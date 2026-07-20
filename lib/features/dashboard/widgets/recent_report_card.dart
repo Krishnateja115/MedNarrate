@@ -1,0 +1,96 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/constants/app_colors.dart';
+
+class RecentReportCard extends StatelessWidget {
+  final String title;
+  final String hospital;
+  final String date;
+  final IconData icon;
+
+  const RecentReportCard({
+    super.key,
+    required this.title,
+    required this.hospital,
+    required this.date,
+    this.icon = Icons.description_outlined,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(18),
+
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(22),
+      ),
+
+      child: Row(
+        children: [
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(15),
+            ),
+
+            child: Icon(
+              icon,
+              color: AppColors.primary,
+            ),
+          ),
+
+          const SizedBox(width: 16),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
+              children: [
+
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  hospital,
+                  style: const TextStyle(
+                    color: Colors.white60,
+                  ),
+                ),
+
+                const SizedBox(height: 3),
+
+                Text(
+                  date,
+                  style: const TextStyle(
+                    color: Colors.white38,
+                  ),
+                ),
+
+              ],
+            ),
+          ),
+
+          const Icon(
+            Icons.arrow_forward_ios,
+            color: Colors.white38,
+            size: 18,
+          )
+
+        ],
+      ),
+    );
+  }
+}

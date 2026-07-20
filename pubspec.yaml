@@ -1,0 +1,60 @@
+name: mednarrate
+description: "AI Medical Report Analysis App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Fonts
+  google_fonts: ^6.3.1
+
+  # File Picker
+  file_picker: ^10.3.2
+
+  # Image Picker
+  image_picker: ^1.1.2
+
+  # Permissions
+  permission_handler: ^12.0.1
+
+  # Path Provider
+  path_provider: ^2.1.5
+
+  # UUID Generator
+  uuid: ^4.5.1
+
+  # PDF Viewer
+  #syncfusion_flutter_pdfviewer: ^31.1.17
+
+  # OCR
+  google_mlkit_text_recognition: ^0.15.0
+
+  # Local Storage
+  shared_preferences: ^2.5.3
+
+  # HTTP
+  http: ^1.5.0
+
+  # Charts
+  fl_chart: ^1.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - lib/assets/images/
+    - lib/assets/icons/
