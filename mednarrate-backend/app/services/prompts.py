@@ -47,3 +47,17 @@ CRITICAL GUARDRAIL: If the user asks for a diagnosis, a treatment plan, or medic
 
 User Question: {user_query}
 Answer:"""
+
+TRANSLATION_PROMPT = """You are a professional medical translator. Translate the following patient summary and list of abnormal findings into {target_language}.
+Maintain a medically accurate, calm, and patient-friendly tone.
+
+INPUT DATA:
+Patient Summary: {patient_summary}
+Abnormal Findings (JSON array): {abnormal_findings_json}
+
+OUTPUT INSTRUCTIONS:
+You MUST output strictly valid JSON with no markdown wrapping or additional text. The JSON object must have exactly two keys:
+1. "patient_summary": The translated patient summary string.
+2. "abnormal_findings": A JSON array where each object has two keys: "test_name" (the original test name in English, DO NOT translate this) and "translated_explanation" (your translation of why this finding matters).
+
+Output the JSON now:"""

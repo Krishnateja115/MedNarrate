@@ -9,8 +9,10 @@ from app.models.report_analysis import ReportAnalysis
 from app.models.analysis_translation import AnalysisTranslation
 from app.schemas.report import ReportAnalysisOut, TranslationRequest, TranslationOut
 from app.services.analysis_pipeline import run_analysis
+from app.services.llm_client import generate
+from app.services.prompts import TRANSLATION_PROMPT
 from typing import Dict, Any
-
+import json
 router = APIRouter()
 
 @router.post("/{id}/process", status_code=202)
@@ -143,10 +145,34 @@ async def translate_analysis(
         )
         
     # Cache miss - translate
-    # Call to translation model (mocked/omitted for brevity, handled by model_registry in real env)
-    translated_summary = "[Translated] " + (analysis.patient_summary or "")
-    translated_findings = [{"test_name": f["test_name"], "translated_explanation": "[Translated explanation]"} for f in analysis.abnormal_findings]
+    prompt = TRANSLATION_PROMPT.format(
+        target_language=lang,
+        patient_summary=analysis.patient_summary or "",
+        abnormal_findings_json=json.dumps(analysis.abnormal_findings, indent=2)
+    )
     
+    response_text = await generate(prompt)
+    
+    # Strip markdown wrappers if LLM returned them
+    response_text = response_text.strip()
+    if response_text.startswith("```json"):
+        response_text = response_text[7:]
+    elif response_text.startswith("```"):
+        response_text = response_text[3:]
+    if response_text.endswith("```"):
+        response_text = response_text[:-3]
+    response_text = response_text.strip()
+    
+    try:
+        parsed = json.loads(response_text)
+        translated_summary = parsed.get("patient_summary", "[Translation failed]")
+        translated_findings = parsed.get("abnormal_findings", [])
+    except json.JSONDecodeError:
+        # Fallback if LLM failed to return valid JSON
+        translated_summary = "[Translation Parsing Error] " + response_text[:100]
+        translated_findings = []
+        
+
     translation = AnalysisTranslation(
         report_analysis_id=analysis.id,
         language=lang,
