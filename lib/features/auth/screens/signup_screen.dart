@@ -8,6 +8,7 @@ import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../../shared/widgets/primary_button.dart';
+import 'package:go_router/go_router.dart';
 import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -50,7 +51,7 @@ class _SignupScreenState extends State<SignupScreen> {
         nameController.text.trim(),
       );
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, Routes.dashboard);
+      context.go(Routes.dashboard);
     } on ApiException catch (e) {
       if (!mounted) return;
       Helpers.showError(context, e.message);

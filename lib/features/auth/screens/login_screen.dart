@@ -10,6 +10,7 @@ import '../../../shared/widgets/custom_password_field.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../../shared/widgets/primary_button.dart';
 import 'forgot_password_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -41,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
         passwordController.text,
       );
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, Routes.dashboard);
+      context.go(Routes.dashboard);
     } on ApiException catch (e) {
       if (!mounted) return;
       Helpers.showError(context, e.message);
@@ -89,8 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
+                    onPressed: () => context.push(Routes.forgotPassword),
                     child: const Text('Forgot Password?'),
                   ),
                 ),
@@ -106,8 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text("Don't have an account?",
                         style: TextStyle(color: Colors.white70)),
                     TextButton(
-                      onPressed: () => Navigator.pushReplacement(context,
-                          MaterialPageRoute(builder: (_) => const SignupScreen())),
+                      onPressed: () => context.go(Routes.signup),
                       child: const Text('Sign Up'),
                     ),
                   ],

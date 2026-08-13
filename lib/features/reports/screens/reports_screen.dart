@@ -7,6 +7,7 @@ import '../../../core/utils/helpers.dart';
 import '../../../core/routing/routes.dart';
 import '../models/report_model.dart';
 import '../widgets/report_card.dart';
+import 'package:go_router/go_router.dart';
 import '../widgets/search_bar.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -55,7 +56,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await Navigator.pushNamed(context, Routes.upload);
+          await context.push(Routes.upload);
           _loadReports();
         },
         child: const Icon(Icons.add),
@@ -125,7 +126,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 const SizedBox(height: 16),
                                 FilledButton.icon(
                                   onPressed: () async {
-                                    await Navigator.pushNamed(context, Routes.upload);
+                                    await context.push(Routes.upload);
                                     _loadReports();
                                   },
                                   icon: const Icon(Icons.upload_file),

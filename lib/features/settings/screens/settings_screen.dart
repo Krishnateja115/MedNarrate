@@ -6,6 +6,7 @@ import '../../../core/services/storage_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/routing/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../../../main.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -88,9 +89,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Logout'),
         content: const Text('Are you sure you want to log out?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => context.pop(false), child: const Text('Cancel')),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => context.pop(true),
             child: const Text('Logout', style: TextStyle(color: Colors.red)),
           ),
         ],
@@ -106,7 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } finally {
       await _storageService.clearTokens();
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, Routes.login, (route) => false);
+        context.go(Routes.login);
       }
     }
   }
@@ -150,7 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             languages: _languages,
                             currentLang: _currentLang,
                             onSelect: (lang) {
-                              Navigator.pop(context);
+                              context.pop();
                               _changeLanguage(lang);
                             },
                           ),
@@ -182,7 +183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           builder: (_) => _ThemePicker(
                             currentTheme: _currentTheme,
                             onSelect: (mode) {
-                              Navigator.pop(context);
+                              context.pop();
                               _changeTheme(mode);
                             },
                           ),

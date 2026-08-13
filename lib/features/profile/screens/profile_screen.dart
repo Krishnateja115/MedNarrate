@@ -5,6 +5,7 @@ import '../../../core/services/api_service.dart';
 import '../../../core/services/api_models.dart';
 import '../../../core/routing/routes.dart';
 import '../../../shared/widgets/profile_tile.dart';
+import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -67,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(ctx),
+                  onPressed: () => ctx.pop(),
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
@@ -79,7 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         dateOfBirth: dobCtrl.text.trim().isEmpty ? null : dobCtrl.text.trim(),
                       );
                       if (!ctx.mounted) return;
-                      Navigator.pop(ctx);
+                      ctx.pop();
                       _loadUser(); // refresh
                     } catch (_) {
                       setDialogState(() => saving = false);
@@ -143,13 +144,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.medical_information_outlined,
                         title: 'Medical Information',
                         subtitle: 'Blood group, allergies and history',
-                        onTap: () => Navigator.pushNamed(context, Routes.medicalProfile),
+                        onTap: () => context.push(Routes.medicalProfile),
                       ),
                       ProfileTile(
                         icon: Icons.emergency_outlined,
                         title: 'Emergency Contact',
                         subtitle: 'Emergency contact information',
-                        onTap: () => Navigator.pushNamed(context, Routes.emergencyContact),
+                        onTap: () => context.push(Routes.emergencyContact),
                       ),
                       
                       const SizedBox(height: 30),
@@ -160,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.settings,
                         title: 'Settings',
                         subtitle: 'Language, Theme & Notifications',
-                        onTap: () => Navigator.pushNamed(context, Routes.settings),
+                        onTap: () => context.push(Routes.settings),
                       ),
                       
                       const SizedBox(height: 35),
@@ -172,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             backgroundColor: Colors.red,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                           ),
-                          onPressed: () => Navigator.pushNamed(context, Routes.settings),
+                          onPressed: () => context.push(Routes.settings),
                           icon: const Icon(Icons.logout, color: Colors.white),
                           label: const Text('Logout', style: TextStyle(fontSize: 18, color: Colors.white)),
                         ),

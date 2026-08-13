@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/services/reminder_service.dart';
 
 class ReminderScreen extends StatefulWidget {
@@ -37,9 +38,9 @@ class _ReminderScreenState extends State<ReminderScreen> {
         title: const Text('Delete Reminder'),
         content: const Text('Are you sure you want to delete this reminder?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => context.pop(false), child: const Text('Cancel')),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => context.pop(true),
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
@@ -66,7 +67,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
         child: _ReminderForm(
           initialData: reminder,
           onSaved: () {
-            Navigator.pop(context);
+            context.pop();
             _loadReminders();
           },
         ),

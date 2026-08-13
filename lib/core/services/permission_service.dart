@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// PermissionService — wraps permission_handler.
@@ -45,10 +46,10 @@ class PermissionService {
         title: const Text('Permission Required'),
         content: Text('$rationale\n\nPlease enable it in app settings.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              context.pop();
               await openAppSettings();
             },
             child: const Text('Open Settings'),

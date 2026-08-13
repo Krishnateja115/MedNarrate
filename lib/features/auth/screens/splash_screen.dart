@@ -6,6 +6,7 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/routing/routes.dart';
+import 'package:go_router/go_router.dart';
 import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -51,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen>
         // Validate token; refresh-on-401 is transparent via ApiService
         await ApiService.instance.getMe();
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, Routes.dashboard);
+        context.go(Routes.dashboard);
         return;
       } catch (_) {
         // Token invalid — fall through to login/onboarding
@@ -62,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen>
     final seen = await StorageService.instance.isOnboardingSeen();
     if (!mounted) return;
     if (seen) {
-      Navigator.pushReplacementNamed(context, Routes.login);
+      context.go(Routes.login);
     } else {
       Navigator.pushReplacement(
         context,

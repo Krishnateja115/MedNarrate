@@ -6,6 +6,7 @@ import '../../../core/services/api_exception.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/routing/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../models/report_model.dart';
 
 /// ReportDetailsScreen — takes a report ID, fetches the latest data from the backend,
@@ -67,9 +68,9 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
         title: const Text('Delete Report'),
         content: const Text('Are you sure you want to delete this report? This cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => context.pop(false), child: const Text('Cancel')),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => context.pop(true),
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
@@ -78,7 +79,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
     if (confirm != true) return;
     try {
       await ApiService.instance.deleteReport(_report!.id);
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) context.pop(true);
     } on ApiException catch (e) {
       if (mounted) Helpers.showError(context, e.message);
     }

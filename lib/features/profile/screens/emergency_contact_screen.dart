@@ -5,6 +5,7 @@ import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/custom_textfield.dart';
+import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/primary_button.dart';
 
 class EmergencyContactScreen extends StatefulWidget {
@@ -51,7 +52,7 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
       );
       if (mounted) {
         Helpers.showSuccess(context, 'Emergency contact updated');
-        Navigator.pop(context);
+        context.pop();
       }
     } on ApiException catch (e) {
       if (mounted) Helpers.showError(context, e.message);

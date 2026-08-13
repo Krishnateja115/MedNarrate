@@ -8,6 +8,7 @@ import '../../../core/services/api_exception.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/report_polling.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/routing/routes.dart';
 
 class UploadScreen extends StatefulWidget {
@@ -78,7 +79,7 @@ class _UploadScreenState extends State<UploadScreen> {
         if (status.processingStatus == 'completed') {
           setState(() => _processing = false);
           Helpers.showSuccess(context, 'Report analyzed successfully!');
-          Navigator.pushReplacementNamed(context, Routes.reportAnalysis, arguments: report.id);
+          context.go(Routes.reportAnalysis, extra: report.id);
           return;
         } else if (status.processingStatus == 'failed') {
           setState(() { _processing = false; _errorMessage = status.errorReason ?? 'Analysis failed.'; });

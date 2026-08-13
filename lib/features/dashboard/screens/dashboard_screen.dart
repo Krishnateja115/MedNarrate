@@ -13,6 +13,7 @@ import '../widgets/health_tip_card.dart';
 import '../widgets/medicine_reminder_card.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/recent_report_card.dart';
+import 'package:go_router/go_router.dart';
 import '../../reports/widgets/upload_card.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -105,7 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Text('Quick Actions', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
                 UploadCard(onTap: () async {
-                  await Navigator.pushNamed(context, Routes.upload);
+                  await context.push(Routes.upload);
                   _loadData();
                 }),
                 const SizedBox(height: 15),
@@ -114,17 +115,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     QuickActionCard(
                       icon: Icons.description_outlined,
                       title: 'All Reports',
-                      onTap: () => Navigator.pushNamed(context, Routes.reports),
+                      onTap: () => context.push(Routes.reports),
                     ),
                     QuickActionCard(
                       icon: Icons.smart_toy_outlined,
                       title: 'AI Chat',
-                      onTap: () => Navigator.pushNamed(context, Routes.aiChat),
+                      onTap: () => context.push(Routes.aiChat),
                     ),
                     QuickActionCard(
                       icon: Icons.bar_chart_rounded,
                       title: 'Insights',
-                      onTap: () => Navigator.pushNamed(context, Routes.insights),
+                      onTap: () => context.push(Routes.insights),
                     ),
                   ],
                 ),
@@ -143,7 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const Center(child: Text('No recent reports.', style: TextStyle(color: Colors.white54)))
                 else
                   ..._recentReports.map((report) => GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, Routes.reportDetails, arguments: report.id),
+                    onTap: () => context.push(Routes.reportDetails, extra: report.id),
                     child: RecentReportCard(
                       title: report.title,
                       hospital: report.hospital,

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'core/routing/app_router.dart';
-import 'core/routing/routes.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/storage_service.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/screens/splash_screen.dart';
 
 final themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.system);
 
@@ -28,15 +26,13 @@ class MedNarrateApp extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeModeNotifier,
       builder: (context, themeMode, _) {
-        return MaterialApp(
+        return MaterialApp.router(
           debugShowCheckedModeBanner: false,
           title: 'MedNarrate',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeMode,
-          onGenerateRoute: AppRouter.generateRoute,
-          initialRoute: Routes.splash,
-          home: const SplashScreen(),
+          routerConfig: AppRouter.router,
         );
       },
     );
