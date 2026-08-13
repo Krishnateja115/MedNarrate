@@ -145,8 +145,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: GestureDetector(
-                                    onTap: () => Navigator.pushNamed(
-                                      context, Routes.reportDetails, arguments: report.id),
+                                    onTap: () => context.push(Routes.reportDetails, extra: report.id),
                                     child: ReportCard(report: report),
                                   ),
                                 );

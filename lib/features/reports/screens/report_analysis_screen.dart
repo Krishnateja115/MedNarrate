@@ -7,6 +7,7 @@ import '../../../core/services/api_models.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/report_polling.dart';
 import '../../../core/routing/routes.dart';
+import 'package:go_router/go_router.dart';
 
 /// ReportAnalysisScreen — shows AI analysis results.
 /// Handles polling (if not yet completed), failure with retry, and dual-mode summary toggle.
@@ -120,8 +121,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
         actions: [
           if (_status == 'completed')
             IconButton(
-              onPressed: () => Navigator.pushNamed(
-                context, Routes.aiChat, arguments: widget.reportId),
+              onPressed: () => context.push(Routes.aiChat, extra: widget.reportId),
               icon: const Icon(Icons.chat_bubble_outline),
               tooltip: 'Ask AI about this report',
             ),

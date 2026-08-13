@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import date, datetime
@@ -34,9 +34,7 @@ class ReportOut(BaseModel):
     isFavourite: bool = Field(..., alias="is_favourite")
     uploadedAt: datetime = Field(..., alias="uploaded_at")
 
-    class Config:
-        from_attributes = True
-        populate_by_name = True
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 class ReportUpdate(BaseModel):
     title: Optional[str] = None
@@ -86,8 +84,7 @@ class ReportAnalysisOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TranslationRequest(BaseModel):
     language: str

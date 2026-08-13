@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/routing/routes.dart';
@@ -9,9 +10,6 @@ import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/custom_password_field.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../../shared/widgets/primary_button.dart';
-import 'forgot_password_screen.dart';
-import 'package:go_router/go_router.dart';
-import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

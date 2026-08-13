@@ -12,14 +12,20 @@ from sqlalchemy.future import select
 from app.core.config import settings
 from app.core.database import get_db
 
+import hashlib as _hashlib
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
+def _pre_hash(password: str) -> str:
+    """Pre-hash password with SHA256 to avoid bcrypt 72-byte truncation and bcrypt version quirks."""
+    return _hashlib.sha256(password.encode("utf-8")).hexdigest()
+
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return pwd_context.hash(_pre_hash(password))
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return pwd_context.verify(_pre_hash(plain), hashed)
 
 def create_access_token(subject: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

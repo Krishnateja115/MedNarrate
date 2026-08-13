@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/routing/routes.dart';
+import '../../../core/services/storage_service.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../widgets/onboarding_page.dart';
 import '../widgets/page_indicator.dart';
-import 'signup_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -45,6 +47,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     },
   ];
 
+  Future<void> _navigateToSignup() async {
+    await StorageService.instance.setOnboardingSeen();
+    if (!mounted) return;
+    context.go(Routes.signup);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,14 +78,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
 
                   TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SignupScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: _navigateToSignup,
                     child: const Text(
                       "Skip",
                       style: TextStyle(
@@ -158,12 +159,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       curve: Curves.easeInOut,
                     );
                   } else {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SignupScreen(),
-                      ),
-                    );
+                    _navigateToSignup();
                   }
                 },
               ),

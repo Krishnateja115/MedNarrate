@@ -150,11 +150,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                         width: double.infinity,
                         height: 55,
                         child: FilledButton.icon(
-                          onPressed: () => Navigator.pushNamed(
-                            context,
-                            Routes.reportAnalysis,
-                            arguments: _report!.id,
-                          ),
+                          onPressed: () => context.push(Routes.reportAnalysis, extra: _report!.id),
                           icon: const Icon(Icons.auto_awesome),
                           label: const Text('AI Analysis'),
                         ),
@@ -164,11 +160,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                         width: double.infinity,
                         height: 55,
                         child: FilledButton.icon(
-                          onPressed: () => Navigator.pushNamed(
-                            context,
-                            Routes.reportTimeline,
-                            arguments: _report!.id,
-                          ),
+                          onPressed: () => context.push(Routes.reportTimeline, extra: _report!.id),
                           icon: const Icon(Icons.timeline),
                           label: const Text('View Timeline'),
                         ),

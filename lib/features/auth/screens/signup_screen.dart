@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/routing/routes.dart';
@@ -8,8 +9,6 @@ import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../../shared/widgets/primary_button.dart';
-import 'package:go_router/go_router.dart';
-import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -138,10 +137,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 35),
                 Center(
                   child: TextButton(
-                    onPressed: () => Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    ),
+                    onPressed: () => context.go(Routes.login),
                     child: const Text(
                       'Already have an account? Login',
                       style: TextStyle(fontSize: 16),
