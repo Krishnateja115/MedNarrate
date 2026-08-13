@@ -40,6 +40,18 @@ dependencies:
   # Local Storage
   shared_preferences: ^2.5.3
 
+  # Secure Storage (for tokens)
+  flutter_secure_storage: ^9.2.2
+
+  # Internationalization
+  intl: ^0.20.2
+
+  # Local Notifications
+  flutter_local_notifications: ^18.0.1
+
+  # Timezone support (required by flutter_local_notifications)
+  timezone: ^0.9.4
+
   # HTTP
   http: ^1.5.0
 

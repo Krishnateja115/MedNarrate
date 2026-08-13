@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
-import '../screens/onboarding_screen.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/services/storage_service.dart';
+import '../../../core/routing/routes.dart';
+import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,9 +19,7 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
 
   late AnimationController _controller;
-
   late Animation<double> _fade;
-
   late Animation<double> _scale;
 
   @override
@@ -30,36 +31,44 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 1200),
     );
 
-    _fade = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
-    _scale = Tween<double>(
-      begin: .85,
-      end: 1,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutBack,
-      ),
+    _scale = Tween<double>(begin: .85, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
 
     _controller.forward();
 
-    Timer(
-      const Duration(seconds: 3),
-      () {
-        if (!mounted) return;
+    Timer(const Duration(seconds: 2), _checkAuthAndNavigate);
+  }
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const OnboardingScreen(),
-          ),
-        );
-      },
-    );
+  Future<void> _checkAuthAndNavigate() async {
+    if (!mounted) return;
+
+    final token = await StorageService.instance.getAccessToken();
+    if (token != null) {
+      try {
+        // Validate token; refresh-on-401 is transparent via ApiService
+        await ApiService.instance.getMe();
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, Routes.dashboard);
+        return;
+      } catch (_) {
+        // Token invalid — fall through to login/onboarding
+      }
+    }
+
+    if (!mounted) return;
+    final seen = await StorageService.instance.isOnboardingSeen();
+    if (!mounted) return;
+    if (seen) {
+      Navigator.pushReplacementNamed(context, Routes.login);
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      );
+    }
   }
 
   @override
@@ -70,40 +79,30 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: AppColors.background,
-
       body: Center(
         child: FadeTransition(
           opacity: _fade,
-
           child: ScaleTransition(
             scale: _scale,
-
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-
               children: [
-
                 Container(
                   height: 110,
                   width: 110,
-
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(30),
                   ),
-
                   child: const Icon(
                     Icons.medical_services_rounded,
                     size: 60,
                     color: Colors.white,
                   ),
                 ),
-
                 const SizedBox(height: 28),
-
                 const Text(
                   AppStrings.appName,
                   style: TextStyle(
@@ -112,9 +111,7 @@ class _SplashScreenState extends State<SplashScreen>
                     color: Colors.white,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 const Text(
                   AppStrings.appTagline,
                   style: TextStyle(
@@ -122,15 +119,11 @@ class _SplashScreenState extends State<SplashScreen>
                     color: AppColors.textSecondary,
                   ),
                 ),
-
                 const SizedBox(height: 50),
-
                 const SizedBox(
                   width: 28,
                   height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 3),
                 ),
               ],
             ),

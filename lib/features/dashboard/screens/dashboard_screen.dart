@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/routing/routes.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/services/reminder_service.dart';
+import '../../reports/models/report_model.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/dashboard_statistics_card.dart';
 import '../widgets/health_progress_card.dart';
@@ -9,196 +13,151 @@ import '../widgets/health_tip_card.dart';
 import '../widgets/medicine_reminder_card.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/recent_report_card.dart';
+import '../../reports/widgets/upload_card.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  bool _loading = true;
+  String _userName = 'User';
+  List<ReportModel> _recentReports = [];
+  int _totalReports = 0;
+  int _favouriteReports = 0;
+  int _activeReminders = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final user = await ApiService.instance.getMe();
+      final reports = await ApiService.instance.listReports();
+      final reminders = await ReminderService.instance.getAll();
+      
+      if (mounted) {
+        setState(() {
+          _userName = user.fullName.split(' ').first;
+          _totalReports = reports.length;
+          _favouriteReports = reports.where((r) => r.isFavourite).length;
+          _recentReports = reports.take(3).toList();
+          _activeReminders = reminders.length;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(22),
+        child: RefreshIndicator(
+          onRefresh: _loadData,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DashboardHeader(name: _userName),
+                const SizedBox(height: 30),
+                const HealthScoreCard(score: 92),
+                const SizedBox(height: 30),
 
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-
-            children: [
-
-              //--------------------------------------------------
-              // HEADER
-              //--------------------------------------------------
-
-              const DashboardHeader(
-                name: "Krishna",
-              ),
-
-              const SizedBox(height: 30),
-
-              //--------------------------------------------------
-              // HEALTH SCORE
-              //--------------------------------------------------
-
-              const HealthScoreCard(
-                score: 92,
-              ),
-
-              const SizedBox(height: 30),
-
-              //--------------------------------------------------
-              // STATISTICS
-              //--------------------------------------------------
-
-              Row(
-                children: [
-
-                  DashboardStatisticsCard(
-                    title: "Reports",
-                    value: "12",
-                    icon: Icons.description_outlined,
-                    color: Colors.blue,
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  DashboardStatisticsCard(
-                    title: "Medicines",
-                    value: "4",
-                    icon: Icons.medication_outlined,
-                    color: Colors.orange,
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  DashboardStatisticsCard(
-                    title: "Alerts",
-                    value: "1",
-                    icon: Icons.warning_amber_outlined,
-                    color: Colors.red,
-                  ),
-
-                ],
-              ),
-
-              const SizedBox(height: 35),
-
-              //--------------------------------------------------
-              // QUICK ACTIONS
-              //--------------------------------------------------
-
-              const Text(
-                "Quick Actions",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                // Statistics
+                Row(
+                  children: [
+                    DashboardStatisticsCard(
+                      title: 'Reports',
+                      value: _totalReports.toString(),
+                      icon: Icons.description_outlined,
+                      color: Colors.blue,
+                    ),
+                    const SizedBox(width: 12),
+                    DashboardStatisticsCard(
+                      title: 'Reminders',
+                      value: _activeReminders.toString(),
+                      icon: Icons.medication_outlined,
+                      color: Colors.orange,
+                    ),
+                    const SizedBox(width: 12),
+                    DashboardStatisticsCard(
+                      title: 'Favourites',
+                      value: _favouriteReports.toString(),
+                      icon: Icons.favorite_border,
+                      color: Colors.red,
+                    ),
+                  ],
                 ),
-              ),
+                const SizedBox(height: 35),
 
-              const SizedBox(height: 20),
-
-              Row(
-                children: [
-
-                  QuickActionCard(
-                    icon: Icons.upload_file_rounded,
-                    title: "Upload\nReport",
-                    onTap: () {},
-                  ),
-
-                  QuickActionCard(
-                    icon: Icons.smart_toy_outlined,
-                    title: "AI\nAssistant",
-                    onTap: () {},
-                  ),
-
-                ],
-              ),
-
-              const SizedBox(height: 15),
-
-              Row(
-                children: [
-
-                  QuickActionCard(
-                    icon: Icons.bar_chart_rounded,
-                    title: "Insights",
-                    onTap: () {},
-                  ),
-
-                  QuickActionCard(
-                    icon: Icons.medication_rounded,
-                    title: "Medicines",
-                    onTap: () {},
-                  ),
-
-                ],
-              ),
-
-              const SizedBox(height: 35),
-
-              //--------------------------------------------------
-              // TODAY'S MEDICINE
-              //--------------------------------------------------
-
-              const MedicineReminderCard(),
-
-              const SizedBox(height: 35),
-
-              //--------------------------------------------------
-              // RECENT REPORTS
-              //--------------------------------------------------
-
-              const Text(
-                "Recent Reports",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                // Quick Actions
+                const Text('Quick Actions', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                UploadCard(onTap: () async {
+                  await Navigator.pushNamed(context, Routes.upload);
+                  _loadData();
+                }),
+                const SizedBox(height: 15),
+                Row(
+                  children: [
+                    QuickActionCard(
+                      icon: Icons.description_outlined,
+                      title: 'All Reports',
+                      onTap: () => Navigator.pushNamed(context, Routes.reports),
+                    ),
+                    QuickActionCard(
+                      icon: Icons.smart_toy_outlined,
+                      title: 'AI Chat',
+                      onTap: () => Navigator.pushNamed(context, Routes.aiChat),
+                    ),
+                    QuickActionCard(
+                      icon: Icons.bar_chart_rounded,
+                      title: 'Insights',
+                      onTap: () => Navigator.pushNamed(context, Routes.insights),
+                    ),
+                  ],
                 ),
-              ),
+                const SizedBox(height: 35),
 
-              const SizedBox(height: 20),
+                // Reminders
+                const MedicineReminderCard(),
+                const SizedBox(height: 35),
 
-              const RecentReportCard(
-                title: "Complete Blood Count",
-                hospital: "Apollo Hospital",
-                date: "12 July 2026",
-              ),
+                // Recent Reports
+                const Text('Recent Reports', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                if (_loading)
+                  const Center(child: CircularProgressIndicator())
+                else if (_recentReports.isEmpty)
+                  const Center(child: Text('No recent reports.', style: TextStyle(color: Colors.white54)))
+                else
+                  ..._recentReports.map((report) => GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, Routes.reportDetails, arguments: report.id),
+                    child: RecentReportCard(
+                      title: report.title,
+                      hospital: report.hospital,
+                      date: report.reportDate.toString().split(' ').first,
+                    ),
+                  )),
+                const SizedBox(height: 35),
 
-              const RecentReportCard(
-                title: "Lipid Profile",
-                hospital: "MedPlus Diagnostics",
-                date: "03 July 2026",
-              ),
-
-              const RecentReportCard(
-                title: "HbA1c Report",
-                hospital: "Yashoda Hospital",
-                date: "21 June 2026",
-              ),
-
-              const SizedBox(height: 35),
-
-              //--------------------------------------------------
-              // HEALTH TIP
-              //--------------------------------------------------
-
-              const HealthTipCard(),
-
-              const SizedBox(height: 30),
-
-              //--------------------------------------------------
-              // WEEKLY PROGRESS
-              //--------------------------------------------------
-
-              const HealthProgressCard(),
-
-              const SizedBox(height: 40),
-
-            ],
+                const HealthTipCard(),
+                const SizedBox(height: 30),
+                const HealthProgressCard(),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),

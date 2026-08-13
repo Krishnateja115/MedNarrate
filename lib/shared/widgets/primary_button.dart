@@ -3,14 +3,14 @@ import '../../core/constants/app_colors.dart';
 
 class PrimaryButton extends StatefulWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final IconData? icon;
   final bool loading;
 
   const PrimaryButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    this.onPressed,
     this.icon,
     this.loading = false,
   });
@@ -27,18 +27,21 @@ class _PrimaryButtonState extends State<PrimaryButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) {
+        if (widget.onPressed == null || widget.loading) return;
         setState(() {
           scale = 0.97;
         });
       },
       onTapUp: (_) {
+        if (widget.onPressed == null || widget.loading) return;
         setState(() {
           scale = 1;
         });
 
-        widget.onPressed();
+        widget.onPressed!();
       },
       onTapCancel: () {
+        if (widget.onPressed == null || widget.loading) return;
         setState(() {
           scale = 1;
         });

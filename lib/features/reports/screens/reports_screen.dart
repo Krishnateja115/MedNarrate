@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/services/api_exception.dart';
+import '../../../core/utils/helpers.dart';
+import '../../../core/routing/routes.dart';
 import '../models/report_model.dart';
-import '../services/report_service.dart';
 import '../widgets/report_card.dart';
-import 'report_details_screen.dart';
-import 'upload_screen.dart';
+import '../widgets/search_bar.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -15,165 +17,154 @@ class ReportsScreen extends StatefulWidget {
 }
 
 class _ReportsScreenState extends State<ReportsScreen> {
-  final ReportService reportService = ReportService.instance;
-
-  final TextEditingController searchController =
-      TextEditingController();
-
-  List<ReportModel> reports = [];
-  List<ReportModel> filteredReports = [];
+  List<ReportModel> _reports = [];
+  bool _loading = true;
+  String? _error;
+  String? _searchQuery;
+  String? _filterType;
+  bool? _filterFavourite;
 
   @override
   void initState() {
     super.initState();
-    loadReports();
-
-    searchController.addListener(() {
-      final query =
-          searchController.text.toLowerCase();
-
-      setState(() {
-        filteredReports = reports.where((report) {
-          return report.title
-                  .toLowerCase()
-                  .contains(query) ||
-              report.hospital
-                  .toLowerCase()
-                  .contains(query);
-        }).toList();
-      });
-    });
+    _loadReports();
   }
 
-  void loadReports() {
-    reports = reportService.getReports();
-    filteredReports = List.from(reports);
+  Future<void> _loadReports() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final reports = await ApiService.instance.listReports(
+        search: _searchQuery,
+        reportType: _filterType,
+        isFavourite: _filterFavourite,
+      );
+      if (mounted) setState(() { _reports = reports; _loading = false; });
+    } on ApiException catch (e) {
+      if (mounted) setState(() { _error = e.message; _loading = false; });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-
       appBar: AppBar(
+        title: const Text('Reports'),
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text(
-          "Medical Reports",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
-
-      floatingActionButton:
-          FloatingActionButton.extended(
-        backgroundColor: AppColors.primary,
-
+      floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  const UploadScreen(),
-            ),
-          );
-
-          if (result == true) {
-            setState(() {
-              loadReports();
-            });
-          }
+          await Navigator.pushNamed(context, Routes.upload);
+          _loadReports();
         },
-
-        icon: const Icon(Icons.upload_file),
-        label: const Text("Upload"),
+        child: const Icon(Icons.add),
       ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-
-        child: Column(
-          children: [
-
-            TextField(
-              controller: searchController,
-
-              decoration: InputDecoration(
-                hintText: "Search reports",
-
-                prefixIcon:
-                    const Icon(Icons.search),
-
-                filled: true,
-
-                fillColor: AppColors.card,
-
-                border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(18),
-                  borderSide: BorderSide.none,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ReportSearchBar(
+              onChanged: (q) {
+                _searchQuery = q.isEmpty ? null : q;
+                _loadReports();
+              },
+            ),
+          ),
+          // Filter chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                _filterChip('All', _filterType == null && _filterFavourite == null, () {
+                  setState(() { _filterType = null; _filterFavourite = null; });
+                  _loadReports();
+                }),
+                _filterChip('Favourites', _filterFavourite == true, () {
+                  setState(() { _filterFavourite = _filterFavourite == true ? null : true; _filterType = null; });
+                  _loadReports();
+                }),
+                ...['blood', 'pathology', 'health', 'other'].map((t) =>
+                  _filterChip(Helpers.reportTypeLabel(t), _filterType == t, () {
+                    setState(() { _filterType = _filterType == t ? null : t; _filterFavourite = null; });
+                    _loadReports();
+                  }),
                 ),
-              ),
+              ],
             ),
-
-            const SizedBox(height: 20),
-
-            Expanded(
-              child: filteredReports.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "No Reports Uploaded",
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 18,
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(_error!, style: const TextStyle(color: Colors.red)),
+                            const SizedBox(height: 16),
+                            TextButton.icon(
+                              onPressed: _loadReports,
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Retry'),
+                            ),
+                          ],
                         ),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount:
-                          filteredReports.length,
-
-                      itemBuilder:
-                          (context, index) {
-                        final report =
-                            filteredReports[index];
-
-                        return ReportCard(
-                          report: report,
-
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    ReportDetailsScreen(
-                                  report: report,
+                      )
+                    : _reports.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.folder_open, size: 70, color: Colors.grey),
+                                const SizedBox(height: 16),
+                                const Text('No reports found',
+                                    style: TextStyle(color: Colors.white70, fontSize: 18)),
+                                const SizedBox(height: 16),
+                                FilledButton.icon(
+                                  onPressed: () async {
+                                    await Navigator.pushNamed(context, Routes.upload);
+                                    _loadReports();
+                                  },
+                                  icon: const Icon(Icons.upload_file),
+                                  label: const Text('Upload your first report'),
                                 ),
-                              ),
-                            );
-                          },
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadReports,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: _reports.length,
+                              itemBuilder: (context, index) {
+                                final report = _reports[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: GestureDetector(
+                                    onTap: () => Navigator.pushNamed(
+                                      context, Routes.reportDetails, arguments: report.id),
+                                    child: ReportCard(report: report),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                          onDelete: () {
-                            setState(() {
-                              reportService
-                                  .deleteReport(
-                                      report.id);
-
-                              loadReports();
-                            });
-                          },
-
-                          onAnalyze: () {},
-
-                          onShare: () {},
-                        );
-                      },
-                    ),
-            ),
-
-          ],
-        ),
+  Widget _filterChip(String label, bool selected, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => onTap(),
       ),
     );
   }
