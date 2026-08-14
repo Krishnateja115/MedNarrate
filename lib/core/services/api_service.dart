@@ -18,10 +18,12 @@ class ApiService {
   ApiService._();
   static final ApiService instance = ApiService._();
 
-  static final String _baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: kIsWeb ? 'http://localhost:8000/api/v1' : 'http://10.0.2.2:8000/api/v1',
-  );
+  static String get _baseUrl {
+    const envUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (envUrl.isNotEmpty) return envUrl;
+    if (kIsWeb) return 'http://localhost:8000/api/v1';
+    return 'http://10.0.2.2:8000/api/v1';
+  }
 
   // ─────────────────────── internal HTTP helpers ───────────────────────
 
