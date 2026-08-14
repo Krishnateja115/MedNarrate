@@ -30,7 +30,7 @@ async def signup(request: Request, signup_data: SignupRequest, db: AsyncSession 
     existing_user = result.scalars().first()
     
     if existing_user:
-        raise HTTPException(status_code=409, detail="Email already registered")
+        raise HTTPException(status_code=409, detail="You already have an account")
         
     hashed_password = hash_password(signup_data.password)
     new_user = User(

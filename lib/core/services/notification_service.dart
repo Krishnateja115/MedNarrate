@@ -19,7 +19,7 @@ class NotificationService {
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
-    const settings = InitializationSettings(android: android, iOS: ios);
+    const settings = InitializationSettings(android: android, iOS: ios, macOS: ios);
     await _plugin.initialize(settings);
   }
 
@@ -40,6 +40,7 @@ class NotificationService {
           priority: Priority.high,
         ),
         iOS: DarwinNotificationDetails(),
+        macOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
@@ -62,6 +63,7 @@ class NotificationService {
           importance: Importance.defaultImportance,
         ),
         iOS: DarwinNotificationDetails(),
+        macOS: DarwinNotificationDetails(),
       ),
     );
   }

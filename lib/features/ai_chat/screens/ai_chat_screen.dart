@@ -243,11 +243,17 @@ class _AIChatScreenState extends State<AIChatScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isUser ? AppColors.primary : AppColors.card,
-                borderRadius: BorderRadius.circular(20),
+                border: isUser ? null : Border.all(color: AppColors.border, width: 1),
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(20),
+                  topRight: const Radius.circular(20),
+                  bottomLeft: Radius.circular(isUser ? 20 : 4),
+                  bottomRight: Radius.circular(isUser ? 4 : 20),
+                ),
               ),
               child: Text(
                 msg.content,
-                style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.5),
+                style: TextStyle(color: isUser ? Colors.black : Colors.white, fontSize: 15, height: 1.5),
               ),
             ),
             if (!isUser && msg.sources.isNotEmpty) ...[

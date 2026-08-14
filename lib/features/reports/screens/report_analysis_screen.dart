@@ -301,54 +301,8 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           if (a.structuredLabValues.isEmpty)
             _card(child: const Text('No lab values found.', style: TextStyle(color: Colors.white54)))
           else
-            _card(
-              child: Table(
-                columnWidths: const {
-                  0: FlexColumnWidth(3),
-                  1: FlexColumnWidth(2),
-                  2: FlexColumnWidth(2),
-                  3: FlexColumnWidth(1.5),
-                },
-                children: [
-                  TableRow(
-                    decoration: BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Colors.white12))),
-                    children: ['Test', 'Value', 'Range', 'Flag']
-                        .map((h) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Text(h,
-                                  style: const TextStyle(
-                                      color: Colors.white54, fontWeight: FontWeight.w600, fontSize: 12)),
-                            ))
-                        .toList(),
-                  ),
-                  ...a.structuredLabValues.map((lv) => TableRow(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Text(lv.testName,
-                            style: const TextStyle(color: Colors.white, fontSize: 13))),
-                      Text('${lv.value} ${lv.unit}',
-                          style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                      Text(lv.refLow != null && lv.refHigh != null
-                          ? '${lv.refLow}–${lv.refHigh}'
-                          : '—',
-                          style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                      Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _flagColor(lv.flag).withValues(alpha: .2),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(lv.flag.toUpperCase(),
-                            style: TextStyle(
-                                color: _flagColor(lv.flag), fontSize: 10, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  )),
-                ],
-              ),
+            Column(
+              children: a.structuredLabValues.map((lv) => _buildLabGauge(lv)).toList(),
             ),
 
           const SizedBox(height: 24),
@@ -481,8 +435,104 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: AppColors.card,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppColors.border, width: 1),
     ),
     child: child,
   );
+
+  Widget _buildLabGauge(LabValue lv) {
+    // A simple beautiful horizontal gauge for the "Nothing" aesthetic
+    final hasRange = lv.refLow != null && lv.refHigh != null;
+    double progress = 0.5;
+    
+    if (hasRange) {
+      final range = lv.refHigh! - lv.refLow!;
+      if (range > 0) {
+        progress = (lv.value - lv.refLow!) / range;
+        // Clamp for UI rendering
+        if (progress < 0) progress = 0.1;
+        if (progress > 1) progress = 0.9;
+      }
+    }
+
+    final color = _flagColor(lv.flag);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(lv.testName,
+                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(lv.flag.toUpperCase(),
+                    style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('${lv.value}', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(lv.unit, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              ),
+              const Spacer(),
+              if (hasRange)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text('${lv.refLow} - ${lv.refHigh}', style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                ),
+            ],
+          ),
+          if (hasRange) ...[
+            const SizedBox(height: 12),
+            Stack(
+              children: [
+                Container(
+                  height: 6,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  child: Container(
+                    height: 6,
+                    width: MediaQuery.of(context).size.width * 0.8 * progress,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ]
+        ],
+      ),
+    );
+  }
 }

@@ -21,102 +21,79 @@ class ReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: AppColors.card,
-      margin: const EdgeInsets.only(bottom: 16),
-
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
-
       child: ListTile(
         onTap: onTap,
-
-        leading: CircleAvatar(
-          backgroundColor:
-              Colors.red.withValues(alpha: .15),
-
-          child: const Icon(
-            Icons.picture_as_pdf,
-            color: Colors.red,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(10),
           ),
+          child: const Icon(Icons.article_outlined, color: Colors.white),
         ),
-
         title: Text(
           report.title,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
-
-        subtitle: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-
-          children: [
-
-            const SizedBox(height: 4),
-
-            Text(
-              report.hospital,
-              style: const TextStyle(
-                color: Colors.white60,
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            children: [
+              Text(
+                report.hospital,
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
               ),
-            ),
-
-            const SizedBox(height: 2),
-
-            Text(
-              report.reportDate
-                  .toLocal()
-                  .toString()
-                  .split(" ")
-                  .first,
-              style: const TextStyle(
-                color: Colors.white38,
+              const SizedBox(width: 8),
+              const Text("•", style: TextStyle(color: Colors.white38)),
+              const SizedBox(width: 8),
+              Text(
+                report.reportDate.toLocal().toString().split(" ").first,
+                style: const TextStyle(color: Colors.white38, fontSize: 13),
               ),
-            ),
-
-          ],
+            ],
+          ),
         ),
-
         trailing: PopupMenuButton<String>(
-          color: AppColors.card,
-
+          color: AppColors.surface,
+          icon: const Icon(Icons.more_vert, color: Colors.white54),
           onSelected: (value) {
             switch (value) {
               case "analyze":
                 onAnalyze?.call();
                 break;
-
               case "share":
                 onShare?.call();
                 break;
-
               case "delete":
                 onDelete?.call();
                 break;
             }
           },
-
-          itemBuilder: (context) => const [
-
-            PopupMenuItem(
+          itemBuilder: (context) => [
+            const PopupMenuItem(
               value: "analyze",
-              child: Text("Analyze"),
+              child: Text("Analyze", style: TextStyle(color: Colors.white)),
             ),
-
-            PopupMenuItem(
+            const PopupMenuItem(
               value: "share",
-              child: Text("Share"),
+              child: Text("Share", style: TextStyle(color: Colors.white)),
             ),
-
-            PopupMenuItem(
+            const PopupMenuItem(
               value: "delete",
-              child: Text("Delete"),
+              child: Text("Delete", style: TextStyle(color: AppColors.error)),
             ),
-
           ],
         ),
       ),
