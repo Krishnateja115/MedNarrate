@@ -41,4 +41,5 @@ class UserUpdate(BaseModel):
     preferred_language: Optional[str] = None
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None
+    role: Optional[UserRole] = None
     medical_profile: Optional[MedicalProfileBase] = None

@@ -7,6 +7,8 @@ import '../../../core/utils/helpers.dart';
 import '../../../core/routing/routes.dart';
 import '../models/report_model.dart';
 import '../widgets/report_card.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
+import '../../../shared/widgets/illustrations.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/search_bar.dart';
 
@@ -98,7 +100,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
           const SizedBox(height: 8),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: 5,
+                    itemBuilder: (_, __) => const SkeletonReportCard(),
+                  )
                 : _error != null
                     ? Center(
                         child: Column(
@@ -119,11 +125,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.folder_open, size: 70, color: Colors.grey),
-                                const SizedBox(height: 16),
+                                const EmptyHistoryIllustration(),
+                                const SizedBox(height: 20),
                                 const Text('No reports found',
-                                    style: TextStyle(color: Colors.white70, fontSize: 18)),
-                                const SizedBox(height: 16),
+                                    style: TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 8),
+                                const Text('Upload your first medical report to get started',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.white54, fontSize: 14)),
+                                const SizedBox(height: 20),
                                 FilledButton.icon(
                                   onPressed: () async {
                                     await context.push(Routes.upload);

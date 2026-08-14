@@ -5,10 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.report import Report, ProcessingStatus
 from app.models.report_analysis import ReportAnalysis
+from app.models.user import User
 from app.services.text_extraction import extract_text_from_file, clean_extracted_text
 from app.services.model_registry import get_ner_pipeline
 from app.services.lab_value_extractor import extract_lab_values
-from app.services.prompts import CLINICIAN_PROMPT, PATIENT_PROMPT
+from app.services.prompts import CLINICIAN_PROMPT, PATIENT_PROMPT, ROLE_INSTRUCTIONS
 from app.services.llm_client import generate
 from app.services.rag import retrieve_chunks
 from app.core.database import AsyncSessionLocal
@@ -42,6 +43,12 @@ async def run_analysis(report_id: uuid.UUID):
             if not report:
                 logger.error(f"Report {report_id} not found for analysis.")
                 return
+
+            # Resolve user role for role-aware prompts
+            user_stmt = select(User).where(User.id == report.user_id)
+            user_result = await db.execute(user_stmt)
+            user = user_result.scalars().first()
+            user_role = user.role.value if user else "patient"
 
             if not report.extracted_text or len(report.extracted_text.strip()) == 0:
                 extracted = extract_text_from_file(report.file_path, report.file_type.value)
@@ -110,9 +117,12 @@ async def run_analysis(report_id: uuid.UUID):
                 extracted_text=cleaned_text
             )
             
+            role_instruction = ROLE_INSTRUCTIONS.get(user_role, ROLE_INSTRUCTIONS["patient"])
             patient_prompt = PATIENT_PROMPT.format(
                 report_type=report.report_type.value,
-                structured_values_json=structured_values_json
+                structured_values_json=structured_values_json,
+                user_role=user_role,
+                role_specific_instruction=role_instruction,
             )
             
             if rag_context:

@@ -7,6 +7,7 @@ from app.core.database import Base
 class UserRole(str, enum.Enum):
     patient = "patient"
     clinician = "clinician"
+    caregiver = "caregiver"
 
 class User(Base):
     __tablename__ = "users"

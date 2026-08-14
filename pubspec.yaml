@@ -59,6 +59,28 @@ dependencies:
   fl_chart: ^1.1.1
   go_router: ^17.5.0
 
+  # Text-to-Speech
+  flutter_tts: ^4.2.0
+
+  # PDF generation & export
+  pdf: ^3.11.1
+  printing: ^5.14.2
+
+  # Native share sheet
+  share_plus: ^10.0.3
+
+  # Skeleton shimmer loading
+  shimmer: ^3.0.0
+
+  # SVG support for illustrations
+  flutter_svg: ^2.0.10+1
+
+  # Path utilities
+  path: ^1.9.1
+
+  # Forgot password token (secure random)
+  crypto: ^3.0.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

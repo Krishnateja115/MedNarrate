@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'api_exception.dart';
 import 'api_models.dart';
@@ -17,9 +18,9 @@ class ApiService {
   ApiService._();
   static final ApiService instance = ApiService._();
 
-  static const String _baseUrl = String.fromEnvironment(
+  static final String _baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000/api/v1',
+    defaultValue: kIsWeb ? 'http://localhost:8000/api/v1' : 'http://10.0.2.2:8000/api/v1',
   );
 
   // ─────────────────────── internal HTTP helpers ───────────────────────
@@ -163,6 +164,39 @@ class ApiService {
     await StorageService.instance.clearTokens();
   }
 
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    final resp = await http.post(
+      Uri.parse('$_baseUrl/auth/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+    if (resp.statusCode >= 400) {
+      String message = resp.reasonPhrase ?? 'Error';
+      try {
+        final d = jsonDecode(resp.body) as Map<String, dynamic>;
+        message = d['detail']?.toString() ?? message;
+      } catch (_) {}
+      throw ApiException(resp.statusCode, message);
+    }
+    return jsonDecode(resp.body) as Map<String, dynamic>;
+  }
+
+  Future<void> resetPassword({required String token, required String newPassword}) async {
+    final resp = await http.post(
+      Uri.parse('$_baseUrl/auth/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'token': token, 'new_password': newPassword}),
+    );
+    if (resp.statusCode >= 400) {
+      String message = resp.reasonPhrase ?? 'Error';
+      try {
+        final d = jsonDecode(resp.body) as Map<String, dynamic>;
+        message = d['detail']?.toString() ?? message;
+      } catch (_) {}
+      throw ApiException(resp.statusCode, message);
+    }
+  }
+
   Future<UserModel> getMe() async {
     final resp = await _get('/auth/me');
     return UserModel.fromMap(jsonDecode(resp.body) as Map<String, dynamic>);
@@ -173,6 +207,7 @@ class ApiService {
     String? preferredLanguage,
     String? dateOfBirth,
     String? gender,
+    String? role,
     String? bloodGroup,
     String? knownAllergies,
     String? chronicConditions,
@@ -184,6 +219,7 @@ class ApiService {
     if (preferredLanguage != null) body['preferred_language'] = preferredLanguage;
     if (dateOfBirth != null) body['date_of_birth'] = dateOfBirth;
     if (gender != null) body['gender'] = gender;
+    if (role != null) body['role'] = role;
     if (bloodGroup != null || knownAllergies != null || chronicConditions != null ||
         emergencyContactName != null || emergencyContactPhone != null) {
       final medicalProfile = <String, dynamic>{};
@@ -201,7 +237,7 @@ class ApiService {
   // ─────────────────────────── Reports ─────────────────────────────────
 
   Future<ReportModel> uploadReport({
-    required File file,
+    required PlatformFile file,
     required String title,
     String? hospital,
     required String reportDate,
@@ -217,7 +253,12 @@ class ApiService {
     request.fields['report_date'] = reportDate;
     request.fields['report_type'] = reportType;
     if (hospital != null) request.fields['hospital'] = hospital;
-    request.files.add(await http.MultipartFile.fromPath('file', file.path));
+    
+    if (kIsWeb) {
+      request.files.add(http.MultipartFile.fromBytes('file', file.bytes!, filename: file.name));
+    } else {
+      request.files.add(await http.MultipartFile.fromPath('file', file.path!));
+    }
     final streamedResponse = await request.send();
     final resp = await http.Response.fromStream(streamedResponse);
     if (resp.statusCode >= 400) {

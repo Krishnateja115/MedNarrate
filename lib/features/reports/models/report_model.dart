@@ -8,6 +8,7 @@ class ReportModel {
   final String fileType;
   final String reportType;
   final String extractedText;
+  final String processingStatus;
   final bool isFavourite;
   final DateTime uploadedAt;
 
@@ -21,6 +22,7 @@ class ReportModel {
     required this.fileType,
     required this.reportType,
     required this.extractedText,
+    required this.processingStatus,
     required this.isFavourite,
     required this.uploadedAt,
   });
@@ -35,6 +37,7 @@ class ReportModel {
     String? fileType,
     String? reportType,
     String? extractedText,
+    String? processingStatus,
     bool? isFavourite,
     DateTime? uploadedAt,
   }) {
@@ -48,6 +51,7 @@ class ReportModel {
       fileType: fileType ?? this.fileType,
       reportType: reportType ?? this.reportType,
       extractedText: extractedText ?? this.extractedText,
+      processingStatus: processingStatus ?? this.processingStatus,
       isFavourite: isFavourite ?? this.isFavourite,
       uploadedAt: uploadedAt ?? this.uploadedAt,
     );
@@ -64,6 +68,7 @@ class ReportModel {
       "fileType": fileType,
       "reportType": reportType,
       "extractedText": extractedText,
+      "processingStatus": processingStatus,
       "isFavourite": isFavourite,
       "uploadedAt": uploadedAt.toIso8601String(),
     };
@@ -82,11 +87,10 @@ class ReportModel {
       fileName: map["fileName"],
       filePath: map["filePath"],
       fileType: map["fileType"],
-      reportType: map["reportType"],
-      extractedText:
-          map["extractedText"] ?? "",
-      isFavourite:
-          map["isFavourite"] ?? false,
+      reportType: map["reportType"] ?? "other",
+      extractedText: map["extractedText"] ?? "",
+      processingStatus: map["processingStatus"] ?? "uploaded",
+      isFavourite: map["isFavourite"] ?? false,
       uploadedAt: DateTime.parse(
         map["uploadedAt"],
       ),

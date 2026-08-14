@@ -10,20 +10,27 @@ Extracted report text (for context only, values above are authoritative):
 
 Write the clinical summary now:"""
 
-PATIENT_PROMPT = """You are explaining a {report_type} medical report to a patient with
+PATIENT_PROMPT = """You are explaining a {report_type} medical report to a {user_role} with
 no medical background. Using ONLY the structured data below:
 - Use plain language, define any medical term you use
 - For each abnormal (flag != "normal") value, explain in everyday terms why it matters and
   what a low/high value like this commonly relates to, WITHOUT diagnosing
-- Keep an calm, reassuring, non-alarming tone for mild deviations
+- Keep a calm, reassuring, non-alarming tone for mild deviations
 - Do not mention any test name that is not present in the structured data below
+{role_specific_instruction}
 - End with exactly this sentence: "This explanation is for informational purposes and does
   not replace advice from your doctor."
 
 Structured lab values:
 {structured_values_json}
 
-Write the patient-friendly explanation now:"""
+Write the {user_role}-friendly explanation now:"""
+
+ROLE_INSTRUCTIONS = {
+    "patient": "- Write as if speaking directly to the patient. Use 'your' and 'you'. Focus on what this means for their daily life and when to see a doctor.",
+    "clinician": "- Write in clinical note style with medical terminology, differential considerations, and clear documentation of abnormal findings.",
+    "caregiver": "- Write for a family member or caregiver who is managing someone else's health. Use 'they' and 'their'. Explain what to watch out for and how to support the patient.",
+}
 
 COMPARISON_PROMPT = """You are analyzing the differences between a previous medical report and a current one.
 Based ONLY on the provided diffed findings below, write a short narrative summary for the patient.

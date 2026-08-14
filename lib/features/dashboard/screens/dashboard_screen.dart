@@ -13,6 +13,7 @@ import '../widgets/health_tip_card.dart';
 import '../widgets/medicine_reminder_card.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/recent_report_card.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import 'package:go_router/go_router.dart';
 import '../../reports/widgets/upload_card.dart';
 
@@ -30,6 +31,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _totalReports = 0;
   int _favouriteReports = 0;
   int _activeReminders = 0;
+  int _healthScore = 0;
+  int _totalLabValues = 0;
+  int _abnormalCount = 0;
 
   @override
   void initState() {
@@ -42,7 +46,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final user = await ApiService.instance.getMe();
       final reports = await ApiService.instance.listReports();
       final reminders = await ReminderService.instance.getAll();
-      
+
+      // Compute health score from the most recent completed report's lab values
+      int totalLab = 0;
+      int abnormal = 0;
+      for (final r in reports.take(3)) {
+        if (r.processingStatus == 'completed') {
+          try {
+            final analysis = await ApiService.instance.getReportAnalysis(r.id);
+            totalLab += analysis.structuredLabValues.length;
+            abnormal += analysis.structuredLabValues.where((v) => v.flag != 'normal').length;
+            break; // only use most recent
+          } catch (_) {}
+        }
+      }
+      final score = totalLab > 0 ? (((totalLab - abnormal) / totalLab) * 100).round() : 0;
+
       if (mounted) {
         setState(() {
           _userName = user.fullName.split(' ').first;
@@ -50,6 +69,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _favouriteReports = reports.where((r) => r.isFavourite).length;
           _recentReports = reports.take(3).toList();
           _activeReminders = reminders.length;
+          _healthScore = score;
+          _totalLabValues = totalLab;
+          _abnormalCount = abnormal;
           _loading = false;
         });
       }
@@ -65,14 +87,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadData,
-          child: SingleChildScrollView(
+          child: _loading
+              ? const Padding(
+                  padding: EdgeInsets.all(22),
+                  child: SkeletonDashboard(),
+                )
+              : SingleChildScrollView(
             padding: const EdgeInsets.all(22),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DashboardHeader(name: _userName),
                 const SizedBox(height: 30),
-                const HealthScoreCard(score: 92),
+                HealthScoreCard(
+                  score: _healthScore,
+                  totalLabValues: _totalLabValues,
+                  abnormalCount: _abnormalCount,
+                ),
                 const SizedBox(height: 30),
 
                 // Statistics

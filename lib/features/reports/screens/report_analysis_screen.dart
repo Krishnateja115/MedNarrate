@@ -4,9 +4,12 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/services/api_models.dart';
+import '../../../core/services/tts_service.dart';
+import '../../../core/services/export_service.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/report_polling.dart';
 import '../../../core/routing/routes.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import 'package:go_router/go_router.dart';
 
 /// ReportAnalysisScreen — shows AI analysis results.
@@ -28,12 +31,22 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
   String? _errorReason;
   bool _clinicalView = false;
   bool _translating = false;
+  bool _exporting = false;
   String? _translatedSummary;
+
+  final TTSService _tts = TTSService.instance;
 
   @override
   void initState() {
     super.initState();
+    _tts.init();
     _init();
+  }
+
+  @override
+  void dispose() {
+    _tts.stop();
+    super.dispose();
   }
 
   Future<void> _init() async {
@@ -128,26 +141,49 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
         ],
       ),
       body: switch (_status) {
-        'loading' => const Center(child: CircularProgressIndicator()),
+        'loading' => const Padding(padding: EdgeInsets.all(20), child: SkeletonAnalysis()),
         'processing' => _buildProcessing(),
         'failed' => _buildFailed(),
         _ => _buildCompleted(),
       },
+      bottomNavigationBar: _status == 'completed' ? _buildBottomBar() : null,
     );
   }
 
   Widget _buildProcessing() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 24),
-          Text('Analyzing your report…', style: TextStyle(color: Colors.white70)),
-          SizedBox(height: 8),
-          Text('This may take a minute.', style: TextStyle(color: Colors.white54, fontSize: 13)),
+          SizedBox(
+            width: 56, height: 56,
+            child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
+          ),
+          const SizedBox(height: 28),
+          const Text('Analyzing your report…',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.white)),
+          const SizedBox(height: 10),
+          const Text('AI is reading your document. This may take a minute.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white54, fontSize: 13)),
+          const SizedBox(height: 32),
+          _processingStep('Reading document text', true),
+          _processingStep('Extracting medical data', true),
+          _processingStep('Running AI analysis', false),
         ],
       ),
+    );
+  }
+
+  Widget _processingStep(String label, bool done) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(done ? Icons.check_circle : Icons.radio_button_unchecked,
+            color: done ? const Color(0xFF00C48C) : Colors.white24, size: 18),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(color: done ? Colors.white70 : Colors.white30, fontSize: 13)),
+      ]),
     );
   }
 
@@ -183,7 +219,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
         (_clinicalView ? a.clinicianSummary : a.patientSummary) ?? '';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -202,8 +238,31 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           ),
           const SizedBox(height: 24),
 
-          // ── Summary card ─────────────────────────────────────────────
-          _sectionTitle('Summary'),
+          // ── Summary card with TTS ─────────────────────────────────────
+          Row(
+            children: [
+              const Expanded(child: Text('Summary',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white))),
+              ValueListenableBuilder<TtsState>(
+                valueListenable: _tts.stateNotifier,
+                builder: (_, ttsState, __) => IconButton(
+                  onPressed: () {
+                    if (ttsState == TtsState.playing) {
+                      _tts.stop();
+                    } else {
+                      _tts.speak(activeSummary);
+                    }
+                  },
+                  icon: Icon(
+                    ttsState == TtsState.playing ? Icons.stop_circle : Icons.volume_up_outlined,
+                    color: ttsState == TtsState.playing ? Colors.redAccent : AppColors.primary,
+                  ),
+                  tooltip: ttsState == TtsState.playing ? 'Stop reading' : 'Read aloud',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           _card(
             child: Text(activeSummary.isEmpty ? 'No summary available.' : activeSummary,
                 style: const TextStyle(color: Colors.white70, height: 1.6)),
@@ -334,6 +393,59 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
             }),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    final a = _analysis!;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _exporting ? null : () async {
+                  setState(() => _exporting = true);
+                  try {
+                    await ExportService.instance.shareSummaryPdf(
+                      analysis: a,
+                      reportTitle: 'Report Analysis',
+                      reportDate: a.processedAt?.toLocal().toString().split(' ').first ?? '',
+                    );
+                  } catch (e) {
+                    if (mounted) Helpers.showError(context, 'Export failed: $e');
+                  } finally {
+                    if (mounted) setState(() => _exporting = false);
+                  }
+                },
+                icon: _exporting
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.picture_as_pdf_outlined),
+                label: Text(_exporting ? 'Exporting…' : 'Export PDF'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: const BorderSide(color: AppColors.primary),
+                  foregroundColor: AppColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: () => ExportService.instance.printSummary(
+                  analysis: a,
+                  reportTitle: 'Report Analysis',
+                  reportDate: a.processedAt?.toLocal().toString().split(' ').first ?? '',
+                ),
+                icon: const Icon(Icons.print_outlined),
+                label: const Text('Print / Preview'),
+                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -111,12 +111,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                   return AnimatedSwitcher(
                     duration: const Duration(milliseconds: 400),
-
                     child: OnboardingPage(
                       key: ValueKey(index),
                       icon: page["icon"],
                       title: page["title"],
                       subtitle: page["subtitle"],
+                      pageIndex: index,
                     ),
                   );
                 },

@@ -1,4 +1,4 @@
-import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -63,7 +63,7 @@ class _UploadScreenState extends State<UploadScreen> {
     setState(() { _uploading = true; _errorMessage = null; });
     try {
       final report = await ApiService.instance.uploadReport(
-        file: File(_selectedFile!.path!),
+        file: _selectedFile!,
         title: _titleCtrl.text.trim(),
         hospital: _hospitalCtrl.text.trim().isEmpty ? null : _hospitalCtrl.text.trim(),
         reportDate: '${_reportDate.year}-${_reportDate.month.toString().padLeft(2, '0')}-${_reportDate.day.toString().padLeft(2, '0')}',
