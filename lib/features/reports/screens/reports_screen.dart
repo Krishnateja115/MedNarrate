@@ -103,7 +103,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ? ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: 5,
-                    itemBuilder: (_, __) => const SkeletonReportCard(),
+                    itemBuilder: (context, index) => const SkeletonReportCard(),
                   )
                 : _error != null
                     ? Center(

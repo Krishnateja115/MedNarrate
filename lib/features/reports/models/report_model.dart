@@ -78,22 +78,22 @@ class ReportModel {
     Map<String, dynamic> map,
   ) {
     return ReportModel(
-      id: map["id"],
-      title: map["title"],
-      hospital: map["hospital"],
-      reportDate: DateTime.parse(
-        map["reportDate"],
-      ),
-      fileName: map["fileName"],
-      filePath: map["filePath"],
-      fileType: map["fileType"],
-      reportType: map["reportType"] ?? "other",
-      extractedText: map["extractedText"] ?? "",
-      processingStatus: map["processingStatus"] ?? "uploaded",
-      isFavourite: map["isFavourite"] ?? false,
-      uploadedAt: DateTime.parse(
-        map["uploadedAt"],
-      ),
+      id: map["id"]?.toString() ?? "",
+      title: map["title"]?.toString() ?? "Untitled Report",
+      hospital: map["hospital"]?.toString() ?? "Unknown Hospital",
+      reportDate: map["reportDate"] != null 
+          ? DateTime.tryParse(map["reportDate"].toString()) ?? DateTime.now() 
+          : DateTime.now(),
+      fileName: map["fileName"]?.toString() ?? "",
+      filePath: map["filePath"]?.toString() ?? "",
+      fileType: map["fileType"]?.toString() ?? "unknown",
+      reportType: map["reportType"]?.toString() ?? "other",
+      extractedText: map["extractedText"]?.toString() ?? "",
+      processingStatus: map["processingStatus"]?.toString() ?? "uploaded",
+      isFavourite: map["isFavourite"] as bool? ?? false,
+      uploadedAt: map["uploadedAt"] != null 
+          ? DateTime.tryParse(map["uploadedAt"].toString()) ?? DateTime.now() 
+          : DateTime.now(),
     );
   }
 

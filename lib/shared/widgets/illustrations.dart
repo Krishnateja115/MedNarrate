@@ -32,12 +32,12 @@ class _Illustration1Painter extends CustomPainter {
       const Radius.circular(10),
     );
     canvas.drawRRect(docRect, paint);
-    paint.color = const Color(0xFF1A6BFF).withOpacity(0.15);
+    paint.color = const Color(0xFF1A6BFF).withValues(alpha: 0.15);
     canvas.drawRRect(docRect, paint);
 
     // Lines on document
     final linePaint = Paint()
-      ..color = const Color(0xFF1A6BFF).withOpacity(0.4)
+      ..color = const Color(0xFF1A6BFF).withValues(alpha: 0.4)
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
 
@@ -182,11 +182,11 @@ class _Illustration3Painter extends CustomPainter {
     final sizes = [32.0, 40.0, 32.0];
 
     for (int i = 0; i < 3; i++) {
-      paint.color = colors[i].withOpacity(0.2);
+      paint.color = colors[i].withValues(alpha: 0.2);
       canvas.drawCircle(positions[i], sizes[i], paint);
       paint.color = colors[i];
       canvas.drawCircle(positions[i] - Offset(0, 8), sizes[i] * 0.35, paint);
-      paint.color = colors[i].withOpacity(0.7);
+      paint.color = colors[i].withValues(alpha: 0.7);
       final bodyRect = Rect.fromCenter(
         center: positions[i] + const Offset(0, 10),
         width: sizes[i] * 0.9,
@@ -237,14 +237,14 @@ class _EmptyHistoryPainter extends CustomPainter {
     canvas.drawCircle(Offset(cx, cy), 75, paint);
 
     // Folder shape
-    paint.color = const Color(0xFF1A6BFF).withOpacity(0.3);
+    paint.color = const Color(0xFF1A6BFF).withValues(alpha: 0.3);
     final folder = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(cx, cy + 10), width: 90, height: 65),
       const Radius.circular(8),
     );
     canvas.drawRRect(folder, paint);
 
-    paint.color = const Color(0xFF1A6BFF).withOpacity(0.15);
+    paint.color = const Color(0xFF1A6BFF).withValues(alpha: 0.15);
     final tab = RRect.fromRectAndRadius(
       Rect.fromLTWH(cx - 45, cy - 22, 35, 12),
       const Radius.circular(4),

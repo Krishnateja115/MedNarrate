@@ -245,7 +245,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white))),
               ValueListenableBuilder<TtsState>(
                 valueListenable: _tts.stateNotifier,
-                builder: (_, ttsState, __) => IconButton(
+                builder: (context, ttsState, child) => IconButton(
                   onPressed: () {
                     if (ttsState == TtsState.playing) {
                       _tts.stop();
