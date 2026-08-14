@@ -157,6 +157,22 @@ class _AIChatScreenState extends State<AIChatScreen> {
               ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
               : Column(
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      color: Colors.amber.withValues(alpha: 0.1),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 18),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              "AI responses are for informational purposes and do not replace professional medical advice. Always consult your doctor.",
+                              style: TextStyle(color: Colors.amber, fontSize: 11, height: 1.3),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     Expanded(
                       child: _messages.isEmpty
                           ? const Center(

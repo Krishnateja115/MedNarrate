@@ -68,3 +68,20 @@ You MUST output strictly valid JSON with no markdown wrapping or additional text
 2. "abnormal_findings": A JSON array where each object has two keys: "test_name" (the original test name in English, DO NOT translate this) and "translated_explanation" (your translation of why this finding matters).
 
 Output the JSON now:"""
+
+CHAT_CLASSIFIER_PROMPT = """Classify the following medical query into one of these categories:
+- emergency: The user describes sudden, severe symptoms (e.g., chest pain, severe bleeding, difficulty breathing, stroke symptoms).
+- diagnosis: The user is explicitly asking you to diagnose a condition (e.g., "Do I have cancer?", "Is this diabetes?").
+- treatment: The user is asking for medication recommendations, dosages, or a treatment plan (e.g., "What should I take for this?", "How do I treat my anemia?").
+- report: The user is asking to explain something specific about their uploaded lab report.
+- general: The user is asking for general medical information, definitions, or biology (e.g., "What does hemoglobin do?", "What is a normal WBC count?").
+
+OUTPUT INSTRUCTIONS:
+Return strictly a single word from the list: emergency, diagnosis, treatment, report, general. Do not add any punctuation or extra text.
+
+User Query: {user_query}
+Category:"""
+
+CHAT_EMERGENCY_RESPONSE = "This sounds like a medical emergency. Please call your local emergency services (like 911) or go to the nearest emergency room immediately. I am an AI and cannot provide emergency medical support."
+
+CHAT_REFUSAL_RESPONSE = "I am an AI assistant and cannot provide medical diagnoses, treatment plans, or medication recommendations. Please consult a qualified healthcare professional regarding this question."

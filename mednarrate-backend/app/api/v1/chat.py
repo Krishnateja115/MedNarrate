@@ -10,7 +10,12 @@ from app.models.report_analysis import ReportAnalysis
 from app.schemas.chat import ChatSessionCreate, ChatSessionOut, ChatMessageCreate, ChatMessageOut, ChatMessageResponse
 from app.services.rag import retrieve_chunks
 from app.services.llm_client import generate
-from app.services.prompts import CHAT_PROMPT
+from app.services.prompts import (
+    CHAT_PROMPT,
+    CHAT_CLASSIFIER_PROMPT,
+    CHAT_EMERGENCY_RESPONSE,
+    CHAT_REFUSAL_RESPONSE
+)
 import json
 
 router = APIRouter()
@@ -81,26 +86,38 @@ async def send_chat_message(
     await db.commit()
     
     # 2. RAG retrieve chunks
-    chunks = await retrieve_chunks(req.content, top_k=3)
-    rag_context = "\n".join([f"{c.source}: {c.content}" for c in chunks])
+    chunks = []
+    sources = []
     
-    # 3. Report context if present
-    report_context = ""
-    if session.report_id:
-        stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == session.report_id)
-        analysis = (await db.execute(stmt_analysis)).scalars().first()
-        if analysis:
-            report_context = json.dumps(analysis.structured_lab_values, indent=2) + "\n" + (analysis.patient_summary or "")
-            
-    # 4. Generate response
-    prompt = CHAT_PROMPT.format(
-        rag_context=rag_context,
-        report_context=report_context,
-        user_query=req.content
-    )
+    # Run Safety Classifier
+    classifier_prompt = CHAT_CLASSIFIER_PROMPT.format(user_query=req.content)
+    classification = (await generate(classifier_prompt)).strip().lower()
     
-    ai_response = await generate(prompt)
-    
+    if "emergency" in classification:
+        ai_response = CHAT_EMERGENCY_RESPONSE
+    elif "diagnosis" in classification or "treatment" in classification:
+        ai_response = CHAT_REFUSAL_RESPONSE
+    else:
+        chunks = await retrieve_chunks(req.content, top_k=3)
+        rag_context = "\n".join([f"{c.source}: {c.content}" for c in chunks])
+        
+        # 3. Report context if present
+        report_context = ""
+        if session.report_id:
+            stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == session.report_id)
+            analysis = (await db.execute(stmt_analysis)).scalars().first()
+            if analysis:
+                report_context = json.dumps(analysis.structured_lab_values, indent=2) + "\n" + (analysis.patient_summary or "")
+                
+        # 4. Generate response
+        prompt = CHAT_PROMPT.format(
+            rag_context=rag_context,
+            report_context=report_context,
+            user_query=req.content
+        )
+        ai_response = await generate(prompt)
+        sources = [{"source": c.source, "chunk_id": str(c.id)} for c in chunks]
+        
     # 5. Persist assistant message
     assistant_msg = ChatMessage(
         chat_session_id=session.id,
@@ -110,8 +127,6 @@ async def send_chat_message(
     db.add(assistant_msg)
     await db.commit()
     await db.refresh(assistant_msg)
-    
-    sources = [{"source": c.source, "chunk_id": str(c.id)} for c in chunks]
     
     return ChatMessageResponse(
         message=ChatMessageOut.model_validate(assistant_msg),
