@@ -130,17 +130,18 @@ class _UploadScreenState extends State<UploadScreen> {
                 child: Column(
                   children: [
                     Container(
-                      width: 120,
-                      height: 120,
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: .12),
+                        color: Colors.white.withValues(alpha: .06),
                         shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.border, width: 1),
                       ),
-                      child: const Icon(Icons.upload_file, color: Colors.blue, size: 60),
+                      child: const Icon(Icons.upload_file_rounded, color: Colors.white, size: 48),
                     ),
                     const SizedBox(height: 24),
                     const Text('Upload Medical Report',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
                     const SizedBox(height: 6),
                     const Text('PDF, JPG, JPEG, or PNG · max 25 MB',
                         style: TextStyle(color: Colors.white54, fontSize: 13)),
@@ -189,15 +190,16 @@ class _UploadScreenState extends State<UploadScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.white24),
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppColors.card,
+                          border: Border.all(color: AppColors.border),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, color: Colors.white54),
+                            const Icon(Icons.calendar_today, color: Colors.white54, size: 20),
                             const SizedBox(width: 12),
                             Text('Report Date: ${Formatters.formatDate(_reportDate)}',
-                                style: const TextStyle(color: Colors.white70)),
+                                style: const TextStyle(color: Colors.white, fontSize: 15)),
                           ],
                         ),
                       ),
@@ -209,40 +211,68 @@ class _UploadScreenState extends State<UploadScreen> {
                       height: 52,
                       child: OutlinedButton.icon(
                         onPressed: _uploading ? null : _pickFile,
-                        icon: const Icon(Icons.attach_file),
-                        label: Text(_selectedFile == null
-                            ? 'Choose File'
-                            : _selectedFile!.name),
+                        icon: Icon(Icons.attach_file_rounded, color: _selectedFile != null ? Colors.white : Colors.white70),
+                        label: Text(
+                          _selectedFile == null ? 'Choose File' : _selectedFile!.name,
+                          style: TextStyle(
+                            color: _selectedFile != null ? Colors.white : Colors.white70,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.blue),
-                          foregroundColor: Colors.blue,
+                          side: BorderSide(color: _selectedFile != null ? Colors.white : AppColors.border, width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          backgroundColor: _selectedFile != null ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
                         ),
                       ),
                     ),
                     if (_selectedFile != null) ...[
                       const SizedBox(height: 12),
-                      Card(
-                        color: AppColors.card,
-                        child: ListTile(
-                          leading: const Icon(Icons.insert_drive_file, color: Colors.blue),
-                          title: Text(_selectedFile!.name,
-                              style: const TextStyle(color: Colors.white)),
-                          subtitle: Text(Formatters.formatFileSize(_selectedFile!.size),
-                              style: const TextStyle(color: Colors.white54)),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border, width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.insert_drive_file_outlined, color: Colors.white70),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(_selectedFile!.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                                  Text(Formatters.formatFileSize(_selectedFile!.size), style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                     if (_errorMessage != null) ...[
                       const SizedBox(height: 16),
-                      Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                      Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)),
                     ],
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       height: 55,
                       child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          disabledBackgroundColor: Colors.white12,
+                          disabledForegroundColor: Colors.white30,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
                         onPressed: (_uploading || _selectedFile == null) ? null : _upload,
-                        child: Text(_uploading ? 'Uploading…' : 'Upload & Analyze'),
+                        child: Text(
+                          _uploading ? 'Uploading…' : 'Upload & Analyze',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ],
@@ -256,21 +286,23 @@ class _UploadScreenState extends State<UploadScreen> {
     labelText: label,
     labelStyle: const TextStyle(color: Colors.white70),
     prefixIcon: Icon(icon, color: Colors.white54),
+    filled: true,
+    fillColor: AppColors.card,
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Colors.white24),
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: AppColors.border),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Colors.blue),
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Colors.white, width: 1.5),
     ),
     errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Colors.red),
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Colors.redAccent),
     ),
     focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Colors.red),
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Colors.redAccent),
     ),
   );
 }

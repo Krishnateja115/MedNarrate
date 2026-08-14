@@ -36,31 +36,25 @@ class DashboardStatisticsCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
 
         decoration: BoxDecoration(
-
           color: AppColors.card,
-
           borderRadius: BorderRadius.circular(22),
-
+          border: Border.all(color: AppColors.border, width: 1),
         ),
-
         child: Column(
-
           children: [
-
-            CircleAvatar(
-
-              radius: 26,
-
-              backgroundColor: color,
-
-              child: Icon(
-
-                icon,
-
-                color: Colors.white,
-
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
               ),
-
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
 
             const SizedBox(height: 15),

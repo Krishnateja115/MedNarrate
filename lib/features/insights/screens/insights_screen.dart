@@ -99,7 +99,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
                               title: 'Recent Reports',
                               value: _recentCount.toString(),
                               subtitle: 'Last 30 days',
-                              color: Colors.blue,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -108,7 +107,6 @@ class _InsightsScreenState extends State<InsightsScreen> {
                               title: 'Favourites',
                               value: _favouriteCount.toString(),
                               subtitle: 'Saved for later',
-                              color: Colors.red,
                             ),
                           ),
                         ],
@@ -142,11 +140,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.card,
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.border, width: 1),
                         ),
                         child: const Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.info_outline, color: Colors.blue),
+                            Icon(Icons.info_outline_rounded, color: Colors.white70),
                             SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -168,9 +167,8 @@ class _StatCard extends StatelessWidget {
   final String title;
   final String value;
   final String subtitle;
-  final Color color;
 
-  const _StatCard({required this.title, required this.value, required this.subtitle, required this.color});
+  const _StatCard({required this.title, required this.value, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
@@ -179,14 +177,14 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: const TextStyle(color: Colors.white70, fontSize: 14)),
           const SizedBox(height: 8),
-          Text(value, style: TextStyle(color: color, fontSize: 32, fontWeight: FontWeight.bold)),
+          Text(value, style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 12)),
         ],

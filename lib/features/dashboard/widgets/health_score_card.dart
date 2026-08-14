@@ -35,8 +35,9 @@ class HealthScoreCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Row(
         children: [

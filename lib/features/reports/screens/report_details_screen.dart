@@ -129,13 +129,14 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                     children: [
                       Center(
                         child: Container(
-                          width: 120,
-                          height: 120,
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: .12),
+                            color: Colors.white.withValues(alpha: .06),
                             shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.border, width: 1),
                           ),
-                          child: const Icon(Icons.picture_as_pdf, size: 60, color: Colors.red),
+                          child: const Icon(Icons.description_outlined, size: 48, color: Colors.white),
                         ),
                       ),
                       const SizedBox(height: 30),
@@ -145,35 +146,49 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                       _infoTile('File Name', _report!.fileName),
                       _infoTile('Upload Date', Formatters.formatDate(_report!.uploadedAt)),
                       _infoTile('Status', Helpers.statusLabel(_report!.reportType)),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
                         height: 55,
                         child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
                           onPressed: () => context.push(Routes.reportAnalysis, extra: _report!.id),
-                          icon: const Icon(Icons.auto_awesome),
-                          label: const Text('AI Analysis'),
+                          icon: const Icon(Icons.auto_awesome_rounded, color: Colors.black),
+                          label: const Text('AI Analysis', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       SizedBox(
                         width: double.infinity,
                         height: 55,
-                        child: FilledButton.icon(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: AppColors.border, width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
                           onPressed: () => context.push(Routes.reportTimeline, extra: _report!.id),
-                          icon: const Icon(Icons.timeline),
-                          label: const Text('View Timeline'),
+                          icon: const Icon(Icons.timeline_rounded, color: Colors.white),
+                          label: const Text('View Timeline', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       SizedBox(
                         width: double.infinity,
                         height: 55,
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.redAccent,
+                            side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4), width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
                           onPressed: _deleteReport,
-                          icon: const Icon(Icons.delete),
-                          label: const Text('Delete Report'),
+                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                          label: const Text('Delete Report', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                         ),
                       ),
                     ],

@@ -26,6 +26,7 @@ class QuickActionCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.card,
             borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border, width: 1),
           ),
           child: Column(
             mainAxisAlignment:

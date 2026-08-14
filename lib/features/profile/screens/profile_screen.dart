@@ -6,7 +6,9 @@ import '../../../core/services/api_models.dart';
 import '../../../core/routing/routes.dart';
 import '../../../shared/widgets/profile_tile.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/storage_service.dart';
 import '../../../shared/widgets/custom_textfield.dart';
+import '../../../main.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -223,13 +225,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       
                       const SizedBox(height: 30),
-                      _sectionTitle('Application'),
+                      _sectionTitle('Application & Appearance'),
                       const SizedBox(height: 15),
                       
+                      ValueListenableBuilder<ThemeMode>(
+                        valueListenable: themeModeNotifier,
+                        builder: (context, mode, _) {
+                          final isDark = mode == ThemeMode.dark || mode == ThemeMode.system;
+                          return ProfileTile(
+                            icon: isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                            title: 'Theme Mode',
+                            subtitle: isDark ? 'Dark Mode (OLED)' : 'Light Mode',
+                            onTap: () async {
+                              final next = isDark ? ThemeMode.light : ThemeMode.dark;
+                              await StorageService.instance.setThemeMode(next);
+                              themeModeNotifier.value = next;
+                            },
+                          );
+                        },
+                      ),
                       ProfileTile(
-                        icon: Icons.settings,
+                        icon: Icons.settings_outlined,
                         title: 'Settings',
-                        subtitle: 'Language, Theme & Notifications',
+                        subtitle: 'Language & Advanced Preferences',
                         onTap: () => context.push(Routes.settings),
                       ),
                       
@@ -237,14 +255,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       SizedBox(
                         width: double.infinity,
                         height: 55,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.redAccent,
+                            side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4), width: 1.5),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                           ),
                           onPressed: () => context.push(Routes.settings),
-                          icon: const Icon(Icons.logout, color: Colors.white),
-                          label: const Text('Logout', style: TextStyle(fontSize: 18, color: Colors.white)),
+                          icon: const Icon(Icons.logout, color: Colors.redAccent),
+                          label: const Text('Logout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent)),
                         ),
                       ),
                       const SizedBox(height: 30),

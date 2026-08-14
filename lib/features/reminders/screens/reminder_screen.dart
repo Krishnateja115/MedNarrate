@@ -85,8 +85,11 @@ class _ReminderScreenState extends State<ReminderScreen> {
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 4,
         onPressed: () => _showReminderForm(),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded, size: 28),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -95,14 +98,22 @@ class _ReminderScreenState extends State<ReminderScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.alarm_off, size: 70, color: Colors.grey),
+                      const Icon(Icons.alarm_off_rounded, size: 64, color: Colors.white38),
                       const SizedBox(height: 16),
-                      const Text('No reminders set', style: TextStyle(color: Colors.white70, fontSize: 18)),
-                      const SizedBox(height: 16),
+                      const Text('No reminders set', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      const Text('Set daily reminders for your medications', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                      const SizedBox(height: 24),
                       FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
                         onPressed: () => _showReminderForm(),
-                        icon: const Icon(Icons.add_alarm),
-                        label: const Text('Add your first reminder'),
+                        icon: const Icon(Icons.add_alarm_rounded, color: Colors.black),
+                        label: const Text('Add your first reminder', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       ),
                     ],
                   ),
@@ -115,16 +126,20 @@ class _ReminderScreenState extends State<ReminderScreen> {
                     return Card(
                       color: AppColors.card,
                       margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        side: const BorderSide(color: AppColors.border, width: 1),
+                      ),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                         leading: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.2),
+                            color: Colors.white.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.border, width: 1),
                           ),
-                          child: const Icon(Icons.medication, color: Colors.blue),
+                          child: const Icon(Icons.medication_rounded, color: Colors.white),
                         ),
                         title: Text(r.medicineName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
                         subtitle: Column(
@@ -137,20 +152,27 @@ class _ReminderScreenState extends State<ReminderScreen> {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                const Icon(Icons.access_time, size: 14, color: Colors.blue),
-                                const SizedBox(width: 4),
+                                const Icon(Icons.access_time_rounded, size: 15, color: Colors.white70),
+                                const SizedBox(width: 6),
                                 Text(
                                   TimeOfDay.fromDateTime(r.time).format(context),
-                                  style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(width: 12),
                                 if (r.repeatDaily)
-                                  const Row(
-                                    children: [
-                                      Icon(Icons.repeat, size: 14, color: Colors.white54),
-                                      SizedBox(width: 4),
-                                      Text('Daily', style: TextStyle(color: Colors.white54)),
-                                    ],
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white10,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.repeat_rounded, size: 12, color: Colors.white70),
+                                        SizedBox(width: 4),
+                                        Text('Daily', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                                      ],
+                                    ),
                                   ),
                               ],
                             ),
@@ -160,11 +182,11 @@ class _ReminderScreenState extends State<ReminderScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.white54),
+                              icon: const Icon(Icons.edit_outlined, color: Colors.white54),
                               onPressed: () => _showReminderForm(r),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
+                              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                               onPressed: () => _deleteReminder(r.id),
                             ),
                           ],
@@ -259,13 +281,15 @@ class _ReminderFormState extends State<_ReminderForm> {
                 labelText: 'Medicine Name',
                 labelStyle: const TextStyle(color: Colors.white70),
                 prefixIcon: const Icon(Icons.medication_outlined, color: Colors.white54),
+                filled: true,
+                fillColor: AppColors.card,
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white24),
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.blue),
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Colors.white, width: 1.5),
                 ),
               ),
               validator: (v) => v == null || v.trim().isEmpty ? 'Medicine name is required' : null,
@@ -278,13 +302,15 @@ class _ReminderFormState extends State<_ReminderForm> {
                 labelText: 'Dosage Note (optional)',
                 labelStyle: const TextStyle(color: Colors.white70),
                 prefixIcon: const Icon(Icons.note_alt_outlined, color: Colors.white54),
+                filled: true,
+                fillColor: AppColors.card,
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white24),
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.blue),
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Colors.white, width: 1.5),
                 ),
               ),
             ),
@@ -300,20 +326,21 @@ class _ReminderFormState extends State<_ReminderForm> {
                       );
                       if (picked != null) setState(() => _time = picked);
                     },
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white24),
-                        borderRadius: BorderRadius.circular(12),
+                        color: AppColors.card,
+                        border: Border.all(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.access_time, color: Colors.white54),
+                          const Icon(Icons.access_time_rounded, color: Colors.white70),
                           const SizedBox(width: 12),
                           Text(
                             _time.format(context),
-                            style: const TextStyle(color: Colors.white, fontSize: 16),
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -328,15 +355,23 @@ class _ReminderFormState extends State<_ReminderForm> {
               contentPadding: EdgeInsets.zero,
               value: _repeatDaily,
               onChanged: (v) => setState(() => _repeatDaily = v),
-              activeThumbColor: Colors.blue,
+              activeThumbColor: Colors.white,
             ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               height: 55,
               child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
                 onPressed: _saving ? null : _save,
-                child: Text(_saving ? 'Saving…' : 'Save Reminder'),
+                child: Text(
+                  _saving ? 'Saving…' : 'Save Reminder',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],

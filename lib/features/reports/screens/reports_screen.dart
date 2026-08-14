@@ -57,11 +57,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 4,
         onPressed: () async {
           await context.push(Routes.upload);
           _loadReports();
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded, size: 28),
       ),
       body: Column(
         children: [
@@ -110,12 +113,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(_error!, style: const TextStyle(color: Colors.red)),
+                            Text(_error!, style: const TextStyle(color: Colors.redAccent)),
                             const SizedBox(height: 16),
                             TextButton.icon(
                               onPressed: _loadReports,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Retry'),
+                              icon: const Icon(Icons.refresh, color: Colors.white),
+                              label: const Text('Retry', style: TextStyle(color: Colors.white)),
                             ),
                           ],
                         ),
@@ -128,19 +131,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 const EmptyHistoryIllustration(),
                                 const SizedBox(height: 20),
                                 const Text('No reports found',
-                                    style: TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.w600)),
+                                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 8),
                                 const Text('Upload your first medical report to get started',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(color: Colors.white54, fontSize: 14)),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 24),
                                 FilledButton.icon(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  ),
                                   onPressed: () async {
                                     await context.push(Routes.upload);
                                     _loadReports();
                                   },
-                                  icon: const Icon(Icons.upload_file),
-                                  label: const Text('Upload your first report'),
+                                  icon: const Icon(Icons.upload_file_rounded, color: Colors.black),
+                                  label: const Text(
+                                    'Upload your first report',
+                                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15),
+                                  ),
                                 ),
                               ],
                             ),
@@ -174,6 +186,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: FilterChip(
         label: Text(label),
         selected: selected,
+        selectedColor: Colors.white,
+        backgroundColor: AppColors.card,
+        checkmarkColor: Colors.black,
+        side: BorderSide(
+          color: selected ? Colors.white : AppColors.border,
+          width: 1,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        labelStyle: TextStyle(
+          color: selected ? Colors.black : Colors.white70,
+          fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+          fontSize: 13,
+        ),
         onSelected: (_) => onTap(),
       ),
     );
