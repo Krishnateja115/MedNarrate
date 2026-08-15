@@ -18,9 +18,9 @@ class HealthScoreCard extends StatelessWidget {
   });
 
   Color get _scoreColor {
-    if (score >= 80) return const Color(0xFF00C48C);
-    if (score >= 60) return const Color(0xFFF5A623);
-    return const Color(0xFFE53935);
+    if (score >= 80) return Color(0xFF00C48C);
+    if (score >= 60) return Color(0xFFF5A623);
+    return Color(0xFFE53935);
   }
 
   String get _scoreLabel {
@@ -35,7 +35,7 @@ class HealthScoreCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.border, width: 1),
       ),
@@ -45,34 +45,34 @@ class HealthScoreCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Health Score',
-                  style: TextStyle(color: Colors.white70, fontSize: 15),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 15),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 totalLabValues == 0
-                    ? const Text(
+                    ? Text(
                         '—',
-                        style: TextStyle(color: Colors.white54, fontSize: 36, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 36, fontWeight: FontWeight.bold),
                       )
                     : Text(
                         '$score%',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 42,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   _scoreLabel,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 13),
                 ),
                 if (totalLabValues > 0) ...[
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Text(
                     '$abnormalCount abnormal / $totalLabValues total values',
-                    style: const TextStyle(color: Colors.white60, fontSize: 11),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.60), fontSize: 11),
                   ),
                 ],
               ],
@@ -86,7 +86,7 @@ class HealthScoreCard extends StatelessWidget {
                 height: 76,
                 child: CircularProgressIndicator(
                   value: totalLabValues == 0 ? 0 : score / 100,
-                  backgroundColor: Colors.white24,
+                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.24),
                   color: _scoreColor,
                   strokeWidth: 7,
                 ),

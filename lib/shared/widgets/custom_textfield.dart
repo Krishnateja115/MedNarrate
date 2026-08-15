@@ -27,13 +27,13 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
-      style: const TextStyle(
-        color: Colors.white,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
         fontSize: 16,
       ),
       decoration: InputDecoration(
         filled: true,
-        fillColor: AppColors.card,
+        fillColor: Theme.of(context).cardColor,
 
         prefixIcon: Icon(
           icon,
@@ -42,7 +42,7 @@ class CustomTextField extends StatelessWidget {
 
         labelText: label,
 
-        labelStyle: const TextStyle(
+        labelStyle: TextStyle(
           color: AppColors.textSecondary,
         ),
 
@@ -63,7 +63,7 @@ class CustomTextField extends StatelessWidget {
 
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(
+          borderSide: BorderSide(
             color: AppColors.primary,
             width: 2,
           ),

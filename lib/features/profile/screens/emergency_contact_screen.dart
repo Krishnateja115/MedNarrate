@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/utils/helpers.dart';
@@ -71,44 +70,44 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Emergency Contact'),
-        backgroundColor: AppColors.background,
+        title: Text('Emergency Contact'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 15),
-                    const Text(
+                    SizedBox(height: 15),
+                    Text(
                       'Emergency Contact',
-                      style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
+                    SizedBox(height: 10),
+                    Text(
                       "We'll use this only during emergencies.",
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
                     ),
-                    const SizedBox(height: 35),
+                    SizedBox(height: 35),
                     CustomTextField(
                       controller: _nameController,
                       label: 'Full Name',
                       icon: Icons.person_outline,
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     CustomTextField(
                       controller: _phoneController,
                       label: 'Phone Number',
                       icon: Icons.phone_outlined,
                       keyboardType: TextInputType.phone,
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40),
                     PrimaryButton(
                       text: _saving ? 'Saving...' : 'Save',
                       onPressed: _saving ? null : () { _save(); },

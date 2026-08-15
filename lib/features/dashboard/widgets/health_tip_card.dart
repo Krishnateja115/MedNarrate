@@ -17,7 +17,7 @@ class HealthTipCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
       ),
 
-      child: const Column(
+      child: Column(
 
         crossAxisAlignment: CrossAxisAlignment.start,
 

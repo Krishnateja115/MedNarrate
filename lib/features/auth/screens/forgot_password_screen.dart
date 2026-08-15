@@ -90,13 +90,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text('Reset Password'),
+        title: Text('Reset Password'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
       ),
@@ -106,28 +106,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(Icons.lock_reset, color: AppColors.primary, size: 48),
+                child: Icon(Icons.lock_reset, color: AppColors.primary, size: 48),
               ),
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
               Text(
                 _step2 ? 'Set New Password' : 'Forgot Password?',
-                style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 28, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Text(
                 _step2
                     ? 'Enter the reset token and your new password below.'
                     : "Enter your email and we'll send you a reset token.",
-                style: const TextStyle(color: Colors.white60, fontSize: 15, height: 1.5),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.60), fontSize: 15, height: 1.5),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               if (!_step2) ...[
               CustomTextField(
@@ -136,7 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   height: 54,
@@ -147,8 +147,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     child: _loading
-                        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Send Reset Token', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface, strokeWidth: 2))
+                        : Text('Send Reset Token', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ] else ...[
@@ -157,7 +157,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     padding: const EdgeInsets.all(14),
                     margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1C2128),
+                      color: Color(0xFF1C2128),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.tealAccent.shade400.withValues(alpha: 0.4)),
                     ),
@@ -166,13 +166,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       children: [
                         Row(children: [
                           Icon(Icons.developer_mode, color: Colors.tealAccent.shade400, size: 16),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Text('Dev Mode — Reset Token:', style: TextStyle(color: Colors.tealAccent.shade400, fontSize: 12, fontWeight: FontWeight.bold)),
                         ]),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         SelectableText(
                           _devToken!,
-                          style: const TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'monospace'),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 12, fontFamily: 'monospace'),
                         ),
                       ],
                     ),
@@ -182,14 +182,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   label: 'Reset Token',
                   icon: Icons.key_outlined,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 CustomTextField(
                   controller: _newPassCtrl,
                   label: 'New Password',
                   icon: Icons.lock_outline,
                   obscureText: true,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   height: 54,
@@ -200,21 +200,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     child: _loading
-                        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Reset Password', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface, strokeWidth: 2))
+                        : Text('Reset Password', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Center(
                   child: TextButton(
                     onPressed: () => setState(() { _step2 = false; _devToken = null; _error = null; }),
-                    child: const Text('Back to Email', style: TextStyle(color: Colors.white54)),
+                    child: Text('Back to Email', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
                   ),
                 ),
               ],
 
               if (_error != null) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -223,9 +223,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13))),
+                    Icon(Icons.error_outline, color: Colors.red, size: 18),
+                    SizedBox(width: 10),
+                    Expanded(child: Text(_error!, style: TextStyle(color: Colors.red, fontSize: 13))),
                   ]),
                 ),
               ],

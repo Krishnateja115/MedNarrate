@@ -86,7 +86,14 @@ async def refresh_token(
     result = await db.execute(stmt)
     db_refresh_token = result.scalars().first()
     
-    if not db_refresh_token or db_refresh_token.revoked or db_refresh_token.expires_at < datetime.now(timezone.utc):
+    if not db_refresh_token or db_refresh_token.revoked:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+        
+    expires_at = db_refresh_token.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+    if expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
         
     db_refresh_token.revoked = True

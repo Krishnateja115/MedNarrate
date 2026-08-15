@@ -22,52 +22,69 @@ class ReportCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border, width: 1),
       ),
       child: ListTile(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.article_outlined, color: Colors.white),
+          child: Icon(Icons.article_outlined, color: Theme.of(context).colorScheme.onSurface),
         ),
-        title: Text(
-          report.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                report.title,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            if (report.processingStatus == 'processing')
+              Container(
+                margin: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.5)),
+                ),
+                child: Text('Processing', style: TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+          ],
         ),
         subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
+          padding: EdgeInsets.only(top: 6),
           child: Row(
             children: [
               Text(
                 report.hospital,
-                style: const TextStyle(color: Colors.white54, fontSize: 13),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13),
               ),
-              const SizedBox(width: 8),
-              const Text("•", style: TextStyle(color: Colors.white38)),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
+              Text("•", style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38))),
+              SizedBox(width: 8),
               Text(
                 report.reportDate.toLocal().toString().split(" ").first,
-                style: const TextStyle(color: Colors.white38, fontSize: 13),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 13),
               ),
             ],
           ),
         ),
         trailing: PopupMenuButton<String>(
           color: AppColors.surface,
-          icon: const Icon(Icons.more_vert, color: Colors.white54),
+          icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
           onSelected: (value) {
             switch (value) {
               case "analyze":
@@ -82,15 +99,15 @@ class ReportCard extends StatelessWidget {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: "analyze",
-              child: Text("Analyze", style: TextStyle(color: Colors.white)),
+              child: Text("Analyze", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: "share",
-              child: Text("Share", style: TextStyle(color: Colors.white)),
+              child: Text("Share", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: "delete",
               child: Text("Delete", style: TextStyle(color: AppColors.error)),
             ),

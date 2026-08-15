@@ -1,33 +1,43 @@
-version: '3.8'
+version: "3.9"
 
 services:
   db:
-    image: ankane/pgvector:v0.5.1
+    image: postgres:16-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mednarrate
+      POSTGRES_USER: mednarrate
+      POSTGRES_PASSWORD: mednarrate_pass
+      POSTGRES_DB: mednarrate_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mednarrate"]
+      test: ["CMD-SHELL", "pg_isready -U mednarrate -d mednarrate_db"]
       interval: 5s
       timeout: 5s
-      retries: 5
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      retries: 10
 
-  api:
-    build: .
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mednarrate:mednarrate_pass@db:5432/mednarrate_db
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
     depends_on:
       db:
         condition: service_healthy
-    env_file:
-      - .env
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
 volumes:
   postgres_data:

@@ -4,6 +4,10 @@ from uuid import UUID
 from datetime import date, datetime
 from app.models.report import FileType, ReportType, ProcessingStatus
 
+class ReportStatusOut(BaseModel):
+    processing_status: str
+    error_reason: Optional[str] = None
+
 class ReportOut(BaseModel):
     """
     Field names map to the existing Flutter ReportModel verbatim.
@@ -91,8 +95,8 @@ class TranslationRequest(BaseModel):
 
 class TranslationOut(BaseModel):
     language: str
-    patient_summary: str
-    findings_json: List[Dict[str, Any]]
+    translated_summary: str
+    cached: bool
 
 class ComparePoint(BaseModel):
     report_id: UUID
@@ -107,3 +111,23 @@ class ComparePreviousResult(BaseModel):
     previous_report_id: Optional[UUID] = None
     compared_findings: List[Dict[str, Any]] = []
     narrative_summary: Optional[str] = None
+
+class LabValuePoint(BaseModel):
+    report_id: str
+    date: str
+    value: float
+    status: str
+    change_from_previous: Optional[float] = None
+
+class ParameterComparison(BaseModel):
+    parameter: str
+    unit: str
+    reference_range: str
+    values: List[LabValuePoint]
+    trend: str
+    ai_summary: Optional[str] = None
+
+class ReportComparisonResult(BaseModel):
+    report_ids: List[str]
+    comparisons: List[ParameterComparison]
+    ai_summary: Optional[str] = None

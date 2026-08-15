@@ -126,22 +126,22 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text('AI Analysis'),
+        title: Text('AI Analysis'),
         actions: [
           if (_status == 'completed')
             IconButton(
               onPressed: () => context.push(Routes.aiChat, extra: widget.reportId),
-              icon: const Icon(Icons.chat_bubble_outline),
+              icon: Icon(Icons.chat_bubble_outline),
               tooltip: 'Ask AI about this report',
             ),
         ],
       ),
       body: switch (_status) {
-        'loading' => const Padding(padding: EdgeInsets.all(20), child: SkeletonAnalysis()),
+        'loading' => Padding(padding: EdgeInsets.all(20), child: SkeletonAnalysis()),
         'processing' => _buildProcessing(),
         'failed' => _buildFailed(),
         _ => _buildCompleted(),
@@ -159,14 +159,14 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
             width: 56, height: 56,
             child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
           ),
-          const SizedBox(height: 28),
-          const Text('Analyzing your report…',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.white)),
-          const SizedBox(height: 10),
-          const Text('AI is reading your document. This may take a minute.',
+          SizedBox(height: 28),
+          Text('Analyzing your report…',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+          SizedBox(height: 10),
+          Text('AI is reading your document. This may take a minute.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54, fontSize: 13)),
-          const SizedBox(height: 32),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13)),
+          SizedBox(height: 32),
           _processingStep('Reading document text', true),
           _processingStep('Extracting medical data', true),
           _processingStep('Running AI analysis', false),
@@ -177,12 +177,12 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
 
   Widget _processingStep(String label, bool done) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: 6),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(done ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: done ? const Color(0xFF00C48C) : Colors.white24, size: 18),
-        const SizedBox(width: 10),
-        Text(label, style: TextStyle(color: done ? Colors.white70 : Colors.white30, fontSize: 13)),
+            color: done ? Color(0xFF00C48C) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24), size: 18),
+        SizedBox(width: 10),
+        Text(label, style: TextStyle(color: done ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.30), fontSize: 13)),
       ]),
     );
   }
@@ -190,22 +190,22 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
   Widget _buildFailed() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 60),
-            const SizedBox(height: 16),
-            const Text('Analysis Failed', style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
+            Icon(Icons.error_outline, color: Colors.red, size: 60),
+            SizedBox(height: 16),
+            Text('Analysis Failed', style: TextStyle(fontSize: 22, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
+            SizedBox(height: 12),
             Text(_errorReason ?? 'An unknown error occurred.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70)),
-            const SizedBox(height: 28),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70))),
+            SizedBox(height: 28),
             FilledButton.icon(
               onPressed: _retry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry Analysis'),
+              icon: Icon(Icons.refresh),
+              label: Text('Retry Analysis'),
             ),
           ],
         ),
@@ -219,14 +219,14 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
         (_clinicalView ? a.clinicianSummary : a.patientSummary) ?? '';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 90),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Dual-mode toggle ──────────────────────────────────────────
           Container(
             decoration: BoxDecoration(
-              color: AppColors.card,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
@@ -236,13 +236,13 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // ── Summary card with TTS ─────────────────────────────────────
           Row(
             children: [
-              const Expanded(child: Text('Summary',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white))),
+              Expanded(child: Text('Summary',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface))),
               ValueListenableBuilder<TtsState>(
                 valueListenable: _tts.stateNotifier,
                 builder: (context, ttsState, child) => IconButton(
@@ -262,23 +262,23 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           _card(
             child: Text(activeSummary.isEmpty ? 'No summary available.' : activeSummary,
-                style: const TextStyle(color: Colors.white70, height: 1.6)),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), height: 1.6)),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Translate button
           if (!_clinicalView && a.translationAvailable && _translatedSummary == null)
             _card(
               child: Row(
                 children: [
-                  const Icon(Icons.translate, color: Colors.blue),
-                  const SizedBox(width: 12),
+                  Icon(Icons.translate, color: Colors.blue),
+                  SizedBox(width: 12),
                   Expanded(child: Text('Translated version available',
-                      style: const TextStyle(color: Colors.white70))),
-                  TextButton(onPressed: _translate, child: const Text('Load')),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)))),
+                  TextButton(onPressed: _translate, child: Text('Load')),
                 ],
               ),
             ),
@@ -288,24 +288,24 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
               child: TextButton.icon(
                 onPressed: _translating ? null : _translate,
                 icon: _translating
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.translate),
+                    ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Icon(Icons.translate),
                 label: Text(_translating ? 'Translating…' : 'Translate to preferred language'),
               ),
             ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // ── Lab values table ─────────────────────────────────────────
           _sectionTitle('Lab Values'),
           if (a.structuredLabValues.isEmpty)
-            _card(child: const Text('No lab values found.', style: TextStyle(color: Colors.white54)))
+            _card(child: Text('No lab values found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))))
           else
             Column(
               children: a.structuredLabValues.map((lv) => _buildLabGauge(lv)).toList(),
             ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // ── Abnormal findings ────────────────────────────────────────
           if (a.abnormalFindings.isNotEmpty) ...[
@@ -323,7 +323,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
                   children: [
                     Row(children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: _flagColor(f['flag']?.toString() ?? 'normal').withValues(alpha: .2),
                           borderRadius: BorderRadius.circular(8),
@@ -333,11 +333,11 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
                       ),
                     ]),
                     if (sources.isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Wrap(spacing: 6, children: sources.map((s) => Chip(
                         label: Text('Based on: $s',
-                            style: const TextStyle(fontSize: 10, color: Colors.white70)),
-                        backgroundColor: Colors.white10,
+                            style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70))),
+                        backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
                         padding: EdgeInsets.zero,
                       )).toList()),
                     ],
@@ -355,7 +355,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
     final a = _analysis!;
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
         child: Row(
           children: [
             Expanded(
@@ -375,17 +375,17 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
                   }
                 },
                 icon: _exporting
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.picture_as_pdf_outlined),
+                    ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Icon(Icons.picture_as_pdf_outlined),
                 label: Text(_exporting ? 'Exporting…' : 'Export PDF'),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: AppColors.primary),
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  side: BorderSide(color: AppColors.primary),
                   foregroundColor: AppColors.primary,
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: FilledButton.icon(
                 onPressed: () => ExportService.instance.printSummary(
@@ -393,9 +393,9 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
                   reportTitle: 'Report Analysis',
                   reportDate: a.processedAt?.toLocal().toString().split(' ').first ?? '',
                 ),
-                icon: const Icon(Icons.print_outlined),
-                label: const Text('Print / Preview'),
-                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                icon: Icon(Icons.print_outlined),
+                label: Text('Print / Preview'),
+                style: FilledButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 14)),
               ),
             ),
           ],
@@ -408,9 +408,9 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.all(4),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        duration: Duration(milliseconds: 200),
+        margin: EdgeInsets.all(4),
+        padding: EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: active ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
@@ -418,23 +418,23 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
         child: Text(label,
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: active ? Colors.white : Colors.white54,
+                color: active ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                 fontWeight: active ? FontWeight.bold : FontWeight.normal)),
       ),
     );
   }
 
   Widget _sectionTitle(String title) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+    padding: EdgeInsets.only(bottom: 12),
+    child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
   );
 
   Widget _card({required Widget child}) => Container(
     width: double.infinity,
-    margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.all(16),
+    margin: EdgeInsets.only(bottom: 12),
+    padding: EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: AppColors.card,
+      color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(16),
       border: Border.all(color: AppColors.border, width: 1),
     ),
@@ -459,10 +459,10 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
     final color = _flagColor(lv.flag);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border, width: 1),
       ),
@@ -474,10 +474,10 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
             children: [
               Expanded(
                 child: Text(lv.testName,
-                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -487,33 +487,33 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('${lv.value}', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 4),
+              Text('${lv.value}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
+              SizedBox(width: 4),
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(lv.unit, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                padding: EdgeInsets.only(bottom: 4),
+                child: Text(lv.unit, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 12)),
               ),
-              const Spacer(),
+              Spacer(),
               if (hasRange)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text('${lv.refLow} - ${lv.refHigh}', style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Text('${lv.refLow} - ${lv.refHigh}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 12)),
                 ),
             ],
           ),
           if (hasRange) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Stack(
               children: [
                 Container(
                   height: 6,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),

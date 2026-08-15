@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/utils/helpers.dart';
@@ -75,43 +74,43 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Medical Information'),
-        backgroundColor: AppColors.background,
+        title: Text('Medical Information'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 10),
-                  const Text(
+                  SizedBox(height: 10),
+                  Text(
                     "Keep your medical history up to date for better analysis.",
-                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 16),
                   ),
-                  const SizedBox(height: 35),
+                  SizedBox(height: 35),
                   CustomTextField(
                     controller: _bloodController,
                     label: 'Blood Group',
                     icon: Icons.bloodtype_outlined,
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   CustomTextField(
                     controller: _allergiesController,
                     label: 'Known Allergies',
                     icon: Icons.warning_amber_outlined,
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   CustomTextField(
                     controller: _conditionsController,
                     label: 'Chronic Conditions',
                     icon: Icons.local_hospital_outlined,
                   ),
-                  const SizedBox(height: 40),
+                  SizedBox(height: 40),
                   PrimaryButton(
                     text: _saving ? 'Saving...' : 'Save',
                     onPressed: _saving ? null : () { _save(); },

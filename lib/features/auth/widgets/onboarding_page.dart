@@ -47,22 +47,22 @@ class OnboardingPage extends StatelessWidget {
         children: [
           const Spacer(),
           _illustration(),
-          const SizedBox(height: 50),
+          SizedBox(height: 50),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 30,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               height: 1.2,
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               color: AppColors.textSecondary,
               height: 1.6,

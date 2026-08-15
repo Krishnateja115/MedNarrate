@@ -9,11 +9,11 @@ async def auth_headers(client: AsyncClient):
     # Register and login a user for reports testing
     await client.post(
         "/api/v1/auth/signup",
-        json={"email": "reports@example.com", "password": "Password1", "full_name": "Reports User"}
+        json={"email": "reports@example.com", "password": "StrongP@ssword1", "full_name": "Reports User"}
     )
     login_resp = await client.post(
         "/api/v1/auth/login",
-        data={"username": "reports@example.com", "password": "Password1"}
+        data={"username": "reports@example.com", "password": "StrongP@ssword1"}
     )
     token = login_resp.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
@@ -22,11 +22,11 @@ async def auth_headers(client: AsyncClient):
 async def other_auth_headers(client: AsyncClient):
     await client.post(
         "/api/v1/auth/signup",
-        json={"email": "other@example.com", "password": "Password1", "full_name": "Other User"}
+        json={"email": "other@example.com", "password": "StrongP@ssword1", "full_name": "Other User"}
     )
     login_resp = await client.post(
         "/api/v1/auth/login",
-        data={"username": "other@example.com", "password": "Password1"}
+        data={"username": "other@example.com", "password": "StrongP@ssword1"}
     )
     token = login_resp.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
@@ -41,6 +41,7 @@ async def test_upload_success(client: AsyncClient, auth_headers):
     }
     
     resp = await client.post("/api/v1/reports/upload", headers=auth_headers, files=files, data=data)
+    print("UPLOAD RESPONSE:", resp.text)
     assert resp.status_code == 201
     resp_data = resp.json()
     assert resp_data["title"] == "My Blood Test"
@@ -90,13 +91,13 @@ async def test_other_user_cannot_access(client: AsyncClient, auth_headers, other
     report_id = list_resp.json()[0]["id"]
     
     get_resp = await client.get(f"/api/v1/reports/{report_id}", headers=other_auth_headers)
-    assert get_resp.status_code == 404
+    assert get_resp.status_code == 403
     
     patch_resp = await client.patch(f"/api/v1/reports/{report_id}", headers=other_auth_headers, json={"title": "Hacked"})
-    assert patch_resp.status_code == 404
+    assert patch_resp.status_code == 403
     
     del_resp = await client.delete(f"/api/v1/reports/{report_id}", headers=other_auth_headers)
-    assert del_resp.status_code == 404
+    assert del_resp.status_code == 403
 
 async def test_delete_removes_file(client: AsyncClient, auth_headers):
     list_resp = await client.get("/api/v1/reports", headers=auth_headers)
@@ -104,9 +105,11 @@ async def test_delete_removes_file(client: AsyncClient, auth_headers):
     report_id = report["id"]
     file_path = report["file_path"]
     
-    assert os.path.exists(file_path)
+    # file_path is something like "/uploads/...", we check relative to cwd
+    local_path = file_path.lstrip("/")
+    assert os.path.exists(local_path)
     
     del_resp = await client.delete(f"/api/v1/reports/{report_id}", headers=auth_headers)
     assert del_resp.status_code == 204
     
-    assert not os.path.exists(file_path)
+    assert not os.path.exists(local_path)

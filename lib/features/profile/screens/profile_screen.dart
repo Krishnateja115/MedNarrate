@@ -69,8 +69,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: AppColors.background,
-              title: const Text('Edit Personal Info', style: TextStyle(color: Colors.white)),
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              title: Text('Edit Personal Info', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -79,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     label: 'Full Name',
                     icon: Icons.person_outline,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   CustomTextField(
                     controller: dobCtrl,
                     label: 'Date of Birth (YYYY-MM-DD)',
@@ -90,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               actions: [
                 TextButton(
                   onPressed: () => ctx.pop(),
-                  child: const Text('Cancel'),
+                  child: Text('Cancel'),
                 ),
                 FilledButton(
                   onPressed: saving ? null : () async {
@@ -120,17 +120,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: false,
-        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _user == null
-              ? const Center(child: Text('Failed to load profile', style: TextStyle(color: Colors.red)))
+              ? Center(child: Text('Failed to load profile', style: TextStyle(color: Colors.red)))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -141,26 +141,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         backgroundColor: AppColors.primary,
                         child: Text(
                           _user!.fullName.split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase(),
-                          style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold),
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: 18),
                       Text(
                         _user!.fullName,
-                        style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 28, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Text(
                         _user!.email,
-                        style: const TextStyle(color: Colors.white70, fontSize: 16),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 16),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
 
                       // Role selector
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: AppColors.card,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
@@ -181,12 +181,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     children: [
                                       Icon(r['icon'] as IconData,
                                           size: 18,
-                                          color: isActive ? Colors.white : Colors.white54),
-                                      const SizedBox(height: 4),
+                                          color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
+                                      SizedBox(height: 4),
                                       Text(r['label'] as String,
                                           style: TextStyle(
                                               fontSize: 11,
-                                              color: isActive ? Colors.white : Colors.white54,
+                                              color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                                               fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
                                     ],
                                   ),
@@ -196,14 +196,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           }).toList(),
                         ),
                       ),
-                      if (_savingRole) const Padding(
+                      if (_savingRole) Padding(
                         padding: EdgeInsets.only(top: 8),
-                        child: Text('Updating role...', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                        child: Text('Updating role...', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 12)),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       
                       _sectionTitle('Account'),
-                      const SizedBox(height: 15),
+                      SizedBox(height: 15),
                       
                       ProfileTile(
                         icon: Icons.person_outline,
@@ -224,9 +224,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () => context.push(Routes.emergencyContact),
                       ),
                       
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
                       _sectionTitle('Application & Appearance'),
-                      const SizedBox(height: 15),
+                      SizedBox(height: 15),
                       
                       ValueListenableBuilder<ThemeMode>(
                         valueListenable: themeModeNotifier,
@@ -251,7 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () => context.push(Routes.settings),
                       ),
                       
-                      const SizedBox(height: 35),
+                      SizedBox(height: 35),
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -262,11 +262,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                           ),
                           onPressed: () => context.push(Routes.settings),
-                          icon: const Icon(Icons.logout, color: Colors.redAccent),
-                          label: const Text('Logout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                          icon: Icon(Icons.logout, color: Colors.redAccent),
+                          label: Text('Logout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent)),
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
                     ],
                   ),
                 ),
@@ -278,7 +278,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       alignment: Alignment.centerLeft,
       child: Text(
         title,
-        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.bold),
       ),
     );
   }

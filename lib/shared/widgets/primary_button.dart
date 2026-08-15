@@ -69,9 +69,9 @@ class _PrimaryButtonState extends State<PrimaryButton> {
           ),
 
           child: Center(
-            child: widget.loading
+                    child: widget.loading
                 ? const CircularProgressIndicator(
-                    color: Colors.black,
+                    color: Colors.white,
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -80,16 +80,16 @@ class _PrimaryButtonState extends State<PrimaryButton> {
                       if (widget.icon != null)
                         Icon(
                           widget.icon,
-                          color: Colors.black,
+                          color: Colors.white,
                         ),
 
                       if (widget.icon != null)
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10),
 
                       Text(
                         widget.text,
-                        style: const TextStyle(
-                          color: Colors.black,
+                        style: TextStyle(
+                          color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),

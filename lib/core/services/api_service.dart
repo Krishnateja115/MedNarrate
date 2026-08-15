@@ -5,7 +5,10 @@ import 'package:http/http.dart' as http;
 import 'api_exception.dart';
 import 'api_models.dart';
 import 'storage_service.dart';
+import 'connectivity_service.dart';
+import 'cache_service.dart';
 import '../../../features/reports/models/report_model.dart';
+import '../../models/comparison_models.dart';
 
 /// ApiService — singleton HTTP client that handles auth headers, 401 retry with token
 /// refresh, and uniform ApiException wrapping.
@@ -106,6 +109,12 @@ class ApiService {
   }
 
   // ─────────────────────────── Auth ────────────────────────────────────
+
+  void _checkOnline() {
+    if (!ConnectivityService.instance.isOnline) {
+      throw const ApiException(0, "You're offline. This action requires an internet connection.");
+    }
+  }
 
   Future<AuthTokens> signup(
       String email, String password, String fullName) async {
@@ -245,6 +254,7 @@ class ApiService {
     required String reportDate,
     required String reportType,
   }) async {
+    _checkOnline();
     final token = await StorageService.instance.getAccessToken();
     final request = http.MultipartRequest(
       'POST',
@@ -282,23 +292,36 @@ class ApiService {
     bool? isFavourite,
     String? search,
   }) async {
-    final params = <String, String>{
-      'limit': limit.toString(),
-      'offset': offset.toString(),
-    };
-    if (reportType != null) params['report_type'] = reportType;
-    if (isFavourite != null) params['is_favourite'] = isFavourite.toString();
-    if (search != null) params['search'] = search;
-    final uri = Uri.parse('$_baseUrl/reports').replace(queryParameters: params);
-    final resp = await http.get(uri, headers: await _authHeaders());
-    await _handleResponse(resp, () => listReports(
-        limit: limit, offset: offset, reportType: reportType,
-        isFavourite: isFavourite, search: search)
-        .then((_) => throw const UnauthorizedException()));
-    final list = jsonDecode(resp.body) as List<dynamic>;
-    return list
-        .map((e) => ReportModel.fromMap(_remapReport(e as Map<String, dynamic>)))
-        .toList();
+    if (!ConnectivityService.instance.isOnline) {
+      return CacheService.instance.getCachedReports();
+    }
+
+    try {
+      final params = <String, String>{
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+      };
+      if (reportType != null) params['report_type'] = reportType;
+      if (isFavourite != null) params['is_favourite'] = isFavourite.toString();
+      if (search != null) params['search'] = search;
+      final uri = Uri.parse('$_baseUrl/reports').replace(queryParameters: params);
+      final resp = await http.get(uri, headers: await _authHeaders());
+      await _handleResponse(resp, () => listReports(
+          limit: limit, offset: offset, reportType: reportType,
+          isFavourite: isFavourite, search: search)
+          .then((_) => throw const UnauthorizedException()));
+      final list = jsonDecode(resp.body) as List<dynamic>;
+      final reports = list
+          .map((e) => ReportModel.fromMap(_remapReport(e as Map<String, dynamic>)))
+          .toList();
+      
+      // Save to cache
+      await CacheService.instance.saveReports(reports);
+      return reports;
+    } catch (e) {
+      // Fallback to cache on error
+      return CacheService.instance.getCachedReports();
+    }
   }
 
   Future<ReportModel> getReport(String id) async {
@@ -344,13 +367,16 @@ class ApiService {
         jsonDecode(resp.body) as Map<String, dynamic>);
   }
 
-  Future<List<ComparePoint>> compareReports(String testName,
-      {int limit = 10}) async {
-    final resp = await _get('/reports/compare?test_name=${Uri.encodeComponent(testName)}&limit=$limit');
+  Future<ReportComparisonResult> compareReports(List<String> reportIds) async {
+    final idsParam = reportIds.map(Uri.encodeComponent).join(',');
+    final resp = await _get('/reports/compare?report_ids=$idsParam');
+    return ReportComparisonResult.fromJson(jsonDecode(resp.body) as Map<String, dynamic>);
+  }
+
+  Future<List<ComparePoint>> getTestTrend(String testName) async {
+    final resp = await _get('/reports/trend?test_name=${Uri.encodeComponent(testName)}');
     final list = jsonDecode(resp.body) as List<dynamic>;
-    return list
-        .map((e) => ComparePoint.fromMap(e as Map<String, dynamic>))
-        .toList();
+    return list.map((e) => ComparePoint.fromMap(e as Map<String, dynamic>)).toList();
   }
 
   Future<ComparePreviousResult> comparePrevious(String id) async {
@@ -429,5 +455,37 @@ class ApiService {
       'isFavourite': m['is_favourite'] ?? false,
       'uploadedAt': m['uploaded_at'],
     };
+  }
+
+  // ─────────────────────────── Notifications ─────────────────────────────
+
+  Future<void> registerPushToken(String token, String platform) async {
+    await _post('/notifications/register-token', body: {
+      'token': token,
+      'platform': platform,
+    });
+  }
+
+  Future<void> unregisterPushToken(String token) async {
+    try {
+      await _delete('/notifications/unregister-token');
+      // Wait, the API requires the token in body for DELETE? Yes, per the prompt.
+      // But _delete doesn't support body. I will use http directly.
+      final headers = await _authHeaders();
+      await http.delete(
+        Uri.parse('$_baseUrl/notifications/unregister-token'),
+        headers: headers,
+        body: jsonEncode({'token': token}),
+      );
+    } catch (_) {}
+  }
+
+  Future<List<Map<String, dynamic>>> getMedicationSchedules() async {
+    final resp = await _get('/notifications/medication-schedules');
+    return List<Map<String, dynamic>>.from(jsonDecode(resp.body));
+  }
+
+  Future<void> toggleMedicationSchedule(String id) async {
+    await _patch('/notifications/medication-schedules/$id/toggle');
   }
 }

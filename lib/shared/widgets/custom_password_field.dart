@@ -31,15 +31,15 @@ class _CustomPasswordFieldState
       controller: widget.controller,
       obscureText: obscure,
 
-      style: const TextStyle(
-        color: Colors.white,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
       ),
 
       decoration: InputDecoration(
         filled: true,
-        fillColor: AppColors.card,
+        fillColor: Theme.of(context).cardColor,
 
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.lock_outline,
           color: AppColors.primary,
         ),
@@ -59,7 +59,7 @@ class _CustomPasswordFieldState
 
         labelText: widget.label,
 
-        labelStyle: const TextStyle(
+        labelStyle: TextStyle(
           color: AppColors.textSecondary,
         ),
 
@@ -70,7 +70,7 @@ class _CustomPasswordFieldState
 
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(
+          borderSide: BorderSide(
             color: AppColors.primary,
             width: 2,
           ),

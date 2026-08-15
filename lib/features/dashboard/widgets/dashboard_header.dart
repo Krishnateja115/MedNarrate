@@ -42,7 +42,7 @@ class _DashboardHeaderState extends State<DashboardHeader> {
           color: Colors.transparent,
           child: TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 250),
+            duration: Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
             builder: (context, val, child) {
               return Transform.translate(
@@ -54,19 +54,19 @@ class _DashboardHeaderState extends State<DashboardHeader> {
               );
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFF1C1C1E),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: isEnabled ? Colors.white38 : Colors.white12,
+                  color: isEnabled ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
                   width: 1,
                 ),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Colors.black87,
-                    blurRadius: 20,
-                    offset: Offset(0, 8),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.10),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
                   ),
                 ],
               ),
@@ -76,14 +76,14 @@ class _DashboardHeaderState extends State<DashboardHeader> {
                 children: [
                   Icon(
                     isEnabled ? Icons.notifications_active_rounded : Icons.notifications_off_outlined,
-                    color: isEnabled ? Colors.white : Colors.white54,
+                    color: isEnabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                     size: 17,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     message,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.2,
@@ -98,7 +98,7 @@ class _DashboardHeaderState extends State<DashboardHeader> {
     );
 
     overlay.insert(overlayEntry);
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(Duration(milliseconds: 1000), () {
       overlayEntry.remove();
     });
   }
@@ -141,17 +141,17 @@ class _DashboardHeaderState extends State<DashboardHeader> {
             children: [
               Text(
                 _greeting,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 widget.name,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
@@ -167,16 +167,16 @@ class _DashboardHeaderState extends State<DashboardHeader> {
           builder: (context, mode, _) {
             final isDark = mode == ThemeMode.dark || mode == ThemeMode.system;
             return Container(
-              margin: const EdgeInsets.only(right: 8),
+              margin: EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: AppColors.card,
+                color: Theme.of(context).cardColor,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.border, width: 1),
               ),
               child: IconButton(
                 icon: Icon(
                   isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                  color: Colors.white70,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
                   size: 20,
                 ),
                 onPressed: _toggleTheme,
@@ -190,12 +190,12 @@ class _DashboardHeaderState extends State<DashboardHeader> {
         Container(
           decoration: BoxDecoration(
             color: _notificationsEnabled
-                ? Colors.white.withValues(alpha: 0.12)
-                : AppColors.card,
+                ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)
+                : Theme.of(context).cardColor,
             shape: BoxShape.circle,
             border: Border.all(
               color: _notificationsEnabled
-                  ? Colors.white54
+                  ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)
                   : AppColors.border,
               width: 1,
             ),
@@ -205,7 +205,7 @@ class _DashboardHeaderState extends State<DashboardHeader> {
               _notificationsEnabled
                   ? Icons.notifications_active_rounded
                   : Icons.notifications_off_outlined,
-              color: _notificationsEnabled ? Colors.white : Colors.white38,
+              color: _notificationsEnabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
               size: 20,
             ),
             onPressed: _toggleNotifications,

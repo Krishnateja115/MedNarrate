@@ -62,7 +62,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -71,40 +71,40 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 30),
-                const Text(
+                SizedBox(height: 30),
+                Text(
                   'Create Account',
-                  style: TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 34, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 10),
-                const Text(
+                SizedBox(height: 10),
+                Text(
                   "Let's personalize your health journey.",
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 17),
                 ),
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
                 CustomTextField(
                   controller: nameController,
                   label: 'Full Name',
                   icon: Icons.person_outline,
                   validator: (v) => Validators.requiredField(v, fieldName: 'Full name'),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 CustomTextField(
                   controller: emailController,
                   label: 'Email Address',
                   icon: Icons.email_outlined,
                   validator: Validators.isValidEmail,
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 TextFormField(
                   controller: passwordController,
                   obscureText: obscurePassword,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   validator: Validators.passwordStrengthError,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
+                    prefixIcon: Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       onPressed: () => setState(() => obscurePassword = !obscurePassword),
                       icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
@@ -112,16 +112,16 @@ class _SignupScreenState extends State<SignupScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 TextFormField(
                   controller: confirmPasswordController,
                   obscureText: obscureConfirmPassword,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   validator: (v) => v == null || v.isEmpty ? 'Confirm your password' : null,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
+                    prefixIcon: Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       onPressed: () => setState(() => obscureConfirmPassword = !obscureConfirmPassword),
                       icon: Icon(obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
@@ -129,16 +129,16 @@ class _SignupScreenState extends State<SignupScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
                   ),
                 ),
-                const SizedBox(height: 35),
+                SizedBox(height: 35),
                 PrimaryButton(
                   text: _loading ? 'Creating Account…' : 'Sign Up',
                   onPressed: _loading ? null : () { _signup(); },
                 ),
-                const SizedBox(height: 35),
+                SizedBox(height: 35),
                 Center(
                   child: TextButton(
                     onPressed: () => context.go(Routes.login),
-                    child: const Text(
+                    child: Text(
                       'Already have an account? Login',
                       style: TextStyle(fontSize: 16),
                     ),

@@ -14,6 +14,7 @@ import '../widgets/medicine_reminder_card.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/recent_report_card.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
+import '../../../shared/widgets/offline_banner.dart';
 import 'package:go_router/go_router.dart';
 import '../../reports/widgets/upload_card.dart';
 
@@ -83,10 +84,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadData,
+        child: Column(
+          children: [
+            const OfflineBanner(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _loadData,
           child: _loading
               ? const Padding(
                   padding: EdgeInsets.all(22),
@@ -134,7 +138,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 35),
 
                 // Quick Actions
-                const Text('Quick Actions', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                Text('Quick Actions', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
                 UploadCard(onTap: () async {
                   await context.push(Routes.upload);
@@ -167,12 +171,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 35),
 
                 // Recent Reports
-                const Text('Recent Reports', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                Text('Recent Reports', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
                 if (_loading)
                   const Center(child: CircularProgressIndicator())
                 else if (_recentReports.isEmpty)
-                  const Center(child: Text('No recent reports.', style: TextStyle(color: Colors.white54)))
+                  Center(child: Text('No recent reports.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))))
                 else
                   ..._recentReports.map((report) => GestureDetector(
                     onTap: () => context.push(Routes.reportDetails, extra: report.id),
@@ -191,6 +195,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
+        ),
+            ),
+          ],
         ),
       ),
     );

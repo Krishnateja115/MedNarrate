@@ -7,12 +7,17 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.report import Report, ReportType, ProcessingStatus
 from app.models.report_analysis import ReportAnalysis
+from app.middleware.ownership import verify_report_ownership
 from app.schemas.report import ReportOut, ReportUpdate, ComparePoint, ComparePreviousResult
 from app.services.file_storage import save_upload_file, delete_file
 from app.services.prompts import COMPARISON_PROMPT
 from app.services.llm_client import generate
 from datetime import date
 from typing import Optional, List
+from app.schemas.report import ReportOut, ReportUpdate, ComparePoint, ComparePreviousResult, TranslationRequest, TranslationOut, ReportComparisonResult, ParameterComparison, LabValuePoint
+from app.services.multilingual import translate_report_summary, LANGUAGE_MAP
+from app.services.lab_value_normalizer import normalize_parameter_name
+from app.services.prompts import TREND_NARRATIVE_PROMPT
 
 router = APIRouter()
 
@@ -78,8 +83,8 @@ async def list_reports(
     reports = result.scalars().all()
     return reports
 
-@router.get("/compare", response_model=List[ComparePoint])
-async def compare_reports(
+@router.get("/trend", response_model=List[ComparePoint])
+async def get_test_trend(
     test_name: str,
     limit: int = Query(10, le=50),
     current_user: User = Depends(get_current_user),
@@ -114,12 +119,7 @@ async def get_report(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(Report).where(Report.id == id, Report.user_id == current_user.id)
-    result = await db.execute(stmt)
-    report = result.scalars().first()
-    
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
+    report = await verify_report_ownership(id, str(current_user.id), db)
     return report
 
 @router.patch("/{id}", response_model=ReportOut)
@@ -129,12 +129,7 @@ async def update_report(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(Report).where(Report.id == id, Report.user_id == current_user.id)
-    result = await db.execute(stmt)
-    report = result.scalars().first()
-    
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
+    report = await verify_report_ownership(id, str(current_user.id), db)
         
     update_dict = update_data.model_dump(exclude_unset=True)
     for field, value in update_dict.items():
@@ -150,14 +145,9 @@ async def delete_report(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(Report).where(Report.id == id, Report.user_id == current_user.id)
-    result = await db.execute(stmt)
-    report = result.scalars().first()
-    
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
+    report = await verify_report_ownership(id, str(current_user.id), db)
         
-    delete_file(report.file_path)
+    await delete_file(report.file_path)
     
     await db.delete(report)
     await db.commit()
@@ -168,11 +158,7 @@ async def compare_previous(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(Report).where(Report.id == id, Report.user_id == current_user.id)
-    result = await db.execute(stmt)
-    current_report = result.scalars().first()
-    if not current_report:
-        raise HTTPException(status_code=404, detail="Report not found")
+    current_report = await verify_report_ownership(id, str(current_user.id), db)
         
     stmt_prev = select(Report)\
         .where(Report.user_id == current_user.id, Report.report_type == current_report.report_type, Report.report_date < current_report.report_date, Report.processing_status == ProcessingStatus.completed)\
@@ -229,4 +215,170 @@ async def compare_previous(
         previous_report_id=prev_report.id,
         compared_findings=diffed_findings,
         narrative_summary=summary
+    )
+
+@router.post("/{report_id}/translate", response_model=TranslationOut)
+async def translate_report(
+    report_id: str,
+    req: TranslationRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if req.language not in LANGUAGE_MAP:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported language. Supported: {', '.join(LANGUAGE_MAP.keys())}"
+        )
+        
+    report = await verify_report_ownership(report_id, str(current_user.id), db)
+        
+    stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == report_id)
+    analysis = (await db.execute(stmt_analysis)).scalars().first()
+    if not analysis or not analysis.patient_summary:
+        raise HTTPException(status_code=400, detail="No patient summary available to translate")
+        
+    from app.models.report_translation import ReportTranslation
+    # Check cache first to set the 'cached' boolean correctly
+    stmt_cache = select(ReportTranslation).where(
+        ReportTranslation.report_id == report_id,
+        ReportTranslation.language_code == req.language
+    )
+    cached_translation = (await db.execute(stmt_cache)).scalars().first()
+    
+    if cached_translation:
+        return TranslationOut(
+            language=req.language,
+            translated_summary=cached_translation.translated_text,
+            cached=True
+        )
+        
+    translated_text = await translate_report_summary(report_id, analysis.patient_summary, req.language, db)
+    
+    return TranslationOut(
+        language=req.language,
+        translated_summary=translated_text,
+        cached=False
+    )
+
+@router.get("/compare", response_model=ReportComparisonResult)
+async def compare_reports_multiple(
+    report_ids: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    ids = [r_id.strip() for r_id in report_ids.split(",") if r_id.strip()]
+    if len(ids) < 2 or len(ids) > 5:
+        raise HTTPException(status_code=400, detail="Must provide between 2 and 5 report IDs")
+        
+    # Verify ownership and fetch reports
+    stmt = select(Report).where(Report.id.in_(ids), Report.user_id == current_user.id).order_by(Report.report_date)
+    reports = (await db.execute(stmt)).scalars().all()
+    
+    if len(reports) != len(ids):
+        raise HTTPException(status_code=404, detail="One or more reports not found or unauthorized")
+        
+    reports_sorted = sorted(reports, key=lambda r: r.report_date)
+    
+    # Fetch analyses
+    stmt_analyses = select(ReportAnalysis).where(ReportAnalysis.report_id.in_([r.id for r in reports_sorted]))
+    analyses = (await db.execute(stmt_analyses)).scalars().all()
+    analysis_by_report_id = {str(a.report_id): a for a in analyses}
+    
+    # Build comparison object
+    param_map = {}
+    
+    for report in reports_sorted:
+        analysis = analysis_by_report_id.get(str(report.id))
+        if not analysis:
+            continue
+            
+        for lab in analysis.structured_lab_values:
+            norm_name = normalize_parameter_name(lab['test_name'])
+            
+            if norm_name not in param_map:
+                param_map[norm_name] = {
+                    "parameter": norm_name,
+                    "unit": lab['unit'],
+                    "reference_range": f"{lab.get('ref_low', '')}-{lab.get('ref_high', '')}",
+                    "values": []
+                }
+                
+            # Check if this report already has a value for this param
+            existing = [v for v in param_map[norm_name]["values"] if v["report_id"] == str(report.id)]
+            if not existing:
+                param_map[norm_name]["values"].append({
+                    "report_id": str(report.id),
+                    "date": report.report_date.isoformat(),
+                    "value": lab['value'],
+                    "status": lab['flag']
+                })
+                
+    # Filter to parameters present in at least 2 reports and compute trends
+    comparisons = []
+    diffed_findings = []
+    
+    for param_name, data in param_map.items():
+        if len(data["values"]) >= 2:
+            values = data["values"]
+            # Sort by date
+            values.sort(key=lambda x: x["date"])
+            
+            # Compute changes
+            for i in range(1, len(values)):
+                values[i]["change_from_previous"] = round(values[i]["value"] - values[i-1]["value"], 2)
+                
+            first_val = values[0]["value"]
+            last_val = values[-1]["value"]
+            first_status = values[0]["status"]
+            last_status = values[-1]["status"]
+            
+            trend = "stable"
+            
+            # Simple trend logic
+            pct_change = abs((last_val - first_val) / first_val) if first_val else 0
+            if pct_change <= 0.05:
+                trend = "stable"
+            else:
+                # Normalizing?
+                if first_status != "normal" and last_status == "normal":
+                    trend = "improving"
+                elif first_status == "normal" and last_status != "normal":
+                    trend = "worsening"
+                else:
+                    trend = "stable"
+                    
+            lab_value_points = [LabValuePoint(**v) for v in values]
+            
+            diffed_findings.append({
+                "parameter": param_name,
+                "first_value": first_val,
+                "last_value": last_val,
+                "first_status": first_status,
+                "last_status": last_status,
+                "trend": trend
+            })
+            
+            comparisons.append(ParameterComparison(
+                parameter=param_name,
+                unit=data["unit"],
+                reference_range=data["reference_range"],
+                values=lab_value_points,
+                trend=trend
+            ))
+            
+    import json
+    diffed_json = json.dumps(diffed_findings, indent=2)
+    prompt = TREND_NARRATIVE_PROMPT.format(diffed_findings_json=diffed_json)
+    
+    ai_summary = "Not enough data to compare."
+    if diffed_findings:
+        try:
+            ai_summary = await generate(prompt)
+        except Exception as e:
+            ai_summary = "Comparison summary temporarily unavailable."
+            
+    return ReportComparisonResult(
+        report_ids=[str(r.id) for r in reports_sorted],
+        comparisons=comparisons,
+        ai_summary=ai_summary
     )

@@ -6,9 +6,10 @@ from app.core.database import Base, get_db
 from app.main import app
 from app.core.config import settings
 import asyncio
+from sqlalchemy.pool import StaticPool
 
-from sqlalchemy.pool import NullPool
-engine = create_async_engine(settings.DATABASE_URL, echo=False, poolclass=NullPool)
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+engine = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=StaticPool, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 @pytest.fixture(scope="session")
@@ -45,11 +46,11 @@ async def client(db_session):
 async def token_headers(client: AsyncClient):
     await client.post(
         "/api/v1/auth/signup",
-        json={"email": "test_part3@example.com", "password": "Password1", "full_name": "Part3 User"}
+        json={"email": "test_part3@example.com", "password": "StrongP@ssword1", "full_name": "Part3 User"}
     )
     login_resp = await client.post(
         "/api/v1/auth/login",
-        data={"username": "test_part3@example.com", "password": "Password1"}
+        data={"username": "test_part3@example.com", "password": "StrongP@ssword1"}
     )
     token = login_resp.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

@@ -132,12 +132,12 @@ class _AIChatScreenState extends State<AIChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: false,
-        title: const Row(
+        title: Row(
           children: [
             CircleAvatar(radius: 18, child: Icon(Icons.smart_toy, size: 20)),
             SizedBox(width: 12),
@@ -152,15 +152,15 @@ class _AIChatScreenState extends State<AIChatScreen> {
         ),
       ),
       body: _initializing
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
+              ? Center(child: Text(_error!, style: TextStyle(color: Colors.red)))
               : Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       color: Colors.amber.withValues(alpha: 0.1),
-                      child: const Row(
+                      child: Row(
                         children: [
                           Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 18),
                           SizedBox(width: 12),
@@ -175,11 +175,11 @@ class _AIChatScreenState extends State<AIChatScreen> {
                     ),
                     Expanded(
                       child: _messages.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 "Hello! I'm MedNarrate AI.\nAsk me any health-related question.",
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.white70, fontSize: 16),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 16),
                               ),
                             )
                           : ListView.builder(
@@ -194,14 +194,14 @@ class _AIChatScreenState extends State<AIChatScreen> {
                             ),
                     ),
                     if (_sending)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.symmetric(vertical: 8),
                         child: CircularProgressIndicator(),
                       ),
                     Container(
                       padding: const EdgeInsets.all(15),
                       decoration: BoxDecoration(
-                        color: AppColors.card,
+                        color: Theme.of(context).cardColor,
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
                       ),
                       child: Row(
@@ -209,10 +209,10 @@ class _AIChatScreenState extends State<AIChatScreen> {
                           Expanded(
                             child: TextField(
                               controller: _messageController,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                              decoration: InputDecoration(
                                 hintText: "Ask about your report...",
-                                hintStyle: TextStyle(color: Colors.white54),
+                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
                                 border: InputBorder.none,
                               ),
                               onSubmitted: (_) => _sendMessage(),
@@ -220,7 +220,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
                           ),
                           IconButton(
                             onPressed: _sendMessage,
-                            icon: const Icon(Icons.send_rounded, color: Colors.blue),
+                            icon: Icon(Icons.send_rounded, color: Colors.blue),
                           ),
                         ],
                       ),
@@ -242,7 +242,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isUser ? AppColors.primary : AppColors.card,
+                color: isUser ? AppColors.primary : Theme.of(context).cardColor,
                 border: isUser ? null : Border.all(color: AppColors.border, width: 1),
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(20),
@@ -253,11 +253,11 @@ class _AIChatScreenState extends State<AIChatScreen> {
               ),
               child: Text(
                 msg.content,
-                style: TextStyle(color: isUser ? Colors.black : Colors.white, fontSize: 15, height: 1.5),
+                style: TextStyle(color: isUser ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface, fontSize: 15, height: 1.5),
               ),
             ),
             if (!isUser && msg.sources.isNotEmpty) ...[
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -266,12 +266,12 @@ class _AIChatScreenState extends State<AIChatScreen> {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white10,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       'Source: $sourceName',
-                      style: const TextStyle(color: Colors.white54, fontSize: 10),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 10),
                     ),
                   );
                 }).toList(),

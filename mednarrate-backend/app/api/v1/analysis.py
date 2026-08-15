@@ -7,7 +7,8 @@ from app.models.user import User
 from app.models.report import Report, ProcessingStatus
 from app.models.report_analysis import ReportAnalysis
 from app.models.analysis_translation import AnalysisTranslation
-from app.schemas.report import ReportAnalysisOut, TranslationRequest, TranslationOut
+from app.schemas.report import ReportAnalysisOut, TranslationRequest, TranslationOut, ReportStatusOut
+from app.middleware.ownership import verify_report_ownership
 from app.services.analysis_pipeline import run_analysis
 from app.services.llm_client import generate
 from app.services.prompts import TRANSLATION_PROMPT
@@ -23,14 +24,9 @@ async def process_report(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(Report).where(Report.id == id, Report.user_id == current_user.id)
-    result = await db.execute(stmt)
-    report = result.scalars().first()
+    report = await verify_report_ownership(id, str(current_user.id), db)
     
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
-        
-    if not force and report.processing_status in [ProcessingStatus.processing, ProcessingStatus.completed]:
+    if report.processing_status in [ProcessingStatus.processing, ProcessingStatus.completed] and not force:
         raise HTTPException(status_code=409, detail="Report is already processing or completed")
         
     report.processing_status = ProcessingStatus.processing
@@ -40,19 +36,14 @@ async def process_report(
     
     return {"processing_status": "processing"}
 
-@router.get("/{id}/status")
+@router.get("/{id}/status", response_model=ReportStatusOut)
 async def get_report_status(
     id: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
-) -> Dict[str, Any]:
-    stmt = select(Report).where(Report.id == id, Report.user_id == current_user.id)
-    result = await db.execute(stmt)
-    report = result.scalars().first()
+):
+    report = await verify_report_ownership(id, str(current_user.id), db)
     
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
-        
     status_dict = {"processing_status": report.processing_status.value}
     
     if report.processing_status == ProcessingStatus.failed:
@@ -71,12 +62,7 @@ async def get_report_analysis(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(Report).where(Report.id == id, Report.user_id == current_user.id)
-    result = await db.execute(stmt)
-    report = result.scalars().first()
-    
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
+    report = await verify_report_ownership(id, str(current_user.id), db)
         
     stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == report.id)
     res_analysis = await db.execute(stmt_analysis)
@@ -111,12 +97,7 @@ async def translate_analysis(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(Report).where(Report.id == id, Report.user_id == current_user.id)
-    result = await db.execute(stmt)
-    report = result.scalars().first()
-    
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
+    report = await verify_report_ownership(id, str(current_user.id), db)
         
     stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == report.id)
     res_analysis = await db.execute(stmt_analysis)

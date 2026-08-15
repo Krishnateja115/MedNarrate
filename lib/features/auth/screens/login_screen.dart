@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
@@ -52,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -61,51 +60,51 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 40),
-                const Text(
+                SizedBox(height: 40),
+                Text(
                   'Welcome Back',
-                  style: TextStyle(fontSize: 34, color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 34, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: 8),
+                Text(
                   'Sign in to continue',
-                  style: TextStyle(color: Colors.white70, fontSize: 17),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 17),
                 ),
-                const SizedBox(height: 45),
+                SizedBox(height: 45),
                 CustomTextField(
                   controller: emailController,
                   label: 'Email',
                   icon: Icons.email_outlined,
                   validator: Validators.isValidEmail,
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 CustomPasswordField(
                   controller: passwordController,
                   label: 'Password',
                   validator: (v) => v == null || v.isEmpty ? 'Password is required' : null,
                 ),
-                const SizedBox(height: 15),
+                SizedBox(height: 15),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => context.push(Routes.forgotPassword),
-                    child: const Text('Forgot Password?'),
+                    child: Text('Forgot Password?'),
                   ),
                 ),
-                const SizedBox(height: 25),
+                SizedBox(height: 25),
                 PrimaryButton(
                   text: _loading ? 'Signing in…' : 'Login',
                   onPressed: _loading ? null : () { _login(); },
                 ),
-                const SizedBox(height: 35),
+                SizedBox(height: 35),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Don't have an account?",
-                        style: TextStyle(color: Colors.white70)),
+                    Text("Don't have an account?",
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70))),
                     TextButton(
                       onPressed: () => context.go(Routes.signup),
-                      child: const Text('Sign Up'),
+                      child: Text('Sign Up'),
                     ),
                   ],
                 ),

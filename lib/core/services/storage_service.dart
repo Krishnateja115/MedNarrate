@@ -18,9 +18,10 @@ class StorageService {
   static const _keyRefresh = 'refresh_token';
   static const _keyOnboarding = 'onboarding_seen';
   static const _keyCachedUser = 'cached_user';
-  static const _keyLang = 'preferred_language';
-  static const _keyTheme = 'theme_mode';
-  static const _keyNotif = 'notifications_enabled';
+  static const String _keyLang = 'preferred_language';
+  static const String _keyTheme = 'theme_mode';
+  static const String _keyNotif = 'notifications_enabled';
+  static const String _keyProfessionalMode = 'professional_mode';
 
   // ── Tokens (flutter_secure_storage) ──────────────────────────────────
 
@@ -79,6 +80,18 @@ class StorageService {
     return prefs.getString(_keyLang) ?? 'en';
   }
 
+  // ── Professional Mode (shared_preferences) ────────────────────────────
+
+  Future<void> setProfessionalMode(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyProfessionalMode, enabled);
+  }
+
+  Future<bool> getProfessionalMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyProfessionalMode) ?? false;
+  }
+
   // ── Theme Mode (shared_preferences) ──────────────────────────────────
 
   Future<void> setThemeMode(ThemeMode mode) async {
@@ -102,5 +115,19 @@ class StorageService {
   Future<bool> getNotificationsEnabled() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_keyNotif) ?? true;
+  }
+
+  // ── Biometric (shared_preferences) ──────────────────────────────────
+
+  static const String _keyBiometric = 'biometric_enabled';
+
+  Future<void> setBiometricEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyBiometric, enabled);
+  }
+
+  Future<bool> getBiometricEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyBiometric) ?? false;
   }
 }

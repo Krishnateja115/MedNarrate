@@ -11,6 +11,8 @@ import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/illustrations.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/search_bar.dart';
+import '../../../core/services/report_polling_service.dart';
+import 'dart:async';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -26,6 +28,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
   String? _searchQuery;
   String? _filterType;
   bool? _filterFavourite;
+  
+  final Map<String, StreamSubscription> _pollingSubscriptions = {};
 
   @override
   void initState() {
@@ -41,30 +45,55 @@ class _ReportsScreenState extends State<ReportsScreen> {
         reportType: _filterType,
         isFavourite: _filterFavourite,
       );
-      if (mounted) setState(() { _reports = reports; _loading = false; });
+      if (mounted) {
+        setState(() { _reports = reports; _loading = false; });
+        _startPollingForProcessingReports();
+      }
     } on ApiException catch (e) {
       if (mounted) setState(() { _error = e.message; _loading = false; });
     }
   }
 
+  void _startPollingForProcessingReports() {
+    for (var report in _reports) {
+      if (report.processingStatus == 'processing' && !_pollingSubscriptions.containsKey(report.id)) {
+        _pollingSubscriptions[report.id] = ReportPollingService.instance.pollReportStatus(report.id).listen((status) {
+          if (status == ReportStatus.completed || status == ReportStatus.failed) {
+            _pollingSubscriptions[report.id]?.cancel();
+            _pollingSubscriptions.remove(report.id);
+            _loadReports(); // Reload to get updated data
+          }
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    for (var sub in _pollingSubscriptions.values) {
+      sub.cancel();
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Reports'),
-        backgroundColor: AppColors.background,
+        title: Text('Reports'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
         elevation: 4,
         onPressed: () async {
           await context.push(Routes.upload);
           _loadReports();
         },
-        child: const Icon(Icons.add_rounded, size: 28),
+        child: Icon(Icons.add_rounded, size: 28),
       ),
       body: Column(
         children: [
@@ -100,7 +129,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Expanded(
             child: _loading
                 ? ListView.builder(
@@ -113,12 +142,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(_error!, style: const TextStyle(color: Colors.redAccent)),
-                            const SizedBox(height: 16),
+                            Text(_error!, style: TextStyle(color: Colors.redAccent)),
+                            SizedBox(height: 16),
                             TextButton.icon(
                               onPressed: _loadReports,
-                              icon: const Icon(Icons.refresh, color: Colors.white),
-                              label: const Text('Retry', style: TextStyle(color: Colors.white)),
+                              icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onSurface),
+                              label: Text('Retry', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                             ),
                           ],
                         ),
@@ -129,18 +158,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const EmptyHistoryIllustration(),
-                                const SizedBox(height: 20),
-                                const Text('No reports found',
-                                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 8),
-                                const Text('Upload your first medical report to get started',
+                                SizedBox(height: 20),
+                                Text('No reports found',
+                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
+                                SizedBox(height: 8),
+                                Text('Upload your first medical report to get started',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(color: Colors.white54, fontSize: 14)),
-                                const SizedBox(height: 24),
+                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 14)),
+                                SizedBox(height: 24),
                                 FilledButton.icon(
                                   style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black,
+                                    backgroundColor: Theme.of(context).colorScheme.primary,
+                                    foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                   ),
@@ -148,10 +177,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                     await context.push(Routes.upload);
                                     _loadReports();
                                   },
-                                  icon: const Icon(Icons.upload_file_rounded, color: Colors.black),
-                                  label: const Text(
+                                  icon: Icon(Icons.upload_file_rounded, color: Colors.white),
+                                  label: Text(
                                     'Upload your first report',
-                                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15),
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                                   ),
                                 ),
                               ],
@@ -186,16 +215,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: FilterChip(
         label: Text(label),
         selected: selected,
-        selectedColor: Colors.white,
-        backgroundColor: AppColors.card,
-        checkmarkColor: Colors.black,
+        selectedColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).cardColor,
+        checkmarkColor: Colors.white,
         side: BorderSide(
-          color: selected ? Colors.white : AppColors.border,
+          color: selected ? Theme.of(context).colorScheme.primary : AppColors.border,
           width: 1,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         labelStyle: TextStyle(
-          color: selected ? Colors.black : Colors.white70,
+          color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
           fontWeight: selected ? FontWeight.bold : FontWeight.w500,
           fontSize: 13,
         ),

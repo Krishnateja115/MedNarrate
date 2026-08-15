@@ -24,6 +24,7 @@ class Routes {
   static const String aiChat = "/ai-chat";
 
   static const String reminders = "/reminders";
+  static const String medications = "/medications";
 
   static const String settings = "/settings";
 }

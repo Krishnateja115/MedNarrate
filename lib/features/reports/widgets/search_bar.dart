@@ -14,7 +14,7 @@ class ReportSearchBar extends StatelessWidget {
       onChanged: onChanged,
       decoration: InputDecoration(
         hintText: "Search reports...",
-        prefixIcon: const Icon(Icons.search),
+        prefixIcon: Icon(Icons.search),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),

@@ -43,16 +43,16 @@ class PermissionService {
     await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Permission Required'),
+        title: Text('Permission Required'),
         content: Text('$rationale\n\nPlease enable it in app settings.'),
         actions: [
-          TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
+          TextButton(onPressed: () => context.pop(), child: Text('Cancel')),
           TextButton(
             onPressed: () async {
               context.pop();
               await openAppSettings();
             },
-            child: const Text('Open Settings'),
+            child: Text('Open Settings'),
           ),
         ],
       ),

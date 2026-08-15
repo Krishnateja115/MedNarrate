@@ -24,14 +24,14 @@ class ReportsFilterChip extends StatelessWidget {
           style: TextStyle(
             color: selected
                 ? Colors.white
-                : Colors.white70,
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
             fontWeight: FontWeight.w600,
           ),
         ),
         selected: selected,
         onSelected: (_) => onTap?.call(),
-        backgroundColor: AppColors.card,
-        selectedColor: AppColors.primary,
+        backgroundColor: Theme.of(context).cardColor,
+        selectedColor: Theme.of(context).colorScheme.primary,
         checkmarkColor: Colors.white,
         side: BorderSide.none,
         shape: RoundedRectangleBorder(

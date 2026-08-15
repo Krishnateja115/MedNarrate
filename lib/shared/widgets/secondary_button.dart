@@ -25,7 +25,7 @@ class SecondaryButton extends StatelessWidget {
         onPressed: onPressed,
 
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(
+          side: BorderSide(
             color: AppColors.primary,
           ),
 
@@ -36,7 +36,7 @@ class SecondaryButton extends StatelessWidget {
 
         child: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppColors.primary,
             fontSize: 17,
             fontWeight: FontWeight.w600,

@@ -22,22 +22,22 @@ class _Illustration1Painter extends CustomPainter {
     final paint = Paint()..style = PaintingStyle.fill;
 
     // Background circle
-    paint.color = const Color(0xFFE8F0FF);
+    paint.color = Color(0xFFE8F0FF);
     canvas.drawCircle(Offset(size.width / 2, size.height / 2), 100, paint);
 
     // Document shape
-    paint.color = Colors.white;
+    paint.color = Color(0xFF0F172A);
     final docRect = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(size.width / 2, size.height / 2 + 5), width: 100, height: 130),
       const Radius.circular(10),
     );
     canvas.drawRRect(docRect, paint);
-    paint.color = const Color(0xFF1A6BFF).withValues(alpha: 0.15);
+    paint.color = Color(0xFF1A6BFF).withValues(alpha: 0.15);
     canvas.drawRRect(docRect, paint);
 
     // Lines on document
     final linePaint = Paint()
-      ..color = const Color(0xFF1A6BFF).withValues(alpha: 0.4)
+      ..color = Color(0xFF1A6BFF).withValues(alpha: 0.4)
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
 
@@ -48,7 +48,7 @@ class _Illustration1Painter extends CustomPainter {
     }
 
     // Medical cross
-    paint.color = const Color(0xFF1A6BFF);
+    paint.color = Color(0xFF1A6BFF);
     canvas.drawRect(
       Rect.fromCenter(center: Offset(size.width / 2 + 42, size.height / 2 - 55), width: 6, height: 22),
       paint,
@@ -60,7 +60,7 @@ class _Illustration1Painter extends CustomPainter {
 
     // Magnifying glass
     final glassPaint = Paint()
-      ..color = const Color(0xFF00C48C)
+      ..color = Color(0xFF00C48C)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4;
     canvas.drawCircle(Offset(size.width / 2 + 50, size.height / 2 + 45), 18, glassPaint);
@@ -98,15 +98,15 @@ class _Illustration2Painter extends CustomPainter {
     final cy = size.height / 2;
 
     // Background
-    paint.color = const Color(0xFFE8F0FF);
+    paint.color = Color(0xFFE8F0FF);
     canvas.drawCircle(Offset(cx, cy), 100, paint);
 
     // Bar chart bars
     final barColors = [
-      const Color(0xFF1A6BFF),
-      const Color(0xFF00C48C),
-      const Color(0xFFF5A623),
-      const Color(0xFF1A6BFF),
+      Color(0xFF1A6BFF),
+      Color(0xFF00C48C),
+      Color(0xFFF5A623),
+      Color(0xFF1A6BFF),
     ];
     final barHeights = [60.0, 90.0, 45.0, 75.0];
     final barWidth = 20.0;
@@ -120,20 +120,20 @@ class _Illustration2Painter extends CustomPainter {
     }
 
     // Highlight badge
-    paint.color = Colors.white;
+    paint.color = Color(0xFF0F172A);
     final badge = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(cx + 55, cy - 55), width: 80, height: 36),
       const Radius.circular(12),
     );
     canvas.drawRRect(badge, paint);
-    final textPaint = Paint()..color = const Color(0xFF00C48C);
+    final textPaint = Paint()..color = Color(0xFF00C48C);
     // Draw check circle
     canvas.drawCircle(Offset(cx + 22, cy - 55), 10, textPaint);
 
     // Warning dot
-    paint.color = const Color(0xFFE53935);
+    paint.color = Color(0xFFE53935);
     canvas.drawCircle(Offset(cx - 65, cy - 60), 10, paint);
-    paint.color = Colors.white;
+    paint.color = Color(0xFF0F172A);
     canvas.drawRect(Rect.fromCenter(center: Offset(cx - 65, cy - 60), width: 10, height: 2), paint);
     canvas.drawRect(Rect.fromCenter(center: Offset(cx - 65, cy - 54), width: 3, height: 3), paint);
   }
@@ -165,7 +165,7 @@ class _Illustration3Painter extends CustomPainter {
     final cy = size.height / 2;
 
     // Background
-    paint.color = const Color(0xFFE8F0FF);
+    paint.color = Color(0xFFE8F0FF);
     canvas.drawCircle(Offset(cx, cy), 100, paint);
 
     // Three person circles
@@ -175,9 +175,9 @@ class _Illustration3Painter extends CustomPainter {
       Offset(cx + 55, cy + 20),
     ];
     final colors = [
-      const Color(0xFF00C48C),
-      const Color(0xFF1A6BFF),
-      const Color(0xFFF5A623),
+      Color(0xFF00C48C),
+      Color(0xFF1A6BFF),
+      Color(0xFFF5A623),
     ];
     final sizes = [32.0, 40.0, 32.0];
 
@@ -196,7 +196,7 @@ class _Illustration3Painter extends CustomPainter {
     }
 
     // Heart in center-top
-    paint.color = const Color(0xFFE53935);
+    paint.color = Color(0xFFE53935);
     final heartPath = Path();
     final hx = cx;
     final hy = cy - 65.0;
@@ -233,18 +233,18 @@ class _EmptyHistoryPainter extends CustomPainter {
     final cx = size.width / 2;
     final cy = size.height / 2;
 
-    paint.color = const Color(0xFFE8F0FF);
+    paint.color = Color(0xFFE8F0FF);
     canvas.drawCircle(Offset(cx, cy), 75, paint);
 
     // Folder shape
-    paint.color = const Color(0xFF1A6BFF).withValues(alpha: 0.3);
+    paint.color = Color(0xFF1A6BFF).withValues(alpha: 0.3);
     final folder = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(cx, cy + 10), width: 90, height: 65),
       const Radius.circular(8),
     );
     canvas.drawRRect(folder, paint);
 
-    paint.color = const Color(0xFF1A6BFF).withValues(alpha: 0.15);
+    paint.color = Color(0xFF1A6BFF).withValues(alpha: 0.15);
     final tab = RRect.fromRectAndRadius(
       Rect.fromLTWH(cx - 45, cy - 22, 35, 12),
       const Radius.circular(4),

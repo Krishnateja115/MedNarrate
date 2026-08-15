@@ -35,13 +35,13 @@ class _ReminderScreenState extends State<ReminderScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete Reminder'),
-        content: const Text('Are you sure you want to delete this reminder?'),
+        title: Text('Delete Reminder'),
+        content: Text('Are you sure you want to delete this reminder?'),
         actions: [
-          TextButton(onPressed: () => context.pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => context.pop(false), child: Text('Cancel')),
           TextButton(
             onPressed: () => context.pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -56,7 +56,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -78,42 +78,42 @@ class _ReminderScreenState extends State<ReminderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Medicine Reminders'),
-        backgroundColor: AppColors.background,
+        title: Text('Medicine Reminders'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+                                    foregroundColor: Colors.white,
         elevation: 4,
         onPressed: () => _showReminderForm(),
-        child: const Icon(Icons.add_rounded, size: 28),
+        child: Icon(Icons.add_rounded, size: 28),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _reminders.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.alarm_off_rounded, size: 64, color: Colors.white38),
-                      const SizedBox(height: 16),
-                      const Text('No reminders set', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      const Text('Set daily reminders for your medications', style: TextStyle(color: Colors.white54, fontSize: 14)),
-                      const SizedBox(height: 24),
+                      Icon(Icons.alarm_off_rounded, size: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
+                      SizedBox(height: 16),
+                      Text('No reminders set', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
+                      Text('Set daily reminders for your medications', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 14)),
+                      SizedBox(height: 24),
                       FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                                    foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         onPressed: () => _showReminderForm(),
-                        icon: const Icon(Icons.add_alarm_rounded, color: Colors.black),
-                        label: const Text('Add your first reminder', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        icon: Icon(Icons.add_alarm_rounded, color: Theme.of(context).colorScheme.onSurface),
+                        label: Text('Add your first reminder', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       ),
                     ],
                   ),
@@ -124,53 +124,53 @@ class _ReminderScreenState extends State<ReminderScreen> {
                   itemBuilder: (context, index) {
                     final r = _reminders[index];
                     return Card(
-                      color: AppColors.card,
+                      color: Theme.of(context).cardColor,
                       margin: const EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18),
-                        side: const BorderSide(color: AppColors.border, width: 1),
+                        side: BorderSide(color: AppColors.border, width: 1),
                       ),
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                         leading: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                             border: Border.all(color: AppColors.border, width: 1),
                           ),
-                          child: const Icon(Icons.medication_rounded, color: Colors.white),
+                          child: Icon(Icons.medication_rounded, color: Theme.of(context).colorScheme.onSurface),
                         ),
-                        title: Text(r.medicineName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                        title: Text(r.medicineName, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (r.dosageNote != null && r.dosageNote!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(r.dosageNote!, style: const TextStyle(color: Colors.white70)),
+                              SizedBox(height: 4),
+                              Text(r.dosageNote!, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70))),
                             ],
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Row(
                               children: [
-                                const Icon(Icons.access_time_rounded, size: 15, color: Colors.white70),
-                                const SizedBox(width: 6),
+                                Icon(Icons.access_time_rounded, size: 15, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
+                                SizedBox(width: 6),
                                 Text(
                                   TimeOfDay.fromDateTime(r.time).format(context),
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
                                 ),
-                                const SizedBox(width: 12),
+                                SizedBox(width: 12),
                                 if (r.repeatDaily)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: Colors.white10,
+                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.10),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       children: [
-                                        Icon(Icons.repeat_rounded, size: 12, color: Colors.white70),
+                                        Icon(Icons.repeat_rounded, size: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
                                         SizedBox(width: 4),
-                                        Text('Daily', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                                        Text('Daily', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 11)),
                                       ],
                                     ),
                                   ),
@@ -182,11 +182,11 @@ class _ReminderScreenState extends State<ReminderScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined, color: Colors.white54),
+                              icon: Icon(Icons.edit_outlined, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
                               onPressed: () => _showReminderForm(r),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                              icon: Icon(Icons.delete_outline, color: Colors.redAccent),
                               onPressed: () => _deleteReminder(r.id),
                             ),
                           ],
@@ -271,50 +271,50 @@ class _ReminderFormState extends State<_ReminderForm> {
           children: [
             Text(
               widget.initialData == null ? 'New Reminder' : 'Edit Reminder',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             TextFormField(
               controller: _nameCtrl,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: 'Medicine Name',
-                labelStyle: const TextStyle(color: Colors.white70),
-                prefixIcon: const Icon(Icons.medication_outlined, color: Colors.white54),
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
+                prefixIcon: Icon(Icons.medication_outlined, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
                 filled: true,
-                fillColor: AppColors.card,
+                fillColor: Theme.of(context).cardColor,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface, width: 1.5),
                 ),
               ),
               validator: (v) => v == null || v.trim().isEmpty ? 'Medicine name is required' : null,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             TextFormField(
               controller: _noteCtrl,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: 'Dosage Note (optional)',
-                labelStyle: const TextStyle(color: Colors.white70),
-                prefixIcon: const Icon(Icons.note_alt_outlined, color: Colors.white54),
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
+                prefixIcon: Icon(Icons.note_alt_outlined, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
                 filled: true,
-                fillColor: AppColors.card,
+                fillColor: Theme.of(context).cardColor,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface, width: 1.5),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
@@ -330,17 +330,17 @@ class _ReminderFormState extends State<_ReminderForm> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       decoration: BoxDecoration(
-                        color: AppColors.card,
+                        color: Theme.of(context).cardColor,
                         border: Border.all(color: AppColors.border),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.access_time_rounded, color: Colors.white70),
-                          const SizedBox(width: 12),
+                          Icon(Icons.access_time_rounded, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
+                          SizedBox(width: 12),
                           Text(
                             _time.format(context),
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -349,28 +349,28 @@ class _ReminderFormState extends State<_ReminderForm> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             SwitchListTile(
-              title: const Text('Repeat Daily', style: TextStyle(color: Colors.white)),
+              title: Text('Repeat Daily', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               contentPadding: EdgeInsets.zero,
               value: _repeatDaily,
               onChanged: (v) => setState(() => _repeatDaily = v),
-              activeThumbColor: Colors.white,
+              activeThumbColor: Theme.of(context).colorScheme.onSurface,
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               height: 55,
               child: FilledButton(
                 style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                    foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 onPressed: _saving ? null : _save,
                 child: Text(
                   _saving ? 'Saving…' : 'Save Reminder',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),

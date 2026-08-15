@@ -22,7 +22,7 @@ class UploadCard extends StatelessWidget {
             width: 1.5,
           ),
         ),
-        child: const Column(
+        child: Column(
           children: [
             Icon(
               Icons.upload_file_rounded,
@@ -33,7 +33,7 @@ class UploadCard extends StatelessWidget {
             Text(
               "Upload Report",
               style: TextStyle(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -43,7 +43,7 @@ class UploadCard extends StatelessWidget {
               "Tap here to upload a new medical report for analysis",
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white70,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
                 fontSize: 14,
               ),
             ),

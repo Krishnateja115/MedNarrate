@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
 
 class MedicineReminderCard extends StatelessWidget {
   const MedicineReminderCard({super.key});
@@ -16,13 +15,13 @@ class MedicineReminderCard extends StatelessWidget {
 
       decoration: BoxDecoration(
 
-        color: AppColors.card,
+        color: Theme.of(context).cardColor,
 
         borderRadius: BorderRadius.circular(22),
 
       ),
 
-      child: const Row(
+      child: Row(
 
         children: [
 
@@ -49,7 +48,7 @@ class MedicineReminderCard extends StatelessWidget {
                 Text(
                   "Today's Medicine",
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
                   ),
                 ),
 
@@ -58,7 +57,7 @@ class MedicineReminderCard extends StatelessWidget {
                 Text(
                   "Paracetamol 650 mg",
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),

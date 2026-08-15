@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../../reports/screens/reports_screen.dart';
+import '../../settings/screens/settings_screen.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../../core/constants/app_colors.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -18,41 +20,53 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
-      const DashboardScreen(),
-      const ReportsScreen(),
-      const ProfileScreen(),
+      DashboardScreen(),
+      ReportsScreen(),
+      SettingsScreen(),
+      ProfileScreen(),
     ];
 
     return Scaffold(
-      extendBody: true, // Required for the body to flow under the transparent nav bar
       body: IndexedStack(
         index: _selectedIndex,
         children: screens,
       ),
-      bottomNavigationBar: ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.6),
-              border: const Border(
-                top: BorderSide(color: Colors.white12, width: 0.5),
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.5), 
+                  width: 1,
+                ),
               ),
-            ),
-            child: BottomNavigationBar(
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  splashColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
+                  splashFactory: NoSplash.splashFactory,
+                ),
+                child: BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
               elevation: 0,
               backgroundColor: Colors.transparent,
-              selectedItemColor: Colors.white,
-              unselectedItemColor: Colors.white38,
+              selectedItemColor: AppColors.primary,
+              unselectedItemColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
               showSelectedLabels: true,
-              showUnselectedLabels: false,
+              showUnselectedLabels: true,
               currentIndex: _selectedIndex,
               onTap: (index) {
                 setState(() {
                   _selectedIndex = index;
                 });
               },
-              items: const [
+              items: [
                 BottomNavigationBarItem(
                   icon: Icon(Icons.dashboard_outlined),
                   activeIcon: Icon(Icons.dashboard_rounded),
@@ -64,15 +78,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   label: "Journal",
                 ),
                 BottomNavigationBarItem(
+                  icon: Icon(Icons.settings_outlined),
+                  activeIcon: Icon(Icons.settings_rounded),
+                  label: "Settings",
+                ),
+                BottomNavigationBarItem(
                   icon: Icon(Icons.person_outline),
                   activeIcon: Icon(Icons.person_rounded),
                   label: "Profile",
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
+    ),
     );
   }
 }

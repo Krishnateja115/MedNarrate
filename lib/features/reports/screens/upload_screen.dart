@@ -102,11 +102,11 @@ class _UploadScreenState extends State<UploadScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text('Upload Report'),
+        title: Text('Upload Report'),
       ),
       body: _processing
           ? Center(
@@ -114,12 +114,12 @@ class _UploadScreenState extends State<UploadScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const CircularProgressIndicator(),
-                  const SizedBox(height: 24),
-                  const Text('Analyzing your report with AI…',
-                      style: TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 8),
-                  const Text('This may take a minute.',
-                      style: TextStyle(color: Colors.white54, fontSize: 13)),
+                  SizedBox(height: 24),
+                  Text('Analyzing your report with AI…',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70))),
+                  SizedBox(height: 8),
+                  Text('This may take a minute.',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13)),
                 ],
               ),
             )
@@ -133,48 +133,48 @@ class _UploadScreenState extends State<UploadScreen> {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .06),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .06),
                         shape: BoxShape.circle,
                         border: Border.all(color: AppColors.border, width: 1),
                       ),
-                      child: const Icon(Icons.upload_file_rounded, color: Colors.white, size: 48),
+                      child: Icon(Icons.upload_file_rounded, color: Theme.of(context).colorScheme.onSurface, size: 48),
                     ),
-                    const SizedBox(height: 24),
-                    const Text('Upload Medical Report',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-                    const SizedBox(height: 6),
-                    const Text('PDF, JPG, JPEG, or PNG · max 25 MB',
-                        style: TextStyle(color: Colors.white54, fontSize: 13)),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 24),
+                    Text('Upload Medical Report',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    SizedBox(height: 6),
+                    Text('PDF, JPG, JPEG, or PNG · max 25 MB',
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13)),
+                    SizedBox(height: 28),
                     // Title
                     TextFormField(
                       controller: _titleCtrl,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       decoration: _inputDec('Title', Icons.title),
                       validator: (v) => v == null || v.trim().isEmpty ? 'Title is required' : null,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     // Hospital (optional)
                     TextFormField(
                       controller: _hospitalCtrl,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       decoration: _inputDec('Hospital (optional)', Icons.local_hospital_outlined),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     // Report type
                     DropdownButtonFormField<String>(
                       initialValue: _reportType,
-                      dropdownColor: AppColors.card,
-                      style: const TextStyle(color: Colors.white),
+                      dropdownColor: Theme.of(context).cardColor,
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       decoration: _inputDec('Report Type', Icons.category_outlined),
                       items: _reportTypes.map((t) => DropdownMenuItem(
                         value: t,
                         child: Text(Helpers.reportTypeLabel(t),
-                            style: const TextStyle(color: Colors.white)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                       )).toList(),
                       onChanged: (v) => setState(() => _reportType = v!),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     // Date picker
                     GestureDetector(
                       onTap: () async {
@@ -190,61 +190,61 @@ class _UploadScreenState extends State<UploadScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.card,
+                          color: Theme.of(context).cardColor,
                           border: Border.all(color: AppColors.border),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, color: Colors.white54, size: 20),
-                            const SizedBox(width: 12),
+                            Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 20),
+                            SizedBox(width: 12),
                             Text('Report Date: ${Formatters.formatDate(_reportDate)}',
-                                style: const TextStyle(color: Colors.white, fontSize: 15)),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15)),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     // File picker
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: OutlinedButton.icon(
                         onPressed: _uploading ? null : _pickFile,
-                        icon: Icon(Icons.attach_file_rounded, color: _selectedFile != null ? Colors.white : Colors.white70),
+                        icon: Icon(Icons.attach_file_rounded, color: _selectedFile != null ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
                         label: Text(
                           _selectedFile == null ? 'Choose File' : _selectedFile!.name,
                           style: TextStyle(
-                            color: _selectedFile != null ? Colors.white : Colors.white70,
+                            color: _selectedFile != null ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: _selectedFile != null ? Colors.white : AppColors.border, width: 1.5),
+                          side: BorderSide(color: _selectedFile != null ? Theme.of(context).colorScheme.onSurface : AppColors.border, width: 1.5),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          backgroundColor: _selectedFile != null ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
+                          backgroundColor: _selectedFile != null ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08) : Colors.transparent,
                         ),
                       ),
                     ),
                     if (_selectedFile != null) ...[
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.card,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AppColors.border, width: 1),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.insert_drive_file_outlined, color: Colors.white70),
-                            const SizedBox(width: 12),
+                            Icon(Icons.insert_drive_file_outlined, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
+                            SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(_selectedFile!.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                  Text(Formatters.formatFileSize(_selectedFile!.size), style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                  Text(_selectedFile!.name, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600)),
+                                  Text(Formatters.formatFileSize(_selectedFile!.size), style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 12)),
                                 ],
                               ),
                             ),
@@ -253,25 +253,25 @@ class _UploadScreenState extends State<UploadScreen> {
                       ),
                     ],
                     if (_errorMessage != null) ...[
-                      const SizedBox(height: 16),
-                      Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)),
+                      SizedBox(height: 16),
+                      Text(_errorMessage!, style: TextStyle(color: Colors.redAccent)),
                     ],
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       height: 55,
                       child: FilledButton(
                         style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          disabledBackgroundColor: Colors.white12,
-                          disabledForegroundColor: Colors.white30,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                                    foregroundColor: Colors.white,
+                          disabledBackgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                          disabledForegroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.30),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         onPressed: (_uploading || _selectedFile == null) ? null : _upload,
                         child: Text(
                           _uploading ? 'Uploading…' : 'Upload & Analyze',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -284,25 +284,25 @@ class _UploadScreenState extends State<UploadScreen> {
 
   InputDecoration _inputDec(String label, IconData icon) => InputDecoration(
     labelText: label,
-    labelStyle: const TextStyle(color: Colors.white70),
-    prefixIcon: Icon(icon, color: Colors.white54),
+    labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
+    prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
     filled: true,
-    fillColor: AppColors.card,
+    fillColor: Theme.of(context).cardColor,
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: AppColors.border),
+      borderSide: BorderSide(color: AppColors.border),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Colors.white, width: 1.5),
+      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface, width: 1.5),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Colors.redAccent),
+      borderSide: BorderSide(color: Colors.redAccent),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Colors.redAccent),
+      borderSide: BorderSide(color: Colors.redAccent),
     ),
   );
 }

@@ -23,7 +23,7 @@ class RecentReportCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
 
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(22),
       ),
 
@@ -43,7 +43,7 @@ class RecentReportCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
 
           Expanded(
             child: Column(
@@ -54,28 +54,28 @@ class RecentReportCard extends StatelessWidget {
 
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
 
-                const SizedBox(height: 5),
+                SizedBox(height: 5),
 
                 Text(
                   hospital,
-                  style: const TextStyle(
-                    color: Colors.white60,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.60),
                   ),
                 ),
 
-                const SizedBox(height: 3),
+                SizedBox(height: 3),
 
                 Text(
                   date,
-                  style: const TextStyle(
-                    color: Colors.white38,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                   ),
                 ),
 
@@ -83,9 +83,9 @@ class RecentReportCard extends StatelessWidget {
             ),
           ),
 
-          const Icon(
+          Icon(
             Icons.arrow_forward_ios,
-            color: Colors.white38,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
             size: 18,
           )
 

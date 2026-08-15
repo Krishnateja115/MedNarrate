@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/services/api_models.dart';
@@ -56,7 +55,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
 
   Future<void> _loadPoints(String testName) async {
     try {
-      final points = await ApiService.instance.compareReports(testName);
+      final points = await ApiService.instance.getTestTrend(testName);
       if (mounted) setState(() => _points = points);
     } catch (_) {}
   }
@@ -64,16 +63,16 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text('Timeline'),
+        title: Text('Timeline'),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
+              ? Center(child: Text(_error!, style: TextStyle(color: Colors.red)))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -85,17 +84,17 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: AppColors.card,
+                              color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Compared to Previous Report',
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                                const SizedBox(height: 8),
+                                Text('Compared to Previous Report',
+                                    style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                                SizedBox(height: 8),
                                 Text(_comparison!.narrativeSummary!,
-                                    style: const TextStyle(color: Colors.white70, height: 1.5)),
+                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), height: 1.5)),
                               ],
                             ),
                           )
@@ -103,24 +102,24 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: AppColors.card,
+                              color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Text('No earlier report available for comparison.',
-                                style: TextStyle(color: Colors.white54)),
+                            child: Text('No earlier report available for comparison.',
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
                           ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                       ],
 
                       // Test selector
                       if (_availableTests.isNotEmpty) ...[
-                        const Text('Test Trend',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                        const SizedBox(height: 12),
+                        Text('Test Trend',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        SizedBox(height: 12),
                         DropdownButton<String>(
                           value: _selectedTest,
-                          dropdownColor: AppColors.card,
-                          style: const TextStyle(color: Colors.white),
+                          dropdownColor: Theme.of(context).cardColor,
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           underline: const SizedBox.shrink(),
                           onChanged: (v) {
                             setState(() { _selectedTest = v!; _points = null; });
@@ -128,21 +127,21 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                           },
                           items: _availableTests.map((t) => DropdownMenuItem(
                             value: t,
-                            child: Text(t, style: const TextStyle(color: Colors.white)),
+                            child: Text(t, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                           )).toList(),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         if (_points == null)
-                          const Center(child: CircularProgressIndicator())
+                          Center(child: CircularProgressIndicator())
                         else if (_points!.isEmpty)
-                          const Text('No historical data for this test.',
-                              style: TextStyle(color: Colors.white54))
+                          Text('No historical data for this test.',
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)))
                         else
                           Container(
                             height: 220,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.card,
+                              color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: LineChart(
@@ -154,10 +153,10 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                                       showTitles: true,
                                       getTitlesWidget: (value, meta) {
                                         final idx = value.toInt();
-                                        if (idx < 0 || idx >= _points!.length) return const SizedBox();
+                                        if (idx < 0 || idx >= _points!.length) return SizedBox();
                                         return Text(
                                           Formatters.formatMonthYear(_points![idx].reportDate),
-                                          style: const TextStyle(color: Colors.white54, fontSize: 9),
+                                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 9),
                                         );
                                       },
                                     ),
@@ -166,7 +165,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                                     sideTitles: SideTitles(showTitles: true,
                                       getTitlesWidget: (value, meta) => Text(
                                         value.toStringAsFixed(1),
-                                        style: const TextStyle(color: Colors.white54, fontSize: 10),
+                                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 10),
                                       ),
                                     ),
                                   ),
@@ -188,7 +187,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                                           radius: 5,
                                           color: Helpers.flagColor(_points![idx].flag),
                                           strokeWidth: 2,
-                                          strokeColor: Colors.white,
+                                          strokeColor: Theme.of(context).colorScheme.onSurface,
                                         ),
                                     ),
                                   ),

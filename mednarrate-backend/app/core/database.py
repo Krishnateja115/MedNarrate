@@ -4,13 +4,33 @@ from app.core.config import settings
 
 import sys
 from sqlalchemy.pool import NullPool
+import os
 
-# SQLite needs check_same_thread=False; PostgreSQL doesn't need connect_args
-_connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+if not settings.DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is required for production.")
 
 _poolclass = NullPool if "pytest" in sys.modules else None
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False, connect_args=_connect_args, poolclass=_poolclass)
+if settings.DATABASE_URL.startswith("sqlite"):
+    _connect_args = {"check_same_thread": False}
+    engine = create_async_engine(settings.DATABASE_URL, echo=False, connect_args=_connect_args, poolclass=_poolclass)
+else:
+    if _poolclass is NullPool:
+        engine = create_async_engine(
+            settings.DATABASE_URL, 
+            echo=False, 
+            poolclass=_poolclass
+        )
+    else:
+        engine = create_async_engine(
+            settings.DATABASE_URL, 
+            echo=False, 
+            poolclass=_poolclass,
+            pool_size=10, 
+            max_overflow=20, 
+            pool_timeout=30
+        )
+
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 Base = declarative_base()

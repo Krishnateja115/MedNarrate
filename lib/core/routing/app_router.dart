@@ -5,6 +5,7 @@ import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
+import '../../features/auth/screens/app_lock_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 import '../../features/reports/screens/upload_screen.dart';
@@ -17,7 +18,9 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/medical_profile_screen.dart';
 import '../../features/profile/screens/emergency_contact_screen.dart';
 import '../../features/reminders/screens/reminder_screen.dart';
+import '../../features/reminders/screens/medication_schedules_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/navigation/screens/main_navigation_screen.dart';
 import 'routes.dart';
 
 class AppRouter {
@@ -47,8 +50,12 @@ class AppRouter {
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
+        path: '/app-lock',
+        builder: (context, state) => const AppLockScreen(),
+      ),
+      GoRoute(
         path: Routes.dashboard,
-        builder: (context, state) => const DashboardScreen(),
+        builder: (context, state) => const MainNavigationScreen(),
       ),
       GoRoute(
         path: Routes.reports,
@@ -84,6 +91,10 @@ class AppRouter {
       GoRoute(
         path: Routes.reminders,
         builder: (context, state) => const ReminderScreen(),
+      ),
+      GoRoute(
+        path: Routes.medications,
+        builder: (context, state) => const MedicationSchedulesScreen(),
       ),
       GoRoute(
         path: Routes.settings,

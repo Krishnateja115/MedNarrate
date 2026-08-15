@@ -73,11 +73,11 @@ def test_extract_lab_values_edge_cases():
 @patch("app.services.analysis_pipeline.get_ner_pipeline")
 @patch("app.services.analysis_pipeline.generate")
 @patch("app.services.analysis_pipeline.extract_text_from_file")
-async def test_run_analysis_mocked(mock_extract, mock_generate, mock_ner):
+async def test_run_analysis_mocked(mock_extract, mock_generate, mock_ner, db_session):
+    db = db_session
     from app.services.analysis_pipeline import run_analysis
     from app.models.report import Report, ProcessingStatus
     from app.models.report_analysis import ReportAnalysis
-    from app.core.database import AsyncSessionLocal
     
     # Mocks
     mock_extract.return_value = "Glucose 120 mg/dL (70-99)"
@@ -88,62 +88,60 @@ async def test_run_analysis_mocked(mock_extract, mock_generate, mock_ner):
     
     from datetime import date
     # Create a test report in DB manually
-    async with AsyncSessionLocal() as db:
-        # We need a user first
-        from app.models.user import User
-        user = User(email="test_analysis@example.com", hashed_password="pw", full_name="User")
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-        
-        report = Report(
-            user_id=user.id,
-            title="Test Report",
-            report_date=date(2024, 1, 1),
-            file_name="test.pdf",
-            file_path="dummy/test.pdf",
-            file_type="pdf",
-            report_type="blood"
-        )
-        db.add(report)
-        await db.commit()
-        await db.refresh(report)
-        report_id = report.id
+    # We need a user first
+    from app.models.user import User
+    user = User(email="test_analysis@example.com", hashed_password="pw", full_name="User")
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    
+    report = Report(
+        user_id=user.id,
+        title="Test Report",
+        report_date=date(2024, 1, 1),
+        file_name="test.pdf",
+        file_path="dummy/test.pdf",
+        file_type="pdf",
+        report_type="blood"
+    )
+    db.add(report)
+    await db.commit()
+    await db.refresh(report)
+    report_id = report.id
         
     # Run analysis
-    await run_analysis(report_id)
+    await run_analysis(report_id, db)
     
     # Assert side effects
-    async with AsyncSessionLocal() as db:
-        from sqlalchemy.future import select
-        stmt = select(Report).where(Report.id == report_id)
-        result = await db.execute(stmt)
-        report = result.scalars().first()
-        assert report.processing_status == ProcessingStatus.completed
-        
-        stmt = select(ReportAnalysis).where(ReportAnalysis.report_id == report_id)
-        result = await db.execute(stmt)
-        analysis = result.scalars().first()
-        
-        assert analysis is not None
-        assert len(analysis.structured_lab_values) == 1
-        assert analysis.structured_lab_values[0]["test_name"] == "glucose"
-        assert analysis.structured_lab_values[0]["flag"] == "high"
-        
-        assert len(analysis.abnormal_findings) == 1
-        assert analysis.clinician_summary == "Mocked LLM summary"
-        assert analysis.patient_summary == "Mocked LLM summary"
+    from sqlalchemy.future import select
+    stmt = select(Report).where(Report.id == report_id)
+    result = await db.execute(stmt)
+    report = result.scalars().first()
+    assert report.processing_status == ProcessingStatus.completed
+    
+    stmt = select(ReportAnalysis).where(ReportAnalysis.report_id == report_id)
+    result = await db.execute(stmt)
+    analysis = result.scalars().first()
+    
+    assert analysis is not None
+    assert len(analysis.structured_lab_values) == 1
+    assert analysis.structured_lab_values[0]["test_name"] == "glucose"
+    assert analysis.structured_lab_values[0]["flag"] == "high"
+    
+    assert len(analysis.abnormal_findings) == 1
+    assert analysis.clinician_summary == "Mocked LLM summary"
+    assert analysis.patient_summary == "Mocked LLM summary"
 
 @pytest.mark.asyncio
 @patch("app.services.analysis_pipeline.extract_lab_values")
 @patch("app.services.analysis_pipeline.get_ner_pipeline")
 @patch("app.services.analysis_pipeline.generate")
 @patch("app.services.analysis_pipeline.extract_text_from_file")
-async def test_run_analysis_defensive_filtering(mock_extract, mock_generate, mock_ner, mock_extract_lab_values):
+async def test_run_analysis_defensive_filtering(mock_extract, mock_generate, mock_ner, mock_extract_lab_values, db_session):
+    db = db_session
     from app.services.analysis_pipeline import run_analysis
     from app.models.report import Report
     from app.models.report_analysis import ReportAnalysis
-    from app.core.database import AsyncSessionLocal
     
     mock_extract.return_value = "dummy text"
     mock_generate.return_value = "Mocked LLM summary"
@@ -159,36 +157,35 @@ async def test_run_analysis_defensive_filtering(mock_extract, mock_generate, moc
     ]
     
     from datetime import date
-    async with AsyncSessionLocal() as db:
-        from app.models.user import User
-        user = User(email="test_filter@example.com", hashed_password="pw", full_name="User")
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-
-        report = Report(
-            user_id=user.id, title="Test Filter", report_date=date(2024, 1, 1),
-            file_name="test.pdf", file_path="dummy.pdf", file_type="pdf", report_type="blood"
-        )
-        db.add(report)
-        await db.commit()
-        await db.refresh(report)
-        report_id = report.id
-        
-    await run_analysis(report_id)
+    from app.models.user import User
     
-    async with AsyncSessionLocal() as db:
-        from sqlalchemy.future import select
-        stmt = select(ReportAnalysis).where(ReportAnalysis.report_id == report_id)
-        result = await db.execute(stmt)
-        analysis = result.scalars().first()
+    user = User(email="test_filter@example.com", hashed_password="pw", full_name="User")
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    report = Report(
+        user_id=user.id, title="Test Filter", report_date=date(2024, 1, 1),
+        file_name="test.pdf", file_path="dummy.pdf", file_type="pdf", report_type="blood"
+    )
+    db.add(report)
+    await db.commit()
+    await db.refresh(report)
+    report_id = report.id
         
-        # Ensure it didn't crash and only 1 valid lab was saved
-        assert analysis is not None
-        assert len(analysis.structured_lab_values) == 1
-        assert analysis.structured_lab_values[0]["test_name"] == "valid"
-        assert analysis.structured_lab_values[0]["flag"] == "normal"
-        
-        assert len(analysis.abnormal_findings) == 0
-        assert analysis.clinician_summary == "Mocked LLM summary"
-        assert analysis.patient_summary == "Mocked LLM summary"
+    await run_analysis(report_id, db)
+    
+    from sqlalchemy.future import select
+    stmt = select(ReportAnalysis).where(ReportAnalysis.report_id == report_id)
+    result = await db.execute(stmt)
+    analysis = result.scalars().first()
+    
+    # Ensure it didn't crash and only 1 valid lab was saved
+    assert analysis is not None
+    assert len(analysis.structured_lab_values) == 1
+    assert analysis.structured_lab_values[0]["test_name"] == "valid"
+    assert analysis.structured_lab_values[0]["flag"] == "normal"
+    
+    assert len(analysis.abnormal_findings) == 0
+    assert analysis.clinician_summary == "Mocked LLM summary"
+    assert analysis.patient_summary == "Mocked LLM summary"

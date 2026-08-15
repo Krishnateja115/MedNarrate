@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
 
 class HealthProgressCard extends StatelessWidget {
 
@@ -17,13 +16,13 @@ class HealthProgressCard extends StatelessWidget {
 
       decoration: BoxDecoration(
 
-        color: AppColors.card,
+        color: Theme.of(context).cardColor,
 
         borderRadius: BorderRadius.circular(22),
 
       ),
 
-      child: const Column(
+      child: Column(
 
         crossAxisAlignment: CrossAxisAlignment.start,
 
@@ -35,7 +34,7 @@ class HealthProgressCard extends StatelessWidget {
 
             style: TextStyle(
 
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
 
               fontSize: 20,
 
@@ -47,12 +46,12 @@ class HealthProgressCard extends StatelessWidget {
 
           SizedBox(height: 18),
 
-          LinearProgressIndicator(
-
-            value: .82,
-
-            minHeight: 10,
-
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: .82,
+              minHeight: 10,
+            ),
           ),
 
           SizedBox(height: 15),
@@ -63,7 +62,7 @@ class HealthProgressCard extends StatelessWidget {
 
             style: TextStyle(
 
-              color: Colors.white70,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
 
               height: 1.5,
 

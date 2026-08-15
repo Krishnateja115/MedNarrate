@@ -11,6 +11,9 @@ class ReportModel {
   final String processingStatus;
   final bool isFavourite;
   final DateTime uploadedAt;
+  final List<Map<String, dynamic>> metrics;
+  final String? clinicalSummary;
+  final String? aiSummary;
 
   const ReportModel({
     required this.id,
@@ -25,6 +28,9 @@ class ReportModel {
     required this.processingStatus,
     required this.isFavourite,
     required this.uploadedAt,
+    this.metrics = const [],
+    this.clinicalSummary,
+    this.aiSummary,
   });
 
   ReportModel copyWith({
@@ -40,6 +46,9 @@ class ReportModel {
     String? processingStatus,
     bool? isFavourite,
     DateTime? uploadedAt,
+    List<Map<String, dynamic>>? metrics,
+    String? clinicalSummary,
+    String? aiSummary,
   }) {
     return ReportModel(
       id: id ?? this.id,
@@ -54,6 +63,9 @@ class ReportModel {
       processingStatus: processingStatus ?? this.processingStatus,
       isFavourite: isFavourite ?? this.isFavourite,
       uploadedAt: uploadedAt ?? this.uploadedAt,
+      metrics: metrics ?? this.metrics,
+      clinicalSummary: clinicalSummary ?? this.clinicalSummary,
+      aiSummary: aiSummary ?? this.aiSummary,
     );
   }
 
@@ -71,6 +83,9 @@ class ReportModel {
       "processingStatus": processingStatus,
       "isFavourite": isFavourite,
       "uploadedAt": uploadedAt.toIso8601String(),
+      "metrics": metrics,
+      "clinicalSummary": clinicalSummary,
+      "aiSummary": aiSummary,
     };
   }
 
@@ -94,6 +109,9 @@ class ReportModel {
       uploadedAt: map["uploadedAt"] != null 
           ? DateTime.tryParse(map["uploadedAt"].toString()) ?? DateTime.now() 
           : DateTime.now(),
+      metrics: List<Map<String, dynamic>>.from(map["metrics"] ?? []),
+      clinicalSummary: map["clinicalSummary"]?.toString(),
+      aiSummary: map["aiSummary"]?.toString(),
     );
   }
 
