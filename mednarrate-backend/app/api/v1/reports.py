@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
+from fastapi.responses import Response
+import csv
+import io
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import or_, desc
@@ -382,3 +385,35 @@ async def compare_reports_multiple(
         comparisons=comparisons,
         ai_summary=ai_summary
     )
+
+@router.get("/{id}/export/csv")
+async def export_report_csv(
+    id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    report = await verify_report_ownership(id, str(current_user.id), db)
+    
+    stmt = select(ReportAnalysis).where(ReportAnalysis.report_id == report.id)
+    analysis = (await db.execute(stmt)).scalars().first()
+    
+    if not analysis or not analysis.structured_lab_values:
+        raise HTTPException(status_code=404, detail="No structured lab data available for this report")
+        
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Test Name", "Value", "Unit", "Reference Low", "Reference High", "Status Flag"])
+    
+    for val in analysis.structured_lab_values:
+        writer.writerow([
+            val.get("test_name", ""),
+            val.get("value", ""),
+            val.get("unit", ""),
+            val.get("ref_low", ""),
+            val.get("ref_high", ""),
+            val.get("flag", "")
+        ])
+        
+    response = Response(content=output.getvalue(), media_type="text/csv")
+    response.headers["Content-Disposition"] = f"attachment; filename=report_{id}_export.csv"
+    return response

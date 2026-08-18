@@ -113,3 +113,19 @@ async def test_delete_removes_file(client: AsyncClient, auth_headers):
     assert del_resp.status_code == 204
     
     assert not os.path.exists(local_path)
+
+async def test_export_csv(client: AsyncClient, auth_headers):
+    file_content = b"%PDF-1.4 dummy pdf content"
+    files = {"file": ("test.pdf", file_content, "application/pdf")}
+    data = {
+        "title": "Export Test",
+        "report_date": "2024-01-01",
+        "report_type": "blood"
+    }
+    
+    resp = await client.post("/api/v1/reports/upload", headers=auth_headers, files=files, data=data)
+    report_id = resp.json()["id"]
+    
+    export_resp = await client.get(f"/api/v1/reports/{report_id}/export/csv", headers=auth_headers)
+    assert export_resp.status_code == 404
+    assert export_resp.json()["detail"] == "No structured lab data available for this report"

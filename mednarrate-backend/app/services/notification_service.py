@@ -9,11 +9,15 @@ logger = logging.getLogger(__name__)
 # Initialize FCM globally
 try:
     if not firebase_admin._apps:
-        # In production, use real credentials path from settings
-        # cred = credentials.Certificate('path/to/serviceAccountKey.json')
-        # firebase_admin.initialize_app(cred)
-        # For this dev setup, we mock it if no key is present, but load it if needed.
-        logger.info("Firebase Admin initialized (mocked for dev unless credentials exist).")
+        from app.core.config import settings
+        import os
+        cred_path = settings.GOOGLE_APPLICATION_CREDENTIALS or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+        if cred_path and os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            logger.info("Firebase Admin initialized with credentials.")
+        else:
+            logger.info("Firebase Admin initialized (mocked for dev as no credentials exist).")
 except Exception as e:
     logger.error(f"Failed to initialize Firebase Admin: {e}")
 
@@ -24,14 +28,12 @@ async def send_push_notification(db: AsyncSession, user_id: str, token: str, tit
     
     try:
         if firebase_admin._apps:
-            # We mock sending if not fully configured with a service account
-            # message = messaging.Message(
-            #     notification=messaging.Notification(title=title, body=body),
-            #     token=token,
-            # )
-            # response = messaging.send(message)
-            # logger.info(f"Successfully sent message: {response}")
-            logger.info(f"[MOCK FCM] Sent to {token}: {title} - {body}")
+            message = messaging.Message(
+                notification=messaging.Notification(title=title, body=body),
+                token=token,
+            )
+            response = messaging.send(message)
+            logger.info(f"Successfully sent message: {response}")
         else:
             logger.info(f"[MOCK FCM - No App] Sent to {token}: {title} - {body}")
     except Exception as e:

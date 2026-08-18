@@ -98,14 +98,18 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
             )
             q_emb = q_res['embedding']
             
-            # Simple cosine similarity in Python (since embedding_json is JSON here to support BM25 fallback easily without pgvector strict deps)
-            import numpy as np
-            def cosine_sim(a, b):
-                return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-                
-            scored_chunks = [(c, cosine_sim(q_emb, c.embedding_json)) for c in chunks]
-            scored_chunks.sort(key=lambda x: x[1], reverse=True)
-            top_chunks = [c[0] for c in scored_chunks[:top_k]]
+            if settings.DATABASE_URL.startswith("postgresql"):
+                stmt_vector = select(RagChunk).where(RagChunk.report_id == report_id).order_by(RagChunk.embedding_json.cosine_distance(q_emb)).limit(top_k)
+                result_vector = await db.execute(stmt_vector)
+                top_chunks = result_vector.scalars().all()
+            else:
+                import numpy as np
+                def cosine_sim(a, b):
+                    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+                    
+                scored_chunks = [(c, cosine_sim(q_emb, c.embedding_json)) for c in chunks]
+                scored_chunks.sort(key=lambda x: x[1], reverse=True)
+                top_chunks = [c[0] for c in scored_chunks[:top_k]]
         except Exception as e:
             logger.error(f"Semantic search failed, falling back to BM25: {e}")
             has_embeddings = False
