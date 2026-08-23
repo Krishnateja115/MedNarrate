@@ -5,7 +5,7 @@ import 'package:mednarrate/features/reminders/models/medication_schedule_model.d
 // Simple standalone MedicationCard widget for testability
 class MedicationCard extends StatelessWidget {
   final MedicationScheduleModel medication;
-  const MedicationCard({Key? key, required this.medication}) : super(key: key);
+  const MedicationCard({super.key, required this.medication});
 
   @override
   Widget build(BuildContext context) {

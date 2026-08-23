@@ -8,7 +8,7 @@ import '../../../core/services/storage_service.dart';
 import 'dart:async';
 
 class AppLockScreen extends StatefulWidget {
-  const AppLockScreen({Key? key}) : super(key: key);
+  const AppLockScreen({super.key});
 
   @override
   State<AppLockScreen> createState() => _AppLockScreenState();

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/services/connectivity_service.dart';
 
 class OfflineBanner extends StatefulWidget {
-  const OfflineBanner({Key? key}) : super(key: key);
+  const OfflineBanner({super.key});
 
   @override
   State<OfflineBanner> createState() => _OfflineBannerState();

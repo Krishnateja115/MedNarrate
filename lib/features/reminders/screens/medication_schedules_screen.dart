@@ -4,7 +4,7 @@ import '../../../shared/widgets/glassmorphism_card.dart';
 import '../models/medication_schedule_model.dart';
 
 class MedicationSchedulesScreen extends StatefulWidget {
-  const MedicationSchedulesScreen({Key? key}) : super(key: key);
+  const MedicationSchedulesScreen({super.key});
 
   @override
   State<MedicationSchedulesScreen> createState() => _MedicationSchedulesScreenState();
@@ -91,7 +91,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
         title: const Text('Medication Reminders'),
         flexibleSpace: ClipRect(
           child: BackdropFilter(
-            filter: ColorFilter.mode(Colors.black.withOpacity(0.01), BlendMode.srcOver),
+            filter: ColorFilter.mode(Colors.black.withValues(alpha: 0.01), BlendMode.srcOver),
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -103,8 +103,8 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             ],
           ),
         ),
@@ -142,13 +142,13 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.medication, size: 80, color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+            Icon(Icons.medication, size: 80, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
             const SizedBox(height: 24),
             Text(
               'No medication schedules found in your reports yet. Upload a report that contains prescriptions to start tracking.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
             ),
             const SizedBox(height: 32),
@@ -211,7 +211,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE8183C).withOpacity(0.1),
+                                color: const Color(0xFFE8183C).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -302,7 +302,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
                       )
                     : Switch(
                         value: schedule.isActive,
-                        activeColor: const Color(0xFFE8183C),
+                        activeThumbColor: const Color(0xFFE8183C),
                         onChanged: (val) => _toggleSchedule(schedule.id, schedule.isActive),
                       ),
               ],

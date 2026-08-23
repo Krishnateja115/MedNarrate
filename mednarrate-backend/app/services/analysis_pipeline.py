@@ -9,17 +9,23 @@ from app.models.user import User
 from app.services.text_extraction import extract_text_from_file, clean_extracted_text
 from app.services.model_registry import get_ner_pipeline
 from app.services.lab_value_extractor import extract_lab_values, extract_medication_schedule
-from app.services.prompts import CLINICIAN_PROMPT, PATIENT_PROMPT, ROLE_INSTRUCTIONS
+from app.services.prompts import CLINICIAN_PROMPT, PATIENT_PROMPT, ROLE_INSTRUCTIONS, get_examples_text
 from app.services.llm_client import generate
 from app.services.rag import process_report_for_rag
 from app.services.multilingual import translate_report_summary
 from app.core.database import AsyncSessionLocal
 import uuid
 from datetime import datetime, timezone
+import asyncio
+from tenacity import retry, stop_after_attempt, wait_exponential
 from pydantic import ValidationError
 from app.schemas.report import LabValue, AbnormalFinding, Entity
 
 logger = logging.getLogger(__name__)
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+async def generate_with_timeout(prompt: str, timeout: int = 30):
+    return await asyncio.wait_for(generate(prompt), timeout=timeout)
 
 def check_hallucinated_tests(patient_summary: str, structured_lab_values: list):
     """Logs a warning if a test name absent from structured data is mentioned in patient_summary."""
@@ -112,18 +118,20 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         )
         
         role_instruction = ROLE_INSTRUCTIONS.get(user_role, ROLE_INSTRUCTIONS["patient"])
+        examples = get_examples_text()
         patient_prompt = PATIENT_PROMPT.format(
             report_type=report.report_type.value,
             structured_values_json=structured_values_json,
             user_role=user_role,
             role_specific_instruction=role_instruction,
+            examples=examples
         )
         
         if rag_context:
             patient_prompt += f"\n\nUse the following reference knowledge if relevant:\n{rag_context}"
             
-        clinician_summary = await generate(clinician_prompt)
-        patient_summary = await generate(patient_prompt)
+        clinician_summary = await generate_with_timeout(clinician_prompt)
+        patient_summary = await generate_with_timeout(patient_prompt)
         
         check_hallucinated_tests(patient_summary, structured_lab_values)
         

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
 
 class ReportsFilterChip extends StatelessWidget {
   final String label;

@@ -40,11 +40,6 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
     super.dispose();
   }
 
-  void _switchToChatTabAndQuery(String query) {
-    _tabController.animateTo(2);
-    // Ideally we would pass the query down to AIChatTab, but since it's already built, 
-    // it requires some state management. We'll leave it as switching tabs for now.
-  }
 
   @override
   Widget build(BuildContext context) {

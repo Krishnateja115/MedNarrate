@@ -132,36 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _logout() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Logout', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-        content: Text('Are you sure you want to log out?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
-        backgroundColor: Theme.of(context).cardColor,
-        actions: [
-          TextButton(onPressed: () => context.pop(false), child: Text('Cancel')),
-          TextButton(
-            onPressed: () => context.pop(true),
-            child: Text('Logout', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    
-    setState(() => _loading = true);
-    try {
-      await _apiService.logout();
-    } catch (_) {
-      // Ignore API errors on logout
-    } finally {
-      await _storageService.clearTokens();
-      if (mounted) {
-        context.go(Routes.login);
-      }
-    }
-  }
+
 
   void _showComingSoon() {
     Helpers.showSuccess(context, 'This feature is coming soon!');
@@ -274,7 +245,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     trailing: Switch(
                       value: _biometricEnabled,
                       onChanged: _biometricAvailable ? _toggleBiometric : null,
-                      activeColor: Theme.of(context).colorScheme.primary,
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
                     ),
                     onTap: _biometricAvailable ? () => _toggleBiometric(!_biometricEnabled) : null,
                   ),
@@ -320,7 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     trailing: Switch(
                       value: _professionalMode,
                       onChanged: _toggleProfessionalMode,
-                      activeColor: Theme.of(context).colorScheme.primary,
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
                     ),
                     onTap: () => _toggleProfessionalMode(!_professionalMode),
                   ),
@@ -365,7 +336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     trailing: Switch(
                       value: _notificationsEnabled,
                       onChanged: _toggleNotifications,
-                      activeColor: Theme.of(context).colorScheme.primary,
+                      activeThumbColor: Theme.of(context).colorScheme.primary,
                     ),
                     onTap: () => _toggleNotifications(!_notificationsEnabled),
                   ),

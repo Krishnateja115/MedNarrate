@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/reminder_service.dart';

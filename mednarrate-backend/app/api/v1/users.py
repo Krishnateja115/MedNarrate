@@ -73,3 +73,12 @@ async def update_users_me(
         "medical_profile": medical_profile
     }
     return current_user_dict
+
+@router.delete("/me", status_code=204)
+async def delete_users_me(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    await db.delete(current_user)
+    await db.commit()
+    return None

@@ -10,9 +10,7 @@ class StorageService {
   StorageService._();
   static final StorageService instance = StorageService._();
 
-  static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
+  static const _storage = FlutterSecureStorage();
 
   static const _keyAccess = 'access_token';
   static const _keyRefresh = 'refresh_token';

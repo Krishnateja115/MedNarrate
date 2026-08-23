@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mednarrate/features/insights/screens/insights_controller.dart';
-import 'package:mednarrate/features/reports/models/report_model.dart';
 
 void main() {
   group('InsightsController Unit Tests', () {

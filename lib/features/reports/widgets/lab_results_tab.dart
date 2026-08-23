@@ -144,7 +144,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
                       maxRange: (m['max_range'] as num).toDouble(),
                       onTap: () => _showParameterDetails(context, m),
                     );
-                  }).toList(),
+                  }),
                 ],
               );
             },

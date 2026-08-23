@@ -8,8 +8,18 @@ import google.generativeai as genai
 
 from app.models.rag_chunk import RagChunk
 from app.core.config import settings
+import chromadb
+import os
 
 logger = logging.getLogger(__name__)
+
+KB_INDEX = os.path.join(os.path.dirname(__file__), "..", "..", "data", "kb_index")
+try:
+    chroma_client = chromadb.PersistentClient(path=KB_INDEX)
+    kb_collection = chroma_client.get_or_create_collection("medical_knowledge")
+except Exception as e:
+    logger.warning(f"Could not initialize ChromaDB: {e}")
+    kb_collection = None
 
 if settings.GEMINI_API_KEY:
     genai.configure(api_key=settings.GEMINI_API_KEY)
@@ -136,3 +146,18 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
         total_chars += len(part)
         
     return "\n\n".join(context_parts)
+
+async def retrieve_kb_context(query: str, top_k: int = 3) -> str:
+    """Query the global medical knowledge base."""
+    if not kb_collection:
+        return ""
+    try:
+        results = kb_collection.query(
+            query_texts=[query],
+            n_results=top_k
+        )
+        if results and results['documents'] and results['documents'][0]:
+            return "\n\n".join(results['documents'][0])
+    except Exception as e:
+        logger.error(f"Error querying KB: {e}")
+    return ""

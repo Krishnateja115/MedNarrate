@@ -7,7 +7,7 @@ import '../../../shared/widgets/glassmorphism_card.dart';
 class ParameterCard extends StatelessWidget {
   final ParameterComparison comparison;
 
-  const ParameterCard({Key? key, required this.comparison}) : super(key: key);
+  const ParameterCard({super.key, required this.comparison});
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +109,7 @@ class ParameterCard extends StatelessWidget {
                         child: Text(
                           comparison.aiSummary!,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.85),
+                            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.85),
                           ),
                         ),
                       ),
@@ -222,13 +222,13 @@ class ParameterCard extends StatelessWidget {
               ? [
                   HorizontalLine(
                     y: refMax,
-                    color: Colors.green.withOpacity(0.3),
+                    color: Colors.green.withValues(alpha: 0.3),
                     strokeWidth: 2,
                     dashArray: [5, 5],
                   ),
                   HorizontalLine(
                     y: refMin,
-                    color: Colors.green.withOpacity(0.3),
+                    color: Colors.green.withValues(alpha: 0.3),
                     strokeWidth: 2,
                     dashArray: [5, 5],
                   ),
@@ -262,7 +262,7 @@ class ParameterCard extends StatelessWidget {
             ),
             belowBarData: BarAreaData(
               show: true,
-              color: const Color(0xFFE8183C).withOpacity(0.1),
+              color: const Color(0xFFE8183C).withValues(alpha: 0.1),
             ),
           ),
         ],

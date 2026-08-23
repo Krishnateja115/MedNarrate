@@ -1,42 +1,38 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base
 from app.core.config import settings
-
 import sys
 from sqlalchemy.pool import NullPool
-import os
 
-if not settings.DATABASE_URL:
-    raise RuntimeError("DATABASE_URL environment variable is required for production.")
+# Determine if we're in a test environment
+is_test = "pytest" in sys.modules
+pool_class = NullPool if is_test else None
 
-_poolclass = NullPool if "pytest" in sys.modules else None
+is_sqlite = settings.DATABASE_URL.startswith("sqlite")
+engine_kwargs = {
+    "echo": settings.ENVIRONMENT == "development",
+    "pool_pre_ping": True,
+}
 
-if settings.DATABASE_URL.startswith("sqlite"):
-    _connect_args = {"check_same_thread": False}
-    engine = create_async_engine(settings.DATABASE_URL, echo=False, connect_args=_connect_args, poolclass=_poolclass)
-else:
-    if _poolclass is NullPool:
-        engine = create_async_engine(
-            settings.DATABASE_URL, 
-            echo=False, 
-            poolclass=_poolclass
-        )
-    else:
-        engine = create_async_engine(
-            settings.DATABASE_URL, 
-            echo=False, 
-            poolclass=_poolclass,
-            pool_size=10, 
-            max_overflow=20, 
-            pool_timeout=30
-        )
+if not is_sqlite:
+    engine_kwargs.update({
+        "pool_size": 5 if not is_test else 0,
+        "max_overflow": 10 if not is_test else 0,
+        "pool_timeout": 30,
+        "pool_recycle": 1800,
+    })
 
+if pool_class:
+    engine_kwargs["poolclass"] = pool_class
+
+engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 Base = declarative_base()
 
 async def init_db():
-    """Create all tables if they don't exist (dev/SQLite mode)."""
+    """Create all tables if they don't exist (dev mode)."""
     import app.models  # noqa: F401 – ensures all models are registered
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

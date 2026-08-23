@@ -1,24 +1,18 @@
-# ---------- Build stage ----------
-FROM python:3.11-slim AS base
-
-# System deps for pymupdf, psycopg2
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    libglib2.0-0 \
-    libgl1-mesa-glx \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.11-slim
 
 WORKDIR /app
+
+# Install system dependencies (e.g. for PyMuPDF or Tesseract if needed)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    tesseract-ocr \
+    poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
-
-EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+mednarrate-backend/.env
+google-services.json
+GoogleService-Info.plist
+*.jks
+key.properties
+mednarrate-backend/data/kb_index/
+__pycache__/

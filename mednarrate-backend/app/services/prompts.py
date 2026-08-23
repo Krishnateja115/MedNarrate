@@ -1,3 +1,19 @@
+import os
+import glob
+
+def get_examples_text() -> str:
+    examples_dir = os.path.join(os.path.dirname(__file__), "..", "..", "data", "examples")
+    examples = []
+    for fpath in glob.glob(os.path.join(examples_dir, "*.txt")):
+        try:
+            with open(fpath, "r") as f:
+                examples.append(f.read())
+        except Exception:
+            pass
+    if examples:
+        return "\n\nFormatting Examples:\n" + "\n---\n".join(examples)
+    return ""
+
 CLINICIAN_PROMPT = """You are assisting a clinician reviewing a {report_type} report.
 Using ONLY the structured data below, write a concise clinical-note-style summary. Use
 standard medical terminology. Do not invent findings not present in the data.
@@ -23,6 +39,8 @@ no medical background. Using ONLY the structured data below:
 
 Structured lab values:
 {structured_values_json}
+
+{examples}
 
 Write the {user_role}-friendly explanation now:"""
 

@@ -20,4 +20,4 @@ class RagChunk(Base):
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
     embedding_json: Mapped[object] = _emb_col()
-    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())

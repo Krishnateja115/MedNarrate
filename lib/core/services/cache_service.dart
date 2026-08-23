@@ -3,6 +3,7 @@ import '../../features/reports/models/report_model.dart';
 import '../../models/cached/cached_report.dart';
 import '../../models/cached/cached_lab_value.dart';
 import '../../models/cached/cached_chat_message.dart';
+import 'keystore_service.dart';
 
 class CacheService {
   CacheService._();
@@ -14,22 +15,27 @@ class CacheService {
   late Box<dynamic> _metadataBox;
 
   bool _initialized = false;
+  String _currentUserId = 'default';
 
-  Future<void> initialize() async {
-    if (_initialized) return;
+  Future<void> initialize({String userId = 'default'}) async {
+    if (_initialized && _currentUserId == userId) return;
 
+    _currentUserId = userId;
     await Hive.initFlutter();
+    
+    final encryptionKey = await KeystoreService.instance.getEncryptionKey();
+    final cipher = HiveAesCipher(encryptionKey);
     
     // Register Adapters
     if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(CachedReportAdapter());
     if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(CachedLabValueAdapter());
     if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(CachedChatMessageAdapter());
 
-    // Open boxes
-    _reportsBox = await Hive.openBox<CachedReport>('reports');
-    _labValuesBox = await Hive.openBox<CachedLabValue>('lab_values');
-    _chatMessagesBox = await Hive.openBox<CachedChatMessage>('chat_messages');
-    _metadataBox = await Hive.openBox<dynamic>('metadata');
+    // Open boxes with scoped names and encryption
+    _reportsBox = await Hive.openBox<CachedReport>('reports_$_currentUserId', encryptionCipher: cipher);
+    _labValuesBox = await Hive.openBox<CachedLabValue>('lab_values_$_currentUserId', encryptionCipher: cipher);
+    _chatMessagesBox = await Hive.openBox<CachedChatMessage>('chat_messages_$_currentUserId', encryptionCipher: cipher);
+    _metadataBox = await Hive.openBox<dynamic>('metadata_$_currentUserId', encryptionCipher: cipher);
 
     _initialized = true;
   }
@@ -39,12 +45,12 @@ class CacheService {
     for (var r in reports) {
       entries[r.id] = CachedReport(
         id: r.id,
-        userId: 'current', // Note: proper user isolation would need the user ID
+        userId: _currentUserId,
         title: r.title,
         reportType: r.reportType,
-        uploadedAt: r.uploadedAt ?? DateTime.now(),
-        status: r.extractedText != null ? 'completed' : 'pending',
-        summaryText: r.extractedText ?? '',
+        uploadedAt: r.uploadedAt,
+        status: 'completed',
+        summaryText: r.extractedText,
         reportDate: r.reportDate,
       );
     }

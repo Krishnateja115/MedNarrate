@@ -13,8 +13,8 @@ class PushToken(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True) if _IS_PG else String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     device_token: Mapped[str] = mapped_column(Text, nullable=False)
     platform: Mapped[str] = mapped_column(String(20), nullable=False) # 'ios' or 'android'
-    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[object] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
     
     __table_args__ = (
         UniqueConstraint('user_id', 'device_token', name='_user_device_token_uc'),

@@ -6,7 +6,6 @@ import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../features/auth/screens/app_lock_screen.dart';
-import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 import '../../features/reports/screens/upload_screen.dart';
 import '../../features/reports/screens/report_details_screen.dart';

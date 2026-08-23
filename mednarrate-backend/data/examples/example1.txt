@@ -1,0 +1,3 @@
+Example:
+Patient Summary:
+Your blood test results show a Glucose level of 90 mg/dL, which is normal. Your Cholesterol level is 180 mg/dL, which is also within the normal range. Keep up the good work! This explanation is for informational purposes and does not replace advice from your doctor.

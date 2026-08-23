@@ -15,4 +15,4 @@ class NotificationLog(Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False) # 'sent', 'failed'
     error_message: Mapped[str] = mapped_column(Text, nullable=True)
-    sent_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    sent_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())

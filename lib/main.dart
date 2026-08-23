@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 import 'core/routing/app_router.dart';
 import 'core/services/notification_service.dart';
@@ -36,6 +37,7 @@ class AppLifecycleObserver extends WidgetsBindingObserver {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  tz.initializeTimeZones();
   WidgetsBinding.instance.addObserver(AppLifecycleObserver());
   await NotificationService.instance.initialize();
   await CacheService.instance.initialize();

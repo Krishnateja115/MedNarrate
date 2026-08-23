@@ -13,7 +13,7 @@ import os
 import sys
 limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
 
-from app.services.notification_scheduler import start_scheduler, stop_scheduler
+from app.services.scheduler import start_scheduler, stop_scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,6 +42,28 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+    return response
+
+@app.middleware("http")
+async def prompt_injection_middleware(request: Request, call_next):
+    # Basic check on POST/PUT requests
+    if request.method in ["POST", "PUT"]:
+        content_type = request.headers.get("content-type", "")
+        if "application/json" in content_type:
+            try:
+                body = await request.body()
+                body_str = body.decode('utf-8').lower()
+                forbidden = ["ignore previous instructions", "system prompt", "you are a helpful assistant"]
+                if any(x in body_str for x in forbidden):
+                    from fastapi.responses import JSONResponse
+                    return JSONResponse(status_code=400, content={"detail": "Potential prompt injection detected."})
+            except Exception:
+                pass
+            # need to make the body available again for downstream consumers
+            async def receive():
+                return {"type": "http.request", "body": body}
+            request._receive = receive
+    response = await call_next(request)
     return response
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)

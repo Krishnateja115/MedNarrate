@@ -20,5 +20,5 @@ class User(Base):
     date_of_birth: Mapped[str | None] = mapped_column(String, nullable=True)
     gender: Mapped[str | None] = mapped_column(String, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[object] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())

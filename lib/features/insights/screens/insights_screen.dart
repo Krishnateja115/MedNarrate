@@ -4,10 +4,9 @@ import 'package:shimmer/shimmer.dart';
 import 'insights_controller.dart';
 import '../widgets/parameter_card.dart';
 import '../../../shared/widgets/glassmorphism_card.dart';
-import '../../../features/reports/models/report_model.dart';
 
 class InsightsScreen extends StatefulWidget {
-  const InsightsScreen({Key? key}) : super(key: key);
+  const InsightsScreen({super.key});
 
   @override
   State<InsightsScreen> createState() => _InsightsScreenState();
@@ -41,7 +40,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
         title: const Text('Health Insights', style: TextStyle(fontWeight: FontWeight.bold)),
         flexibleSpace: ClipRect(
           child: BackdropFilter(
-            filter: ColorFilter.mode(Colors.black.withOpacity(0.01), BlendMode.srcOver),
+            filter: ColorFilter.mode(Colors.black.withValues(alpha: 0.01), BlendMode.srcOver),
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -53,8 +52,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             ],
           ),
         ),
@@ -67,7 +66,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                   child: Text(
                     "Track your progress over time",
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                   ),
                 ),
@@ -221,7 +220,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       )
@@ -354,7 +353,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),

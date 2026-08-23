@@ -7,6 +7,8 @@ import 'api_models.dart';
 import 'storage_service.dart';
 import 'connectivity_service.dart';
 import 'cache_service.dart';
+import 'offline_queue_service.dart';
+import '../../models/cached/offline_action.dart';
 import '../../../features/reports/models/report_model.dart';
 import '../../models/comparison_models.dart';
 
@@ -110,11 +112,6 @@ class ApiService {
 
   // ─────────────────────────── Auth ────────────────────────────────────
 
-  void _checkOnline() {
-    if (!ConnectivityService.instance.isOnline) {
-      throw const ApiException(0, "You're offline. This action requires an internet connection.");
-    }
-  }
 
   Future<AuthTokens> signup(
       String email, String password, String fullName) async {
@@ -254,7 +251,39 @@ class ApiService {
     required String reportDate,
     required String reportType,
   }) async {
-    _checkOnline();
+    if (!ConnectivityService.instance.isOnline) {
+      final action = OfflineAction(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        endpoint: '/reports/upload',
+        method: 'POST_MULTIPART',
+        body: {
+          'title': title,
+          'report_date': reportDate,
+          'report_type': reportType,
+          'hospital': hospital ?? '',
+          'file_path': file.path ?? '',
+          'file_name': file.name,
+        },
+        createdAt: DateTime.now(),
+      );
+      await OfflineQueueService.instance.enqueueAction(action);
+      // Return a temporary cached report
+      return ReportModel(
+        id: action.id,
+        title: title,
+        hospital: hospital ?? '',
+        reportDate: DateTime.parse(reportDate),
+        fileName: file.name,
+        filePath: file.path ?? '',
+        fileType: '',
+        reportType: reportType,
+        extractedText: '',
+        processingStatus: 'queued_for_upload',
+        isFavourite: false,
+        uploadedAt: DateTime.now(),
+      );
+    }
+    
     final token = await StorageService.instance.getAccessToken();
     final request = http.MultipartRequest(
       'POST',
@@ -487,5 +516,23 @@ class ApiService {
 
   Future<void> toggleMedicationSchedule(String id) async {
     await _patch('/notifications/medication-schedules/$id/toggle');
+  }
+
+  Future<void> executeOfflineAction(OfflineAction action) async {
+    if (action.method == 'POST_MULTIPART') {
+      await uploadReport(
+        file: PlatformFile(name: action.body['file_name'], size: 0, path: action.body['file_path']),
+        title: action.body['title'],
+        reportDate: action.body['report_date'],
+        reportType: action.body['report_type'],
+        hospital: action.body['hospital'],
+      );
+    } else if (action.method == 'POST') {
+      await _post(action.endpoint, body: action.body);
+    } else if (action.method == 'PATCH') {
+      await _patch(action.endpoint, body: action.body);
+    } else if (action.method == 'DELETE') {
+      await _delete(action.endpoint);
+    }
   }
 }

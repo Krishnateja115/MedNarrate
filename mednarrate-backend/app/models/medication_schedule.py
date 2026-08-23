@@ -27,4 +27,4 @@ class MedicationSchedule(Base):
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())

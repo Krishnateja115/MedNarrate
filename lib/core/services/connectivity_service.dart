@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'offline_queue_service.dart';
+import 'api_service.dart';
 
 class ConnectivityService {
   ConnectivityService._();
@@ -31,6 +33,16 @@ class ConnectivityService {
     if (_isOnline != online) {
       _isOnline = online;
       _controller.add(online);
+      if (online) {
+        OfflineQueueService.instance.processQueue((action) async {
+          try {
+            await ApiService.instance.executeOfflineAction(action);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        });
+      }
     }
   }
 }

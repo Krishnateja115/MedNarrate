@@ -6,6 +6,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "MedNarrate"
+    ENVIRONMENT: str = "development"
+    FIREBASE_SERVICE_ACCOUNT_JSON: str | None = None
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_MB: int = 25
     CORS_ORIGINS: list[str] = ["*"]

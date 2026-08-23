@@ -17,7 +17,7 @@ class ReportAnalysis(Base):
     patient_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     model_versions: Mapped[dict] = mapped_column(JSONB, default=dict)
-    processed_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    processed_at: Mapped[object | None] = mapped_column(DateTime, nullable=True)
     
-    created_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[object] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[object] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
