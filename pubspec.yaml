@@ -92,6 +92,7 @@ dependencies:
   flutter_timezone: ^5.1.0
   dio: ^5.11.0
   sentry_flutter: ^8.14.2
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:
@@ -111,3 +112,4 @@ flutter:
   assets:
     - lib/assets/images/
     - lib/assets/icons/
+    - assets/sounds/

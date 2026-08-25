@@ -139,4 +139,18 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_keyBiometric) ?? false;
   }
+
+  // ── Reminder Sound (shared_preferences) ──────────────────────────────────
+  
+  static const String _keyReminderSound = 'reminder_sound';
+
+  Future<void> setReminderSound(String soundName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyReminderSound, soundName);
+  }
+
+  Future<String> getReminderSound() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyReminderSound) ?? 'default';
+  }
 }

@@ -5,9 +5,10 @@ import '../../../core/services/storage_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/utils/helpers.dart';
-import '../../../core/routing/routes.dart';
-import '../../../core/constants/app_colors.dart';
 import 'package:go_router/go_router.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+import '../../../core/constants/app_colors.dart';
 import '../../../main.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
@@ -30,6 +31,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _biometricEnabled = false;
   bool _biometricAvailable = false;
   bool _loading = true;
+  String _currentSound = 'default';
+  
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   final Map<String, String> _languages = {
     'en': 'English',
@@ -47,6 +51,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _loadSettings();
   }
+  
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
 
   Future<void> _loadSettings() async {
     final lang = await _storageService.getPreferredLanguage();
@@ -56,16 +66,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final units = await _storageService.getMedicalUnits();
     final bioAvail = await BiometricService.instance.isAvailable();
     final bioEnab = await BiometricService.instance.isBiometricEnabled();
+    final sound = await _storageService.getReminderSound();
     
     if (mounted) {
       setState(() {
         _currentLang = lang;
         _currentTheme = theme;
-        _currentUnits = units;
         _notificationsEnabled = notifs;
         _professionalMode = profMode;
+        _currentUnits = units;
         _biometricAvailable = bioAvail;
         _biometricEnabled = bioEnab;
+        _currentSound = sound;
         _loading = false;
       });
     }
@@ -101,7 +113,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _toggleNotifications(bool enabled) async {
     await _storageService.setNotificationsEnabled(enabled);
     if (mounted) setState(() => _notificationsEnabled = enabled);
-    if (mounted) Helpers.showSuccess(context, enabled ? 'Notifications enabled' : 'Notifications disabled');
+    
+    if (enabled) {
+      Helpers.showSuccess(context, AppLocalizations.of(context)!.notificationsEnabled);
+    } else {
+      Helpers.showSuccess(context, AppLocalizations.of(context)!.notificationsDisabled);
+    }
+  }
+
+  Future<void> _changeReminderSound(String sound) async {
+    await _storageService.setReminderSound(sound);
+    if (mounted) setState(() => _currentSound = sound);
+  }
+
+  void _playSound(String sound) {
+    if (sound == 'default') return; // Cannot play system default easily via audioplayers without knowing URI
+    _audioPlayer.play(AssetSource('sounds/$sound.wav'));
+  }
+
+  void _showSoundPicker() {
+    final sounds = {
+      'default': 'System Default',
+      'gentle_chime': 'Gentle Chime',
+      'soft_pulse': 'Soft Pulse',
+      'alert': 'Alert',
+    };
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
+                  const SizedBox(height: 24),
+                  Text(AppLocalizations.of(context)!.reminderSound, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 24),
+                  ...sounds.entries.map((e) {
+                    final isSelected = _currentSound == e.key;
+                    return ListTile(
+                      title: Text(e.value),
+                      trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
+                      onTap: () {
+                        _playSound(e.key);
+                        _changeReminderSound(e.key);
+                        setSheetState(() {});
+                      },
+                    );
+                  }),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          }
+        );
+      },
+    );
   }
 
   Future<void> _toggleProfessionalMode(bool enabled) async {
@@ -464,16 +541,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.alarm,
                     iconColor: AppColors.warning,
                     title: AppLocalizations.of(context)!.reminderSound,
-                    subtitle: AppLocalizations.of(context)!.comingSoon,
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text('SOON', style: TextStyle(color: AppColors.warning, fontSize: 10, fontWeight: FontWeight.bold)),
-                    ),
-                    onTap: () => _showSoonSheet('Reminder Sound', 'Custom ringtones for your medication reminders are coming in the next update.'),
+                    subtitle: _currentSound == 'default' ? 'System Default' : _currentSound.replaceAll('_', ' ').split(' ').map((w) => w[0].toUpperCase() + w.substring(1)).join(' '),
+                    onTap: _showSoundPicker,
                   ),
                 ]),
 
