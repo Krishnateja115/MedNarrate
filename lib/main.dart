@@ -70,7 +70,7 @@ class MedNarrateApp extends StatelessWidget {
           builder: (context, locale, _) {
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
-              title: AppLocalizations.of(context)!.appTitle,
+              onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
               themeMode: themeMode,
