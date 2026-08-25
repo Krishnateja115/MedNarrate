@@ -8,6 +8,7 @@ import '../../../core/utils/helpers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+import '../../../core/routing/routes.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../main.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
@@ -134,9 +135,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showSoundPicker() {
     final sounds = {
       'default': 'System Default',
-      'gentle_chime': 'Gentle Chime',
-      'soft_pulse': 'Soft Pulse',
-      'alert': 'Alert',
+      'chime': 'Crystal Chime',
+      'warm_chord': 'Warm Chord',
+      'nature_drop': 'Nature Drop',
     };
 
     showModalBottomSheet(
