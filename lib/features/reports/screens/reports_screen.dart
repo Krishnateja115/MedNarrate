@@ -30,6 +30,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   bool? _filterFavourite;
   
   final Map<String, StreamSubscription> _pollingSubscriptions = {};
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -70,6 +71,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     for (var sub in _pollingSubscriptions.values) {
       sub.cancel();
     }
@@ -101,8 +103,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ReportSearchBar(
               onChanged: (q) {
+                _searchDebounce?.cancel();
                 _searchQuery = q.isEmpty ? null : q;
-                _loadReports();
+                _searchDebounce = Timer(const Duration(milliseconds: 400), _loadReports);
               },
             ),
           ),

@@ -19,7 +19,8 @@ class StorageService {
   static const String _keyLang = 'preferred_language';
   static const String _keyTheme = 'theme_mode';
   static const String _keyNotif = 'notifications_enabled';
-  static const String _keyProfessionalMode = 'professional_mode';
+  static const _keyProfessionalMode = 'professional_mode';
+  static const _keyMedicalUnits = 'medical_units';
 
   // ── Tokens (flutter_secure_storage) ──────────────────────────────────
 
@@ -34,6 +35,16 @@ class StorageService {
   Future<void> clearTokens() async {
     await _storage.delete(key: _keyAccess);
     await _storage.delete(key: _keyRefresh);
+  }
+
+  // ─────────────────────────── App Preferences ────────────────────────
+  
+  Future<void> setMedicalUnits(String units) async {
+    await _storage.write(key: _keyMedicalUnits, value: units);
+  }
+
+  Future<String> getMedicalUnits() async {
+    return await _storage.read(key: _keyMedicalUnits) ?? 'metric';
   }
 
   // ── Onboarding (shared_preferences) ──────────────────────────────────

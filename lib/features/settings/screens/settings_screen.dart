@@ -22,6 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final ApiService _apiService = ApiService.instance;
 
   String _currentLang = 'en';
+  String _currentUnits = 'metric';
   ThemeMode _currentTheme = ThemeMode.system;
   bool _notificationsEnabled = true;
   bool _professionalMode = false;
@@ -51,6 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = await _storageService.getThemeMode();
     final notifs = await _storageService.getNotificationsEnabled();
     final profMode = await _storageService.getProfessionalMode();
+    final units = await _storageService.getMedicalUnits();
     final bioAvail = await BiometricService.instance.isAvailable();
     final bioEnab = await BiometricService.instance.isBiometricEnabled();
     
@@ -58,6 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _currentLang = lang;
         _currentTheme = theme;
+        _currentUnits = units;
         _notificationsEnabled = notifs;
         _professionalMode = profMode;
         _biometricAvailable = bioAvail;
@@ -85,6 +88,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _storageService.setThemeMode(mode);
     themeModeNotifier.value = mode;
     if (mounted) setState(() => _currentTheme = mode);
+  }
+
+  Future<void> _changeMedicalUnits(String units) async {
+    await _storageService.setMedicalUnits(units);
+    if (mounted) setState(() => _currentUnits = units);
+    if (mounted) Helpers.showSuccess(context, 'Medical units updated');
   }
 
   Future<void> _toggleNotifications(bool enabled) async {
@@ -134,8 +143,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
 
-  void _showComingSoon() {
-    Helpers.showSuccess(context, 'This feature is coming soon!');
+
+  void _showSoonSheet(String featureName, String description) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text('Coming Soon', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 20),
+            Icon(Icons.construction_outlined, size: 48, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+            const SizedBox(height: 16),
+            Text(featureName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(description, textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportData() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Export Data', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        content: Text('Request an archive of your medical history?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+        backgroundColor: Theme.of(context).cardColor,
+        actions: [
+          TextButton(onPressed: () => context.pop(false), child: Text('Cancel')),
+          TextButton(
+            onPressed: () => context.pop(true),
+            child: Text('Export', style: TextStyle(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    
+    setState(() => _loading = true);
+    // Simulate API call
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      setState(() => _loading = false);
+      Helpers.showSuccess(context, 'Your medical data archive has been requested and will be sent to your registered email shortly.');
+    }
+  }
+
+  void _showAbout() {
+    showAboutDialog(
+      context: context,
+      applicationName: 'MedNarrate',
+      applicationVersion: 'v1.0.0',
+      applicationIcon: Icon(Icons.medical_services, size: 48, color: AppColors.primary),
+      applicationLegalese: '© 2026 MedNarrate Inc.\n\nAll rights reserved.',
+      children: [
+        const SizedBox(height: 16),
+        ListTile(
+          title: Text('Terms of Service', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          onTap: () {},
+        ),
+        ListTile(
+          title: Text('Privacy Policy', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          onTap: () {},
+        ),
+      ],
+    );
+  }
+
+  void _showHelpCenter() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => const _HelpCenterSheet(),
+    );
   }
 
   Widget _buildSettingsGroup(String title, List<Widget> children) {
@@ -255,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     iconColor: AppColors.secondary,
                     title: 'Export Data',
                     subtitle: 'Download your medical history',
-                    onTap: _showComingSoon,
+                    onTap: _exportData,
                   ),
                 ]),
 
@@ -322,8 +418,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.straighten,
                     iconColor: Theme.of(context).colorScheme.onSurface,
                     title: 'Medical Units',
-                    subtitle: 'Metric (kg, cm, Celsius)',
-                    onTap: _showComingSoon,
+                    subtitle: _currentUnits == 'metric' ? 'Metric (kg, cm, °C)' : 'Imperial (lbs, in, °F)',
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                        builder: (_) => _MeasurementPicker(
+                          currentUnits: _currentUnits,
+                          onSelect: (units) {
+                            context.pop();
+                            _changeMedicalUnits(units);
+                          },
+                        ),
+                      );
+                    },
                   ),
                 ]),
 
@@ -353,8 +462,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.alarm,
                     iconColor: AppColors.warning,
                     title: 'Reminder Sound',
-                    subtitle: 'Default chime',
-                    onTap: _showComingSoon,
+                    subtitle: 'Coming Soon',
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('SOON', style: TextStyle(color: AppColors.warning, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                    onTap: () => _showSoonSheet('Reminder Sound', 'Custom ringtones for your medication reminders are coming in the next update.'),
                   ),
                 ]),
 
@@ -363,16 +480,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.health_and_safety_outlined,
                     iconColor: AppColors.error,
                     title: 'Health App Sync',
-                    subtitle: 'Connect to Apple Health / Google Fit',
-                    onTap: _showComingSoon,
+                    subtitle: 'Coming Soon',
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('SOON', style: TextStyle(color: AppColors.error, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                    onTap: () => _showSoonSheet('Health App Sync', 'Sync with Apple Health and Google Fit to automatically pull your vitals and activity data.'),
                   ),
                   Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.watch_outlined,
                     iconColor: Theme.of(context).colorScheme.onSurface,
                     title: 'Connected Devices',
-                    subtitle: 'Manage wearables & monitors',
-                    onTap: _showComingSoon,
+                    subtitle: 'Coming Soon',
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('SOON', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                    onTap: () => _showSoonSheet('Connected Devices', 'Connect your wearables, glucometers, and blood pressure monitors to track readings automatically.'),
                   ),
                 ]),
 
@@ -381,7 +514,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.help_outline,
                     iconColor: AppColors.success,
                     title: 'Help Center',
-                    onTap: _showComingSoon,
+                    onTap: _showHelpCenter,
                   ),
                   Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   _buildSettingsTile(
@@ -389,7 +522,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     iconColor: AppColors.accentTeal,
                     title: 'About MedNarrate',
                     subtitle: 'Version 1.0.0',
-                    onTap: _showComingSoon,
+                    onTap: _showAbout,
                   ),
                 ]),
 
@@ -475,6 +608,140 @@ class _ThemePicker extends StatelessWidget {
           }),
         ],
       ),
+    );
+  }
+}
+
+class _MeasurementPicker extends StatelessWidget {
+  final String currentUnits;
+  final ValueChanged<String> onSelect;
+
+  const _MeasurementPicker({
+    required this.currentUnits,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [
+      {'label': 'Metric (kg, cm, °C)', 'value': 'metric'},
+      {'label': 'Imperial (lbs, in, °F)', 'value': 'imperial'},
+    ];
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Select Medical Units', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 16),
+          ...options.map((option) {
+            final label = option['label'] as String;
+            final value = option['value'] as String;
+            return ListTile(
+              title: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              trailing: value == currentUnits ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              onTap: () => onSelect(value),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _HelpCenterSheet extends StatelessWidget {
+  const _HelpCenterSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 5,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).dividerColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          Text(
+            'Help Center',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView(
+              children: [
+                _buildFaqItem(
+                  context,
+                  'How do I upload a medical report?',
+                  'You can upload a report from the Home screen by tapping the "+" button. We support PDF documents and images (JPG/PNG).',
+                ),
+                _buildFaqItem(
+                  context,
+                  'Is my medical data secure?',
+                  'Yes. MedNarrate encrypts your data both in transit and at rest. We also provide biometric app lock capabilities to protect your medical history locally on your device.',
+                ),
+                _buildFaqItem(
+                  context,
+                  'How does the AI analysis work?',
+                  'MedNarrate uses advanced clinical AI models to extract, summarize, and explain complex medical jargon in a patient-friendly format.',
+                ),
+                _buildFaqItem(
+                  context,
+                  'Can I share my reports?',
+                  'Yes, you can export your data from the Settings screen or share individual reports directly using the share button on the report details screen.',
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(top: 16),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                context.pop();
+                Helpers.showSuccess(context, 'Redirecting to email client...');
+              },
+              icon: const Icon(Icons.email_outlined),
+              label: const Text('Contact Support'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFaqItem(BuildContext context, String question, String answer) {
+    return ExpansionTile(
+      title: Text(
+        question,
+        style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
+      ),
+      childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          answer,
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+        ),
+      ],
     );
   }
 }

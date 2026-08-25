@@ -43,6 +43,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Log Out?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        content: Text('Are you sure you want to log out of MedNarrate?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+        backgroundColor: Theme.of(context).cardColor,
+        actions: [
+          TextButton(onPressed: () => context.pop(false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => context.pop(true),
+            child: const Text('Log Out', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await StorageService.instance.clearTokens();
+    if (mounted) context.go(Routes.login);
+  }
+
   Future<void> _updateRole(String role) async {
     if (_savingRole) return;
     setState(() => _savingRole = true);
@@ -261,7 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4), width: 1.5),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                           ),
-                          onPressed: () => context.push(Routes.settings),
+                          onPressed: _logout,
                           icon: Icon(Icons.logout, color: Colors.redAccent),
                           label: Text('Logout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent)),
                         ),

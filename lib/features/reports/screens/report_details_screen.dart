@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/api_service.dart';
 import '../models/report_model.dart';
 import '../controllers/report_detail_controller.dart';
 import '../widgets/summary_tab.dart';
@@ -51,14 +53,69 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
         elevation: 0,
         title: Text('Report Details'),
         actions: [
-          if (_controller.report != null)
+          if (_controller.report != null) ...[  
             IconButton(
               onPressed: _controller.toggleFavourite,
               icon: Icon(
                 _controller.report!.isFavourite ? Icons.favorite : Icons.favorite_border,
                 color: _controller.report!.isFavourite ? Colors.red : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
               ),
+              tooltip: _controller.report!.isFavourite ? 'Unfavourite' : 'Favourite',
             ),
+            PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (value == 'delete') {
+                  // Capture before async gap
+                  final messenger = ScaffoldMessenger.of(context);
+                  final router = GoRouter.of(context);
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('Delete Report?'),
+                      content: const Text('This will permanently delete this report and all its analysis. This cannot be undone.'),
+                      actions: [
+                        TextButton(onPressed: () => router.pop(), child: const Text('Cancel')),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm != true || !mounted) return;
+                  try {
+                    await ApiService.instance.deleteReport(_controller.report!.id);
+                    if (mounted) {
+                      messenger.showSnackBar(const SnackBar(
+                        content: Text('Report deleted.'),
+                        backgroundColor: Color(0xFF00C48C),
+                      ));
+                      router.pop();
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      messenger.showSnackBar(SnackBar(
+                        content: Text('Delete failed: $e'),
+                        backgroundColor: Colors.red,
+                      ));
+                    }
+                  }
+                }
+              },
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline, color: Colors.red),
+                      SizedBox(width: 12),
+                      Text('Delete Report', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
         bottom: TabBar(
           controller: _tabController,

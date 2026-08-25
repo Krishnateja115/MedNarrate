@@ -3,15 +3,25 @@ import '../../../core/constants/app_colors.dart';
 import '../../reports/models/report_model.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
+import '../../../core/services/api_service.dart';
 
-class SummaryTab extends StatelessWidget {
+class SummaryTab extends StatefulWidget {
   final ReportModel report;
   final bool isProfessionalMode;
 
   const SummaryTab({super.key, required this.report, required this.isProfessionalMode});
 
-  void _showTranslationBottomSheet(BuildContext context) {
-    // Show bottom sheet with 8 languages (Mock implementation)
+  @override
+  State<SummaryTab> createState() => _SummaryTabState();
+}
+
+class _SummaryTabState extends State<SummaryTab> {
+  bool _translating = false;
+  String? _translatedSummary;
+
+  Future<void> _translate(BuildContext context) async {
+    if (_translating) return;
+    // Show language picker
     final languages = {
       'en': 'English',
       'hi': 'Hindi (हिन्दी)',
@@ -22,46 +32,47 @@ class SummaryTab extends StatelessWidget {
       'mr': 'Marathi (मराठी)',
       'bn': 'Bengali (বাংলা)',
     };
-
-    showModalBottomSheet(
+    final selected = await showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Translate Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 16),
-              Expanded(
-                child: ListView(
-                  children: languages.entries.map((e) {
-                    return ListTile(
-                      title: Text(e.value),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Helpers.showSuccess(context, 'Translated to ${e.value} (Coming Soon)');
-                      },
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (_) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Translate Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            ...languages.entries.map((e) => ListTile(
+              title: Text(e.value),
+              onTap: () => Navigator.pop(context, e.key),
+            )),
+          ],
+        ),
+      ),
     );
+    if (selected == null) return;
+    if (!context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _translating = true);
+    try {
+      final t = await ApiService.instance.translateAnalysis(widget.report.id, selected);
+      if (mounted) setState(() => _translatedSummary = t.patientSummary);
+    } catch (_) {
+      if (mounted) messenger.showSnackBar(const SnackBar(content: Text('Translation failed. Please try again.')));
+    } finally {
+      if (mounted) setState(() => _translating = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final report = widget.report;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Patient Info Card
+          // Report Info Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -74,29 +85,30 @@ class SummaryTab extends StatelessWidget {
                 CircleAvatar(
                   radius: 30,
                   backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  child: Icon(Icons.person, color: AppColors.primary, size: 30),
+                  child: Icon(Icons.description, color: AppColors.primary, size: 30),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('John Doe', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text('Male, 34 yrs', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
-                      SizedBox(height: 8),
+                      Text(report.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                      if (report.hospital.isNotEmpty && report.hospital != 'Unknown Hospital')
+                        Text(report.hospital, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Icon(Icons.calendar_today, size: 14, color: Theme.of(context).colorScheme.primary),
-                          SizedBox(width: 4),
-                          Text(Formatters.formatDate(report.uploadedAt), style: TextStyle(fontSize: 12)),
-                          SizedBox(width: 12),
+                          const SizedBox(width: 4),
+                          Text(Formatters.formatDate(report.reportDate), style: const TextStyle(fontSize: 12)),
+                          const SizedBox(width: 12),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: AppColors.accentTeal.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Text(Helpers.reportTypeLabel(report.reportType), style: TextStyle(fontSize: 10, color: AppColors.accentTeal)),
+                            child: Text(Helpers.reportTypeLabel(report.reportType), style: const TextStyle(fontSize: 10, color: AppColors.accentTeal)),
                           ),
                         ],
                       ),
@@ -110,16 +122,16 @@ class SummaryTab extends StatelessWidget {
           SizedBox(height: 24),
 
           // Abnormal Values Alert
-          if (report.metrics.isNotEmpty) // Mock condition
+          if (report.metrics.any((m) => m['flag'] != null && m['flag'] != 'normal'))
             Container(
               margin: const EdgeInsets.only(bottom: 24),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.red.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border(left: BorderSide(color: Colors.red, width: 4)),
+                border: const Border(left: BorderSide(color: Colors.red, width: 4)),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -142,18 +154,20 @@ class SummaryTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isProfessionalMode ? 'Clinical Summary' : 'Patient-Friendly Summary',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                widget.isProfessionalMode ? 'Clinical Summary' : 'Patient-Friendly Summary',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              if (!isProfessionalMode)
-                TextButton.icon(
-                  onPressed: () => _showTranslationBottomSheet(context),
-                  icon: Icon(Icons.translate, size: 16),
-                  label: Text('Translate'),
-                ),
+              if (!widget.isProfessionalMode)
+                _translating
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : TextButton.icon(
+                    onPressed: () => _translate(context),
+                    icon: const Icon(Icons.translate, size: 16),
+                    label: Text(_translatedSummary != null ? 'Retranslate' : 'Translate'),
+                  ),
             ],
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -163,23 +177,39 @@ class SummaryTab extends StatelessWidget {
               border: Border.all(color: AppColors.border),
             ),
             child: SelectableText(
-              isProfessionalMode 
-                ? (report.clinicalSummary ?? 'No clinical summary available.')
-                : (report.aiSummary ?? 'No patient-friendly summary available.'),
-              style: TextStyle(height: 1.6, fontSize: 15),
+              _translatedSummary ?? (
+                widget.isProfessionalMode 
+                  ? (report.clinicalSummary ?? 'No clinical summary available.')
+                  : (report.aiSummary ?? 'No patient-friendly summary available.')
+              ),
+              style: const TextStyle(height: 1.6, fontSize: 15),
             ),
           ),
 
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           
-          Text('Key Findings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 12),
+          Text('Key Findings', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
           
-          // Mock Key Findings
-          _buildKeyFinding(context, 'Vitamin D is low (12 ng/mL)', 'green'),
-          _buildKeyFinding(context, 'LDL Cholesterol is elevated', 'amber'),
-          _buildKeyFinding(context, 'Fasting Glucose is high (140 mg/dL)', 'red'),
-          SizedBox(height: 32),
+          if (report.metrics.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Text('No key findings available for this report.',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
+            )
+          else
+            ...report.metrics.where((m) => m['flag'] != null && m['flag'] != 'normal').map((m) {
+              final flag = m['flag']?.toString() ?? 'normal';
+              final severity = flag == 'high' || flag == 'low' ? (flag == 'high' ? 'red' : 'amber') : 'green';
+              final label = '${m['parameter']} is $flag (${m['value']} ${m['unit']})';
+              return _buildKeyFinding(context, label, severity);
+            }),
+          const SizedBox(height: 32),
         ],
       ),
     );
