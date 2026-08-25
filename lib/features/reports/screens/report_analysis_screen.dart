@@ -11,6 +11,7 @@ import '../../../core/utils/report_polling.dart';
 import '../../../core/routing/routes.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 /// ReportAnalysisScreen — shows AI analysis results.
 /// Handles polling (if not yet completed), failure with retry, and dual-mode summary toggle.
@@ -130,7 +131,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: Text('AI Analysis'),
+        title: Text(AppLocalizations.of(context)!.aiAnalysis),
         actions: [
           if (_status == 'completed')
             IconButton(
@@ -160,10 +161,10 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
             child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
           ),
           SizedBox(height: 28),
-          Text('Analyzing your report…',
+          Text(AppLocalizations.of(context)!.analyzingYourReport,
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
           SizedBox(height: 10),
-          Text('AI is reading your document. This may take a minute.',
+          Text(AppLocalizations.of(context)!.aiReadingDocument,
               textAlign: TextAlign.center,
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13)),
           SizedBox(height: 32),
@@ -196,7 +197,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           children: [
             Icon(Icons.error_outline, color: Colors.red, size: 60),
             SizedBox(height: 16),
-            Text('Analysis Failed', style: TextStyle(fontSize: 22, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.analysisFailed, style: TextStyle(fontSize: 22, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
             SizedBox(height: 12),
             Text(_errorReason ?? 'An unknown error occurred.',
                 textAlign: TextAlign.center,
@@ -205,7 +206,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
             FilledButton.icon(
               onPressed: _retry,
               icon: Icon(Icons.refresh),
-              label: Text('Retry Analysis'),
+              label: Text(AppLocalizations.of(context)!.retryAnalysis),
             ),
           ],
         ),
@@ -241,7 +242,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           // ── Summary card with TTS ─────────────────────────────────────
           Row(
             children: [
-              Expanded(child: Text('Summary',
+              Expanded(child: Text(AppLocalizations.of(context)!.summary,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface))),
               ValueListenableBuilder<TtsState>(
                 valueListenable: _tts.stateNotifier,
@@ -276,9 +277,9 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
                 children: [
                   Icon(Icons.translate, color: Colors.blue),
                   SizedBox(width: 12),
-                  Expanded(child: Text('Translated version available',
+                  Expanded(child: Text(AppLocalizations.of(context)!.translatedVersionAvailable,
                       style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)))),
-                  TextButton(onPressed: _translate, child: Text('Load')),
+                  TextButton(onPressed: _translate, child: Text(AppLocalizations.of(context)!.load)),
                 ],
               ),
             ),
@@ -299,7 +300,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           // ── Lab values table ─────────────────────────────────────────
           _sectionTitle('Lab Values'),
           if (a.structuredLabValues.isEmpty)
-            _card(child: Text('No lab values found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))))
+            _card(child: Text(AppLocalizations.of(context)!.noLabValues, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))))
           else
             Column(
               children: a.structuredLabValues.map((lv) => _buildLabGauge(lv)).toList(),
@@ -394,7 +395,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
                   reportDate: a.processedAt?.toLocal().toString().split(' ').first ?? '',
                 ),
                 icon: Icon(Icons.print_outlined),
-                label: Text('Print / Preview'),
+                label: Text(AppLocalizations.of(context)!.printPreview),
                 style: FilledButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 14)),
               ),
             ),

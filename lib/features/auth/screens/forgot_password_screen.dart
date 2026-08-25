@@ -6,6 +6,7 @@ import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/routing/routes.dart';
 import '../../../shared/widgets/custom_textfield.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 /// ForgotPasswordScreen — two-step flow:
 /// Step 1: Enter email → get reset token (in dev mode shown on screen)
@@ -94,7 +95,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: Text('Reset Password'),
+        title: Text(AppLocalizations.of(context)!.resetPassword),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -132,7 +133,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               if (!_step2) ...[
               CustomTextField(
                   controller: _emailCtrl,
-                  label: 'Email Address',
+                  label: AppLocalizations.of(context)!.emailAddress,
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                 ),
@@ -148,7 +149,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     child: _loading
                         ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface, strokeWidth: 2))
-                        : Text('Send Reset Token', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        : Text(AppLocalizations.of(context)!.sendResetToken, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ] else ...[
@@ -201,14 +202,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     child: _loading
                         ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface, strokeWidth: 2))
-                        : Text('Reset Password', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        : Text(AppLocalizations.of(context)!.resetPassword, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 SizedBox(height: 16),
                 Center(
                   child: TextButton(
                     onPressed: () => setState(() { _step2 = false; _devToken = null; _error = null; }),
-                    child: Text('Back to Email', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
+                    child: Text(AppLocalizations.of(context)!.backToEmail, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
                   ),
                 ),
               ],

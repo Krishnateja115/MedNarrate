@@ -8,7 +8,11 @@ import 'core/services/biometric_service.dart';
 import 'core/services/cache_service.dart';
 import 'core/theme/app_theme.dart';
 
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
+
 final themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.system);
+final localeModeNotifier = ValueNotifier<Locale>(const Locale('en'));
 
 class AppLifecycleObserver extends WidgetsBindingObserver {
   DateTime? _backgroundedAt;
@@ -46,6 +50,10 @@ Future<void> main() async {
   final savedThemeMode = await StorageService.instance.getThemeMode();
   themeModeNotifier.value = savedThemeMode;
 
+  // Load saved language
+  final savedLanguage = await StorageService.instance.getPreferredLanguage();
+  localeModeNotifier.value = Locale(savedLanguage);
+
   runApp(const MedNarrateApp());
 }
 
@@ -57,13 +65,26 @@ class MedNarrateApp extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeModeNotifier,
       builder: (context, themeMode, _) {
-        return MaterialApp.router(
-          debugShowCheckedModeBanner: false,
-          title: 'MedNarrate',
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: themeMode,
-          routerConfig: AppRouter.router,
+        return ValueListenableBuilder<Locale>(
+          valueListenable: localeModeNotifier,
+          builder: (context, locale, _) {
+            return MaterialApp.router(
+              debugShowCheckedModeBanner: false,
+              title: AppLocalizations.of(context)!.appTitle,
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeMode,
+              locale: locale,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: AppLocalizations.supportedLocales,
+              routerConfig: AppRouter.router,
+            );
+          },
         );
       },
     );

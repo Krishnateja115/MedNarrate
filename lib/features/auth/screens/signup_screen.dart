@@ -9,6 +9,7 @@ import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../../shared/widgets/primary_button.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -72,26 +73,24 @@ class _SignupScreenState extends State<SignupScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 30),
-                Text(
-                  'Create Account',
+                Text(AppLocalizations.of(context)!.createAccount,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 34, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 10),
-                Text(
-                  "Let's personalize your health journey.",
+                Text(AppLocalizations.of(context)!.personalizeHealthJourney,
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 17),
                 ),
                 SizedBox(height: 40),
                 CustomTextField(
                   controller: nameController,
-                  label: 'Full Name',
+                  label: AppLocalizations.of(context)!.fullName,
                   icon: Icons.person_outline,
                   validator: (v) => Validators.requiredField(v, fieldName: 'Full name'),
                 ),
                 SizedBox(height: 20),
                 CustomTextField(
                   controller: emailController,
-                  label: 'Email Address',
+                  label: AppLocalizations.of(context)!.emailAddress,
                   icon: Icons.email_outlined,
                   validator: Validators.isValidEmail,
                 ),
@@ -138,8 +137,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 Center(
                   child: TextButton(
                     onPressed: () => context.go(Routes.login),
-                    child: Text(
-                      'Already have an account? Login',
+                    child: Text(AppLocalizations.of(context)!.alreadyHaveAccount,
                       style: TextStyle(fontSize: 16),
                     ),
                   ),

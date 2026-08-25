@@ -6,6 +6,7 @@ import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/primary_button.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class MedicalProfileScreen extends StatefulWidget {
   const MedicalProfileScreen({super.key});
@@ -76,7 +77,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Medical Information'),
+        title: Text(AppLocalizations.of(context)!.medicalProfile),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
@@ -88,26 +89,25 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: 10),
-                  Text(
-                    "Keep your medical history up to date for better analysis.",
+                  Text(AppLocalizations.of(context)!.keepMedicalHistoryUpdated,
                     style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 16),
                   ),
                   SizedBox(height: 35),
                   CustomTextField(
                     controller: _bloodController,
-                    label: 'Blood Group',
+                    label: AppLocalizations.of(context)!.bloodGroup,
                     icon: Icons.bloodtype_outlined,
                   ),
                   SizedBox(height: 20),
                   CustomTextField(
                     controller: _allergiesController,
-                    label: 'Known Allergies',
+                    label: AppLocalizations.of(context)!.knownAllergies,
                     icon: Icons.warning_amber_outlined,
                   ),
                   SizedBox(height: 20),
                   CustomTextField(
                     controller: _conditionsController,
-                    label: 'Chronic Conditions',
+                    label: AppLocalizations.of(context)!.chronicConditions,
                     icon: Icons.local_hospital_outlined,
                   ),
                   SizedBox(height: 40),

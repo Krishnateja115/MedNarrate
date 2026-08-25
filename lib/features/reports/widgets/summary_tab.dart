@@ -4,6 +4,7 @@ import '../../reports/models/report_model.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/services/api_service.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class SummaryTab extends StatefulWidget {
   final ReportModel report;
@@ -40,7 +41,7 @@ class _SummaryTabState extends State<SummaryTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Translate Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.translateSummary, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             ...languages.entries.map((e) => ListTile(
               title: Text(e.value),
@@ -58,7 +59,7 @@ class _SummaryTabState extends State<SummaryTab> {
       final t = await ApiService.instance.translateAnalysis(widget.report.id, selected);
       if (mounted) setState(() => _translatedSummary = t.patientSummary);
     } catch (_) {
-      if (mounted) messenger.showSnackBar(const SnackBar(content: Text('Translation failed. Please try again.')));
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.translationFailed)));
     } finally {
       if (mounted) setState(() => _translating = false);
     }
@@ -131,20 +132,20 @@ class _SummaryTabState extends State<SummaryTab> {
                 borderRadius: BorderRadius.circular(12),
                 border: const Border(left: BorderSide(color: Colors.red, width: 4)),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Abnormal Values Detected', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                      const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Text(AppLocalizations.of(context)!.abnormalValuesDetected, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  SizedBox(height: 8),
-                  Text('Some parameters are outside the normal reference range.', style: TextStyle(fontSize: 13)),
-                  SizedBox(height: 8),
-                  Text('Consult your doctor about these findings.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  Text(AppLocalizations.of(context)!.someParametersOutOfRange, style: const TextStyle(fontSize: 13)),
+                  const SizedBox(height: 8),
+                  Text(AppLocalizations.of(context)!.consultYourDoctor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ],
               ),
             ),
@@ -188,7 +189,7 @@ class _SummaryTabState extends State<SummaryTab> {
 
           const SizedBox(height: 24),
           
-          Text('Key Findings', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.keyFindings, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           
           if (report.metrics.isEmpty)
@@ -199,7 +200,7 @@ class _SummaryTabState extends State<SummaryTab> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
               ),
-              child: Text('No key findings available for this report.',
+              child: Text(AppLocalizations.of(context)!.noKeyFindings,
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
             )
           else

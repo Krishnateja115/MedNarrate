@@ -6,6 +6,7 @@ import '../../../core/services/biometric_service.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/storage_service.dart';
 import 'dart:async';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class AppLockScreen extends StatefulWidget {
   const AppLockScreen({super.key});
@@ -108,8 +109,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'MedNarrate',
+              Text(AppLocalizations.of(context)!.appTitle,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 32,

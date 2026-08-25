@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/services/reminder_service.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class ReminderScreen extends StatefulWidget {
   const ReminderScreen({super.key});
@@ -35,13 +36,13 @@ class _ReminderScreenState extends State<ReminderScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Delete Reminder'),
-        content: Text('Are you sure you want to delete this reminder?'),
+        title: Text(AppLocalizations.of(context)!.deleteReminder),
+        content: Text(AppLocalizations.of(context)!.deleteReminderConfirm),
         actions: [
-          TextButton(onPressed: () => context.pop(false), child: Text('Cancel')),
+          TextButton(onPressed: () => context.pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
             onPressed: () => context.pop(true),
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(AppLocalizations.of(context)!.delete, style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -80,7 +81,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Medicine Reminders'),
+        title: Text(AppLocalizations.of(context)!.medicineReminders),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
@@ -100,9 +101,9 @@ class _ReminderScreenState extends State<ReminderScreen> {
                     children: [
                       Icon(Icons.alarm_off_rounded, size: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
                       SizedBox(height: 16),
-                      Text('No reminders set', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(AppLocalizations.of(context)!.noRemindersSet, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
                       SizedBox(height: 8),
-                      Text('Set daily reminders for your medications', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 14)),
+                      Text(AppLocalizations.of(context)!.setDailyReminders, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 14)),
                       SizedBox(height: 24),
                       FilledButton.icon(
                         style: FilledButton.styleFrom(
@@ -113,7 +114,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                         ),
                         onPressed: () => _showReminderForm(),
                         icon: Icon(Icons.add_alarm_rounded, color: Theme.of(context).colorScheme.onSurface),
-                        label: Text('Add your first reminder', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        label: Text(AppLocalizations.of(context)!.addFirstReminder, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       ),
                     ],
                   ),
@@ -170,7 +171,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                       children: [
                                         Icon(Icons.repeat_rounded, size: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
                                         SizedBox(width: 4),
-                                        Text('Daily', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 11)),
+                                        Text(AppLocalizations.of(context)!.daily, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 11)),
                                       ],
                                     ),
                                   ),
@@ -351,7 +352,7 @@ class _ReminderFormState extends State<_ReminderForm> {
             ),
             SizedBox(height: 16),
             SwitchListTile(
-              title: Text('Repeat Daily', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              title: Text(AppLocalizations.of(context)!.repeatDaily, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               contentPadding: EdgeInsets.zero,
               value: _repeatDaily,
               onChanged: (v) => setState(() => _repeatDaily = v),

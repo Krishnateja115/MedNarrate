@@ -6,6 +6,7 @@ import '../../reports/screens/reports_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -70,22 +71,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 BottomNavigationBarItem(
                   icon: Icon(Icons.dashboard_outlined),
                   activeIcon: Icon(Icons.dashboard_rounded),
-                  label: "Dashboard",
+                  label: AppLocalizations.of(context)!.dashboard,
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.article_outlined),
                   activeIcon: Icon(Icons.article_rounded),
-                  label: "Journal",
+                  label: AppLocalizations.of(context)!.journal,
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.settings_outlined),
                   activeIcon: Icon(Icons.settings_rounded),
-                  label: "Settings",
+                  label: AppLocalizations.of(context)!.settings,
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.person_outline),
                   activeIcon: Icon(Icons.person_rounded),
-                  label: "Profile",
+                  label: AppLocalizations.of(context)!.profile,
                 ),
                 ],
               ),

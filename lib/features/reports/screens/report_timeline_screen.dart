@@ -6,6 +6,7 @@ import '../../../core/services/api_exception.dart';
 import '../../../core/services/api_models.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/formatters.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class ReportTimelineScreen extends StatefulWidget {
   final String reportId;
@@ -67,7 +68,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: Text('Timeline'),
+        title: Text(AppLocalizations.of(context)!.timeline),
       ),
       body: _loading
           ? Center(child: CircularProgressIndicator())
@@ -90,7 +91,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Compared to Previous Report',
+                                Text(AppLocalizations.of(context)!.comparedToPreviousReport,
                                     style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                                 SizedBox(height: 8),
                                 Text(_comparison!.narrativeSummary!,
@@ -105,7 +106,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                               color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: Text('No earlier report available for comparison.',
+                            child: Text(AppLocalizations.of(context)!.noEarlierReport,
                                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
                           ),
                         SizedBox(height: 24),
@@ -113,7 +114,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
 
                       // Test selector
                       if (_availableTests.isNotEmpty) ...[
-                        Text('Test Trend',
+                        Text(AppLocalizations.of(context)!.testTrend,
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                         SizedBox(height: 12),
                         DropdownButton<String>(
@@ -134,7 +135,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                         if (_points == null)
                           Center(child: CircularProgressIndicator())
                         else if (_points!.isEmpty)
-                          Text('No historical data for this test.',
+                          Text(AppLocalizations.of(context)!.noHistoricalData,
                               style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)))
                         else
                           Container(

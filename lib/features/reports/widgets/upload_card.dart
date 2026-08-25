@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class UploadCard extends StatelessWidget {
   final VoidCallback onTap;
@@ -30,8 +31,7 @@ class UploadCard extends StatelessWidget {
               size: 48,
             ),
             SizedBox(height: 16),
-            Text(
-              "Upload Report",
+            Text(AppLocalizations.of(context)!.uploadReport,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 18,

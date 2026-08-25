@@ -9,6 +9,7 @@ import '../../../core/routing/routes.dart';
 import '../../../core/constants/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../../../main.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -75,8 +76,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await _apiService.updateMe(preferredLanguage: lang);
       await _storageService.setPreferredLanguage(lang);
+      localeModeNotifier.value = Locale(lang);
       if (mounted) setState(() => _currentLang = lang);
-      if (mounted) Helpers.showSuccess(context, 'Language updated successfully');
+      if (mounted) Helpers.showSuccess(context, AppLocalizations.of(context)!.languageUpdated);
     } on ApiException catch (e) {
       if (mounted) Helpers.showError(context, e.message);
     } finally {
@@ -93,7 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _changeMedicalUnits(String units) async {
     await _storageService.setMedicalUnits(units);
     if (mounted) setState(() => _currentUnits = units);
-    if (mounted) Helpers.showSuccess(context, 'Medical units updated');
+    if (mounted) Helpers.showSuccess(context, AppLocalizations.of(context)!.medicalUnitsUpdated);
   }
 
   Future<void> _toggleNotifications(bool enabled) async {
@@ -118,14 +120,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: Text('Disable App Lock?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          content: Text('Your reports will be accessible without biometrics.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+          title: Text(AppLocalizations.of(context)!.disableAppLock, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+          content: Text(AppLocalizations.of(context)!.appLockReportsAccessible, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
           backgroundColor: Theme.of(context).cardColor,
           actions: [
-            TextButton(onPressed: () => context.pop(false), child: Text('Cancel')),
+            TextButton(onPressed: () => context.pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
             TextButton(
               onPressed: () => context.pop(true),
-              child: Text('Disable', style: TextStyle(color: Colors.red)),
+              child: Text(AppLocalizations.of(context)!.disable, style: TextStyle(color: Colors.red)),
             ),
           ],
         ),
@@ -160,7 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Text('Coming Soon', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+              child: Text(AppLocalizations.of(context)!.comingSoon, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 20),
             Icon(Icons.construction_outlined, size: 48, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
@@ -180,14 +182,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Export Data', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-        content: Text('Request an archive of your medical history?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+        title: Text(AppLocalizations.of(context)!.exportData, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        content: Text(AppLocalizations.of(context)!.requestArchive, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
         backgroundColor: Theme.of(context).cardColor,
         actions: [
-          TextButton(onPressed: () => context.pop(false), child: Text('Cancel')),
+          TextButton(onPressed: () => context.pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
             onPressed: () => context.pop(true),
-            child: Text('Export', style: TextStyle(color: AppColors.primary)),
+            child: Text(AppLocalizations.of(context)!.export, style: TextStyle(color: AppColors.primary)),
           ),
         ],
       ),
@@ -213,11 +215,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         const SizedBox(height: 16),
         ListTile(
-          title: Text('Terms of Service', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          title: Text(AppLocalizations.of(context)!.termsOfService, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           onTap: () {},
         ),
         ListTile(
-          title: Text('Privacy Policy', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          title: Text(AppLocalizations.of(context)!.privacyPolicy, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
           onTap: () {},
         ),
       ],
@@ -315,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.settings, style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
@@ -328,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.person_outline,
                     iconColor: Theme.of(context).colorScheme.primary,
-                    title: 'Personal Information',
+                    title: AppLocalizations.of(context)!.personalInformation,
                     subtitle: 'Update your basic profile details',
                     onTap: () => context.push(Routes.profile),
                   ),
@@ -349,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.download_outlined,
                     iconColor: AppColors.secondary,
-                    title: 'Export Data',
+                    title: AppLocalizations.of(context)!.exportData,
                     subtitle: 'Download your medical history',
                     onTap: _exportData,
                   ),
@@ -382,7 +384,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.medical_services_outlined,
                     iconColor: AppColors.primary,
-                    title: 'Professional Mode',
+                    title: AppLocalizations.of(context)!.professionalMode,
                     subtitle: 'Show clinical summaries instead of patient-friendly ones',
                     trailing: Switch(
                       value: _professionalMode,
@@ -395,7 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.language,
                     iconColor: AppColors.accentGold,
-                    title: 'Language',
+                    title: AppLocalizations.of(context)!.language,
                     subtitle: _languages[_currentLang] ?? 'English',
                     onTap: () {
                       showModalBottomSheet(
@@ -417,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.straighten,
                     iconColor: Theme.of(context).colorScheme.onSurface,
-                    title: 'Medical Units',
+                    title: AppLocalizations.of(context)!.medicalUnits,
                     subtitle: _currentUnits == 'metric' ? 'Metric (kg, cm, °C)' : 'Imperial (lbs, in, °F)',
                     onTap: () {
                       showModalBottomSheet(
@@ -441,7 +443,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.notifications_active_outlined,
                     iconColor: AppColors.primary,
                     title: 'Push Notifications',
-                    subtitle: 'Enable medicine reminders & alerts',
+                    subtitle: AppLocalizations.of(context)!.notificationsSubtitle,
                     trailing: Switch(
                       value: _notificationsEnabled,
                       onChanged: _toggleNotifications,
@@ -453,16 +455,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.medication,
                     iconColor: AppColors.error,
-                    title: 'Medication Schedules',
-                    subtitle: 'Manage your automated pill reminders',
+                    title: AppLocalizations.of(context)!.medicationSchedules,
+                    subtitle: AppLocalizations.of(context)!.managePillReminders,
                     onTap: () => context.push(Routes.medications),
                   ),
                   Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.alarm,
                     iconColor: AppColors.warning,
-                    title: 'Reminder Sound',
-                    subtitle: 'Coming Soon',
+                    title: AppLocalizations.of(context)!.reminderSound,
+                    subtitle: AppLocalizations.of(context)!.comingSoon,
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -479,8 +481,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.health_and_safety_outlined,
                     iconColor: AppColors.error,
-                    title: 'Health App Sync',
-                    subtitle: 'Coming Soon',
+                    title: AppLocalizations.of(context)!.healthAppSync,
+                    subtitle: AppLocalizations.of(context)!.comingSoon,
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -495,8 +497,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.watch_outlined,
                     iconColor: Theme.of(context).colorScheme.onSurface,
-                    title: 'Connected Devices',
-                    subtitle: 'Coming Soon',
+                    title: AppLocalizations.of(context)!.connectedDevices,
+                    subtitle: AppLocalizations.of(context)!.comingSoon,
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -513,15 +515,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.help_outline,
                     iconColor: AppColors.success,
-                    title: 'Help Center',
+                    title: AppLocalizations.of(context)!.helpCenter,
                     onTap: _showHelpCenter,
                   ),
                   Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.info_outline,
                     iconColor: AppColors.accentTeal,
-                    title: 'About MedNarrate',
-                    subtitle: 'Version 1.0.0',
+                    title: AppLocalizations.of(context)!.aboutMedNarrate,
+                    subtitle: AppLocalizations.of(context)!.version,
                     onTap: _showAbout,
                   ),
                 ]),
@@ -551,7 +553,7 @@ class _LanguagePicker extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Select Language', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.selectLanguage, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 16),
           Expanded(
             child: ListView.builder(
@@ -595,7 +597,7 @@ class _ThemePicker extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Select Theme Mode', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.selectThemeMode, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 16),
           ...options.map((option) {
             final label = option['label'] as String;
@@ -633,7 +635,7 @@ class _MeasurementPicker extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Select Medical Units', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.selectMedicalUnits, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 16),
           ...options.map((option) {
             final label = option['label'] as String;
@@ -672,8 +674,7 @@ class _HelpCenterSheet extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            'Help Center',
+          Text(AppLocalizations.of(context)!.helpCenter,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -716,7 +717,7 @@ class _HelpCenterSheet extends StatelessWidget {
                 Helpers.showSuccess(context, 'Redirecting to email client...');
               },
               icon: const Icon(Icons.email_outlined),
-              label: const Text('Contact Support'),
+              label: Text(AppLocalizations.of(context)!.contactSupport),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

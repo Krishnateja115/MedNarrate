@@ -16,6 +16,7 @@ import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/offline_banner.dart';
 import 'package:go_router/go_router.dart';
 import '../../reports/widgets/upload_card.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -113,21 +114,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   children: [
                     DashboardStatisticsCard(
-                      title: 'Reports',
+                      title: AppLocalizations.of(context)!.statReports,
                       value: _totalReports.toString(),
                       icon: Icons.description_outlined,
                       color: Colors.blue,
                     ),
                     const SizedBox(width: 12),
                     DashboardStatisticsCard(
-                      title: 'Reminders',
+                      title: AppLocalizations.of(context)!.statReminders,
                       value: _activeReminders.toString(),
                       icon: Icons.medication_outlined,
                       color: Colors.orange,
                     ),
                     const SizedBox(width: 12),
                     DashboardStatisticsCard(
-                      title: 'Favourites',
+                      title: AppLocalizations.of(context)!.statFavourites,
                       value: _favouriteReports.toString(),
                       icon: Icons.favorite_border,
                       color: Colors.red,
@@ -137,7 +138,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 35),
 
                 // Quick Actions
-                Text('Quick Actions', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
+                Text(AppLocalizations.of(context)!.quickActions, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
                 UploadCard(onTap: () async {
                   await context.push(Routes.upload);
@@ -148,17 +149,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     QuickActionCard(
                       icon: Icons.description_outlined,
-                      title: 'All Reports',
+                      title: AppLocalizations.of(context)!.allReports,
                       onTap: () => context.push(Routes.reports),
                     ),
                     QuickActionCard(
                       icon: Icons.smart_toy_outlined,
-                      title: 'AI Chat',
+                      title: AppLocalizations.of(context)!.aiChatTab,
                       onTap: () => context.push(Routes.aiChat),
                     ),
                     QuickActionCard(
                       icon: Icons.bar_chart_rounded,
-                      title: 'Insights',
+                      title: AppLocalizations.of(context)!.insights,
                       onTap: () => context.push(Routes.insights),
                     ),
                   ],
@@ -170,12 +171,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 35),
 
                 // Recent Reports
-                Text('Recent Reports', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
+                Text(AppLocalizations.of(context)!.recentReports, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
                 if (_loading)
                   const Center(child: CircularProgressIndicator())
                 else if (_recentReports.isEmpty)
-                  Center(child: Text('No recent reports.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))))
+                  Center(child: Text(AppLocalizations.of(context)!.noRecentReports, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))))
                 else
                   ..._recentReports.map((report) => GestureDetector(
                     onTap: () => context.push(Routes.reportDetails, extra: report.id),

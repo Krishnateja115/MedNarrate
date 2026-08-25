@@ -7,6 +7,7 @@ import '../controllers/report_detail_controller.dart';
 import '../widgets/summary_tab.dart';
 import '../widgets/lab_results_tab.dart';
 import '../widgets/ai_chat_tab.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class ReportDetailsScreen extends StatefulWidget {
   final String? reportId;
@@ -51,7 +52,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: Text('Report Details'),
+        title: Text(AppLocalizations.of(context)!.reportDetails),
         actions: [
           if (_controller.report != null) ...[  
             IconButton(
@@ -71,13 +72,13 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (_) => AlertDialog(
-                      title: const Text('Delete Report?'),
-                      content: const Text('This will permanently delete this report and all its analysis. This cannot be undone.'),
+                      title: Text(AppLocalizations.of(context)!.deleteReportTitle),
+                      content: Text(AppLocalizations.of(context)!.deleteReportConfirm),
                       actions: [
-                        TextButton(onPressed: () => router.pop(), child: const Text('Cancel')),
+                        TextButton(onPressed: () => router.pop(), child: Text(AppLocalizations.of(context)!.cancel)),
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(true),
-                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                          child: Text(AppLocalizations.of(context)!.delete, style: TextStyle(color: Colors.red)),
                         ),
                       ],
                     ),
@@ -86,8 +87,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                   try {
                     await ApiService.instance.deleteReport(_controller.report!.id);
                     if (mounted) {
-                      messenger.showSnackBar(const SnackBar(
-                        content: Text('Report deleted.'),
+                      messenger.showSnackBar(SnackBar(
+                        content: Text(AppLocalizations.of(context)!.reportDeleted),
                         backgroundColor: Color(0xFF00C48C),
                       ));
                       router.pop();
@@ -103,13 +104,13 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                 }
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline, color: Colors.red),
-                      SizedBox(width: 12),
-                      Text('Delete Report', style: TextStyle(color: Colors.red)),
+                      const Icon(Icons.delete_outline, color: Colors.red),
+                      const SizedBox(width: 12),
+                      Text(AppLocalizations.of(context)!.deleteReport, style: const TextStyle(color: Colors.red)),
                     ],
                   ),
                 ),
@@ -123,10 +124,10 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
           unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
           indicatorColor: AppColors.primary,
           indicatorWeight: 3,
-          tabs: const [
-            Tab(text: 'Summary'),
-            Tab(text: 'Lab Results'),
-            Tab(text: 'AI Chat'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context)!.summary),
+            Tab(text: AppLocalizations.of(context)!.labResultsTab),
+            Tab(text: AppLocalizations.of(context)!.aiChatTab),
           ],
         ),
       ),

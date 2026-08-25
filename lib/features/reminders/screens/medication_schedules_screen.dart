@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/services/api_service.dart';
 import '../../../shared/widgets/glassmorphism_card.dart';
 import '../models/medication_schedule_model.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class MedicationSchedulesScreen extends StatefulWidget {
   const MedicationSchedulesScreen({super.key});
@@ -88,7 +89,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Medication Reminders'),
+        title: Text(AppLocalizations.of(context)!.medicationReminders),
         flexibleSpace: ClipRect(
           child: BackdropFilter(
             filter: ColorFilter.mode(Colors.black.withValues(alpha: 0.01), BlendMode.srcOver),
@@ -117,7 +118,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(_error!, style: const TextStyle(color: Colors.red)),
-                          ElevatedButton(onPressed: _fetchSchedules, child: const Text('Retry')),
+                          ElevatedButton(onPressed: _fetchSchedules, child: Text(AppLocalizations.of(context)!.retry)),
                         ],
                       ),
                     )
@@ -144,8 +145,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
           children: [
             Icon(Icons.medication, size: 80, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
             const SizedBox(height: 24),
-            Text(
-              'No medication schedules found in your reports yet. Upload a report that contains prescriptions to start tracking.',
+            Text(AppLocalizations.of(context)!.noMedicationSchedules,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
@@ -163,7 +163,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Go to Reports'),
+              child: Text(AppLocalizations.of(context)!.goToReports),
             ),
           ],
         ),

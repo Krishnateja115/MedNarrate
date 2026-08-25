@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../reports/models/report_model.dart';
 import 'lab_result_row.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class LabResultsTab extends StatefulWidget {
   final ReportModel report;
@@ -43,7 +44,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
               ),
               SizedBox(height: 24),
-              Text('Historical Trend', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Text(AppLocalizations.of(context)!.historicalTrend, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
               Container(
                 height: 150,
@@ -71,7 +72,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
                     // (Requires callback to parent, handled later)
                   },
                   icon: Icon(Icons.smart_toy),
-                  label: Text('Ask AI about this'),
+                  label: Text(AppLocalizations.of(context)!.askAiAboutThis),
                 ),
               ),
             ],
@@ -108,7 +109,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
           child: TextField(
             onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
-              hintText: 'Search parameters...',
+              hintText: AppLocalizations.of(context)!.searchParameters,
               prefixIcon: Icon(Icons.search),
               filled: true,
               fillColor: Theme.of(context).cardColor,

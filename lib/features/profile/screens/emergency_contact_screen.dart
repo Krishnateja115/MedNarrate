@@ -6,6 +6,7 @@ import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/primary_button.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class EmergencyContactScreen extends StatefulWidget {
   const EmergencyContactScreen({super.key});
@@ -72,7 +73,7 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Emergency Contact'),
+        title: Text(AppLocalizations.of(context)!.emergencyContact),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
@@ -85,25 +86,23 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(height: 15),
-                    Text(
-                      'Emergency Contact',
+                    Text(AppLocalizations.of(context)!.emergencyContact,
                       style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                     ),
                     SizedBox(height: 10),
-                    Text(
-                      "We'll use this only during emergencies.",
+                    Text(AppLocalizations.of(context)!.emergencyContactSubtitle,
                       style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
                     ),
                     SizedBox(height: 35),
                     CustomTextField(
                       controller: _nameController,
-                      label: 'Full Name',
+                      label: AppLocalizations.of(context)!.fullName,
                       icon: Icons.person_outline,
                     ),
                     SizedBox(height: 20),
                     CustomTextField(
                       controller: _phoneController,
-                      label: 'Phone Number',
+                      label: AppLocalizations.of(context)!.phoneNumber,
                       icon: Icons.phone_outlined,
                       keyboardType: TextInputType.phone,
                     ),

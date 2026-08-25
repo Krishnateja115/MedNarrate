@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../../../models/comparison_models.dart';
 import '../../../shared/widgets/glassmorphism_card.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class ParameterCard extends StatelessWidget {
   final ParameterComparison comparison;
@@ -286,7 +287,7 @@ class ParameterCard extends StatelessWidget {
             style: const TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 16),
-          const Text('Need at least 2 reports to show a trend graph.', 
+          Text(AppLocalizations.of(context)!.needTwoReports, 
             style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
         ],
       ),

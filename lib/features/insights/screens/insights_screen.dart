@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 import 'insights_controller.dart';
 import '../widgets/parameter_card.dart';
 import '../../../shared/widgets/glassmorphism_card.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class InsightsScreen extends StatefulWidget {
   const InsightsScreen({super.key});
@@ -37,7 +38,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Health Insights', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.healthInsights, style: TextStyle(fontWeight: FontWeight.bold)),
         flexibleSpace: ClipRect(
           child: BackdropFilter(
             filter: ColorFilter.mode(Colors.black.withValues(alpha: 0.01), BlendMode.srcOver),
@@ -92,7 +93,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: _controller.loadAvailableReports,
-                          child: const Text('Retry'),
+                          child: Text(AppLocalizations.of(context)!.retry),
                         ),
                       ],
                     ),
@@ -270,7 +271,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Compare Selected'),
+              child: Text(AppLocalizations.of(context)!.compareSelected),
             ),
           ),
         ),

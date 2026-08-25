@@ -13,6 +13,7 @@ import 'package:go_router/go_router.dart';
 import '../widgets/search_bar.dart';
 import '../../../core/services/report_polling_service.dart';
 import 'dart:async';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -83,7 +84,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Reports'),
+        title: Text(AppLocalizations.of(context)!.statReports),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
@@ -150,7 +151,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             TextButton.icon(
                               onPressed: _loadReports,
                               icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onSurface),
-                              label: Text('Retry', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                              label: Text(AppLocalizations.of(context)!.retry, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                             ),
                           ],
                         ),
@@ -162,10 +163,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               children: [
                                 const EmptyHistoryIllustration(),
                                 SizedBox(height: 20),
-                                Text('No reports found',
+                                Text(AppLocalizations.of(context)!.noReportsFound,
                                     style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
                                 SizedBox(height: 8),
-                                Text('Upload your first medical report to get started',
+                                Text(AppLocalizations.of(context)!.uploadFirstReport,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 14)),
                                 SizedBox(height: 24),

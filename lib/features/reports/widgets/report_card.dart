@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../models/report_model.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class ReportCard extends StatelessWidget {
   final ReportModel report;
@@ -60,7 +61,7 @@ class ReportCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.blue.withValues(alpha: 0.5)),
                 ),
-                child: Text('Processing', style: TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold)),
+                child: Text(AppLocalizations.of(context)!.processing, style: TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold)),
               ),
           ],
         ),
@@ -109,7 +110,7 @@ class ReportCard extends StatelessWidget {
             ),
             PopupMenuItem(
               value: "delete",
-              child: Text("Delete", style: TextStyle(color: AppColors.error)),
+              child: Text(AppLocalizations.of(context)!.delete, style: TextStyle(color: AppColors.error)),
             ),
           ],
         ),

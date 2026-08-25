@@ -6,6 +6,7 @@ import '../../../../core/services/api_exception.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../chat/widgets/typing_indicator.dart';
 import '../../chat/widgets/quick_question_chips.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class AIChatTab extends StatefulWidget {
   final String reportId;
@@ -238,7 +239,7 @@ class _AIChatTabState extends State<AIChatTab> {
         onLongPress: () {
           if (!isUser) {
             // Show copy
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Message copied')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.messageCopied)));
           }
         },
         child: Container(

@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../../main.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -47,14 +48,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Log Out?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-        content: Text('Are you sure you want to log out of MedNarrate?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+        title: Text(AppLocalizations.of(context)!.logOutTitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        content: Text(AppLocalizations.of(context)!.logOutConfirm, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
         backgroundColor: Theme.of(context).cardColor,
         actions: [
-          TextButton(onPressed: () => context.pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => context.pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
             onPressed: () => context.pop(true),
-            child: const Text('Log Out', style: TextStyle(color: Colors.redAccent)),
+            child: Text(AppLocalizations.of(context)!.logOut, style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -91,19 +92,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text('Edit Personal Info', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              title: Text(AppLocalizations.of(context)!.editPersonalInfo, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CustomTextField(
                     controller: nameCtrl,
-                    label: 'Full Name',
+                    label: AppLocalizations.of(context)!.fullName,
                     icon: Icons.person_outline,
                   ),
                   SizedBox(height: 16),
                   CustomTextField(
                     controller: dobCtrl,
-                    label: 'Date of Birth (YYYY-MM-DD)',
+                    label: AppLocalizations.of(context)!.dateOfBirth,
                     icon: Icons.calendar_today,
                   ),
                 ],
@@ -111,7 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               actions: [
                 TextButton(
                   onPressed: () => ctx.pop(),
-                  child: Text('Cancel'),
+                  child: Text(AppLocalizations.of(context)!.cancel),
                 ),
                 FilledButton(
                   onPressed: saving ? null : () async {
@@ -146,12 +147,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: false,
-        title: Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.profile, style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : _user == null
-              ? Center(child: Text('Failed to load profile', style: TextStyle(color: Colors.red)))
+              ? Center(child: Text(AppLocalizations.of(context)!.failedToLoadProfile, style: TextStyle(color: Colors.red)))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -219,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       if (_savingRole) Padding(
                         padding: EdgeInsets.only(top: 8),
-                        child: Text('Updating role...', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 12)),
+                        child: Text(AppLocalizations.of(context)!.updatingRole, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 12)),
                       ),
                       SizedBox(height: 20),
                       
@@ -228,20 +229,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       
                       ProfileTile(
                         icon: Icons.person_outline,
-                        title: 'Personal Information',
-                        subtitle: 'View and edit your personal details',
+                        title: AppLocalizations.of(context)!.personalInformation,
+                        subtitle: AppLocalizations.of(context)!.viewEditPersonalDetails,
                         onTap: _showEditPersonalInfoDialog,
                       ),
                       ProfileTile(
                         icon: Icons.medical_information_outlined,
-                        title: 'Medical Information',
-                        subtitle: 'Blood group, allergies and history',
+                        title: AppLocalizations.of(context)!.medicalProfile,
+                        subtitle: AppLocalizations.of(context)!.bloodGroupAllergiesHistory,
                         onTap: () => context.push(Routes.medicalProfile),
                       ),
                       ProfileTile(
                         icon: Icons.emergency_outlined,
-                        title: 'Emergency Contact',
-                        subtitle: 'Emergency contact information',
+                        title: AppLocalizations.of(context)!.emergencyContact,
+                        subtitle: AppLocalizations.of(context)!.emergencyContactInfo,
                         onTap: () => context.push(Routes.emergencyContact),
                       ),
                       
@@ -255,7 +256,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final isDark = mode == ThemeMode.dark || mode == ThemeMode.system;
                           return ProfileTile(
                             icon: isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-                            title: 'Theme Mode',
+                            title: AppLocalizations.of(context)!.themeMode,
                             subtitle: isDark ? 'Dark Mode (OLED)' : 'Light Mode',
                             onTap: () async {
                               final next = isDark ? ThemeMode.light : ThemeMode.dark;
@@ -267,8 +268,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       ProfileTile(
                         icon: Icons.settings_outlined,
-                        title: 'Settings',
-                        subtitle: 'Language & Advanced Preferences',
+                        title: AppLocalizations.of(context)!.settings,
+                        subtitle: AppLocalizations.of(context)!.languageAndPreferences,
                         onTap: () => context.push(Routes.settings),
                       ),
                       
@@ -284,7 +285,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           onPressed: _logout,
                           icon: Icon(Icons.logout, color: Colors.redAccent),
-                          label: Text('Logout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                          label: Text(AppLocalizations.of(context)!.logout, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent)),
                         ),
                       ),
                       SizedBox(height: 30),

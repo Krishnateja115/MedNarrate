@@ -10,6 +10,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/report_polling.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/routing/routes.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
@@ -78,7 +79,7 @@ class _UploadScreenState extends State<UploadScreen> {
         if (!mounted) return;
         if (status.processingStatus == 'completed') {
           setState(() => _processing = false);
-          Helpers.showSuccess(context, 'Report analyzed successfully!');
+          Helpers.showSuccess(context, AppLocalizations.of(context)!.reportAnalyzedSuccessfully);
           context.go(Routes.reportAnalysis, extra: report.id);
           return;
         } else if (status.processingStatus == 'failed') {
@@ -106,7 +107,7 @@ class _UploadScreenState extends State<UploadScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: Text('Upload Report'),
+        title: Text(AppLocalizations.of(context)!.uploadReport),
       ),
       body: _processing
           ? Center(
@@ -115,10 +116,10 @@ class _UploadScreenState extends State<UploadScreen> {
                 children: [
                   const CircularProgressIndicator(),
                   SizedBox(height: 24),
-                  Text('Analyzing your report with AI…',
+                  Text(AppLocalizations.of(context)!.analyzingReport,
                       style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70))),
                   SizedBox(height: 8),
-                  Text('This may take a minute.',
+                  Text(AppLocalizations.of(context)!.thisMayTakeAMinute,
                       style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13)),
                 ],
               ),
@@ -140,10 +141,10 @@ class _UploadScreenState extends State<UploadScreen> {
                       child: Icon(Icons.upload_file_rounded, color: Theme.of(context).colorScheme.onSurface, size: 48),
                     ),
                     SizedBox(height: 24),
-                    Text('Upload Medical Report',
+                    Text(AppLocalizations.of(context)!.uploadMedicalReport,
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                     SizedBox(height: 6),
-                    Text('PDF, JPG, JPEG, or PNG · max 25 MB',
+                    Text(AppLocalizations.of(context)!.pdfJpgPngMax,
                         style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13)),
                     SizedBox(height: 28),
                     // Title

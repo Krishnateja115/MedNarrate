@@ -9,6 +9,7 @@ import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/custom_password_field.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../../shared/widgets/primary_button.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -61,26 +62,24 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 40),
-                Text(
-                  'Welcome Back',
+                Text(AppLocalizations.of(context)!.welcomeBack,
                   style: TextStyle(fontSize: 34, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
-                Text(
-                  'Sign in to continue',
+                Text(AppLocalizations.of(context)!.signInToContinue,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 17),
                 ),
                 SizedBox(height: 45),
                 CustomTextField(
                   controller: emailController,
-                  label: 'Email',
+                  label: AppLocalizations.of(context)!.email,
                   icon: Icons.email_outlined,
                   validator: Validators.isValidEmail,
                 ),
                 SizedBox(height: 20),
                 CustomPasswordField(
                   controller: passwordController,
-                  label: 'Password',
+                  label: AppLocalizations.of(context)!.password,
                   validator: (v) => v == null || v.isEmpty ? 'Password is required' : null,
                 ),
                 SizedBox(height: 15),
@@ -88,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => context.push(Routes.forgotPassword),
-                    child: Text('Forgot Password?'),
+                    child: Text(AppLocalizations.of(context)!.forgotPassword),
                   ),
                 ),
                 SizedBox(height: 25),
@@ -100,11 +99,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Don't have an account?",
+                    Text(AppLocalizations.of(context)!.dontHaveAccount,
                         style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70))),
                     TextButton(
                       onPressed: () => context.go(Routes.signup),
-                      child: Text('Sign Up'),
+                      child: Text(AppLocalizations.of(context)!.signUp),
                     ),
                   ],
                 ),
