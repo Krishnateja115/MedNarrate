@@ -109,10 +109,14 @@ The backend uses a local ChromaDB instance populated from the MRAD dataset for c
 
 ```bash
 cd mednarrate-backend
-# First ingest general knowledge and examples
+
+# 1. Download the MRAD dataset (if not already present)
+python scripts/download_mrad_dataset.py
+
+# 2. First ingest general knowledge and examples
 python scripts/ingest_mrad_dataset.py
 
-# Then ingest lab reference ranges
+# 3. Then ingest lab reference ranges
 python scripts/ingest_mrad_lab_references.py
 ```
 
