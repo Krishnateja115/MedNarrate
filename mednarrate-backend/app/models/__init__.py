@@ -10,3 +10,5 @@ from .report_translation import ReportTranslation
 from .push_token import PushToken
 from .medication_schedule import MedicationSchedule
 from .notification_log import NotificationLog
+from .analysis_translation import AnalysisTranslation
+from .knowledge_chunk import KnowledgeChunk

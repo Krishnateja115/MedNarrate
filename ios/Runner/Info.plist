@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSHealthShareUsageDescription</key>
+	<string>We will sync your data with the Apple Health app to give you better insights into your daily steps, heart rate, and sleep patterns.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>We need this permission to interact with Apple Health.</string>
 </dict>
 </plist>

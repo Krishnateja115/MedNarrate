@@ -23,8 +23,8 @@ async def save_upload_file(user_id: uuid.UUID, upload_file: UploadFile) -> str:
     # Read the file to check size
     file_bytes = await upload_file.read()
     size_mb = len(file_bytes) / (1024 * 1024)
-    if size_mb > 10:  # Enforce 10MB limit
-        raise HTTPException(status_code=422, detail="File too large. Max size is 10MB")
+    if size_mb > settings.MAX_UPLOAD_MB:
+        raise HTTPException(status_code=422, detail=f"File too large. Max size is {settings.MAX_UPLOAD_MB}MB")
         
     # PDF magic byte check if ext is pdf
     if ext == "pdf":

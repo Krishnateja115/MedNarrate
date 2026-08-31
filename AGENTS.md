@@ -15,3 +15,7 @@ These are the rules and guidelines for AI coding agents working on the MedNarrat
 ## AI Constraints
 - Do not remove existing comments unless rewriting the entire block.
 - For database schema changes, you must generate Alembic migrations (`alembic revision --autogenerate -m "msg"`).
+
+## Dataset & AI Integration
+- **MRAD Dataset**: The MRAD dataset is large. Never attempt to load it entirely into memory. Use chunking or use the provided `scripts/ingest_mrad_dataset.py` script.
+- **LLM Client**: The application uses `google-generativeai` (Gemini). When writing Pytest tests, always mock this client using `pytest.monkeypatch` to prevent actual API calls.

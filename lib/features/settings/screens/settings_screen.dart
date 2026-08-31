@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/services/api_service.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/services/health_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/utils/helpers.dart';
@@ -33,6 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _biometricAvailable = false;
   bool _loading = true;
   String _currentSound = 'default';
+  bool _healthSyncEnabled = false;
   
   final AudioPlayer _audioPlayer = AudioPlayer();
 
@@ -68,6 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bioAvail = await BiometricService.instance.isAvailable();
     final bioEnab = await BiometricService.instance.isBiometricEnabled();
     final sound = await _storageService.getReminderSound();
+    final healthSync = await _storageService.isHealthSyncEnabled();
     
     if (mounted) {
       setState(() {
@@ -79,6 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _biometricAvailable = bioAvail;
         _biometricEnabled = bioEnab;
         _currentSound = sound;
+        _healthSyncEnabled = healthSync;
         _loading = false;
       });
     }
@@ -254,6 +258,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _toggleHealthSync(bool enabled) async {
+    if (enabled) {
+      setState(() => _loading = true);
+      bool authorized = await HealthService.instance.requestAuthorization();
+      setState(() => _loading = false);
+      if (authorized) {
+        await _storageService.setHealthSyncEnabled(true);
+        if (mounted) setState(() => _healthSyncEnabled = true);
+        if (mounted) Helpers.showSuccess(context, 'Health App Sync Enabled');
+      } else {
+        if (mounted) Helpers.showError(context, 'Failed to get Health permissions');
+      }
+    } else {
+      await _storageService.setHealthSyncEnabled(false);
+      if (mounted) setState(() => _healthSyncEnabled = false);
+      if (mounted) Helpers.showSuccess(context, 'Health App Sync Disabled');
+    }
   }
 
   Future<void> _exportData() async {
@@ -552,16 +575,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.health_and_safety_outlined,
                     iconColor: AppColors.error,
                     title: AppLocalizations.of(context)!.healthAppSync,
-                    subtitle: AppLocalizations.of(context)!.comingSoon,
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text('SOON', style: TextStyle(color: AppColors.error, fontSize: 10, fontWeight: FontWeight.bold)),
+                    subtitle: 'Sync vitals with Apple Health / Google Fit',
+                    trailing: Switch(
+                      value: _healthSyncEnabled,
+                      onChanged: _toggleHealthSync,
+                      activeColor: Theme.of(context).colorScheme.primary,
                     ),
-                    onTap: () => _showSoonSheet('Health App Sync', 'Sync with Apple Health and Google Fit to automatically pull your vitals and activity data.'),
+                    onTap: () => _toggleHealthSync(!_healthSyncEnabled),
                   ),
                   Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   _buildSettingsTile(

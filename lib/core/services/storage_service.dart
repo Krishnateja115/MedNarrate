@@ -153,4 +153,18 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyReminderSound) ?? 'default';
   }
+
+  // ── Health App Sync (shared_preferences) ──────────────────────────────────
+  
+  static const String _keyHealthSync = 'health_sync_enabled';
+
+  Future<void> setHealthSyncEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyHealthSync, enabled);
+  }
+
+  Future<bool> isHealthSyncEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyHealthSync) ?? false;
+  }
 }
