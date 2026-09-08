@@ -31,6 +31,161 @@
 
   <title>mednarrate</title>
   <link rel="manifest" href="manifest.json">
+  <script>
+    window.MedNarrateWebAuthn = {
+      async checkAvailability() {
+        if (!window.PublicKeyCredential) {
+          return 'UNSUPPORTED';
+        }
+        try {
+          if (PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+            const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            return available ? 'AVAILABLE' : 'NO_PLATFORM_AUTHENTICATOR';
+          }
+          return 'AVAILABLE';
+        } catch (e) {
+          return 'NO_PLATFORM_AUTHENTICATOR';
+        }
+      },
+
+      async authenticateExisting(credIdBase64) {
+        if (!window.PublicKeyCredential) {
+          return { status: 'UNSUPPORTED', error: 'Biometric authentication is not supported by this browser.' };
+        }
+        try {
+          const challenge = new Uint8Array(32);
+          window.crypto.getRandomValues(challenge);
+          const credIdBytes = Uint8Array.from(atob(credIdBase64), c => c.charCodeAt(0));
+
+          const getOptions = {
+            publicKey: {
+              challenge: challenge,
+              timeout: 60000,
+              userVerification: 'required',
+              allowCredentials: [{
+                id: credIdBytes,
+                type: 'public-key',
+                transports: ['internal']
+              }]
+            }
+          };
+
+          const assertion = await navigator.credentials.get(getOptions);
+          if (assertion) {
+            return { status: 'SUCCESS' };
+          }
+          return { status: 'FAILURE', error: 'Biometric authentication failed. Please try again.' };
+        } catch (err) {
+          if (err.name === 'NotAllowedError') {
+            return { status: 'CANCELLED', error: 'Biometric authentication was cancelled.' };
+          }
+          return { status: 'FAILURE', error: 'Biometric authentication failed. Please try again.' };
+        }
+      },
+
+      async registerNewCredential() {
+        if (!window.PublicKeyCredential) {
+          return { status: 'UNSUPPORTED', error: 'Biometric authentication is not supported by this browser.' };
+        }
+        try {
+          const challenge = new Uint8Array(32);
+          window.crypto.getRandomValues(challenge);
+          const userId = new Uint8Array(16);
+          window.crypto.getRandomValues(userId);
+
+          const createOptions = {
+            publicKey: {
+              challenge: challenge,
+              rp: { name: 'MedNarrate', id: window.location.hostname },
+              user: {
+                id: userId,
+                name: 'user@mednarrate.local',
+                displayName: 'MedNarrate User'
+              },
+              pubKeyCredParams: [
+                { type: 'public-key', alg: -7 },
+                { type: 'public-key', alg: -257 }
+              ],
+              authenticatorSelection: {
+                authenticatorAttachment: 'platform',
+                userVerification: 'required',
+                requireResidentKey: false
+              },
+              timeout: 60000,
+              attestation: 'none'
+            }
+          };
+
+          const newCred = await navigator.credentials.create(createOptions);
+          if (newCred && newCred.rawId) {
+            const credIdBase64 = btoa(String.fromCharCode(...new Uint8Array(newCred.rawId)));
+            return { status: 'SUCCESS', credId: credIdBase64 };
+          }
+          return { status: 'FAILURE', error: 'Biometric registration failed. Please try again.' };
+        } catch (err) {
+          if (err.name === 'NotAllowedError') {
+            return { status: 'CANCELLED', error: 'Biometric authentication was cancelled.' };
+          }
+          if (err.name === 'NotSupportedError' || err.name === 'ConstraintError' || (err.message && err.message.includes('platform'))) {
+            return { status: 'NOT_CONFIGURED', error: 'Please set up Windows Hello to enable biometric app lock.' };
+          }
+          return { status: 'FAILURE', error: 'Biometric authentication failed. Please try again.' };
+        }
+      },
+
+      async authenticate(reasonText) {
+        const storedCredId = localStorage.getItem('mednarrate_webauthn_cred_id');
+        if (storedCredId) {
+          const res = await this.authenticateExisting(storedCredId);
+          if (res.status === 'SUCCESS' || res.status === 'CANCELLED') {
+            return res;
+          }
+        }
+        const regRes = await this.registerNewCredential();
+        if (regRes.status === 'SUCCESS' && regRes.credId) {
+          localStorage.setItem('mednarrate_webauthn_cred_id', regRes.credId);
+        }
+        return regRes;
+      },
+
+      async verifyCurrentBiometric() {
+        const storedCredId = localStorage.getItem('mednarrate_webauthn_cred_id');
+        if (storedCredId) {
+          return await this.authenticateExisting(storedCredId);
+        }
+        return { status: 'SUCCESS' };
+      },
+
+      async saveNewCredential(credIdBase64) {
+        if (credIdBase64) {
+          localStorage.setItem('mednarrate_webauthn_cred_id', credIdBase64);
+          return { status: 'SUCCESS' };
+        }
+        return { status: 'FAILURE' };
+      },
+
+      async disableBiometric() {
+        const storedCredId = localStorage.getItem('mednarrate_webauthn_cred_id');
+        if (storedCredId) {
+          const currentAuth = await this.authenticateExisting(storedCredId);
+          if (currentAuth.status !== 'SUCCESS') {
+            return currentAuth;
+          }
+        }
+        localStorage.removeItem('mednarrate_webauthn_cred_id');
+        return { status: 'SUCCESS' };
+      },
+
+      openWindowsSettings() {
+        try {
+          window.location.href = 'ms-settings:signinoptions';
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+    };
+  </script>
 </head>
 <body>
   <!--

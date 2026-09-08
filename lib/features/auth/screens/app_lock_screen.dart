@@ -43,7 +43,9 @@ class _AppLockScreenState extends State<AppLockScreen> {
       _error = null;
     });
 
-    final result = await BiometricService.instance.authenticate();
+    final result = await BiometricService.instance.authenticate(
+      reason: 'Authenticate to unlock MedNarrate',
+    );
 
     if (!mounted) return;
 
@@ -55,13 +57,21 @@ class _AppLockScreenState extends State<AppLockScreen> {
       }
     } else {
       setState(() {
-        _failures++;
-        if (_failures >= 3) {
-          _lockout();
-        } else {
-          _error = 'Authentication failed. Please try again.';
-        }
         _isAuthenticating = false;
+        if (result == BiometricResult.cancelled) {
+          _error = 'Biometric authentication was cancelled.';
+        } else if (result == BiometricResult.notConfigured) {
+          _error = 'Please set up fingerprint or Face ID in device settings first.';
+        } else if (result == BiometricResult.unsupported) {
+          _error = 'Biometric authentication is not supported by this browser.';
+        } else {
+          _failures++;
+          if (_failures >= 3) {
+            _lockout();
+          } else {
+            _error = 'Biometric authentication failed. Please try again.';
+          }
+        }
       });
     }
   }

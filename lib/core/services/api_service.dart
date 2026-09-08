@@ -206,7 +206,7 @@ class ApiService {
   }
 
   Future<UserModel> getMe() async {
-    final resp = await _get('/auth/me');
+    final resp = await _get('/users/me');
     return UserModel.fromMap(jsonDecode(resp.body) as Map<String, dynamic>);
   }
 

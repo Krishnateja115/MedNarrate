@@ -7,11 +7,7 @@ from app.models.user import User
 from app.core.security import hash_password
 import secrets
 import hashlib
-import logging
 from datetime import datetime, timezone, timedelta
-from app.core.config import settings
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -55,27 +51,10 @@ async def forgot_password(req: ForgotPasswordRequest, db: AsyncSession = Depends
     }
 
     # In production: send email with reset link
-    if settings.SENDGRID_API_KEY:
-        try:
-            import sendgrid
-            from sendgrid.helpers.mail import Mail
-            sg = sendgrid.SendGridAPIClient(api_key=settings.SENDGRID_API_KEY)
-            message = Mail(
-                from_email=settings.SENDGRID_FROM_EMAIL,
-                to_emails=req.email,
-                subject="Password Reset Request",
-                html_content=f"Your password reset token is: <strong>{raw_token}</strong>"
-            )
-            sg.send(message)
-        except Exception as e:
-            logger.error(f"Failed to send password reset email: {e}")
-    else:
-        logger.info(f"OTP generated for {req.email}: {raw_token}")
-
-    # For development: return the token directly in the response if no sendgrid key
+    # For development: return the token directly in the response
     return ForgotPasswordResponse(
         message="If this email is registered, a reset link has been sent.",
-        dev_token=raw_token if not settings.SENDGRID_API_KEY else None,
+        dev_token=raw_token,
     )
 
 

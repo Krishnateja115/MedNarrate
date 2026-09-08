@@ -22,11 +22,31 @@ import '../../features/settings/screens/settings_screen.dart';
 import '../../features/navigation/screens/main_navigation_screen.dart';
 import 'routes.dart';
 
+import '../services/biometric_service.dart';
+import '../services/storage_service.dart';
+
 class AppRouter {
   AppRouter._();
 
   static final router = GoRouter(
     initialLocation: Routes.splash,
+    redirect: (context, state) async {
+      final isBioEnabled = await BiometricService.instance.isBiometricEnabled();
+      final isUnlocked = BiometricService.instance.isUnlocked;
+
+      if (isBioEnabled && !isUnlocked) {
+        final loc = state.matchedLocation;
+        if (loc != '/app-lock' &&
+            loc != Routes.login &&
+            loc != Routes.signup &&
+            loc != Routes.forgotPassword &&
+            loc != Routes.splash &&
+            loc != Routes.onboarding) {
+          return '/app-lock';
+        }
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: Routes.splash,

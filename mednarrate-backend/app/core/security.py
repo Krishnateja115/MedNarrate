@@ -14,18 +14,22 @@ from app.core.database import get_db
 
 import hashlib as _hashlib
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-def _pre_hash(password: str) -> str:
-    """Pre-hash password with SHA256 to avoid bcrypt 72-byte truncation and bcrypt version quirks."""
-    return _hashlib.sha256(password.encode("utf-8")).hexdigest()
+def _pre_hash(password: str) -> bytes:
+    """Pre-hash password with SHA256 to avoid bcrypt 72-byte truncation and quirks."""
+    return _hashlib.sha256(password.encode("utf-8")).hexdigest().encode("utf-8")
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(_pre_hash(password))
+    pwd_bytes = _pre_hash(password)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(_pre_hash(plain), hashed)
+    pwd_bytes = _pre_hash(plain)
+    return bcrypt.checkpw(pwd_bytes, hashed.encode("utf-8"))
 
 def create_access_token(subject: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

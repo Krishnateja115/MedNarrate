@@ -77,6 +77,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  String? _validateDateOfBirth(String? input) {
+    if (input == null || input.trim().isEmpty) {
+      return null;
+    }
+    final value = input.trim();
+    final regExp = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+    if (!regExp.hasMatch(value)) {
+      return 'Invalid format. Use YYYY-MM-DD (e.g., 2006-05-20)';
+    }
+
+    final parts = value.split('-');
+    final year = int.parse(parts[0]);
+    final month = int.parse(parts[1]);
+    final day = int.parse(parts[2]);
+
+    if (year < 1900) {
+      return 'Year must be 1900 or later';
+    }
+
+    if (month < 1 || month > 12) {
+      return 'Invalid month ($month). Must be between 01 and 12';
+    }
+
+    int maxDays;
+    if (month == 2) {
+      final bool isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+      maxDays = isLeapYear ? 29 : 28;
+    } else if ([4, 6, 9, 11].contains(month)) {
+      maxDays = 30;
+    } else {
+      maxDays = 31;
+    }
+
+    if (day < 1 || day > maxDays) {
+      if (month == 2) {
+        final bool isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+        return isLeapYear
+            ? 'February $year (leap year) has only 29 days'
+            : 'February $year has only 28 days';
+      }
+      return 'Month $month has only $maxDays days';
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dobDate = DateTime(year, month, day);
+
+    if (dobDate.isAfter(today)) {
+      return 'Date of Birth cannot be in the future';
+    }
+
+    return null;
+  }
+
   void _showEditPersonalInfoDialog() {
     if (_user == null) return;
     
@@ -84,6 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final dobCtrl = TextEditingController(text: _user!.dateOfBirth ?? '');
     
     bool saving = false;
+    String? dobError;
 
     showDialog(
       context: context,
@@ -106,6 +161,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     controller: dobCtrl,
                     label: AppLocalizations.of(context)!.dateOfBirth,
                     icon: Icons.calendar_today,
+                    errorText: dobError,
+                    onChanged: (_) {
+                      if (dobError != null) {
+                        setDialogState(() {
+                          dobError = null;
+                        });
+                      }
+                    },
                   ),
                 ],
               ),
@@ -116,7 +179,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 FilledButton(
                   onPressed: saving ? null : () async {
-                    setDialogState(() => saving = true);
+                    final err = _validateDateOfBirth(dobCtrl.text);
+                    if (err != null) {
+                      setDialogState(() {
+                        dobError = err;
+                      });
+                      return;
+                    }
+
+                    setDialogState(() {
+                      saving = true;
+                      dobError = null;
+                    });
                     try {
                       await ApiService.instance.updateMe(
                         fullName: nameCtrl.text.trim(),
@@ -125,8 +199,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (!ctx.mounted) return;
                       ctx.pop();
                       _loadUser(); // refresh
-                    } catch (_) {
-                      setDialogState(() => saving = false);
+                    } catch (e) {
+                      setDialogState(() {
+                        saving = false;
+                        dobError = e.toString().replaceAll('Exception:', '').trim();
+                      });
                     }
                   },
                   child: Text(saving ? 'Saving...' : 'Save'),

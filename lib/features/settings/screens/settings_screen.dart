@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:app_settings/app_settings.dart';
 
 import '../../../core/services/api_service.dart';
 import '../../../core/services/storage_service.dart';
-import '../../../core/services/health_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/utils/helpers.dart';
@@ -31,10 +32,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _professionalMode = false;
   bool _biometricEnabled = false;
-  bool _biometricAvailable = false;
   bool _loading = true;
   String _currentSound = 'default';
-  bool _healthSyncEnabled = false;
   
   final AudioPlayer _audioPlayer = AudioPlayer();
 
@@ -61,16 +60,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
+  BiometricAvailability _biometricStatus = BiometricAvailability.unsupported;
+
   Future<void> _loadSettings() async {
     final lang = await _storageService.getPreferredLanguage();
     final theme = await _storageService.getThemeMode();
     final notifs = await _storageService.getNotificationsEnabled();
     final profMode = await _storageService.getProfessionalMode();
     final units = await _storageService.getMedicalUnits();
-    final bioAvail = await BiometricService.instance.isAvailable();
+    final bioStatus = await BiometricService.instance.checkAvailability();
     final bioEnab = await BiometricService.instance.isBiometricEnabled();
     final sound = await _storageService.getReminderSound();
-    final healthSync = await _storageService.isHealthSyncEnabled();
     
     if (mounted) {
       setState(() {
@@ -79,13 +79,158 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _notificationsEnabled = notifs;
         _professionalMode = profMode;
         _currentUnits = units;
-        _biometricAvailable = bioAvail;
+        _biometricStatus = bioStatus;
         _biometricEnabled = bioEnab;
         _currentSound = sound;
-        _healthSyncEnabled = healthSync;
         _loading = false;
       });
     }
+  }
+
+  String get _biometricSubtitle {
+    if (kIsWeb) {
+      return 'Biometric App Lock is available on the mobile app (Android / iOS)';
+    }
+    if (_biometricEnabled) {
+      return 'Protected with device biometric authentication';
+    }
+    switch (_biometricStatus) {
+      case BiometricAvailability.available:
+        return 'Use fingerprint or Face ID to protect the app';
+      case BiometricAvailability.notConfigured:
+        return 'Set up fingerprint or Face ID in device settings first';
+      case BiometricAvailability.noPlatformAuthenticator:
+        return 'Biometric authentication is not available on this device';
+      case BiometricAvailability.webUnsupported:
+      case BiometricAvailability.unsupported:
+        return 'Biometric App Lock is available on the mobile app (Android / iOS)';
+    }
+  }
+
+  Future<void> _toggleBiometric(bool enabled) async {
+    if (kIsWeb) {
+      Helpers.showError(context, 'Biometric App Lock requires a physical Android or iOS mobile device. It is not available in the web browser environment.');
+      return;
+    }
+    if (!enabled) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.disableAppLock, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+          content: Text(AppLocalizations.of(context)!.appLockReportsAccessible, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+          backgroundColor: Theme.of(context).cardColor,
+          actions: [
+            TextButton(onPressed: () => context.pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
+            TextButton(
+              onPressed: () => context.pop(true),
+              child: Text(AppLocalizations.of(context)!.disable, style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+    } else {
+      if (_biometricStatus == BiometricAvailability.noPlatformAuthenticator) {
+        Helpers.showError(context, 'Biometric authentication is not available on this device.');
+        return;
+      }
+      if (_biometricStatus == BiometricAvailability.notConfigured) {
+        Helpers.showError(context, 'Please set up fingerprint or Face ID in your device settings first.');
+        return;
+      }
+    }
+
+    final result = await BiometricService.instance.setBiometricEnabled(enabled);
+    if (!mounted) return;
+
+    if (result == BiometricResult.success) {
+      setState(() => _biometricEnabled = enabled);
+      if (enabled) {
+        Helpers.showSuccess(context, 'Biometric App Lock enabled successfully.');
+      } else {
+        Helpers.showSuccess(context, 'Biometric App Lock disabled.');
+      }
+    } else if (result == BiometricResult.cancelled) {
+      Helpers.showError(context, 'Authentication cancelled.');
+    } else if (result == BiometricResult.notConfigured) {
+      Helpers.showError(context, 'Please set up fingerprint or Face ID in your device settings first.');
+    } else {
+      Helpers.showError(context, 'Biometric authentication failed. Please try again.');
+    }
+  }
+
+  Future<void> _changeBiometric() async {
+    if (kIsWeb) {
+      Helpers.showError(context, 'Biometric management requires a physical Android or iOS mobile device.');
+      return;
+    }
+    if (!_biometricEnabled) return;
+
+    // STEP 1: Require authentication of current biometric
+    final authRes = await BiometricService.instance.verifyCurrentBiometric();
+    if (!mounted) return;
+
+    if (authRes == BiometricResult.cancelled) {
+      Helpers.showError(context, 'Biometric change cancelled.');
+      return;
+    } else if (authRes != BiometricResult.success) {
+      Helpers.showError(context, 'Authentication failed. Your biometric settings have not been changed.');
+      return;
+    }
+
+    // STEP 2: Current authentication succeeded -> Guide user to device settings to add/update fingerprint/Face ID
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).cardColor,
+        title: Row(
+          children: [
+            Icon(Icons.fingerprint, color: AppColors.accentTeal),
+            const SizedBox(width: 10),
+            Text(
+              'Change Device Biometrics',
+              style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Current biometric verified successfully!\n\nTo add or update your fingerprint or Face ID, manage your biometrics in your mobile device settings:',
+              style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.8), fontSize: 15),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  ctx.pop();
+                  try {
+                    await AppSettings.openAppSettings(type: AppSettingsType.security);
+                  } catch (_) {}
+                },
+                icon: const Icon(Icons.settings, size: 18),
+                label: const Text('Open Device Security Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentTeal,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => ctx.pop(),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _changeLanguage(String lang) async {
@@ -117,7 +262,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _toggleNotifications(bool enabled) async {
     await _storageService.setNotificationsEnabled(enabled);
-    if (mounted) setState(() => _notificationsEnabled = enabled);
+    if (!mounted) return;
+    setState(() => _notificationsEnabled = enabled);
     
     if (enabled) {
       Helpers.showSuccess(context, AppLocalizations.of(context)!.notificationsEnabled);
@@ -192,38 +338,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) Helpers.showSuccess(context, enabled ? 'Professional Mode enabled' : 'Professional Mode disabled');
   }
 
-  Future<void> _toggleBiometric(bool enabled) async {
-    if (!_biometricAvailable) {
-      Helpers.showError(context, 'Biometrics not available on this device.');
-      return;
-    }
 
-    if (!enabled) {
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text(AppLocalizations.of(context)!.disableAppLock, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          content: Text(AppLocalizations.of(context)!.appLockReportsAccessible, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
-          backgroundColor: Theme.of(context).cardColor,
-          actions: [
-            TextButton(onPressed: () => context.pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
-            TextButton(
-              onPressed: () => context.pop(true),
-              child: Text(AppLocalizations.of(context)!.disable, style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
-      );
-      if (confirm != true) return;
-    }
-
-    final success = await BiometricService.instance.setBiometricEnabled(enabled);
-    if (success) {
-      if (mounted) setState(() => _biometricEnabled = enabled);
-    } else {
-      if (mounted) Helpers.showError(context, 'Authentication failed. Biometric lock was not changed.');
-    }
-  }
 
 
 
@@ -258,25 +373,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _toggleHealthSync(bool enabled) async {
-    if (enabled) {
-      setState(() => _loading = true);
-      bool authorized = await HealthService.instance.requestAuthorization();
-      setState(() => _loading = false);
-      if (authorized) {
-        await _storageService.setHealthSyncEnabled(true);
-        if (mounted) setState(() => _healthSyncEnabled = true);
-        if (mounted) Helpers.showSuccess(context, 'Health App Sync Enabled');
-      } else {
-        if (mounted) Helpers.showError(context, 'Failed to get Health permissions');
-      }
-    } else {
-      await _storageService.setHealthSyncEnabled(false);
-      if (mounted) setState(() => _healthSyncEnabled = false);
-      if (mounted) Helpers.showSuccess(context, 'Health App Sync Disabled');
-    }
   }
 
   Future<void> _exportData() async {
@@ -440,14 +536,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.shield_outlined,
                     iconColor: AppColors.accentTeal,
                     title: 'Biometric App Lock',
-                    subtitle: _biometricAvailable ? 'Require Face ID / Fingerprint to open' : 'Not available on this device',
+                    subtitle: _biometricSubtitle,
                     trailing: Switch(
                       value: _biometricEnabled,
-                      onChanged: _biometricAvailable ? _toggleBiometric : null,
+                      onChanged: !kIsWeb && (_biometricStatus == BiometricAvailability.available || _biometricEnabled)
+                          ? _toggleBiometric
+                          : null,
                       activeThumbColor: Theme.of(context).colorScheme.primary,
                     ),
-                    onTap: _biometricAvailable ? () => _toggleBiometric(!_biometricEnabled) : null,
+                    onTap: () {
+                      if (kIsWeb) {
+                        Helpers.showError(context, 'Biometric App Lock is available when running on a mobile device (Android / iOS).');
+                      } else if (_biometricStatus == BiometricAvailability.available || _biometricEnabled) {
+                        _toggleBiometric(!_biometricEnabled);
+                      }
+                    },
                   ),
+                  if (_biometricEnabled && !kIsWeb) ...[
+                    Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                    _buildSettingsTile(
+                      icon: Icons.fingerprint,
+                      iconColor: AppColors.primary,
+                      title: 'Change Biometric',
+                      subtitle: 'Re-verify & manage device biometric settings',
+                      onTap: _changeBiometric,
+                    ),
+                  ],
                   Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.download_outlined,
@@ -575,13 +689,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.health_and_safety_outlined,
                     iconColor: AppColors.error,
                     title: AppLocalizations.of(context)!.healthAppSync,
-                    subtitle: 'Sync vitals with Apple Health / Google Fit',
-                    trailing: Switch(
-                      value: _healthSyncEnabled,
-                      onChanged: _toggleHealthSync,
-                      activeColor: Theme.of(context).colorScheme.primary,
+                    subtitle: AppLocalizations.of(context)!.comingSoon,
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('SOON', style: TextStyle(color: AppColors.error, fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
-                    onTap: () => _toggleHealthSync(!_healthSyncEnabled),
+                    onTap: () => _showSoonSheet('Health App Sync', 'Sync with Apple Health and Google Fit to automatically pull your vitals and activity data.'),
                   ),
                   Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
                   _buildSettingsTile(

@@ -11,7 +11,7 @@ import '../widgets/health_score_card.dart';
 import '../widgets/health_tip_card.dart';
 import '../widgets/medicine_reminder_card.dart';
 import '../widgets/quick_action_card.dart';
-import '../widgets/recent_report_card.dart';
+import '../widgets/recent_reports_section.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/offline_banner.dart';
 import 'package:go_router/go_router.dart';
@@ -171,21 +171,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 35),
 
                 // Recent Reports
-                Text(AppLocalizations.of(context)!.recentReports, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 20),
-                if (_loading)
-                  const Center(child: CircularProgressIndicator())
-                else if (_recentReports.isEmpty)
-                  Center(child: Text(AppLocalizations.of(context)!.noRecentReports, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))))
-                else
-                  ..._recentReports.map((report) => GestureDetector(
-                    onTap: () => context.push(Routes.reportDetails, extra: report.id),
-                    child: RecentReportCard(
-                      title: report.title,
-                      hospital: report.hospital,
-                      date: report.reportDate.toString().split(' ').first,
-                    ),
-                  )),
+                RecentReportsSection(
+                  loading: _loading,
+                  reports: _recentReports,
+                  onViewAllTap: () => context.push(Routes.reports),
+                  onUploadTap: () async {
+                    await context.push(Routes.upload);
+                    _loadData();
+                  },
+                  onReportTap: (report) => context.push(Routes.reportDetails, extra: report.id),
+                ),
                 const SizedBox(height: 35),
 
                 const HealthTipCard(),

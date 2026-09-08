@@ -51,6 +51,3 @@ GoogleService-Info.plist
 key.properties
 mednarrate-backend/data/kb_index/
 __pycache__/
-MRAD/
-scratch_prompt.txt
-MRAD_Dataset.zip

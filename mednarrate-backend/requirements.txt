@@ -34,4 +34,3 @@ chromadb==0.5.5
 sentry-sdk[fastapi]==2.14.0
 sendgrid==6.11.0
 aiosqlite==0.20.0
-tenacity==8.5.0

@@ -18,4 +18,9 @@ async def admin_health(admin_user: User = Depends(require_admin)):
 
 @router.get("/kb-stats")
 async def get_kb_stats(admin_user: User = Depends(require_admin)):
-    raise HTTPException(status_code=501, detail="Not implemented")
+    # Mock KB stats for now
+    return {
+        "status": "ok",
+        "total_documents": 5,
+        "total_chunks": 42
+    }

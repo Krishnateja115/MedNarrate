@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/biometric_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/routing/routes.dart';
 
@@ -48,10 +49,16 @@ class _SplashScreenState extends State<SplashScreen>
     final token = await StorageService.instance.getAccessToken();
     if (token != null) {
       try {
-        // Validate token; refresh-on-401 is transparent via ApiService
         await ApiService.instance.getMe();
         if (!mounted) return;
-        context.go(Routes.dashboard);
+
+        final isBioEnabled = await BiometricService.instance.isBiometricEnabled();
+        if (!mounted) return;
+        if (isBioEnabled) {
+          context.go('/app-lock');
+        } else {
+          context.go(Routes.dashboard);
+        }
         return;
       } catch (_) {
         // Token invalid — fall through to login/onboarding

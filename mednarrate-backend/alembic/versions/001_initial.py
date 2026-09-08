@@ -16,8 +16,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
-    if op.get_bind().dialect.name == 'postgresql':
-        op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     
     op.create_table('users',
     sa.Column('id', sa.UUID(as_uuid=True), nullable=False),

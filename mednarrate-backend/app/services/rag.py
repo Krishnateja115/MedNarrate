@@ -4,17 +4,16 @@ import logging
 from typing import List
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import google.generativeai as genai
+import os
 
 from app.models.rag_chunk import RagChunk
 from app.core.config import settings
-import chromadb
-import os
 
 logger = logging.getLogger(__name__)
 
 KB_INDEX = os.path.join(os.path.dirname(__file__), "..", "..", "data", "kb_index")
 try:
+    import chromadb
     chroma_client = chromadb.PersistentClient(path=KB_INDEX)
     kb_collection = chroma_client.get_or_create_collection("medical_knowledge")
 except Exception as e:

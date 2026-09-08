@@ -103,23 +103,6 @@ alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 ```
 
-#### MRAD Dataset Ingestion
-
-The backend uses a local ChromaDB instance populated from the MRAD dataset for context. To ingest the data:
-
-```bash
-cd mednarrate-backend
-
-# 1. Download the MRAD dataset (if not already present)
-python scripts/download_mrad_dataset.py
-
-# 2. First ingest general knowledge and examples
-python scripts/ingest_mrad_dataset.py
-
-# 3. Then ingest lab reference ranges
-python scripts/ingest_mrad_lab_references.py
-```
-
 The API will be available at `http://localhost:8000`  
 Interactive docs: `http://localhost:8000/docs`
 
@@ -177,10 +160,6 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # AI
 GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL=gemini-1.5-flash
-
-# Firebase / Notifications (Optional)
-FIREBASE_SERVICE_ACCOUNT_JSON=path/to/service-account.json
 
 # Storage
 UPLOAD_DIR=uploads

@@ -139,9 +139,7 @@ class _SummaryTabState extends State<SummaryTab> {
                     children: [
                       const Icon(Icons.warning_amber_rounded, color: Colors.red),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(AppLocalizations.of(context)!.abnormalValuesDetected, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                      ),
+                      Text(AppLocalizations.of(context)!.abnormalValuesDetected, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -156,11 +154,9 @@ class _SummaryTabState extends State<SummaryTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  widget.isProfessionalMode ? 'Clinical Summary' : 'Patient-Friendly Summary',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+              Text(
+                widget.isProfessionalMode ? 'Clinical Summary' : 'Patient-Friendly Summary',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               if (!widget.isProfessionalMode)
                 _translating

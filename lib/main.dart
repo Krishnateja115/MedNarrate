@@ -21,15 +21,16 @@ class AppLifecycleObserver extends WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
 
-    if (state == AppLifecycleState.paused) {
-      _backgroundedAt = DateTime.now();
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden || state == AppLifecycleState.inactive) {
+      _backgroundedAt ??= DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
       if (_backgroundedAt != null) {
         final diff = DateTime.now().difference(_backgroundedAt!);
         if (diff.inSeconds > 30) {
           final isEnabled = await BiometricService.instance.isBiometricEnabled();
           if (isEnabled) {
-            AppRouter.router.push('/app-lock');
+            BiometricService.instance.isUnlocked = false;
+            AppRouter.router.go('/app-lock');
           }
         }
       }

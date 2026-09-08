@@ -9,16 +9,14 @@ from app.core.database import AsyncSessionLocal, init_db
 from app.models.user import User
 from app.models.medical_profile import MedicalProfile
 from app.models.report import Report
-from passlib.context import CryptContext
+from app.core.security import hash_password
 from datetime import datetime, timezone
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def seed():
     await init_db()
     async with AsyncSessionLocal() as session:
         # Create a test user
-        hashed_password = pwd_context.hash("password123")
+        hashed_password = hash_password("password123")
         test_user = User(
             email="test@mednarrate.com",
             hashed_password=hashed_password,
@@ -32,11 +30,9 @@ async def seed():
         # Create a medical profile
         profile = MedicalProfile(
             user_id=test_user.id,
-            date_of_birth=datetime(1980, 1, 1, tzinfo=timezone.utc),
-            gender="Male",
-            blood_type="O+",
-            allergies=["Penicillin"],
-            chronic_conditions=["Hypertension"]
+            blood_group="O+",
+            known_allergies="Penicillin",
+            chronic_conditions="Hypertension"
         )
         session.add(profile)
         
