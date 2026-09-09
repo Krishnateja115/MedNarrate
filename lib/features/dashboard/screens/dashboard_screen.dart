@@ -32,14 +32,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _totalReports = 0;
   int _favouriteReports = 0;
   int _activeReminders = 0;
+  List<ReminderModel> _remindersList = [];
   int _healthScore = 0;
   int _totalLabValues = 0;
   int _abnormalCount = 0;
+  int _completedReportsCount = 0;
+  int? _currentPeriodScore;
+  int? _previousPeriodScore;
+  bool _hasPreviousPeriodData = false;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  Future<int?> _calculateScoreForReport(String reportId) async {
+    try {
+      final analysis = await ApiService.instance.getReportAnalysis(reportId);
+      if (analysis.structuredLabValues.isEmpty) return 100;
+      final total = analysis.structuredLabValues.length;
+      final abnormal = analysis.structuredLabValues.where((v) => v.flag != 'normal').length;
+      return (((total - abnormal) / total) * 100).round();
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _loadData() async {
@@ -48,31 +65,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final reports = await ApiService.instance.listReports();
       final reminders = await ReminderService.instance.getAll();
 
-      // Compute health score from the most recent completed report's lab values
-      int totalLab = 0;
-      int abnormal = 0;
-      for (final r in reports.take(3)) {
-        if (r.processingStatus == 'completed') {
-          try {
-            final analysis = await ApiService.instance.getReportAnalysis(r.id);
-            totalLab += analysis.structuredLabValues.length;
-            abnormal += analysis.structuredLabValues.where((v) => v.flag != 'normal').length;
-            break; // only use most recent
-          } catch (_) {}
+      final completed = reports.where((r) => r.processingStatus == 'completed').toList();
+      completed.sort((a, b) => b.reportDate.compareTo(a.reportDate));
+
+      int? currentPeriodScore;
+      int? previousPeriodScore;
+      bool hasPreviousData = false;
+
+      if (completed.isNotEmpty) {
+        currentPeriodScore = await _calculateScoreForReport(completed.first.id);
+        if (completed.length > 1) {
+          final latestDate = completed.first.reportDate;
+          final prevReport = completed.firstWhere(
+            (r) => latestDate.difference(r.reportDate).inDays.abs() >= 1,
+            orElse: () => completed[1],
+          );
+          if (prevReport.id != completed.first.id) {
+            previousPeriodScore = await _calculateScoreForReport(prevReport.id);
+            hasPreviousData = previousPeriodScore != null;
+          }
         }
       }
-      final score = totalLab > 0 ? (((totalLab - abnormal) / totalLab) * 100).round() : 0;
+
+      int totalLab = 0;
+      int abnormal = 0;
+      if (completed.isNotEmpty && currentPeriodScore != null) {
+        try {
+          final analysis = await ApiService.instance.getReportAnalysis(completed.first.id);
+          totalLab = analysis.structuredLabValues.length;
+          abnormal = analysis.structuredLabValues.where((v) => v.flag != 'normal').length;
+        } catch (_) {}
+      }
+      final score = currentPeriodScore ?? 0;
 
       if (mounted) {
         setState(() {
           _userName = user.fullName.split(' ').first;
           _totalReports = reports.length;
+          _completedReportsCount = completed.length;
           _favouriteReports = reports.where((r) => r.isFavourite).length;
           _recentReports = reports.take(3).toList();
           _activeReminders = reminders.length;
+          _remindersList = reminders;
           _healthScore = score;
           _totalLabValues = totalLab;
           _abnormalCount = abnormal;
+          _currentPeriodScore = currentPeriodScore;
+          _previousPeriodScore = previousPeriodScore;
+          _hasPreviousPeriodData = hasPreviousData;
           _loading = false;
         });
       }
@@ -167,7 +207,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 35),
 
                 // Reminders
-                const MedicineReminderCard(),
+                MedicineReminderCard(
+                  reminders: _remindersList,
+                  onAddTap: () async {
+                    await context.push(Routes.upload);
+                    _loadData();
+                  },
+                ),
                 const SizedBox(height: 35),
 
                 // Recent Reports
@@ -185,7 +231,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 const HealthTipCard(),
                 const SizedBox(height: 30),
-                const HealthProgressCard(),
+                HealthProgressCard(
+                  totalReportsCount: _totalReports,
+                  completedReportsCount: _completedReportsCount,
+                  currentScore: _currentPeriodScore,
+                  previousScore: _previousPeriodScore,
+                  hasPreviousPeriodData: _hasPreviousPeriodData,
+                  onUploadTap: () async {
+                    await context.push(Routes.upload);
+                    _loadData();
+                  },
+                ),
                 const SizedBox(height: 40),
               ],
             ),

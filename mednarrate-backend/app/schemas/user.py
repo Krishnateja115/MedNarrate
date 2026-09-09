@@ -41,16 +41,12 @@ def validate_text_field_str(v: Optional[str]) -> Optional[str]:
 import re
 
 VALID_INDIAN_PHONE_REGEX = re.compile(r'^[6-9]\d{9}$')
-DUMMY_REPEATED_PHONES = {
-    '0000000000', '1111111111', '2222222222', '3333333333', '4444444444',
-    '5555555555', '6666666666', '7777777777', '8888888888', '9999999999'
-}
 
 def validate_indian_phone_str(v: Optional[str]) -> Optional[str]:
     if v is None:
         return None
     trimmed = v.strip()
-    if trimmed == "" or not VALID_INDIAN_PHONE_REGEX.match(trimmed) or trimmed in DUMMY_REPEATED_PHONES:
+    if trimmed == "" or not VALID_INDIAN_PHONE_REGEX.match(trimmed):
         raise ValueError("Please enter a valid 10-digit Indian mobile number.")
     return trimmed
 
@@ -95,6 +91,21 @@ class MedicalProfileOut(MedicalProfileBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+class DoctorProfileBase(BaseModel):
+    specialty: Optional[str] = None
+    qualifications: Optional[str] = None
+    license_number: Optional[str] = None
+    years_of_experience: Optional[int] = None
+    hospital: Optional[str] = None
+    professional_address: Optional[str] = None
+    bio: Optional[str] = None
+
+class CaregiverProfileBase(BaseModel):
+    relationship: Optional[str] = None
+    caregiver_role: Optional[str] = None
+    supported_patient_name: Optional[str] = None
+    organization: Optional[str] = None
+
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str
@@ -116,6 +127,8 @@ class UserOut(UserBase):
 
 class UserWithProfileOut(UserOut):
     medical_profile: Optional[MedicalProfileOut] = None
+    doctor_profile: Optional[DoctorProfileBase] = None
+    caregiver_profile: Optional[CaregiverProfileBase] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -126,8 +139,11 @@ class UserUpdate(BaseModel):
     gender: Optional[str] = None
     role: Optional[UserRole] = None
     medical_profile: Optional[MedicalProfileBase] = None
+    doctor_profile: Optional[DoctorProfileBase] = None
+    caregiver_profile: Optional[CaregiverProfileBase] = None
 
     @field_validator('date_of_birth')
     @classmethod
     def validate_dob(cls, v: Optional[str]) -> Optional[str]:
         return validate_dob_string(v)
+

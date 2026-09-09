@@ -221,6 +221,8 @@ class ApiService {
     String? chronicConditions,
     String? emergencyContactName,
     String? emergencyContactPhone,
+    DoctorProfileModel? doctorProfile,
+    CaregiverProfileModel? caregiverProfile,
   }) async {
     final body = <String, dynamic>{};
     if (fullName != null) body['full_name'] = fullName;
@@ -237,6 +239,12 @@ class ApiService {
       if (emergencyContactName != null) medicalProfile['emergency_contact_name'] = emergencyContactName;
       if (emergencyContactPhone != null) medicalProfile['emergency_contact_phone'] = emergencyContactPhone;
       body['medical_profile'] = medicalProfile;
+    }
+    if (doctorProfile != null) {
+      body['doctor_profile'] = doctorProfile.toMap();
+    }
+    if (caregiverProfile != null) {
+      body['caregiver_profile'] = caregiverProfile.toMap();
     }
     final resp = await _patch('/users/me', body: body);
     return UserModel.fromMap(jsonDecode(resp.body) as Map<String, dynamic>);

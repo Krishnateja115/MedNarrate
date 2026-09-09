@@ -26,6 +26,8 @@ class UserModel {
   final String? gender;
   final bool isActive;
   final MedicalProfileModel? medicalProfile;
+  final DoctorProfileModel? doctorProfile;
+  final CaregiverProfileModel? caregiverProfile;
 
   const UserModel({
     required this.id,
@@ -37,6 +39,8 @@ class UserModel {
     this.gender,
     required this.isActive,
     this.medicalProfile,
+    this.doctorProfile,
+    this.caregiverProfile,
   });
 
   UserModel copyWith({
@@ -49,6 +53,8 @@ class UserModel {
     String? gender,
     bool? isActive,
     MedicalProfileModel? medicalProfile,
+    DoctorProfileModel? doctorProfile,
+    CaregiverProfileModel? caregiverProfile,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -60,6 +66,8 @@ class UserModel {
       gender: gender ?? this.gender,
       isActive: isActive ?? this.isActive,
       medicalProfile: medicalProfile ?? this.medicalProfile,
+      doctorProfile: doctorProfile ?? this.doctorProfile,
+      caregiverProfile: caregiverProfile ?? this.caregiverProfile,
     );
   }
 
@@ -73,6 +81,9 @@ class UserModel {
       'date_of_birth': dateOfBirth,
       'gender': gender,
       'is_active': isActive,
+      if (medicalProfile != null) 'medical_profile': medicalProfile!.toMap(),
+      if (doctorProfile != null) 'doctor_profile': doctorProfile!.toMap(),
+      if (caregiverProfile != null) 'caregiver_profile': caregiverProfile!.toMap(),
     };
   }
 
@@ -89,6 +100,122 @@ class UserModel {
       medicalProfile: map['medical_profile'] != null
           ? MedicalProfileModel.fromMap(map['medical_profile'] as Map<String, dynamic>)
           : null,
+      doctorProfile: map['doctor_profile'] != null
+          ? DoctorProfileModel.fromMap(map['doctor_profile'] as Map<String, dynamic>)
+          : null,
+      caregiverProfile: map['caregiver_profile'] != null
+          ? CaregiverProfileModel.fromMap(map['caregiver_profile'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+class DoctorProfileModel {
+  final String? specialty;
+  final String? qualifications;
+  final String? licenseNumber;
+  final int? yearsOfExperience;
+  final String? hospital;
+  final String? professionalAddress;
+  final String? bio;
+
+  const DoctorProfileModel({
+    this.specialty,
+    this.qualifications,
+    this.licenseNumber,
+    this.yearsOfExperience,
+    this.hospital,
+    this.professionalAddress,
+    this.bio,
+  });
+
+  DoctorProfileModel copyWith({
+    String? specialty,
+    String? qualifications,
+    String? licenseNumber,
+    int? yearsOfExperience,
+    String? hospital,
+    String? professionalAddress,
+    String? bio,
+  }) {
+    return DoctorProfileModel(
+      specialty: specialty ?? this.specialty,
+      qualifications: qualifications ?? this.qualifications,
+      licenseNumber: licenseNumber ?? this.licenseNumber,
+      yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
+      hospital: hospital ?? this.hospital,
+      professionalAddress: professionalAddress ?? this.professionalAddress,
+      bio: bio ?? this.bio,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'specialty': specialty,
+      'qualifications': qualifications,
+      'license_number': licenseNumber,
+      'years_of_experience': yearsOfExperience,
+      'hospital': hospital,
+      'professional_address': professionalAddress,
+      'bio': bio,
+    };
+  }
+
+  factory DoctorProfileModel.fromMap(Map<String, dynamic> map) {
+    return DoctorProfileModel(
+      specialty: map['specialty'] as String?,
+      qualifications: map['qualifications'] as String?,
+      licenseNumber: map['license_number'] as String?,
+      yearsOfExperience: map['years_of_experience'] as int?,
+      hospital: map['hospital'] as String?,
+      professionalAddress: map['professional_address'] as String?,
+      bio: map['bio'] as String?,
+    );
+  }
+}
+
+class CaregiverProfileModel {
+  final String? relationship;
+  final String? caregiverRole;
+  final String? supportedPatientName;
+  final String? organization;
+
+  const CaregiverProfileModel({
+    this.relationship,
+    this.caregiverRole,
+    this.supportedPatientName,
+    this.organization,
+  });
+
+  CaregiverProfileModel copyWith({
+    String? relationship,
+    String? caregiverRole,
+    String? supportedPatientName,
+    String? organization,
+  }) {
+    return CaregiverProfileModel(
+      relationship: relationship ?? this.relationship,
+      caregiverRole: caregiverRole ?? this.caregiverRole,
+      supportedPatientName: supportedPatientName ?? this.supportedPatientName,
+      organization: organization ?? this.organization,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'relationship': relationship,
+      'caregiver_role': caregiverRole,
+      'supported_patient_name': supportedPatientName,
+      'organization': organization,
+    };
+  }
+
+  factory CaregiverProfileModel.fromMap(Map<String, dynamic> map) {
+    return CaregiverProfileModel(
+      relationship: map['relationship'] as String?,
+      caregiverRole: map['caregiver_role'] as String?,
+      supportedPatientName: map['supported_patient_name'] as String?,
+      organization: map['organization'] as String?,
     );
   }
 }

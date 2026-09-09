@@ -153,4 +153,38 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyReminderSound) ?? 'default';
   }
+
+  // ── Role Profile Isolation Storage ──────────────────────────────────────
+
+  Future<void> saveDoctorProfile(String userId, DoctorProfileModel profile) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('doctor_profile_$userId', jsonEncode(profile.toMap()));
+  }
+
+  Future<DoctorProfileModel?> getDoctorProfile(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('doctor_profile_$userId');
+    if (raw == null) return null;
+    try {
+      return DoctorProfileModel.fromMap(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> saveCaregiverProfile(String userId, CaregiverProfileModel profile) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('caregiver_profile_$userId', jsonEncode(profile.toMap()));
+  }
+
+  Future<CaregiverProfileModel?> getCaregiverProfile(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('caregiver_profile_$userId');
+    if (raw == null) return null;
+    try {
+      return CaregiverProfileModel.fromMap(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
 }

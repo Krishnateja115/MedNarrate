@@ -19,11 +19,13 @@ import '../../features/profile/screens/emergency_contact_screen.dart';
 import '../../features/reminders/screens/reminder_screen.dart';
 import '../../features/reminders/screens/medication_schedules_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/settings/screens/terms_of_service_screen.dart';
+import '../../features/settings/screens/privacy_policy_screen.dart';
+import '../../features/settings/screens/licenses_screen.dart';
 import '../../features/navigation/screens/main_navigation_screen.dart';
 import 'routes.dart';
 
 import '../services/biometric_service.dart';
-import '../services/storage_service.dart';
 
 class AppRouter {
   AppRouter._();
@@ -118,6 +120,18 @@ class AppRouter {
       GoRoute(
         path: Routes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.termsOfService,
+        builder: (context, state) => const TermsOfServiceScreen(),
+      ),
+      GoRoute(
+        path: Routes.privacyPolicy,
+        builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
+      GoRoute(
+        path: Routes.customLicenses,
+        builder: (context, state) => const CustomLicensesScreen(),
       ),
       GoRoute(
         path: Routes.reportDetails,

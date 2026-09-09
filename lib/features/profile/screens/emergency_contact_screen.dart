@@ -25,19 +25,6 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
   bool _loading = true;
   bool _saving = false;
 
-  static const _dummyRepeatedPhones = {
-    '0000000000',
-    '1111111111',
-    '2222222222',
-    '3333333333',
-    '4444444444',
-    '5555555555',
-    '6666666666',
-    '7777777777',
-    '8888888888',
-    '9999999999',
-  };
-
   @override
   void initState() {
     super.initState();
@@ -79,9 +66,6 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
       return "Please enter a valid 10-digit Indian mobile number.";
     }
     if (!RegExp(r'^[6-9]\d{9}$').hasMatch(trimmed)) {
-      return "Please enter a valid 10-digit Indian mobile number.";
-    }
-    if (_dummyRepeatedPhones.contains(trimmed)) {
       return "Please enter a valid 10-digit Indian mobile number.";
     }
     return null;

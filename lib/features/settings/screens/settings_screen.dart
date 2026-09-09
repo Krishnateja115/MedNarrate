@@ -403,23 +403,217 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showAbout() {
-    showAboutDialog(
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    showDialog(
       context: context,
-      applicationName: 'MedNarrate',
-      applicationVersion: 'v1.0.0',
-      applicationIcon: Icon(Icons.medical_services, size: 48, color: AppColors.primary),
-      applicationLegalese: '© 2026 MedNarrate Inc.\n\nAll rights reserved.',
-      children: [
-        const SizedBox(height: 16),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.termsOfService, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-          onTap: () {},
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.privacyPolicy, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-          onTap: () {},
-        ),
-      ],
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          backgroundColor: theme.cardColor,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // App Icon Badge
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.medical_services_rounded,
+                      size: 38,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // App Name & Version
+                  Text(
+                    'MedNarrate',
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      'v1.0.0',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Copyright & Legal Attribution
+                  Text(
+                    '© 2026 MedNarrate\nAll rights reserved.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Clickable Legal Links
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(dialogContext).pop();
+                        context.push(Routes.termsOfService);
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.gavel_rounded,
+                                  size: 18,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  l10n?.termsOfService ?? 'Terms of Service',
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onSurface,
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 14,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(dialogContext).pop();
+                        context.push(Routes.privacyPolicy);
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.privacy_tip_outlined,
+                                  size: 18,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  l10n?.privacyPolicy ?? 'Privacy Policy',
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onSurface,
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 14,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Bottom Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop();
+                          context.push(Routes.customLicenses);
+                        },
+                        icon: const Icon(Icons.code_rounded, size: 18),
+                        label: const Text('View Licenses'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

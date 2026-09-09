@@ -27,4 +27,7 @@ class Routes {
   static const String medications = "/medications";
 
   static const String settings = "/settings";
+  static const String termsOfService = "/terms-of-service";
+  static const String privacyPolicy = "/privacy-policy";
+  static const String customLicenses = "/licenses";
 }

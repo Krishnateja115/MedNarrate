@@ -40,6 +40,8 @@ async def update_users_me(
     # Update user fields
     update_data = user_update.model_dump(exclude_unset=True)
     medical_profile_data = update_data.pop("medical_profile", None)
+    doctor_profile_data = update_data.pop("doctor_profile", None)
+    caregiver_profile_data = update_data.pop("caregiver_profile", None)
 
     for field, value in update_data.items():
         setattr(current_user, field, value)
@@ -70,7 +72,9 @@ async def update_users_me(
         "date_of_birth": current_user.date_of_birth,
         "gender": current_user.gender,
         "is_active": current_user.is_active,
-        "medical_profile": medical_profile
+        "medical_profile": medical_profile,
+        "doctor_profile": doctor_profile_data,
+        "caregiver_profile": caregiver_profile_data,
     }
     return current_user_dict
 
