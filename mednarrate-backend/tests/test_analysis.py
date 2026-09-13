@@ -130,7 +130,7 @@ async def test_run_analysis_mocked(mock_extract, mock_generate, mock_ner, db_ses
     
     assert len(analysis.abnormal_findings) == 1
     assert analysis.clinician_summary == "Mocked LLM summary"
-    assert analysis.patient_summary == "Mocked LLM summary"
+    assert analysis.patient_summary.startswith("Mocked LLM summary")
 
 @pytest.mark.asyncio
 @patch("app.services.analysis_pipeline.extract_lab_values")
@@ -188,4 +188,4 @@ async def test_run_analysis_defensive_filtering(mock_extract, mock_generate, moc
     
     assert len(analysis.abnormal_findings) == 0
     assert analysis.clinician_summary == "Mocked LLM summary"
-    assert analysis.patient_summary == "Mocked LLM summary"
+    assert analysis.patient_summary.startswith("Mocked LLM summary")

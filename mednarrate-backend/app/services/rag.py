@@ -5,6 +5,7 @@ from typing import List
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import os
+import google.generativeai as genai
 
 from app.models.rag_chunk import RagChunk
 from app.core.config import settings
@@ -20,8 +21,12 @@ except Exception as e:
     logger.warning(f"Could not initialize ChromaDB: {e}")
     kb_collection = None
 
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
+if settings.GEMINI_API_KEY and settings.GEMINI_API_KEY.strip() and settings.GEMINI_API_KEY != "your_gemini_api_key_here":
+    try:
+        genai.configure(api_key=settings.GEMINI_API_KEY.strip())
+    except Exception as e:
+        logger.warning(f"Failed to configure Gemini in RAG: {e}")
+
 
 def chunk_text(text: str, chunk_size: int = 512, overlap: int = 64) -> List[str]:
     # Very rough estimate: 4 chars per token

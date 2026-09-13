@@ -1,0 +1,24 @@
+{
+  "model_type": "LogisticRegression + TFIDF",
+  "mrad_dataset": "FULL",
+  "raw_records": 123371,
+  "duplicates_removed": 4,
+  "usable_records": 123367,
+  "train_records": 98492,
+  "validation_records": 12421,
+  "test_records": 12454,
+  "unique_patients": 110677,
+  "target": "Report_Type (Source)",
+  "classes": [
+    "Blood",
+    "Health",
+    "TCGA"
+  ],
+  "features_used": [
+    "cleaned_report_text_tfidf"
+  ],
+  "split_method": "patient-level GroupKFold",
+  "random_seed": 42,
+  "test_accuracy": 1.0,
+  "test_f1_macro": 1.0
+}

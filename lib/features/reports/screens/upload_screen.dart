@@ -57,7 +57,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
   Future<void> _upload() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedFile?.path == null) {
+    if (_selectedFile == null || (_selectedFile?.path == null && _selectedFile?.bytes == null)) {
       setState(() => _errorMessage = 'Please select a file.');
       return;
     }

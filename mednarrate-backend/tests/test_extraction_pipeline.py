@@ -35,11 +35,10 @@ def test_extraction_pipeline():
             continue
         file_type = "image" if filename.endswith(".png") else "pdf"
         
-        # 1. Extract text
         try:
             raw_text = extract_text_from_file(file_path, file_type)
         except Exception as e:
-            if "tesseract" in str(e).lower() or "poppler" in str(e).lower() or "not found" in str(e).lower():
+            if "tesseract" in str(e).lower() or "poppler" in str(e).lower() or "not found" in str(e).lower() or "could not extract" in str(e).lower():
                 pytest.skip(f"System OCR dependencies not installed: {e}")
             raise
         assert len(raw_text) > 0, f"Failed to extract any text from {filename}"

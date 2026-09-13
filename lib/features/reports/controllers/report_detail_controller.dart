@@ -30,6 +30,23 @@ class ReportDetailController extends ChangeNotifier {
     try {
       final r = await _apiService.getReport(reportId);
       report = r;
+      if (r.processingStatus == 'completed') {
+        try {
+          final analysis = await _apiService.getReportAnalysis(reportId);
+          report = report!.copyWith(
+            aiSummary: analysis.patientSummary,
+            clinicalSummary: analysis.clinicianSummary,
+            metrics: analysis.structuredLabValues.map((v) => {
+              'test_name': v.testName,
+              'value': v.value,
+              'unit': v.unit,
+              'ref_low': v.refLow,
+              'ref_high': v.refHigh,
+              'flag': v.flag,
+            }).toList(),
+          );
+        } catch (_) {}
+      }
       error = null;
     } on ApiException catch (e) {
       if (report == null) error = e.message;

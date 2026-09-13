@@ -34,7 +34,13 @@ async def upload_report(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    # Validation and saving happens in the service
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(
+        f"[UPLOAD:RECEIVED] User={current_user.id} filename='{file.filename}' "
+        f"contentType='{file.content_type}' title='{title}' type='{report_type.value}' date='{report_date}'"
+    )
+    
     file_path = await save_upload_file(current_user.id, file)
     
     file_type_str = file.filename.split(".")[-1].lower()
@@ -54,7 +60,9 @@ async def upload_report(
     db.add(new_report)
     await db.commit()
     await db.refresh(new_report)
+    logger.info(f"[UPLOAD:CREATED] Created report record ID={new_report.id} path='{file_path}'")
     return new_report
+
 
 @router.get("", response_model=List[ReportOut])
 async def list_reports(
@@ -150,8 +158,33 @@ async def delete_report(
 ):
     report = await verify_report_ownership(id, str(current_user.id), db)
         
+    # Delete uploaded physical file
     await delete_file(report.file_path)
     
+    # Explicit cascade cleanup of related records
+    stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == report.id)
+    analyses = (await db.execute(stmt_analysis)).scalars().all()
+    for a in analyses:
+        await db.delete(a)
+
+    try:
+        from app.models.medication_schedule import MedicationSchedule
+        stmt_meds = select(MedicationSchedule).where(MedicationSchedule.report_id == report.id)
+        meds = (await db.execute(stmt_meds)).scalars().all()
+        for m in meds:
+            await db.delete(m)
+    except Exception:
+        pass
+
+    try:
+        from app.models.report_translation import ReportTranslation
+        stmt_trans = select(ReportTranslation).where(ReportTranslation.report_id == str(report.id))
+        trans = (await db.execute(stmt_trans)).scalars().all()
+        for t in trans:
+            await db.delete(t)
+    except Exception:
+        pass
+
     await db.delete(report)
     await db.commit()
 

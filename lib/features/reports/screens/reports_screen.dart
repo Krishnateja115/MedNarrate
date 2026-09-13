@@ -63,9 +63,104 @@ class _ReportsScreenState extends State<ReportsScreen> {
           if (status == ReportStatus.completed || status == ReportStatus.failed) {
             _pollingSubscriptions[report.id]?.cancel();
             _pollingSubscriptions.remove(report.id);
-            _loadReports(); // Reload to get updated data
+            _loadReports();
           }
         });
+      }
+    }
+  }
+
+  Future<void> _handleDeleteReport(ReportModel report) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 24),
+            const SizedBox(width: 10),
+            Text(AppLocalizations.of(context)!.deleteReportTitle),
+          ],
+        ),
+        content: Text(AppLocalizations.of(context)!.deleteReportConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              AppLocalizations.of(context)!.cancel,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              AppLocalizations.of(context)!.delete,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    // Immediately update local state to feel snappy
+    setState(() {
+      _reports.removeWhere((r) => r.id == report.id);
+    });
+
+    try {
+      await ApiService.instance.deleteReport(report.id);
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.reportDeleted),
+            backgroundColor: const Color(0xFF00C48C),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) {
+        // Already deleted elsewhere, ignore error
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.reportDeleted),
+              backgroundColor: const Color(0xFF00C48C),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } else {
+        // Revert local state and show error
+        _loadReports();
+        if (mounted) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text('Unable to delete report: ${e.message}'),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      _loadReports();
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Unable to delete report. Please try again.'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -96,7 +191,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           await context.push(Routes.upload);
           _loadReports();
         },
-        child: Icon(Icons.add_rounded, size: 28),
+        child: const Icon(Icons.add_rounded, size: 28),
       ),
       body: Column(
         children: [
@@ -110,7 +205,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
               },
             ),
           ),
-          // Filter chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -133,7 +227,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ],
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Expanded(
             child: _loading
                 ? ListView.builder(
@@ -146,8 +240,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(_error!, style: TextStyle(color: Colors.redAccent)),
-                            SizedBox(height: 16),
+                            Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+                            const SizedBox(height: 16),
                             TextButton.icon(
                               onPressed: _loadReports,
                               icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onSurface),
@@ -162,14 +256,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const EmptyHistoryIllustration(),
-                                SizedBox(height: 20),
+                                const SizedBox(height: 20),
                                 Text(AppLocalizations.of(context)!.noReportsFound,
                                     style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold)),
-                                SizedBox(height: 8),
+                                const SizedBox(height: 8),
                                 Text(AppLocalizations.of(context)!.uploadFirstReport,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 14)),
-                                SizedBox(height: 24),
+                                const SizedBox(height: 24),
                                 FilledButton.icon(
                                   style: FilledButton.styleFrom(
                                     backgroundColor: Theme.of(context).colorScheme.primary,
@@ -181,8 +275,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                     await context.push(Routes.upload);
                                     _loadReports();
                                   },
-                                  icon: Icon(Icons.upload_file_rounded, color: Colors.white),
-                                  label: Text(
+                                  icon: const Icon(Icons.upload_file_rounded, color: Colors.white),
+                                  label: const Text(
                                     'Upload your first report',
                                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                                   ),
@@ -200,8 +294,29 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: GestureDetector(
-                                    onTap: () => context.push(Routes.reportDetails, extra: report.id),
-                                    child: ReportCard(report: report),
+                                    onTap: () async {
+                                      await context.push(Routes.reportDetails, extra: report.id);
+                                      _loadReports();
+                                    },
+                                    child: ReportCard(
+                                      report: report,
+                                      onDelete: () => _handleDeleteReport(report),
+                                      onAnalyze: () async {
+                                        try {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(content: Text('Starting report analysis...')),
+                                          );
+                                          await ApiService.instance.processReport(report.id, force: true);
+                                          _loadReports();
+                                        } catch (e) {
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Analysis request failed: $e'), backgroundColor: Colors.red),
+                                            );
+                                          }
+                                        }
+                                      },
+                                    ),
                                   ),
                                 );
                               },
