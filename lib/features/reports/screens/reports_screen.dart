@@ -302,15 +302,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                       report: report,
                                       onDelete: () => _handleDeleteReport(report),
                                       onAnalyze: () async {
+                                        final messenger = ScaffoldMessenger.of(context);
                                         try {
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          messenger.showSnackBar(
                                             const SnackBar(content: Text('Starting report analysis...')),
                                           );
                                           await ApiService.instance.processReport(report.id, force: true);
                                           _loadReports();
                                         } catch (e) {
                                           if (mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
+                                            messenger.showSnackBar(
                                               SnackBar(content: Text('Analysis request failed: $e'), backgroundColor: Colors.red),
                                             );
                                           }

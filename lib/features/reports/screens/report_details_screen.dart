@@ -4,9 +4,11 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
+import '../../dashboard/screens/dashboard_screen.dart';
 import '../models/report_model.dart';
 import '../controllers/report_detail_controller.dart';
-import '../widgets/summary_tab.dart';
+import '../widgets/patient_view_tab.dart';
+import '../widgets/clinical_view_tab.dart';
 import '../widgets/lab_results_tab.dart';
 import '../widgets/ai_chat_tab.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
@@ -28,7 +30,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _controller.init(widget.reportId ?? widget.report!.id, widget.report);
     _controller.addListener(_onStateChanged);
   }
@@ -98,15 +100,11 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go(Routes.reports);
-        }
+        DashboardScreen.onRefreshRequested?.call();
+        context.go(Routes.dashboard);
       }
     } on ApiException catch (e) {
       if (e.statusCode == 404) {
-        // Report already deleted, return to reports
         if (mounted) {
           messenger.showSnackBar(
             SnackBar(
@@ -115,11 +113,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
               behavior: SnackBarBehavior.floating,
             ),
           );
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go(Routes.reports);
-          }
+          DashboardScreen.onRefreshRequested?.call();
+          context.go(Routes.dashboard);
         }
       } else {
         if (mounted) {
@@ -156,6 +151,18 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
+        leadingWidth: 140,
+        leading: TextButton.icon(
+          onPressed: () {
+            DashboardScreen.onRefreshRequested?.call();
+            context.go(Routes.dashboard);
+          },
+          icon: const Icon(Icons.arrow_back_rounded, size: 18),
+          label: const Text(
+            'Dashboard',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+        ),
         title: Text(AppLocalizations.of(context)!.reportDetails),
         actions: [
           if (_controller.report != null) ...[
@@ -210,10 +217,12 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
           unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           indicatorColor: AppColors.primary,
           indicatorWeight: 3,
-          tabs: [
-            Tab(text: AppLocalizations.of(context)!.summary),
-            Tab(text: AppLocalizations.of(context)!.labResultsTab),
-            Tab(text: AppLocalizations.of(context)!.aiChatTab),
+          isScrollable: true,
+          tabs: const [
+            Tab(text: "For You"),
+            Tab(text: "Clinical View"),
+            Tab(text: "Lab Results"),
+            Tab(text: "AI Chat"),
           ],
         ),
       ),
@@ -224,10 +233,16 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
               : TabBarView(
                   controller: _tabController,
                   children: [
-                    SummaryTab(
-                      key: const PageStorageKey('summary_tab'),
+                    PatientViewTab(
+                      key: const PageStorageKey('patient_view_tab'),
                       report: _controller.report!,
-                      isProfessionalMode: _controller.professionalMode,
+                      analysis: _controller.analysis,
+                    ),
+                    ClinicalViewTab(
+                      key: const PageStorageKey('clinical_view_tab'),
+                      report: _controller.report!,
+                      analysis: _controller.analysis,
+                      comparison: _controller.comparison,
                     ),
                     LabResultsTab(
                       key: const PageStorageKey('lab_results_tab'),

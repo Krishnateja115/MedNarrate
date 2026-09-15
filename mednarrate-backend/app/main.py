@@ -68,6 +68,9 @@ async def prompt_injection_middleware(request: Request, call_next):
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
+from fastapi.staticfiles import StaticFiles
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+
 app.include_router(api_v1_router, prefix="/api/v1")
 
 @app.get("/health")

@@ -64,7 +64,7 @@ class HealthProgressCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                "Weekly Health Progress",
+                "Health Progress",
                 style: TextStyle(
                   color: theme.colorScheme.onSurface,
                   fontSize: 18,
@@ -84,8 +84,8 @@ class HealthProgressCard extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context, ThemeData theme) {
-    // STATE 1: Zero reports or missing score
-    if (totalReportsCount == 0 || currentScore == null) {
+    // STATE 1: Zero reports
+    if (completedReportsCount == 0 && totalReportsCount == 0) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         child: Center(
@@ -155,74 +155,69 @@ class HealthProgressCard extends StatelessWidget {
       );
     }
 
-    // STATE 2: 1 Report or insufficient comparison data
-    if (!hasPreviousPeriodData || previousScore == null) {
-      final double progressVal = (currentScore! / 100.0).clamp(0.0, 1.0);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Current Score",
-                style: TextStyle(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+    // STATE 2: 1 Report analyzed
+    if (completedReportsCount == 1 || !hasPreviousPeriodData || previousScore == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: theme.colorScheme.primary.withValues(alpha: 0.12),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.check_circle_outline_rounded, color: AppColors.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  "Latest report analyzed",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Historical trend tracking will become available when additional comparable reports are uploaded.",
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
+                fontSize: 13.5,
+                height: 1.45,
               ),
-              Text(
-                "$currentScore%",
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+            ),
+            if (onUploadTap != null) ...[
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                onPressed: onUploadTap,
+                icon: const Icon(Icons.upload_file_rounded, size: 16),
+                label: const Text("Upload Another Report"),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progressVal,
-              minHeight: 10,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            completedReportsCount <= 1
-                ? "Health tracking has started. More historical data is needed to show a weekly comparison."
-                : "Not enough historical data for a weekly comparison.",
-            style: TextStyle(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
-              fontSize: 13.5,
-              height: 1.45,
-            ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
-    // STATE 3: Sufficient comparable data -> calculate actual % change
+    // STATE 3: Multi-report comparison with real numbers
     final int diff = currentScore! - previousScore!;
-    final int pctChange = previousScore! > 0
-        ? (((currentScore! - previousScore!) / previousScore!).abs() * 100).round()
-        : 0;
-
-    String textMsg;
+    String trendLabel = "Stable";
     if (diff > 0) {
-      textMsg = "Your health score improved by $pctChange% compared to last week.";
+      trendLabel = "Increased since previous report";
     } else if (diff < 0) {
-      textMsg = "Your health score changed by $pctChange% compared to last week.";
-    } else {
-      textMsg = "Your health score is unchanged compared to last week.";
+      trendLabel = "Decreased since previous report";
     }
-
-    final double progressVal = (currentScore! / 100.0).clamp(0.0, 1.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,41 +226,56 @@ class HealthProgressCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "Current Score",
+              "Reports Compared: $completedReportsCount",
               style: TextStyle(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            Text(
-              "$currentScore%",
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                trendLabel,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: LinearProgressIndicator(
-            value: progressVal,
-            minHeight: 10,
-            backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        const SizedBox(height: 14),
-        Text(
-          textMsg,
-          style: TextStyle(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
-            fontSize: 14,
-            height: 1.45,
-            fontWeight: FontWeight.w500,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  Text("Previous", style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                  const SizedBox(height: 4),
+                  Text("$previousScore%", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const Icon(Icons.arrow_forward_rounded, color: AppColors.primary, size: 20),
+              Column(
+                children: [
+                  Text("Current", style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                  const SizedBox(height: 4),
+                  Text("$currentScore%", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                ],
+              ),
+            ],
           ),
         ),
       ],

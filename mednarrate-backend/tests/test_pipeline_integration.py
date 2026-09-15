@@ -48,6 +48,7 @@ async def test_llm_client_missing_config_fails_cleanly(monkeypatch):
     # Ensure no API key or Ollama URL is available
     monkeypatch.setattr(settings, "GEMINI_API_KEY", None)
     monkeypatch.setattr(settings, "OLLAMA_URL", "http://invalid-localhost-url:9999")
+    monkeypatch.setattr(settings, "ENABLE_LLM_FALLBACK", False)
     
     with pytest.raises(RuntimeError, match="AI analysis is currently unavailable"):
         await generate("Test prompt", timeout=1.0)

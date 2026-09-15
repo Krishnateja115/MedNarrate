@@ -35,44 +35,22 @@ class _LabResultsTabState extends State<LabResultsTab> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(metric['parameter'], style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Text('What is ${metric['parameter']}?', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
-              SizedBox(height: 4),
+              Text(metric['parameter'], style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('What is ${metric['parameter']}?', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
               Text(
-                'This measures the amount of ${metric['parameter']} in your blood. It is an important indicator of your overall health.',
+                'This measures ${metric['parameter']} in your medical document. Always consult your physician for interpretation.',
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
               ),
-              SizedBox(height: 24),
-              Text(AppLocalizations.of(context)!.historicalTrend, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              SizedBox(height: 12),
-              Container(
-                height: 150,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Center(
-                  child: Text(
-                    'Mini-chart goes here',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
-                  ),
-                ),
-              ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    // Switch to Chat tab and pre-fill input
-                    // (Requires callback to parent, handled later)
-                  },
-                  icon: Icon(Icons.smart_toy),
-                  label: Text(AppLocalizations.of(context)!.askAiAboutThis),
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.check_circle_outline_rounded),
+                  label: const Text('Close'),
                 ),
               ),
             ],
@@ -85,15 +63,19 @@ class _LabResultsTabState extends State<LabResultsTab> {
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> filteredMetrics = widget.report.metrics.where((m) {
-      return m['parameter'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
+      final param = m['parameter'].toString().toLowerCase();
+      // Filter out demographic fields or non-lab keywords if any slip into metrics
+      if (param.contains('date of birth') || param.contains('dob') || param.contains('september') || param.contains('once daily')) {
+        return false;
+      }
+      return param.contains(_searchQuery.toLowerCase());
     }).toList();
 
-    // Grouping logic (simplified)
     Map<String, List<Map<String, dynamic>>> grouped = {'Uncategorized': []};
     for (var m in filteredMetrics) {
       String cat = 'Uncategorized';
       for (var entry in _categories.entries) {
-        if (entry.value.contains(m['parameter'])) {
+        if (entry.value.any((v) => v.toLowerCase() == m['parameter'].toString().toLowerCase())) {
           cat = entry.key;
           break;
         }
@@ -110,7 +92,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
             onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
               hintText: AppLocalizations.of(context)!.searchParameters,
-              prefixIcon: Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search),
               filled: true,
               fillColor: Theme.of(context).cardColor,
               border: OutlineInputBorder(
@@ -127,7 +109,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
             itemBuilder: (context, index) {
               String cat = grouped.keys.elementAt(index);
               List<Map<String, dynamic>> items = grouped[cat]!;
-              if (items.isEmpty) return SizedBox.shrink();
+              if (items.isEmpty) return const SizedBox.shrink();
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,12 +119,18 @@ class _LabResultsTabState extends State<LabResultsTab> {
                     child: Text(cat, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
                   ),
                   ...items.map((m) {
+                    final double val = (m['value'] is num) ? (m['value'] as num).toDouble() : 0.0;
+                    final double? minR = (m['min_range'] is num) ? (m['min_range'] as num).toDouble() : ((m['ref_low'] is num) ? (m['ref_low'] as num).toDouble() : null);
+                    final double? maxR = (m['max_range'] is num) ? (m['max_range'] as num).toDouble() : ((m['ref_high'] is num) ? (m['ref_high'] as num).toDouble() : null);
+                    final String flag = m['flag']?.toString() ?? 'not_classified';
+
                     return LabResultRow(
                       parameter: m['parameter'],
-                      unit: m['unit'],
-                      value: (m['value'] as num).toDouble(),
-                      minRange: (m['min_range'] as num).toDouble(),
-                      maxRange: (m['max_range'] as num).toDouble(),
+                      unit: m['unit'] ?? '',
+                      value: val,
+                      minRange: minR,
+                      maxRange: maxR,
+                      flag: flag,
                       onTap: () => _showParameterDetails(context, m),
                     );
                   }),

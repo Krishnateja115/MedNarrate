@@ -5,8 +5,9 @@ class LabResultRow extends StatelessWidget {
   final String parameter;
   final String unit;
   final double value;
-  final double minRange;
-  final double maxRange;
+  final double? minRange;
+  final double? maxRange;
+  final String flag;
   final VoidCallback onTap;
 
   const LabResultRow({
@@ -14,26 +15,34 @@ class LabResultRow extends StatelessWidget {
     required this.parameter,
     required this.unit,
     required this.value,
-    required this.minRange,
-    required this.maxRange,
+    this.minRange,
+    this.maxRange,
+    this.flag = 'not_classified',
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    bool isLow = value < minRange;
-    bool isHigh = value > maxRange;
-    bool isNormal = !isLow && !isHigh;
+    final theme = Theme.of(context);
+    final hasRange = minRange != null && maxRange != null && (maxRange! > minRange!);
 
-    Color statusColor = isNormal ? Colors.green : Colors.red;
-    
-    // Calculate progress bar positioning
-    double rangeDiff = maxRange - minRange;
-    double normalizedValue = 0.5; // Default center
-    if (rangeDiff > 0) {
-      normalizedValue = (value - minRange) / rangeDiff;
+    Color statusColor = theme.colorScheme.onSurface;
+    String badgeText = "Not Classified";
+
+    if (flag == 'high') {
+      statusColor = Colors.redAccent;
+      badgeText = "HIGH";
+    } else if (flag == 'low') {
+      statusColor = Colors.orange;
+      badgeText = "LOW";
+    } else if (flag == 'critical') {
+      statusColor = Colors.red.shade900;
+      badgeText = "CRITICAL";
+    } else if (flag == 'normal') {
+      statusColor = Colors.green;
+      badgeText = "NORMAL";
     }
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -41,7 +50,7 @@ class LabResultRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border),
         ),
@@ -54,18 +63,40 @@ class LabResultRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(parameter, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Theme.of(context).colorScheme.onSurface)),
-                      SizedBox(height: 2),
-                      Text(unit, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                      Text(
+                        parameter,
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: theme.colorScheme.onSurface),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        unit.isNotEmpty ? unit : 'Unit: -',
+                        style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                      ),
                     ],
                   ),
                 ),
                 Expanded(
                   flex: 2,
                   child: Center(
-                    child: Text(
-                      value.toString(),
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: statusColor),
+                    child: Column(
+                      children: [
+                        Text(
+                          value == value.roundToDouble() ? value.toInt().toString() : value.toString(),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: statusColor),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: statusColor),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -74,59 +105,9 @@ class LabResultRow extends StatelessWidget {
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      '$minRange - $maxRange',
-                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+                      hasRange ? '$minRange - $maxRange' : 'No ref range',
+                      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                     ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            double indicatorLeft = constraints.maxWidth * normalizedValue.clamp(0.0, 1.0);
-                            if (isLow) indicatorLeft = 0;
-                            if (isHigh) indicatorLeft = constraints.maxWidth - 8;
-                            
-                            return Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                SizedBox(height: 4, width: constraints.maxWidth),
-                                Positioned(
-                                  left: indicatorLeft - 4,
-                                  top: -2,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: statusColor,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ],

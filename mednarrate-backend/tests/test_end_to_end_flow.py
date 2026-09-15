@@ -12,10 +12,11 @@ async def test_end_to_end_analysis_persistence(db_session, monkeypatch):
     from app.core.config import settings
     
     # Mock LLM response for test double
-    async def mock_generate(prompt, timeout=25):
+    async def mock_generate(prompt, timeout=30, request_id=None, **kwargs):
         return "Patient summary: Hemoglobin is 14.2 g/dL which is normal."
     
     monkeypatch.setattr("app.services.analysis_pipeline.generate_with_timeout", mock_generate)
+
 
     # 1. Create User & Report
     user = User(email="e2e_user@example.com", hashed_password="pw", full_name="E2E User")

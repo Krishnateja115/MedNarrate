@@ -14,9 +14,13 @@ def get_examples_text() -> str:
         return "\n\nFormatting Examples:\n" + "\n---\n".join(examples)
     return ""
 
-CLINICIAN_PROMPT = """You are assisting a clinician reviewing a {report_type} report.
-Using ONLY the structured data below, write a concise clinical-note-style summary. Use
-standard medical terminology. Do not invent findings not present in the data.
+CLINICIAN_PROMPT = """You are a clinical documentation specialist summarizing a {report_type} medical report for a clinician.
+CRITICAL MANDATE:
+- Using ONLY the provided structured report data and extracted text below, write a detailed, report-specific clinical summary.
+- YOU MUST cite exact test names, measured values, units, reference ranges, and flagged abnormal findings from THIS report.
+- DO NOT use generic phrases such as "Your report has been analyzed" or "Review structured lab parameters".
+- Include a clear section on primary clinical findings, flagged abnormalities with exact values vs reference bounds, and listed medications (with dose, frequency, timing).
+- Do not invent any values, diagnoses, or medications not present in the data.
 
 Structured lab values:
 {structured_values_json}
@@ -24,35 +28,42 @@ Structured lab values:
 Extracted report text (for context only, values above are authoritative):
 {extracted_text}
 
-Write the clinical summary now:"""
+Clinical Knowledge Reference (RAG Context):
+{rag_context}
 
-PATIENT_PROMPT = """You are explaining a {report_type} medical report to a {user_role} with
-no medical background. Using ONLY the structured data below:
-- Use plain language, define any medical term you use
-- For each abnormal (flag != "normal") value, explain in everyday terms why it matters and
-  what a low/high value like this commonly relates to, WITHOUT diagnosing
-- Keep a calm, reassuring, non-alarming tone for mild deviations
-- Do not mention any test name that is not present in the structured data below
+Write the report-specific clinical executive summary now:"""
+
+PATIENT_PROMPT = """You are a patient communication specialist explaining a {report_type} medical report directly to a {user_role} with no medical background.
+
+CRITICAL MANDATE:
+- Using ONLY the provided structured report data below, write a personalized, report-specific summary.
+- YOU MUST cite the actual test names, exact numerical values, units, and reported reference ranges present in THIS report.
+- DO NOT use generic boilerplate like "Your medical report has been uploaded and analyzed successfully" or "Key values have been extracted".
+- If abnormal (flag != "normal") values exist, explain in everyday terms why each specific result (e.g. MCV 80 fL vs 81-101 fL) was flagged, without making a medical diagnosis.
+- Mention any medications found in the report alongside their exact dosage and frequency.
+- Keep a calm, clear, reassuring tone.
 {role_specific_instruction}
-- End with exactly this sentence: "This explanation is for informational purposes and does
-  not replace advice from your doctor."
+- End with exactly this sentence: "This explanation is for informational purposes and does not replace advice from your doctor."
 
 Structured lab values:
 {structured_values_json}
 
+Clinical Knowledge Reference (RAG Context):
+{rag_context}
+
 {examples}
 
-Write the {user_role}-friendly explanation now:"""
+Write the personalized {user_role}-friendly explanation now:"""
 
 ROLE_INSTRUCTIONS = {
-    "patient": "- Write as if speaking directly to the patient. Use 'your' and 'you'. Focus on what this means for their daily life and when to see a doctor.",
+    "patient": "- Write as if speaking directly to the patient using 'your' and 'you'. Focus on what these specific results show and what to discuss with their physician.",
     "clinician": "- Write in clinical note style with medical terminology, differential considerations, and clear documentation of abnormal findings.",
     "caregiver": "- Write for a family member or caregiver who is managing someone else's health. Use 'they' and 'their'. Explain what to watch out for and how to support the patient.",
 }
 
 COMPARISON_PROMPT = """You are analyzing the differences between a previous medical report and a current one.
 Based ONLY on the provided diffed findings below, write a short narrative summary for the patient.
-Use plain language. Explain whether things have improved, worsened, or remained stable.
+Use plain language. Explain whether specific test values (citing exact numbers and dates) have increased, decreased, or remained stable.
 
 Diffed findings:
 {diffed_findings_json}

@@ -1,4 +1,5 @@
 import logging
+import uuid
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.report_translation import ReportTranslation
@@ -22,9 +23,11 @@ async def translate_report_summary(report_id: str, summary_text: str, target_lan
         
     language_name = LANGUAGE_MAP[target_language]
     
+    report_uuid = uuid.UUID(str(report_id)) if not isinstance(report_id, uuid.UUID) else report_id
+
     # 1. Check cache
     stmt = select(ReportTranslation).where(
-        ReportTranslation.report_id == report_id,
+        ReportTranslation.report_id == report_uuid,
         ReportTranslation.language_code == target_language
     )
     result = await db.execute(stmt)
@@ -54,7 +57,7 @@ Original Summary:
         
     # 3. Cache the translation
     translation = ReportTranslation(
-        report_id=report_id,
+        report_id=report_uuid,
         language_code=target_language,
         translated_text=translated_text
     )

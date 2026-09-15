@@ -6,25 +6,29 @@ from app.core.config import settings
 from .storage import get_storage_backend
 
 def sanitize_filename(filename: str) -> str:
-    # Strip path separators
-    filename = os.path.basename(filename)
+    # Strip path separators & path traversal components
+    filename = os.path.basename(filename).replace("\\", "/").split("/")[-1]
     # Keep only alnum/._- characters
     filename = re.sub(r'[^a-zA-Z0-9.\-_]', '', filename)
-    return filename
+    return filename or "upload"
 
 async def save_upload_file(user_id: uuid.UUID, upload_file: UploadFile) -> str:
     if not upload_file.filename:
         raise HTTPException(status_code=422, detail="No filename provided")
 
-    ext = upload_file.filename.split(".")[-1].lower()
+    safe_name = sanitize_filename(upload_file.filename)
+    ext = safe_name.split(".")[-1].lower() if "." in safe_name else ""
     if ext not in ["pdf", "jpg", "jpeg", "png"]:
         raise HTTPException(status_code=422, detail="Unsupported file extension")
 
     # Read the file to check size
     file_bytes = await upload_file.read()
+    if len(file_bytes) == 0:
+        raise HTTPException(status_code=422, detail="Empty file payload")
+
     size_mb = len(file_bytes) / (1024 * 1024)
-    if size_mb > 10:  # Enforce 10MB limit
-        raise HTTPException(status_code=422, detail="File too large. Max size is 10MB")
+    if size_mb > 25:  # Enforce 25MB limit
+        raise HTTPException(status_code=422, detail="File too large. Max size is 25MB")
         
     # PDF magic byte check if ext is pdf
     if ext == "pdf":

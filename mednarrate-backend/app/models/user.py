@@ -8,6 +8,8 @@ class UserRole(str, enum.Enum):
     patient = "patient"
     clinician = "clinician"
     caregiver = "caregiver"
+    admin = "admin"
+
 
 class User(Base):
     __tablename__ = "users"

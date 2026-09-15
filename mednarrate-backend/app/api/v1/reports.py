@@ -178,7 +178,7 @@ async def delete_report(
 
     try:
         from app.models.report_translation import ReportTranslation
-        stmt_trans = select(ReportTranslation).where(ReportTranslation.report_id == str(report.id))
+        stmt_trans = select(ReportTranslation).where(ReportTranslation.report_id == report.id)
         trans = (await db.execute(stmt_trans)).scalars().all()
         for t in trans:
             await db.delete(t)
@@ -274,9 +274,10 @@ async def translate_report(
         raise HTTPException(status_code=400, detail="No patient summary available to translate")
         
     from app.models.report_translation import ReportTranslation
+    r_uuid = uuid.UUID(str(report_id)) if not isinstance(report_id, uuid.UUID) else report_id
     # Check cache first to set the 'cached' boolean correctly
     stmt_cache = select(ReportTranslation).where(
-        ReportTranslation.report_id == report_id,
+        ReportTranslation.report_id == r_uuid,
         ReportTranslation.language_code == req.language
     )
     cached_translation = (await db.execute(stmt_cache)).scalars().first()

@@ -6,6 +6,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.report import Report, ProcessingStatus
 from app.models.report_analysis import ReportAnalysis
+from app.models.medication_schedule import MedicationSchedule
 from app.models.analysis_translation import AnalysisTranslation
 from app.schemas.report import ReportAnalysisOut, TranslationRequest, TranslationOut, ReportStatusOut
 from app.middleware.ownership import verify_report_ownership
@@ -51,8 +52,10 @@ async def get_report_status(
         res_analysis = await db.execute(stmt_analysis)
         analysis = res_analysis.scalars().first()
         status_dict["error_reason"] = analysis.error_reason if analysis else "Unknown error"
+        status_dict["failure_category"] = getattr(analysis, "failure_category", None) if analysis else None
     else:
         status_dict["error_reason"] = None
+        status_dict["failure_category"] = None
         
     return status_dict
 
@@ -71,9 +74,27 @@ async def get_report_analysis(
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found. Call /process first.")
         
-    # Check for translation
+    stmt_meds = select(MedicationSchedule).where(MedicationSchedule.report_id == report.id)
+    res_meds = await db.execute(stmt_meds)
+    meds = res_meds.scalars().all()
+
+    meds_list = [
+        {
+            "id": str(m.id),
+            "medication_name": m.medication_name,
+            "dosage": m.dosage,
+            "frequency": m.frequency,
+            "times_of_day": m.times_of_day or [],
+            "duration_days": m.duration_days,
+            "notes": m.notes,
+            "provenance": getattr(m, "provenance", "REPORT_EXTRACTED") or "REPORT_EXTRACTED",
+        }
+        for m in meds
+    ]
+
     pref_lang = current_user.preferred_language or "en"
     analysis_out = ReportAnalysisOut.model_validate(analysis)
+    analysis_out.medications = meds_list
     
     if pref_lang != "en":
         stmt_trans = select(AnalysisTranslation).where(

@@ -4,11 +4,15 @@ import '../../../core/services/api_exception.dart';
 import '../../../core/services/storage_service.dart';
 import '../models/report_model.dart';
 
+import '../../../core/services/api_models.dart';
+
 class ReportDetailController extends ChangeNotifier {
   final ApiService _apiService = ApiService.instance;
   final StorageService _storageService = StorageService.instance;
   
   ReportModel? report;
+  ReportAnalysisModel? analysis;
+  ComparePreviousResult? comparison;
   bool isLoading = true;
   String? error;
   bool professionalMode = false;
@@ -32,19 +36,25 @@ class ReportDetailController extends ChangeNotifier {
       report = r;
       if (r.processingStatus == 'completed') {
         try {
-          final analysis = await _apiService.getReportAnalysis(reportId);
+          final resAnalysis = await _apiService.getReportAnalysis(reportId);
+          analysis = resAnalysis;
           report = report!.copyWith(
-            aiSummary: analysis.patientSummary,
-            clinicalSummary: analysis.clinicianSummary,
-            metrics: analysis.structuredLabValues.map((v) => {
+            aiSummary: resAnalysis.patientSummary,
+            clinicalSummary: resAnalysis.clinicianSummary,
+            metrics: resAnalysis.structuredLabValues.map((v) => {
+              'parameter': v.testName,
               'test_name': v.testName,
               'value': v.value,
               'unit': v.unit,
               'ref_low': v.refLow,
               'ref_high': v.refHigh,
               'flag': v.flag,
+              'category': v.category,
             }).toList(),
           );
+          try {
+            comparison = await _apiService.comparePrevious(reportId);
+          } catch (_) {}
         } catch (_) {}
       }
       error = null;

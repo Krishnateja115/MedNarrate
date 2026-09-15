@@ -7,6 +7,10 @@ from app.models.report import FileType, ReportType, ProcessingStatus
 class ReportStatusOut(BaseModel):
     processing_status: str
     error_reason: Optional[str] = None
+    failure_category: Optional[str] = Field(None, alias="failure_category")
+    failureCategory: Optional[str] = Field(None, alias="failure_category")
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 class ReportOut(BaseModel):
     """
@@ -53,7 +57,8 @@ class LabValue(BaseModel):
     original_unit: str
     ref_low: Optional[float] = None
     ref_high: Optional[float] = None
-    flag: str = Field(default="normal", pattern="^(normal|low|high)$")
+    flag: str = Field(default="not_classified", pattern="^(normal|low|high|critical|not_classified)$")
+    category: Optional[str] = "LabResult"
 
 class Entity(BaseModel):
     entity_group: Optional[str] = None
@@ -77,6 +82,7 @@ class ReportAnalysisOut(BaseModel):
     structured_lab_values: List[LabValue]
     entities: List[Entity]
     abnormal_findings: List[AbnormalFinding]
+    medications: List[Dict[str, Any]] = []
     evidence_sources: List[Dict[str, Any]] = []
     clinician_summary: Optional[str] = None
     patient_summary: Optional[str] = None

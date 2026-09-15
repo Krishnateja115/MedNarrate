@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-
 import '../../../core/services/reminder_service.dart';
 
 class MedicineReminderCard extends StatelessWidget {
   final List<ReminderModel> reminders;
+  final List<Map<String, dynamic>> reportedMedications;
   final VoidCallback? onAddTap;
 
   const MedicineReminderCard({
     super.key,
     required this.reminders,
+    this.reportedMedications = const [],
     this.onAddTap,
   });
 
@@ -16,6 +17,9 @@ class MedicineReminderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    final hasReportedMeds = reportedMedications.isNotEmpty;
+    final hasManualMeds = reminders.isNotEmpty;
 
     return Container(
       width: double.infinity,
@@ -37,186 +41,220 @@ class MedicineReminderCard extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Row
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.medication_outlined,
-                  color: Colors.orange,
-                  size: 20,
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.medication_outlined,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Today's Medicine",
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text(
-                "Today's Medicine",
-                style: TextStyle(
-                  color: theme.colorScheme.onSurface,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              if (onAddTap != null && (hasReportedMeds || hasManualMeds))
+                IconButton(
+                  onPressed: onAddTap,
+                  icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.orange),
+                  tooltip: "Add Medicine",
                 ),
-              ),
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // Content
-          if (reminders.isEmpty)
+          if (!hasReportedMeds && !hasManualMeds)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 460),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.10),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.medication_liquid_outlined,
-                          size: 28,
-                          color: Colors.orange,
-                        ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.10),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 14),
-                      Text(
-                        "No medicines added yet",
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurface,
-                          fontSize: 16.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
+                      child: const Icon(
+                        Icons.medication_liquid_outlined,
+                        size: 24,
+                        color: Colors.orange,
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        "Add a medication or upload a prescription to see your schedule here.",
-                        style: TextStyle(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
-                          fontSize: 13.5,
-                          height: 1.4,
-                        ),
-                        textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      "No medicines added yet",
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                      if (onAddTap != null) ...[
-                        const SizedBox(height: 18),
-                        ElevatedButton.icon(
-                          onPressed: onAddTap,
-                          icon: const Icon(Icons.add_rounded, size: 18),
-                          label: const Text(
-                            "Add Medicine",
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange.shade700,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Add a medication or upload a report containing medication information.",
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
+                        fontSize: 13,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             )
-          else
-            Column(
-              children: reminders.asMap().entries.map((entry) {
-                final index = entry.key;
-                final reminder = entry.value;
-                final isLast = index == reminders.length - 1;
-                final timeFormatted = TimeOfDay.fromDateTime(reminder.time).format(context);
-
-                return Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 22,
-                            backgroundColor: Colors.orange.withValues(alpha: 0.15),
-                            child: const Icon(
-                              Icons.medication,
-                              color: Colors.orange,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  reminder.medicineName,
-                                  style: TextStyle(
-                                    color: theme.colorScheme.onSurface,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                if (reminder.dosageNote != null &&
-                                    reminder.dosageNote!.trim().isNotEmpty) ...[
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    reminder.dosageNote!,
-                                    style: TextStyle(
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.60),
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              timeFormatted,
-                              style: TextStyle(
-                                color: Colors.orange.shade800,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
+          else ...[
+            // Report Extracted Medications
+            if (hasReportedMeds) ...[
+              Row(
+                children: [
+                  Text(
+                    "Medications from Latest Report",
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      "Reported",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
                       ),
                     ),
-                    if (!isLast)
-                      Divider(
-                        height: 1,
-                        thickness: 1,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ...reportedMedications.map((med) {
+                final name = med['medication_name'] ?? med['name'] ?? 'Medication';
+                final dosage = med['dosage'] as String?;
+                final frequency = med['frequency'] as String?;
+                final times = med['times_of_day'] as List<dynamic>? ?? [];
+
+                String timingStr = times.isNotEmpty ? times.join(', ') : 'Timing: Not specified';
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: const Color(0xFFFFF3E0),
+                        child: const Icon(Icons.medication, size: 16, color: Colors.orange),
                       ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              [
+                                if (dosage != null && dosage.isNotEmpty) dosage,
+                                if (frequency != null && frequency.isNotEmpty) frequency,
+                                timingStr,
+                              ].join(' • '),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 );
-              }).toList(),
-            ),
+              }),
+            ],
+
+            // User Manual Medications
+            if (hasManualMeds) ...[
+              if (hasReportedMeds) const SizedBox(height: 14),
+              Text(
+                "My Confirmed Schedule",
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...reminders.map((reminder) {
+                final timeFormatted = TimeOfDay.fromDateTime(reminder.time).format(context);
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.alarm, size: 18, color: Colors.orange),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          reminder.medicineName,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                      ),
+                      Text(
+                        timeFormatted,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.orange),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ],
         ],
       ),
     );

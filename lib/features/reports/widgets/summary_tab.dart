@@ -3,6 +3,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../reports/models/report_model.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
+import '../../../core/utils/markdown_formatter.dart';
 import '../../../core/services/api_service.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
@@ -22,7 +23,6 @@ class _SummaryTabState extends State<SummaryTab> {
 
   Future<void> _translate(BuildContext context) async {
     if (_translating) return;
-    // Show language picker
     final languages = {
       'en': 'English',
       'hi': 'Hindi (हिन्दी)',
@@ -41,7 +41,7 @@ class _SummaryTabState extends State<SummaryTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(AppLocalizations.of(context)!.translateSummary, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.translateSummary, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             ...languages.entries.map((e) => ListTile(
               title: Text(e.value),
@@ -54,12 +54,13 @@ class _SummaryTabState extends State<SummaryTab> {
     if (selected == null) return;
     if (!context.mounted) return;
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _translating = true);
     try {
       final t = await ApiService.instance.translateAnalysis(widget.report.id, selected);
       if (mounted) setState(() => _translatedSummary = t.patientSummary);
     } catch (_) {
-      if (mounted) messenger.showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.translationFailed)));
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(l10n.translationFailed)));
     } finally {
       if (mounted) setState(() => _translating = false);
     }
@@ -68,12 +69,20 @@ class _SummaryTabState extends State<SummaryTab> {
   @override
   Widget build(BuildContext context) {
     final report = widget.report;
+    final isClinical = widget.isProfessionalMode;
+
+    final rawSummary = _translatedSummary ?? (
+      isClinical 
+        ? (report.clinicalSummary ?? 'No clinical summary available.')
+        : (report.aiSummary ?? 'No patient-friendly summary available.')
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Report Info Card
+          // Report Overview Header Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -84,32 +93,49 @@ class _SummaryTabState extends State<SummaryTab> {
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 30,
+                  radius: 28,
                   backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  child: Icon(Icons.description, color: AppColors.primary, size: 30),
+                  child: Icon(
+                    isClinical ? Icons.medical_services_outlined : Icons.person_outline,
+                    color: AppColors.primary,
+                    size: 28,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(report.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                      Text(
+                        report.title,
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       if (report.hospital.isNotEmpty && report.hospital != 'Unknown Hospital')
-                        Text(report.hospital, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
-                      const SizedBox(height: 8),
+                        Text(
+                          report.hospital,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontSize: 13,
+                          ),
+                        ),
+                      const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 14, color: Theme.of(context).colorScheme.primary),
+                          Icon(Icons.calendar_today, size: 13, color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 4),
                           Text(Formatters.formatDate(report.reportDate), style: const TextStyle(fontSize: 12)),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.accentTeal.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
+                              color: AppColors.accentTeal.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Text(Helpers.reportTypeLabel(report.reportType), style: const TextStyle(fontSize: 10, color: AppColors.accentTeal)),
+                            child: Text(
+                              Helpers.reportTypeLabel(report.reportType),
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentTeal),
+                            ),
                           ),
                         ],
                       ),
@@ -120,45 +146,17 @@ class _SummaryTabState extends State<SummaryTab> {
             ),
           ),
           
-          SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // Abnormal Values Alert
-          if (report.metrics.any((m) => m['flag'] != null && m['flag'] != 'normal'))
-            Container(
-              margin: const EdgeInsets.only(bottom: 24),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: const Border(left: BorderSide(color: Colors.red, width: 4)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.warning_amber_rounded, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.abnormalValuesDetected, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(AppLocalizations.of(context)!.someParametersOutOfRange, style: const TextStyle(fontSize: 13)),
-                  const SizedBox(height: 8),
-                  Text(AppLocalizations.of(context)!.consultYourDoctor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ],
-              ),
-            ),
-            
-          // Summary Section
+          // View Title & Translation Action
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                widget.isProfessionalMode ? 'Clinical Summary' : 'Patient-Friendly Summary',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                isClinical ? 'Clinical Executive Summary' : 'For You — Plain Language Summary',
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
               ),
-              if (!widget.isProfessionalMode)
+              if (!isClinical)
                 _translating
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : TextButton.icon(
@@ -168,7 +166,9 @@ class _SummaryTabState extends State<SummaryTab> {
                   ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+
+          // Formatted Summary Container (No raw markdown!)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -177,19 +177,16 @@ class _SummaryTabState extends State<SummaryTab> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.border),
             ),
-            child: SelectableText(
-              _translatedSummary ?? (
-                widget.isProfessionalMode 
-                  ? (report.clinicalSummary ?? 'No clinical summary available.')
-                  : (report.aiSummary ?? 'No patient-friendly summary available.')
-              ),
-              style: const TextStyle(height: 1.6, fontSize: 15),
-            ),
+            child: MarkdownFormatter.formatText(context, rawSummary),
           ),
 
           const SizedBox(height: 24),
           
-          Text(AppLocalizations.of(context)!.keyFindings, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          // Section: Key Takeaways / Findings
+          Text(
+            isClinical ? 'Key Clinical Findings' : 'Important Findings',
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 12),
           
           if (report.metrics.isEmpty)
@@ -200,23 +197,55 @@ class _SummaryTabState extends State<SummaryTab> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
               ),
-              child: Text(AppLocalizations.of(context)!.noKeyFindings,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
+              child: Text(
+                AppLocalizations.of(context)!.noKeyFindings,
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
+              ),
             )
           else
-            ...report.metrics.where((m) => m['flag'] != null && m['flag'] != 'normal').map((m) {
-              final flag = m['flag']?.toString() ?? 'normal';
+            ...report.metrics.where((m) => m['flag'] != null && m['flag'] != 'normal' && m['flag'] != 'not_classified').map((m) {
+              final flag = m['flag']?.toString() ?? 'not_classified';
               final severity = flag == 'high' || flag == 'low' ? (flag == 'high' ? 'red' : 'amber') : 'green';
               final label = '${m['parameter']} is $flag (${m['value']} ${m['unit']})';
-              return _buildKeyFinding(context, label, severity);
+              return _buildKeyFinding(context, label, severity, isClinical);
             }),
+
+          const SizedBox(height: 24),
+
+          // Medical Disclaimer Card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.amber.shade700.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline_rounded, color: Colors.amber.shade800, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.",
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.4,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  Widget _buildKeyFinding(BuildContext context, String text, String severity) {
+  Widget _buildKeyFinding(BuildContext context, String text, String severity, bool isClinical) {
     Color dotColor = Colors.green;
     if (severity == 'amber') dotColor = Colors.orange;
     if (severity == 'red') dotColor = Colors.red;
@@ -226,23 +255,25 @@ class _SummaryTabState extends State<SummaryTab> {
       child: ExpansionTile(
         tilePadding: EdgeInsets.zero,
         leading: Container(
-          width: 12,
-          height: 12,
+          width: 10,
+          height: 10,
           decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
         ),
-        title: Text(text, style: TextStyle(fontWeight: FontWeight.w500)),
+        title: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         children: [
           Container(
-            padding: EdgeInsets.all(12),
-            margin: EdgeInsets.only(bottom: 12, left: 32, right: 16),
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 12, left: 24, right: 8),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.border),
             ),
             child: Text(
-              "What does this mean? This finding suggests a need for lifestyle changes or medical review. Please discuss this with your physician.",
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 13),
+              isClinical
+                ? "Clinical Finding Note: Out-of-range measurement observed. Review patient history and cross-reference with baseline laboratory parameters."
+                : "What does this mean? This result is outside the standard reference range. Please discuss this finding with your physician during your next consultation.",
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75), fontSize: 13, height: 1.4),
             ),
           ),
         ],

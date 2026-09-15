@@ -17,10 +17,17 @@ class LocalStorageBackend(StorageBackend):
         try:
             def _write():
                 with open(filepath, 'wb') as f:
-                    f.write(file_bytes)
+                    written = f.write(file_bytes)
+                if written != len(file_bytes):
+                    raise IOError(f"Incomplete write: expected {len(file_bytes)} bytes, wrote {written} bytes")
+                actual_size = os.path.getsize(filepath)
+                if actual_size != len(file_bytes):
+                    raise IOError(f"Disk file size mismatch: expected {len(file_bytes)} bytes, got {actual_size} bytes")
             await asyncio.to_thread(_write)
             # Returning a relative URL path suitable for local serving
-            return f"/uploads/{filename}"
+            # Normalize to forward slashes for URL safety
+            normalized_filename = filename.replace("\\", "/")
+            return f"/uploads/{normalized_filename}"
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to save file locally: {str(e)}")
 

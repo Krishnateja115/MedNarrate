@@ -63,6 +63,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               showUnselectedLabels: true,
               currentIndex: _selectedIndex,
               onTap: (index) {
+                if (index == 0) {
+                  DashboardScreen.onRefreshRequested?.call();
+                }
                 setState(() {
                   _selectedIndex = index;
                 });

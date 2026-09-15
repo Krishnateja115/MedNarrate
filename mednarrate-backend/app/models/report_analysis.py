@@ -16,6 +16,7 @@ class ReportAnalysis(Base):
     clinician_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     patient_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    failure_category: Mapped[str | None] = mapped_column(Text, nullable=True)
     model_versions: Mapped[dict] = mapped_column(JSONB, default=dict)
     processed_at: Mapped[object | None] = mapped_column(DateTime, nullable=True)
     
