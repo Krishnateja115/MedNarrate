@@ -32,7 +32,7 @@ from app.schemas.report import LabValue, AbnormalFinding, Entity
 
 logger = logging.getLogger(__name__)
 
-async def generate_with_timeout(prompt: str, timeout: int = 30, request_id: str | None = None):
+async def generate_with_timeout(prompt: str, timeout: int = 60, request_id: str | None = None):
     """Executes single LLM call with request timeout and request correlation tracking."""
     return await asyncio.wait_for(generate(prompt, timeout=timeout, request_id=request_id), timeout=timeout)
 
@@ -246,8 +246,10 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             
             await db.commit()
     except Exception as e:
+        import traceback
         failure_cat = getattr(e, 'failure_category', 'PIPELINE_ERROR')
-        logger.error(f"[STAGE:FAIL] Pipeline failed for report {report_id}: {e}")
+        logger.error(f"[STAGE:FAIL] Pipeline failed for report {report_id}: {repr(e)}\n{traceback.format_exc()}")
+
         if 'report' in locals() and report:
             report.processing_status = ProcessingStatus.failed
             

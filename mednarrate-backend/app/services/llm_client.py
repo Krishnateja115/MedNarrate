@@ -227,13 +227,27 @@ class DevGeminiProvider(LLMProvider):
         if not _is_valid_dev_gemini_key(self.api_key):
             raise LLMConfigurationError("Gemini API key is not configured or is invalid.")
 
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key.strip()}"
+        
         try:
-            genai.configure(api_key=self.api_key.strip())
-            model = genai.GenerativeModel(self.model_name)
-            response = await model.generate_content_async(prompt)
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                resp = await client.post(
+                    url,
+                    json={
+                        "contents": [{"parts": [{"text": prompt}]}]
+                    }
+                )
+            
+            resp.raise_for_status()
+            data = resp.json()
+            
             latency_ms = int((time.time() - start_time) * 1000)
-
-            if response and response.text:
+            
+            content = ""
+            if "candidates" in data and len(data["candidates"]) > 0:
+                content = data["candidates"][0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            
+            if content:
                 logger.info(f"[LLM:DEV_GEMINI:SUCCESS] req_id={req_id} latency={latency_ms}ms model={self.model_name}")
                 return {
                     "provider": "dev_gemini",
@@ -241,16 +255,16 @@ class DevGeminiProvider(LLMProvider):
                     "request_success": True,
                     "response_received": True,
                     "error_category": None,
-                    "content": response.text.strip(),
+                    "content": content.strip(),
                     "latency_ms": latency_ms,
                     "request_id": req_id,
                 }
-            raise ValueError("Empty response text received from Gemini developer API.")
-        except LLMConfigurationError:
-            raise
+            raise ValueError(f"Empty or invalid response from Gemini API: {data}")
+        except httpx.HTTPStatusError as e:
+            logger.error(f"[LLM:DEV_GEMINI:FAIL] HTTP {e.response.status_code}: {e.response.text}")
+            raise ValueError(f"Gemini API returned error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            latency_ms = int((time.time() - start_time) * 1000)
-            logger.error(f"[LLM:DEV_GEMINI:FAIL] req_id={req_id} latency={latency_ms}ms error={e}")
+            logger.error(f"[LLM:DEV_GEMINI:FAIL] req_id={req_id} error={e}")
             raise LLMConnectionError(f"Gemini developer API error: {e}")
 
 # Standalone Fallback Provider for Development & Offline Execution

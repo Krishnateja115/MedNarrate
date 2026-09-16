@@ -70,7 +70,7 @@ async def process_report_for_rag(report_id: uuid.UUID, report_text: str, db: Asy
         if settings.GEMINI_API_KEY:
             try:
                 result = genai.embed_content(
-                    model="models/text-embedding-004",
+                    model="models/gemini-embedding-001",
                     content=chunk,
                     task_type="retrieval_document"
                 )
@@ -106,7 +106,7 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
         try:
             # Get query embedding
             q_res = genai.embed_content(
-                model="models/text-embedding-004",
+                model="models/gemini-embedding-001",
                 content=query,
                 task_type="retrieval_query"
             )

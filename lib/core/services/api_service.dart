@@ -292,32 +292,30 @@ class ApiService {
       );
     }
     
-    final token = await StorageService.instance.getAccessToken();
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$_baseUrl/reports/upload'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    request.fields['title'] = title;
-    request.fields['report_date'] = reportDate;
-    request.fields['report_type'] = reportType;
-    if (hospital != null) request.fields['hospital'] = hospital;
+    Future<http.Response> doUpload() async {
+      final token = await StorageService.instance.getAccessToken();
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_baseUrl/reports/upload'),
+      );
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.fields['title'] = title;
+      request.fields['report_date'] = reportDate;
+      request.fields['report_type'] = reportType;
+      if (hospital != null) request.fields['hospital'] = hospital;
+      
+      if (kIsWeb) {
+        request.files.add(http.MultipartFile.fromBytes('file', file.bytes!, filename: file.name));
+      } else {
+        request.files.add(await http.MultipartFile.fromPath('file', file.path!));
+      }
+      final streamedResponse = await request.send();
+      return await http.Response.fromStream(streamedResponse);
+    }
     
-    if (kIsWeb) {
-      request.files.add(http.MultipartFile.fromBytes('file', file.bytes!, filename: file.name));
-    } else {
-      request.files.add(await http.MultipartFile.fromPath('file', file.path!));
-    }
-    final streamedResponse = await request.send();
-    final resp = await http.Response.fromStream(streamedResponse);
-    if (resp.statusCode >= 400) {
-      String message = 'Upload failed';
-      try {
-        final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
-        message = decoded['detail']?.toString() ?? message;
-      } catch (_) {}
-      throw ApiException(resp.statusCode, message);
-    }
+    final resp = await _handleResponse(await doUpload(), doUpload);
     return ReportModel.fromMap(_remapReport(
         jsonDecode(resp.body) as Map<String, dynamic>));
   }
