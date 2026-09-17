@@ -143,7 +143,7 @@ async def test_oversized_file_upload_returns_422(client, test_user_and_token):
         "/api/v1/reports/upload",
         headers={"Authorization": f"Bearer {access_token}"},
         files={"file": ("big.pdf", io.BytesIO(oversized_bytes), "application/pdf")},
-        data={"title": "Oversized", "report_date": "2024-01-01", "report_type": "blood_test"},
+        data={"title": "Oversized", "report_date": "2024-01-01", "report_type": "blood"},
     )
     assert resp.status_code == 422
     detail = resp.json().get("detail", "").lower()
@@ -162,7 +162,7 @@ async def test_corrupt_pdf_upload_returns_422(client, test_user_and_token):
         "/api/v1/reports/upload",
         headers={"Authorization": f"Bearer {access_token}"},
         files={"file": ("report.pdf", io.BytesIO(fake_pdf), "application/pdf")},
-        data={"title": "Corrupt", "report_date": "2024-01-01", "report_type": "blood_test"},
+        data={"title": "Corrupt", "report_date": "2024-01-01", "report_type": "blood"},
     )
     assert resp.status_code == 422
     assert "invalid" in resp.json().get("detail", "").lower(), (
@@ -179,7 +179,7 @@ async def test_unsupported_file_type_returns_422(client, test_user_and_token):
         "/api/v1/reports/upload",
         headers={"Authorization": f"Bearer {access_token}"},
         files={"file": ("malware.exe", io.BytesIO(b"MZ\x90\x00"), "application/octet-stream")},
-        data={"title": "Exe file", "report_date": "2024-01-01", "report_type": "blood_test"},
+        data={"title": "Exe file", "report_date": "2024-01-01", "report_type": "blood"},
     )
     assert resp.status_code == 422
     detail = resp.json().get("detail", "").lower()
@@ -197,7 +197,7 @@ async def test_empty_file_upload_returns_422(client, test_user_and_token):
         "/api/v1/reports/upload",
         headers={"Authorization": f"Bearer {access_token}"},
         files={"file": ("empty.pdf", io.BytesIO(b""), "application/pdf")},
-        data={"title": "Empty", "report_date": "2024-01-01", "report_type": "blood_test"},
+        data={"title": "Empty", "report_date": "2024-01-01", "report_type": "blood"},
     )
     assert resp.status_code == 422
     detail = resp.json().get("detail", "").lower()
