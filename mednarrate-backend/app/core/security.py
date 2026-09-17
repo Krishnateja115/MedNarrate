@@ -53,17 +53,24 @@ def decode_access_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
-    from app.models.user import User # Local import to avoid circular dependencies if necessary
+    from app.models.user import User  # Local import to avoid circular dependencies
+
+    # decode_access_token raises HTTPException with specific detail ("Token has expired",
+    # "Invalid token"). Re-raise those directly so the real cause reaches the client.
+    # Only fall back to a generic 401 for truly unexpected errors (e.g., DB unavailable).
     try:
         payload = decode_access_token(token)
-        user_id = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+    except HTTPException:
+        raise  # Propagate specific detail ("Token has expired" / "Invalid token")
     except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_id = payload.get("sub")
+    if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -81,7 +88,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         )
 
     stmt = select(User).where(User.id == user_uuid)
-    print(f"DEBUG get_current_user: user_uuid type={type(user_uuid)}, value={repr(user_uuid)}")
     result = await db.execute(stmt)
     user = result.scalars().first()
 

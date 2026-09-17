@@ -4,7 +4,6 @@ import uuid
 import logging
 import httpx
 import google.auth
-import google.generativeai as genai
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -88,6 +87,7 @@ class VertexAIProvider(LLMProvider):
             )
 
         try:
+            import google.generativeai as genai  # Lazy import — avoids deprecation warnings at startup
             if settings.GEMINI_API_KEY and _is_valid_dev_gemini_key(settings.GEMINI_API_KEY):
                 genai.configure(api_key=settings.GEMINI_API_KEY.strip())
             

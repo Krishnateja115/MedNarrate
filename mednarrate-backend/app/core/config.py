@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     FIREBASE_SERVICE_ACCOUNT_JSON: str | None = None
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_MB: int = 25
+    # SECURITY: ["*"] is acceptable for local development only.
+    # For production, set this to an explicit list of allowed origins, e.g.:
+    #   CORS_ORIGINS=["https://app.mednarrate.com"]
+    # or via environment: CORS_ORIGINS='["https://app.mednarrate.com"]'
     CORS_ORIGINS: list[str] = ["*"]
 
     # LLM Provider Architecture Configuration

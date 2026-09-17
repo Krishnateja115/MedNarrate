@@ -503,15 +503,10 @@ class ApiService {
 
   Future<void> unregisterPushToken(String token) async {
     try {
-      await _delete('/notifications/unregister-token');
-      // Wait, the API requires the token in body for DELETE? Yes, per the prompt.
-      // But _delete doesn't support body. I will use http directly.
-      final headers = await _authHeaders();
-      await http.delete(
-        Uri.parse('$_baseUrl/notifications/unregister-token'),
-        headers: headers,
-        body: jsonEncode({'token': token}),
-      );
+      // The unregister endpoint expects the token in the body.
+      // Use _post (which goes through _handleResponse and the 401-refresh path)
+      // rather than a raw http.delete() which bypasses auth retry.
+      await _post('/notifications/unregister-token', body: {'token': token});
     } catch (_) {}
   }
 

@@ -22,7 +22,7 @@ from app.services.model_registry import get_ner_pipeline
 from app.services.lab_value_extractor import extract_lab_values, extract_medication_schedule
 from app.services.privacy import deidentify_prompt_text
 from app.services.prompts import CLINICIAN_PROMPT, PATIENT_PROMPT, ROLE_INSTRUCTIONS, get_examples_text
-from app.services.llm_client import generate
+from app.services.llm_client import generate, LLMConfigurationError, LLMConnectionError
 from app.services.rag import process_report_for_rag, retrieve_chunks
 from app.services.multilingual import translate_report_summary
 from app.services.validation import validate_and_ground_analysis
@@ -245,6 +245,34 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             analysis.failure_category = failure_cat
             
             await db.commit()
+
+    except (LLMConfigurationError, LLMConnectionError) as llm_e:
+        # LLM not configured or unreachable — store a clean, user-facing message
+        # instead of the raw traceback that the generic handler would produce.
+        is_config_error = isinstance(llm_e, LLMConfigurationError)
+        failure_cat = "LLM_NOT_CONFIGURED" if is_config_error else "LLM_GENERATION_ERROR"
+        clean_msg = (
+            "AI analysis is unavailable: the AI service is not configured on this server. "
+            "Please contact support."
+            if is_config_error else
+            "AI analysis failed because the AI service could not be reached. Please try again later."
+        )
+        logger.error(f"[STAGE:FAIL] LLM error for report {report_id} [{failure_cat}]: {llm_e}")
+
+        if 'report' in locals() and report:
+            report.processing_status = ProcessingStatus.failed
+
+            stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == report.id)
+            res_analysis = await db.execute(stmt_analysis)
+            analysis = res_analysis.scalars().first()
+            if not analysis:
+                analysis = ReportAnalysis(report_id=report.id)
+                db.add(analysis)
+            analysis.error_reason = clean_msg
+            analysis.failure_category = failure_cat
+
+            await db.commit()
+
     except Exception as e:
         import traceback
         failure_cat = getattr(e, 'failure_category', 'PIPELINE_ERROR')
