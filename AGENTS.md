@@ -15,3 +15,12 @@ These are the rules and guidelines for AI coding agents working on the MedNarrat
 ## AI Constraints
 - Do not remove existing comments unless rewriting the entire block.
 - For database schema changes, you must generate Alembic migrations (`alembic revision --autogenerate -m "msg"`).
+
+## Git Workflow (MANDATORY)
+- **After every modification to any file in this project**, you MUST immediately run:
+  ```
+  git add -A && git commit -m "<concise description of change>" && git push origin main
+  ```
+- This applies to ALL changes — bug fixes, new features, config updates, test additions, documentation edits — without exception.
+- Do NOT batch changes across multiple user turns before pushing. Each logical change set must be committed and pushed before moving on.
+- Never ask the user whether to push. Just do it automatically every time.
