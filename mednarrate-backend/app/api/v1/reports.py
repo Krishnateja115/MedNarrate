@@ -133,6 +133,35 @@ async def get_report(
     report = await verify_report_ownership(id, str(current_user.id), db)
     return report
 
+@router.get("/{id}/download")
+async def download_report(
+    id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    report = await verify_report_ownership(id, str(current_user.id), db)
+    
+    from app.services.storage import get_storage_backend
+    storage = get_storage_backend()
+    
+    # Extract the storage key from the saved path (e.g. remove /uploads/ prefix for local)
+    file_key = report.file_path.replace("/uploads/", "")
+    
+    if not await storage.file_exists(file_key):
+        raise HTTPException(status_code=404, detail="File not found in storage.")
+        
+    file_bytes = await storage.download_file(file_key)
+    
+    # Return as an inline or attachment response
+    return Response(
+        content=file_bytes,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f'inline; filename="{report.file_name}"',
+            "Cache-Control": "private, max-age=3600"
+        }
+    )
+
 @router.patch("/{id}", response_model=ReportOut)
 async def update_report(
     id: str,
