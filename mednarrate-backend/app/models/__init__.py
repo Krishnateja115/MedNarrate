@@ -1,12 +1,14 @@
 from app.core.database import Base
-from .user import User
-from .medical_profile import MedicalProfile
-from .refresh_token import RefreshToken
-from .report import Report, ReportType, ProcessingStatus
-from .report_analysis import ReportAnalysis
-from .chat import ChatSession, ChatMessage, ChatRole
-from .rag_chunk import RagChunk
-from .report_translation import ReportTranslation
-from .push_token import PushToken
-from .medication_schedule import MedicationSchedule
-from .notification_log import NotificationLog
+from app.models.user import User
+from app.models.medical_profile import MedicalProfile
+from app.models.report import Report
+from app.models.rag_chunk import RagChunk
+from app.models.chat import ChatSession, ChatMessage
+from app.models.medication_schedule import MedicationSchedule
+from app.models.notification_log import NotificationLog
+from app.models.refresh_token import RefreshToken
+from app.models.push_token import PushToken
+from app.models.report_analysis import ReportAnalysis
+from app.models.report_translation import ReportTranslation
+from app.models.analysis_translation import AnalysisTranslation
+from app.models.password_reset_token import PasswordResetToken

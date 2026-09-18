@@ -4,16 +4,13 @@ from sqlalchemy.future import select
 from pydantic import BaseModel, EmailStr
 from app.core.database import get_db
 from app.models.user import User
+from app.models.password_reset_token import PasswordResetToken
 from app.core.security import hash_password
 import secrets
 import hashlib
 from datetime import datetime, timezone, timedelta
 
 router = APIRouter()
-
-# In-memory token store (keyed by hash → {user_id, expires_at})
-# In production, use a DB table or Redis.
-_reset_tokens: dict = {}
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
@@ -24,8 +21,6 @@ class ResetPasswordRequest(BaseModel):
 
 class ForgotPasswordResponse(BaseModel):
     message: str
-    # In dev mode only, return the token directly so it can be tested
-    dev_token: str | None = None
 
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
@@ -45,33 +40,47 @@ async def forgot_password(req: ForgotPasswordRequest, db: AsyncSession = Depends
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
     expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
 
-    _reset_tokens[token_hash] = {
-        "user_id": str(user.id),
-        "expires_at": expires_at,
-    }
+    db_token = PasswordResetToken(
+        user_id=user.id,
+        token_hash=token_hash,
+        expires_at=expires_at,
+        used=False
+    )
+    db.add(db_token)
+    await db.commit()
 
-    # In production: send email with reset link
-    # For development: return the token directly in the response
+    # In production: send email with reset link containing raw_token
+    # We do NOT return raw_token in the API response for security reasons.
     return ForgotPasswordResponse(
-        message="If this email is registered, a reset link has been sent.",
-        dev_token=raw_token,
+        message="If this email is registered, a reset link has been sent."
     )
 
 
 @router.post("/reset-password")
 async def reset_password(req: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
     token_hash = hashlib.sha256(req.token.encode()).hexdigest()
-    token_data = _reset_tokens.get(token_hash)
+    
+    stmt = select(PasswordResetToken).where(
+        PasswordResetToken.token_hash == token_hash,
+        PasswordResetToken.used == False
+    )
+    result = await db.execute(stmt)
+    db_token = result.scalars().first()
 
-    if not token_data:
+    if not db_token:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token.")
 
-    expires_at = token_data["expires_at"]
+    # Convert naive to aware UTC if necessary, though SQLAlchemy DateTime might be naive
+    expires_at = db_token.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
     if datetime.now(timezone.utc) > expires_at:
-        del _reset_tokens[token_hash]
+        db_token.used = True
+        await db.commit()
         raise HTTPException(status_code=400, detail="Reset token has expired. Please request a new one.")
 
-    stmt = select(User).where(User.id == token_data["user_id"])
+    stmt = select(User).where(User.id == db_token.user_id)
     result = await db.execute(stmt)
     user = result.scalars().first()
 
@@ -79,9 +88,7 @@ async def reset_password(req: ResetPasswordRequest, db: AsyncSession = Depends(g
         raise HTTPException(status_code=404, detail="User not found.")
 
     user.hashed_password = hash_password(req.new_password)
+    db_token.used = True
     await db.commit()
-
-    # Invalidate the token after use
-    del _reset_tokens[token_hash]
 
     return {"message": "Password reset successfully. You can now log in with your new password."}

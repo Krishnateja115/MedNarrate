@@ -19,13 +19,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('report_analyses', sa.Column('structured_lab_values', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column('report_analyses', sa.Column('entities', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column('report_analyses', sa.Column('abnormal_findings', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
+    op.add_column('report_analyses', sa.Column('structured_lab_values', sa.JSON().with_variant(postgresql.JSONB, 'postgresql'), nullable=True))
+    op.add_column('report_analyses', sa.Column('entities', sa.JSON().with_variant(postgresql.JSONB, 'postgresql'), nullable=True))
+    op.add_column('report_analyses', sa.Column('abnormal_findings', sa.JSON().with_variant(postgresql.JSONB, 'postgresql'), nullable=True))
     op.add_column('report_analyses', sa.Column('clinician_summary', sa.Text(), nullable=True))
     op.add_column('report_analyses', sa.Column('patient_summary', sa.Text(), nullable=True))
     op.add_column('report_analyses', sa.Column('error_reason', sa.Text(), nullable=True))
-    op.add_column('report_analyses', sa.Column('model_versions', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
+    op.add_column('report_analyses', sa.Column('model_versions', sa.JSON().with_variant(postgresql.JSONB, 'postgresql'), nullable=True))
     op.add_column('report_analyses', sa.Column('processed_at', sa.DateTime(timezone=True), nullable=True))
 
 

@@ -133,11 +133,11 @@ class UserWithProfileOut(UserOut):
     model_config = ConfigDict(from_attributes=True)
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     full_name: Optional[str] = None
     preferred_language: Optional[str] = None
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None
-    role: Optional[UserRole] = None
     medical_profile: Optional[MedicalProfileBase] = None
     doctor_profile: Optional[DoctorProfileBase] = None
     caregiver_profile: Optional[CaregiverProfileBase] = None

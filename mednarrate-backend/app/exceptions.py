@@ -19,9 +19,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         detail = f"{loc}: {msg}" if loc else msg
     else:
         detail = "Validation error"
+    from fastapi.encoders import jsonable_encoder
     return JSONResponse(
         status_code=422,
-        content={"detail": detail, "code": "validation_error", "errors": errors}
+        content={"detail": detail, "code": "validation_error", "errors": jsonable_encoder(errors)}
     )
 
 async def unhandled_exception_handler(request: Request, exc: Exception):
