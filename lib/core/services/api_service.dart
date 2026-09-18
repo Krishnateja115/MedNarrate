@@ -11,6 +11,7 @@ import 'offline_queue_service.dart';
 import '../../models/cached/offline_action.dart';
 import '../../../features/reports/models/report_model.dart';
 import '../../models/comparison_models.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 /// ApiService — singleton HTTP client that handles auth headers, 401 retry with token
 /// refresh, and uniform ApiException wrapping.
@@ -164,9 +165,20 @@ class ApiService {
 
   Future<void> logout() async {
     final refreshToken = await StorageService.instance.getRefreshToken();
+    String? deviceToken;
+    try {
+      if (!kIsWeb) {
+        deviceToken = await FirebaseMessaging.instance.getToken();
+      }
+    } catch (_) {}
+
     if (refreshToken != null) {
       try {
-        await _post('/auth/logout', body: {'refresh_token': refreshToken});
+        final body = <String, dynamic>{'refresh_token': refreshToken};
+        if (deviceToken != null) {
+          body['device_token'] = deviceToken;
+        }
+        await _post('/auth/logout', body: body);
       } catch (_) {}
     }
     await StorageService.instance.clearTokens();

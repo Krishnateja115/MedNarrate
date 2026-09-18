@@ -25,9 +25,13 @@ async def check_medication_reminders():
         current_minute = now.minute
 
         for schedule in schedules:
-            for reminder_time in schedule.reminder_times:
+            for reminder_time in (schedule.times_of_day or []):
                 try:
-                    h, m = map(int, reminder_time.split(':'))
+                    # Parse times like "08:00 AM" or "14:30"
+                    from dateutil.parser import parse
+                    dt = parse(reminder_time)
+                    h, m = dt.hour, dt.minute
+                    
                     if h == current_hour and m == current_minute:
                         # Find push tokens for this user
                         token_stmt = select(PushToken).where(PushToken.user_id == schedule.user_id)
@@ -40,8 +44,8 @@ async def check_medication_reminders():
                                 f"It's time to take {schedule.medication_name} ({schedule.dosage})",
                                 {"type": "medication_reminder", "schedule_id": str(schedule.id)}
                             )
-                except ValueError:
-                    logger.error(f"Invalid reminder time format for schedule {schedule.id}: {reminder_time}")
+                except Exception as e:
+                    logger.error(f"Invalid reminder time format for schedule {schedule.id}: {reminder_time} - {e}")
 
 def start_scheduler():
     scheduler.add_job(check_medication_reminders, 'cron', minute='*')

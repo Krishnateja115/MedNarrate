@@ -12,3 +12,5 @@ from app.models.report_analysis import ReportAnalysis
 from app.models.report_translation import ReportTranslation
 from app.models.analysis_translation import AnalysisTranslation
 from app.models.password_reset_token import PasswordResetToken
+from app.models.doctor_profile import DoctorProfile
+from app.models.caregiver_profile import CaregiverProfile

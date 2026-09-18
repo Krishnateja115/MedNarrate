@@ -5,6 +5,8 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.medical_profile import MedicalProfile
+from app.models.doctor_profile import DoctorProfile
+from app.models.caregiver_profile import CaregiverProfile
 from app.schemas.user import UserWithProfileOut, UserUpdate
 
 router = APIRouter()
@@ -15,8 +17,13 @@ async def get_users_me(
     db: AsyncSession = Depends(get_db)
 ):
     stmt = select(MedicalProfile).where(MedicalProfile.user_id == current_user.id)
-    result = await db.execute(stmt)
-    medical_profile = result.scalars().first()
+    medical_profile = (await db.execute(stmt)).scalars().first()
+    
+    doc_stmt = select(DoctorProfile).where(DoctorProfile.user_id == current_user.id)
+    doctor_profile = (await db.execute(doc_stmt)).scalars().first()
+    
+    cg_stmt = select(CaregiverProfile).where(CaregiverProfile.user_id == current_user.id)
+    caregiver_profile = (await db.execute(cg_stmt)).scalars().first()
     
     current_user_dict = {
         "id": current_user.id,
@@ -27,7 +34,9 @@ async def get_users_me(
         "date_of_birth": current_user.date_of_birth,
         "gender": current_user.gender,
         "is_active": current_user.is_active,
-        "medical_profile": medical_profile
+        "medical_profile": medical_profile,
+        "doctor_profile": doctor_profile,
+        "caregiver_profile": caregiver_profile
     }
     return current_user_dict
 
@@ -47,8 +56,7 @@ async def update_users_me(
         setattr(current_user, field, value)
 
     stmt = select(MedicalProfile).where(MedicalProfile.user_id == current_user.id)
-    result = await db.execute(stmt)
-    medical_profile = result.scalars().first()
+    medical_profile = (await db.execute(stmt)).scalars().first()
 
     if medical_profile_data is not None:
         if medical_profile:
@@ -57,11 +65,34 @@ async def update_users_me(
         else:
             medical_profile = MedicalProfile(user_id=current_user.id, **medical_profile_data)
             db.add(medical_profile)
+            
+    doc_stmt = select(DoctorProfile).where(DoctorProfile.user_id == current_user.id)
+    doctor_profile = (await db.execute(doc_stmt)).scalars().first()
+
+    if doctor_profile_data is not None:
+        if doctor_profile:
+            for field, value in doctor_profile_data.items():
+                setattr(doctor_profile, field, value)
+        else:
+            doctor_profile = DoctorProfile(user_id=current_user.id, **doctor_profile_data)
+            db.add(doctor_profile)
+            
+    cg_stmt = select(CaregiverProfile).where(CaregiverProfile.user_id == current_user.id)
+    caregiver_profile = (await db.execute(cg_stmt)).scalars().first()
+
+    if caregiver_profile_data is not None:
+        if caregiver_profile:
+            for field, value in caregiver_profile_data.items():
+                setattr(caregiver_profile, field, value)
+        else:
+            caregiver_profile = CaregiverProfile(user_id=current_user.id, **caregiver_profile_data)
+            db.add(caregiver_profile)
 
     await db.commit()
     await db.refresh(current_user)
-    if medical_profile:
-        await db.refresh(medical_profile)
+    if medical_profile: await db.refresh(medical_profile)
+    if doctor_profile: await db.refresh(doctor_profile)
+    if caregiver_profile: await db.refresh(caregiver_profile)
 
     current_user_dict = {
         "id": current_user.id,
@@ -73,8 +104,8 @@ async def update_users_me(
         "gender": current_user.gender,
         "is_active": current_user.is_active,
         "medical_profile": medical_profile,
-        "doctor_profile": doctor_profile_data,
-        "caregiver_profile": caregiver_profile_data,
+        "doctor_profile": doctor_profile,
+        "caregiver_profile": caregiver_profile,
     }
     return current_user_dict
 

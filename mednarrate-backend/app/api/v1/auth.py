@@ -144,6 +144,19 @@ async def logout(
     
     if db_refresh_token:
         db_refresh_token.revoked = True
+        
+        # If device_token is provided, unregister it
+        if refresh_req.device_token:
+            from app.models.push_token import PushToken
+            pt_stmt = select(PushToken).where(
+                PushToken.user_id == db_refresh_token.user_id,
+                PushToken.device_token == refresh_req.device_token
+            )
+            pt_result = await db.execute(pt_stmt)
+            push_token_record = pt_result.scalars().first()
+            if push_token_record:
+                await db.delete(push_token_record)
+                
         await db.commit()
 
 @router.get("/me", response_model=UserOut)
