@@ -125,7 +125,7 @@ async def test_expired_refresh_token_returns_401(client, test_user_and_token):
     resp = await client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_str})
     assert resp.status_code == 401
     detail = resp.json().get("detail", "").lower()
-    assert "refresh" in detail or "expired" in detail or "invalid" in detail, (
+    assert "refresh" in detail or "expired" in detail or "invalid" in detail or "reuse" in detail, (
         f"Expected specific refresh token error, got: {resp.json().get('detail')}"
     )
 

@@ -65,11 +65,14 @@ async def test_dev_gemini_provider_health_and_mocked_generation(monkeypatch):
     assert health["provider"] == "dev_gemini"
     assert health["configured"] is True
 
-    mock_resp = AsyncMock()
-    mock_resp.text = "Mocked Dev Gemini Response"
-    with patch("google.generativeai.GenerativeModel") as mock_model_cls:
-        mock_inst = mock_model_cls.return_value
-        mock_inst.generate_content_async = AsyncMock(return_value=mock_resp)
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "candidates": [{"content": {"parts": [{"text": "Mocked Dev Gemini Response"}]}}]
+        }
+        mock_resp.raise_for_status = MagicMock()
+        mock_post.return_value = mock_resp
 
         res = await provider.generate("Test prompt")
         assert res["provider"] == "dev_gemini"

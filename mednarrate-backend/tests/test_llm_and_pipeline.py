@@ -1,6 +1,6 @@
 import os
 import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, MagicMock
 from app.core.config import settings
 from app.services.llm_client import (
     generate,
@@ -27,12 +27,14 @@ async def test_llm_provider_gemini_valid_mocked(monkeypatch):
     monkeypatch.setattr(settings, "LLM_PROVIDER", "gemini")
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "valid_test_key_12345")
     
-    mock_resp = AsyncMock()
-    mock_resp.text = "Mocked Gemini Response Text"
-    
-    with patch("google.generativeai.GenerativeModel") as mock_model_cls:
-        mock_model_inst = mock_model_cls.return_value
-        mock_model_inst.generate_content_async = AsyncMock(return_value=mock_resp)
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "candidates": [{"content": {"parts": [{"text": "Mocked Gemini Response Text"}]}}]
+        }
+        mock_resp.raise_for_status = MagicMock()
+        mock_post.return_value = mock_resp
         
         result = await generate_with_metadata("Test prompt")
         assert result["request_success"] is True
@@ -159,6 +161,9 @@ async def test_live_gemini_generation_if_credentials_available():
         assert resp and resp.text
         assert "OK" in resp.text or len(resp.text) > 0
     except Exception as e:
+        error_msg = str(e).lower()
+        if "429" in error_msg or "quota" in error_msg or "resourceexhausted" in error_msg:
+            pytest.skip(f"Live Gemini API rate limit/quota exceeded: {e}")
         pytest.fail(f"Live Gemini API call failed with credentials: {e}")
 
 # 11. Prompt Injection Resistance Test
