@@ -237,7 +237,7 @@ class _ReminderFormState extends State<_ReminderForm> {
     final dt = DateTime(now.year, now.month, now.day, _time.hour, _time.minute);
     
     final reminder = ReminderModel(
-      id: widget.initialData?.id ?? DateTime.now().millisecondsSinceEpoch,
+      id: widget.initialData?.id ?? (DateTime.now().millisecondsSinceEpoch % 2147483647),
       medicineName: _nameCtrl.text.trim(),
       dosageNote: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
       time: dt,
