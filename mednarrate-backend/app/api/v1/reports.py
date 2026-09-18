@@ -37,8 +37,8 @@ async def upload_report(
     import logging
     logger = logging.getLogger(__name__)
     logger.info(
-        f"[UPLOAD:RECEIVED] User={current_user.id} filename='{file.filename}' "
-        f"contentType='{file.content_type}' title='{title}' type='{report_type.value}' date='{report_date}'"
+        f"[UPLOAD:RECEIVED] User={current_user.id} "
+        f"contentType='{file.content_type}' type='{report_type.value}' date='{report_date}'"
     )
     
     file_path = await save_upload_file(current_user.id, file)

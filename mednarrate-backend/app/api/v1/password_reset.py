@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydantic import BaseModel, EmailStr
@@ -6,11 +6,15 @@ from app.core.database import get_db
 from app.models.user import User
 from app.models.password_reset_token import PasswordResetToken
 from app.core.security import hash_password
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+import sys
 import secrets
 import hashlib
 from datetime import datetime, timezone, timedelta
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
@@ -24,7 +28,8 @@ class ForgotPasswordResponse(BaseModel):
 
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
-async def forgot_password(req: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def forgot_password(request: Request, req: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     stmt = select(User).where(User.email == req.email)
     result = await db.execute(stmt)
     user = result.scalars().first()
@@ -57,7 +62,8 @@ async def forgot_password(req: ForgotPasswordRequest, db: AsyncSession = Depends
 
 
 @router.post("/reset-password")
-async def reset_password(req: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def reset_password(request: Request, req: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
     token_hash = hashlib.sha256(req.token.encode()).hexdigest()
     
     stmt = select(PasswordResetToken).where(
