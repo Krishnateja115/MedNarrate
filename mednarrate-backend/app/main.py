@@ -9,8 +9,9 @@ from app.core.database import init_db
 from app.exceptions import setup_exception_handlers
 from app.api.v1 import router as api_v1_router
 import os
-
 import sys
+import re
+
 limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
 
 from app.services.scheduler import start_scheduler, stop_scheduler
@@ -53,8 +54,14 @@ async def prompt_injection_middleware(request: Request, call_next):
             try:
                 body = await request.body()
                 body_str = body.decode('utf-8').lower()
-                forbidden = ["ignore previous instructions", "system prompt", "you are a helpful assistant"]
-                if any(x in body_str for x in forbidden):
+                
+                # Robust Prompt Injection / Jailbreak Detection Regex
+                injection_pattern = re.compile(
+                    r"(ignore previous instructions|ignore all previous|system prompt|you are a helpful assistant|forget previous|override instructions|bypass|jailbreak|dan|do anything now)", 
+                    re.IGNORECASE
+                )
+                
+                if injection_pattern.search(body_str):
                     from fastapi.responses import JSONResponse
                     return JSONResponse(status_code=400, content={"detail": "Potential prompt injection detected."})
             except Exception:

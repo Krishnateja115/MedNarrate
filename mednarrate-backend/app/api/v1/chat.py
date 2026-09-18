@@ -28,6 +28,10 @@ async def create_chat_session(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    if req.report_id:
+        from app.middleware.ownership import verify_report_ownership
+        await verify_report_ownership(str(req.report_id), str(current_user.id), db)
+        
     session = ChatSession(
         user_id=current_user.id,
         report_id=req.report_id,

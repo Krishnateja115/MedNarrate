@@ -62,7 +62,16 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 64) -> List[str]
 import uuid
 
 async def process_report_for_rag(report_id: uuid.UUID, report_text: str, db: AsyncSession):
-    chunks = chunk_text(report_text)
+    # Prevent duplicate chunks on re-processing
+    stmt = select(RagChunk).where(RagChunk.report_id == report_id)
+    existing_chunks = (await db.execute(stmt)).scalars().all()
+    for chunk in existing_chunks:
+        await db.delete(chunk)
+    await db.commit()
+
+    from app.services.privacy import deidentify_prompt_text
+    clean_text = deidentify_prompt_text(report_text)
+    chunks = chunk_text(clean_text)
     
     # Generate embeddings using Gemini if available
     for i, chunk in enumerate(chunks):
@@ -119,9 +128,14 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
             else:
                 import numpy as np
                 def cosine_sim(a, b):
-                    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+                    if not a or not b: return 0.0
+                    norm_a = np.linalg.norm(a)
+                    norm_b = np.linalg.norm(b)
+                    if norm_a == 0 or norm_b == 0:
+                        return 0.0
+                    return np.dot(a, b) / (norm_a * norm_b)
                     
-                scored_chunks = [(c, cosine_sim(q_emb, c.embedding_json)) for c in chunks]
+                scored_chunks = [(c, cosine_sim(q_emb, c.embedding_json)) for c in chunks if c.embedding_json]
                 scored_chunks.sort(key=lambda x: x[1], reverse=True)
                 top_chunks = [c[0] for c in scored_chunks[:top_k]]
         except Exception as e:
