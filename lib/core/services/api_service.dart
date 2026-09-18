@@ -181,6 +181,17 @@ class ApiService {
         await _post('/auth/logout', body: body);
       } catch (_) {}
     }
+    
+    // Privacy: Clear all locally cached user data
+    try {
+      final user = await StorageService.instance.getCachedProfile();
+      await StorageService.instance.clearUserData(user?.id);
+    } catch (_) {}
+    
+    try {
+      await CacheService.instance.clearAll();
+    } catch (_) {}
+    
     await StorageService.instance.clearTokens();
   }
 

@@ -187,4 +187,13 @@ class StorageService {
       return null;
     }
   }
+
+  Future<void> clearUserData(String? userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyCachedUser);
+    if (userId != null) {
+      await prefs.remove('doctor_profile_$userId');
+      await prefs.remove('caregiver_profile_$userId');
+    }
+  }
 }
