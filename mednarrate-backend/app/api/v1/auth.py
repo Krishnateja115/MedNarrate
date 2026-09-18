@@ -82,12 +82,25 @@ async def refresh_token(
     db: AsyncSession = Depends(get_db)
 ):
     token_hash_str = hash_token(refresh_req.refresh_token)
-    stmt = select(RefreshToken).where(RefreshToken.token_hash == token_hash_str)
+    # Use row-level locking to prevent race conditions on concurrent refresh requests
+    stmt = select(RefreshToken).where(RefreshToken.token_hash == token_hash_str).with_for_update()
     result = await db.execute(stmt)
     db_refresh_token = result.scalars().first()
     
-    if not db_refresh_token or db_refresh_token.revoked:
+    if not db_refresh_token:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+        
+    if db_refresh_token.revoked:
+        # Token reuse detection: possible token theft!
+        # Revoke all tokens for this user.
+        from sqlalchemy import update
+        await db.execute(
+            update(RefreshToken)
+            .where(RefreshToken.user_id == db_refresh_token.user_id)
+            .values(revoked=True)
+        )
+        await db.commit()
+        raise HTTPException(status_code=401, detail="Token reuse detected. All sessions revoked.")
         
     expires_at = db_refresh_token.expires_at
     if expires_at.tzinfo is None:
@@ -96,6 +109,7 @@ async def refresh_token(
     if expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
         
+    # Revoke the current token
     db_refresh_token.revoked = True
     
     access_token = create_access_token(subject=db_refresh_token.user_id)
@@ -106,7 +120,8 @@ async def refresh_token(
     new_db_refresh_token = RefreshToken(
         user_id=db_refresh_token.user_id,
         token_hash=hash_token(new_refresh_token_str),
-        expires_at=expires_at
+        expires_at=expires_at,
+        revoked=False
     )
     db.add(new_db_refresh_token)
     await db.commit()
