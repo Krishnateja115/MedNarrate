@@ -101,8 +101,9 @@ class TranslationRequest(BaseModel):
 
 class TranslationOut(BaseModel):
     language: str
-    translated_summary: str
-    cached: bool
+    patient_summary: str
+    findings_json: List[dict] = []
+    cached: bool = False
 
 class ComparePoint(BaseModel):
     report_id: UUID

@@ -282,7 +282,7 @@ async def compare_previous(
         narrative_summary=summary
     )
 
-@router.post("/{report_id}/translate", response_model=TranslationOut)
+@router.post("/{report_id}/analysis/translate", response_model=TranslationOut)
 async def translate_report(
     report_id: str,
     req: TranslationRequest,
@@ -314,7 +314,8 @@ async def translate_report(
     if cached_translation:
         return TranslationOut(
             language=req.language,
-            translated_summary=cached_translation.translated_text,
+            patient_summary=cached_translation.translated_text,
+            findings_json=[],
             cached=True
         )
         
@@ -322,7 +323,8 @@ async def translate_report(
     
     return TranslationOut(
         language=req.language,
-        translated_summary=translated_text,
+        patient_summary=translated_text,
+        findings_json=[],
         cached=False
     )
 
@@ -359,31 +361,36 @@ async def compare_reports_multiple(
             continue
             
         for lab in analysis.structured_lab_values:
+            from app.services.lab_value_normalizer import normalize_parameter_name
             norm_name = normalize_parameter_name(lab['test_name'])
+            unit = lab.get('unit', '').strip()
             
-            if norm_name not in param_map:
-                param_map[norm_name] = {
+            # Key by parameter AND unit to avoid comparing apples to oranges
+            key = f"{norm_name}|{unit}"
+            
+            if key not in param_map:
+                param_map[key] = {
                     "parameter": norm_name,
-                    "unit": lab['unit'],
+                    "unit": unit,
                     "reference_range": f"{lab.get('ref_low', '')}-{lab.get('ref_high', '')}",
                     "values": []
                 }
                 
             # Check if this report already has a value for this param
-            existing = [v for v in param_map[norm_name]["values"] if v["report_id"] == str(report.id)]
+            existing = [v for v in param_map[key]["values"] if v["report_id"] == str(report.id)]
             if not existing:
-                param_map[norm_name]["values"].append({
+                param_map[key]["values"].append({
                     "report_id": str(report.id),
                     "date": report.report_date.isoformat(),
                     "value": lab['value'],
-                    "status": lab['flag']
+                    "status": lab.get('flag', 'not_classified')
                 })
                 
     # Filter to parameters present in at least 2 reports and compute trends
     comparisons = []
     diffed_findings = []
     
-    for param_name, data in param_map.items():
+    for key, data in param_map.items():
         if len(data["values"]) >= 2:
             values = data["values"]
             # Sort by date
@@ -400,21 +407,32 @@ async def compare_reports_multiple(
             
             trend = "stable"
             
-            # Simple trend logic
+            # Trend logic relative to status bounds
             pct_change = abs((last_val - first_val) / first_val) if first_val else 0
             if pct_change <= 0.05:
                 trend = "stable"
             else:
-                # Normalizing?
                 if first_status != "normal" and last_status == "normal":
                     trend = "improving"
                 elif first_status == "normal" and last_status != "normal":
                     trend = "worsening"
+                elif last_status == "high":
+                    if last_val > first_val:
+                        trend = "worsening"
+                    else:
+                        trend = "improving"
+                elif last_status == "low":
+                    if last_val < first_val:
+                        trend = "worsening"
+                    else:
+                        trend = "improving"
                 else:
+                    # e.g., both normal but fluctuated > 5%
                     trend = "stable"
                     
             lab_value_points = [LabValuePoint(**v) for v in values]
             
+            param_name = data["parameter"]
             diffed_findings.append({
                 "parameter": param_name,
                 "first_value": first_val,
