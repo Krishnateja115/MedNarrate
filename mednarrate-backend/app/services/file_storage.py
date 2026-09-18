@@ -21,15 +21,15 @@ async def save_upload_file(user_id: uuid.UUID, upload_file: UploadFile) -> str:
     if ext not in ["pdf", "jpg", "jpeg", "png"]:
         raise HTTPException(status_code=422, detail="Unsupported file extension")
 
-    # Read the file to check size
-    file_bytes = await upload_file.read()
+    max_bytes = settings.MAX_UPLOAD_MB * 1024 * 1024
+    
+    # Read up to max_bytes + 1 to check if it exceeds the limit without loading the whole file into RAM
+    file_bytes = await upload_file.read(max_bytes + 1024)
     if len(file_bytes) == 0:
         raise HTTPException(status_code=422, detail="Empty file payload")
 
-    size_mb = len(file_bytes) / (1024 * 1024)
-    if size_mb > settings.MAX_UPLOAD_MB:
+    if len(file_bytes) > max_bytes:
         raise HTTPException(status_code=422, detail=f"File too large. Max size is {settings.MAX_UPLOAD_MB}MB")
-        
     # PDF magic byte check if ext is pdf
     if ext == "pdf":
         if not file_bytes.startswith(b"%PDF-"):
