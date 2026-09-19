@@ -32,14 +32,13 @@ VALID_LAB_UNITS = re.compile(
 )
 
 LAB_LINE_RE = re.compile(
-    r"^\s*(?P<name>[A-Za-z][A-Za-z0-9 /\-\(\)]{2,40}?)"
-    r"(?:\s+[:\-]?\s*|[:\-]\s*)"
+    r"^\s*(?P<name>[A-Za-z][A-Za-z0-9 /\-\(\)\.]{1,40}?)"
+    r"\s*[:\-]?\s*"
     r"(?P<value>-?\d+\.?\d*)\s*"
-    r"(?P<unit>[^\(\n]*?)\s*"
+    r"(?P<unit>(?:x\s*)?[A-Za-z0-9\^/%/µuIU/L/g/dl/mg]+(?:/[A-Za-z0-9]+)?)*\s*"
     r"(?:\(?\s*(?:ref\s*range|reference\s*range|ref|reference|normal)?[:\s]*"
-    r"(?P<low>\d+\.?\d*)?\s*[-–~to]*\s*(?P<high>\d+\.?\d*)?\s*\)?)?"
-    r"(?:\s*[\(\[]?(?:normal|high|low|critical|abnormal)[\)\]]?)?"
-    r"\s*$",
+    r"(?P<ref_str>(?:<=?|>=?|<|>)\s*\d+\.?\d*|\d+\.?\d*\s*(?:[\-–~]|\bto\b)\s*\d+\.?\d*|[\-–~])\s*(?P<ref_unit>(?:x\s*)?[A-Za-z0-9\^/%/µuIU/L/g/dl/mg]+(?:/[A-Za-z0-9]+)?)?\s*\)?)?"
+    r"\s*(?:(?:\[|\()*(?P<flag>LOW|HIGH|NORMAL|CRITICAL|ABNORMAL)(?:\]|\))*)?\s*$",
     re.IGNORECASE | re.MULTILINE
 )
 
@@ -64,9 +63,21 @@ def classify_entity_category(name: str, unit: str = "") -> str:
     return "LabResult"
 
 
-def extract_lab_values(text: str) -> list[dict]:
+def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
+    # Non-blood report types (radiology, pathology) do not have numerical lab parameters
+    if (report_type or "").lower().strip() not in ["blood", "lab", "laboratory"]:
+        return []
+
     results = []
-    for m in LAB_LINE_RE.finditer(text):
+    for line in text.splitlines():
+        line_clean = line.strip()
+        if not line_clean:
+            continue
+            
+        m = LAB_LINE_RE.match(line_clean)
+        if not m:
+            continue
+
         name = m.group("name").strip()
         unit = (m.group("unit") or "").strip()
 
@@ -81,23 +92,64 @@ def extract_lab_values(text: str) -> list[dict]:
         except (TypeError, ValueError):
             continue
 
-        low = float(m.group("low")) if m.group("low") else None
-        high = float(m.group("high")) if m.group("high") else None
+        ref_str = m.group("ref_str")
+        ref_unit = (m.group("ref_unit") or "").strip()
+        target_unit = ref_unit if ref_unit else unit
 
-        # Status Hierarchy: Normal, High, Low, Critical, Not Classified
-        # Only assign Normal if reference ranges exist and value is within bounds
-        flag = "not_classified"
-        if low is not None and high is not None:
+        low = None
+        high = None
+        formatted_ref_str = None
+
+        if ref_str:
+            ref_clean = ref_str.strip()
+            if "-" in ref_clean or "–" in ref_clean or "~" in ref_clean or " to " in ref_clean.lower():
+                parts = re.split(r"[\-–~]|\bto\b", ref_clean, flags=re.IGNORECASE)
+                if len(parts) == 2:
+                    try:
+                        low = float(parts[0].strip())
+                        high = float(parts[1].strip())
+                        formatted_ref_str = f"{parts[0].strip()} - {parts[1].strip()} {target_unit}".strip()
+                    except ValueError:
+                        pass
+            elif ref_clean.startswith("<=") or ref_clean.startswith("<"):
+                val_str = ref_clean.replace("<=", "").replace("<", "").strip()
+                try:
+                    high = float(val_str)
+                    op = "<=" if ref_clean.startswith("<=") else "<"
+                    formatted_ref_str = f"{op} {val_str} {target_unit}".strip()
+                except ValueError:
+                    pass
+            elif ref_clean.startswith(">=") or ref_clean.startswith(">"):
+                val_str = ref_clean.replace(">=", "").replace(">", "").strip()
+                try:
+                    low = float(val_str)
+                    op = ">=" if ref_clean.startswith(">=") else ">"
+                    formatted_ref_str = f"{op} {val_str} {target_unit}".strip()
+                except ValueError:
+                    pass
+
+        explicit_flag = (m.group("flag") or "").lower().strip()
+        if explicit_flag in ["low", "high", "normal", "critical", "abnormal"]:
+            flag = explicit_flag
+        elif low is not None and high is not None:
             if value < low:
                 flag = "low"
             elif value > high:
                 flag = "high"
             else:
                 flag = "normal"
-        elif low is not None and value < low:
-            flag = "low"
-        elif high is not None and value > high:
-            flag = "high"
+        elif low is not None:
+            if value < low:
+                flag = "low"
+            else:
+                flag = "normal"
+        elif high is not None:
+            if value > high:
+                flag = "high"
+            else:
+                flag = "normal"
+        else:
+            flag = "not_provided"
 
         raw_dict = {
             "test_name": name,
@@ -106,6 +158,7 @@ def extract_lab_values(text: str) -> list[dict]:
             "ref_low": low,
             "ref_high": high,
             "flag": flag,
+            "ref_range_str": formatted_ref_str,
             "category": "LabResult"
         }
         results.append(normalize_lab_value(raw_dict))

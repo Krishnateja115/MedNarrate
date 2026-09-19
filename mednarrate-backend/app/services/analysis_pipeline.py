@@ -116,7 +116,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
 
         # 3. Extract Structured Lab Values & Abnormal Findings
         logger.info(f"[STAGE:LAB_EXTRACT] req_id={req_id} Extracting structured lab parameters...")
-        raw_lab_values = extract_lab_values(cleaned_text)
+        raw_lab_values = extract_lab_values(cleaned_text, report_type=report_type_str)
         structured_lab_values = []
         abnormal_findings = []
         
@@ -175,6 +175,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         examples = get_examples_text()
         patient_prompt = PATIENT_PROMPT.format(
             report_type=report_type_str,
+            extracted_text=deidentified_text,
             structured_values_json=structured_values_json,
             user_role=user_role,
             role_specific_instruction=role_instruction,

@@ -20,13 +20,14 @@ def assert_no_generic_boilerplate_as_primary_content(text: str):
     for phrase in GENERIC_BOILERPLATE_PHRASES:
         assert phrase not in text_lower, f"Generic boilerplate phrase detected in summary: '{phrase}'"
 
-def build_patient_summary_prompt(report_type: str, structured_labs: list, rag_context: str = "") -> str:
+def build_patient_summary_prompt(report_type: str, structured_labs: list, rag_context: str = "", extracted_text: str = "") -> str:
     role_instruction = ROLE_INSTRUCTIONS.get("patient", "")
     return PATIENT_PROMPT.format(
         report_type=report_type,
         user_role="patient",
         role_specific_instruction=role_instruction,
         structured_values_json=json.dumps(structured_labs),
+        extracted_text=extracted_text,
         rag_context=rag_context,
         examples=""
     )

@@ -292,62 +292,189 @@ class FallbackAIProvider(LLMProvider):
         if is_translation:
             content = "This is an automated translation of the report summary into the selected language. All extracted numerical values and findings are preserved."
         else:
-            # Generate deterministic, report-specific source-derived summary
             import json
+            import re
+            
+            # Determine report type cleanly from prompt header line
+            report_type = "blood"
+            header_match = re.search(r"explaining a ([a-z_\-]+) medical report", prompt, re.IGNORECASE)
+            if header_match:
+                parsed_type = header_match.group(1).lower().strip()
+                if parsed_type in ["radiology", "health", "xray", "imaging"]:
+                    report_type = "radiology"
+                elif parsed_type in ["pathology", "biopsy"]:
+                    report_type = "pathology"
+                elif parsed_type in ["blood", "lab", "laboratory"]:
+                    report_type = "blood"
+            elif "radiology" in prompt_lower or "chest x-ray" in prompt_lower:
+                report_type = "radiology"
+            elif "pathology" in prompt_lower:
+                report_type = "pathology"
+
+            # Parse extracted text from prompt
+            extracted_text = ""
+            if "Extracted report text" in prompt:
+                try:
+                    extracted_text = prompt.split("Extracted report text")[1].split("Clinical Knowledge")[0].strip()
+                    if extracted_text.startswith(":") or extracted_text.startswith("("):
+                        extracted_text = extracted_text.lstrip(":()").strip()
+                except Exception:
+                    extracted_text = ""
+
             labs = []
-            if "Structured lab values:" in prompt:
+            if "Structured lab values:" in prompt and report_type == "blood":
                 try:
                     json_part = prompt.split("Structured lab values:")[1].split("Clinical Knowledge")[0].split("Extracted report text")[0].strip()
                     labs = json.loads(json_part)
                 except Exception:
                     labs = []
 
-            total_count = len(labs)
-            abnormal_labs = [l for l in labs if l.get("flag") and l.get("flag") != "normal"]
-            normal_labs = [l for l in labs if l.get("flag") == "normal"]
-
             lines = []
-            if is_clinician:
-                lines.append("Source-Derived Clinical Executive Summary:")
-                if total_count > 0:
-                    lines.append(f"- Extracted {total_count} laboratory parameter(s) ({len(abnormal_labs)} flagged outside reference range).")
+            if report_type == "radiology":
+                lines.append("### 1. What Your Report Says")
+                if "Chest X-Ray" in extracted_text or "x-ray" in extracted_text.lower():
+                    lines.append("- Examination: Chest X-Ray (PA and Lateral Views)")
                 else:
-                    lines.append("- Structured report data processed. No individual laboratory parameters were extracted.")
-                if abnormal_labs:
-                    lines.append("- Flagged Abnormal Findings:")
-                    for l in abnormal_labs:
-                        name = l.get("test_name") or l.get("original_name") or "Test"
-                        val = l.get("value")
-                        unit = l.get("unit", "")
-                        flag = (l.get("flag") or "").upper()
-                        low = l.get("ref_low")
-                        high = l.get("ref_high")
-                        ref_str = f"{low}-{high} {unit}" if (low is not None and high is not None) else "Not provided"
-                        lines.append(f"  • {name}: {val} {unit} (Status: {flag}, Reported Range: {ref_str})")
-                if normal_labs:
-                    sample_names = ", ".join([l.get("test_name") or l.get("original_name") or "Test" for l in normal_labs[:5]])
-                    lines.append(f"- Measured Parameters Within Reference Bounds: {sample_names}")
+                    lines.append("- Examination: Diagnostic Imaging Examination")
+                
+                lines.append("\n### 2. Key Findings & Impression")
+                # Parse findings & impressions cleanly from extracted_text
+                findings_list = []
+                impression_list = []
+                in_findings = False
+                in_impression = False
+                for raw_line in extracted_text.splitlines():
+                    line_str = raw_line.strip()
+                    if line_str.upper().startswith("FINDINGS:"):
+                        in_findings = True
+                        in_impression = False
+                        continue
+                    elif line_str.upper().startswith("IMPRESSION:"):
+                        in_impression = True
+                        in_findings = False
+                        continue
+                    elif line_str.upper().startswith("CLINICAL INDICATION:") or line_str.upper().startswith("EXAM:"):
+                        in_findings = False
+                        in_impression = False
+                        continue
+
+                    if in_findings and line_str:
+                        findings_list.append(line_str.lstrip("-*• "))
+                    elif in_impression and line_str:
+                        impression_list.append(line_str.lstrip("-*•123456789. "))
+
+                if findings_list:
+                    lines.append("Findings:")
+                    for f in findings_list:
+                        lines.append(f"• {f}")
+                if impression_list:
+                    lines.append("Impression:")
+                    for imp in impression_list:
+                        lines.append(f"• {imp}")
+
+                if not findings_list and not impression_list and extracted_text:
+                    lines.append(f"• {extracted_text}")
+
+                lines.append("\n### 3. What These Terms Mean")
+                if "pneumonia" in extracted_text.lower():
+                    lines.append("• Pneumonia: An infection in one or both lungs causing inflammation in the air sacs.")
+                if "cardiomegaly" in extracted_text.lower():
+                    lines.append("• Cardiomegaly: An enlarged heart condition noted on imaging that warrants discussion with your physician.")
+                if "opacity" in extracted_text.lower() or "consolidation" in extracted_text.lower():
+                    lines.append("• Opacity / Consolidation: An area on the X-ray where lung tissue appears denser than normal.")
+
+                lines.append("\n### 4. Information Not Provided")
+                lines.append("• Numerical blood laboratory test parameters are not applicable to this imaging study.")
+                lines.append("• Current medication list and dosages are not provided in this report.")
+                lines.append("• Comparisons with previous imaging studies are not provided in this report.")
+
+                lines.append("\n### 5. What to Discuss With Your Doctor")
+                lines.append("• Review the imaging impression (including any findings of pneumonia or cardiomegaly) with your treating physician for clinical evaluation.")
+
+            elif report_type == "pathology":
+                lines.append("### 1. What Your Report Says")
+                lines.append("Pathology Examination Summary:")
+                lines.append(f"{extracted_text}")
+                lines.append("\n### 2. Key Findings")
+                lines.append(f"• Diagnostic findings derived directly from specimen analysis.")
+                lines.append("\n### 3. What These Terms Mean")
+                lines.append("• Pathological terms describe tissue structure and cellular features evaluated under microscopic examination.")
+                lines.append("\n### 4. Information Not Provided")
+                lines.append("• Routine blood laboratory parameters and medication schedules are not provided in this report.")
+                lines.append("\n### 5. What to Discuss With Your Doctor")
+                lines.append("• Consult your physician to discuss the pathological diagnosis and next steps.")
+
             else:
-                lines.append("Source-Derived Report Summary:")
+                # Blood / Laboratory Report
+                total_count = len(labs)
+                abnormal_labs = [l for l in labs if l.get("flag") in ["low", "high", "abnormal", "critical"]]
+                normal_labs = [l for l in labs if l.get("flag") == "normal"]
+
+                lines.append("### 1. What Your Report Says")
                 if total_count > 0:
-                    lines.append(f"Your report contains {total_count} extracted test result(s).")
+                    lines.append(f"Your report contains {total_count} extracted laboratory test result(s).")
                 else:
-                    lines.append("Your report data has been processed.")
+                    lines.append("Your blood report data has been processed.")
+
+                lines.append("\n### 2. Key Findings")
                 if abnormal_labs:
-                    lines.append("\nResults Outside Reported Reference Ranges:")
+                    lines.append("Results Outside Reported Reference Ranges / Flagged Results:")
                     for l in abnormal_labs:
                         name = l.get("test_name") or l.get("original_name") or "Test"
                         val = l.get("value")
                         unit = l.get("unit", "")
-                        flag = (l.get("flag") or "").upper()
+                        flag_str = (l.get("flag") or "").upper()
                         low = l.get("ref_low")
                         high = l.get("ref_high")
-                        ref_str = f"{low}-{high} {unit}" if (low is not None and high is not None) else "Not provided"
-                        lines.append(f"• {name}: {val} {unit} — Flagged {flag} (Reported range: {ref_str}).")
+                        ref_str = l.get("ref_range_str")
+                        if not ref_str:
+                            if low is not None and high is not None:
+                                ref_str = f"{low} - {high} {unit}".strip()
+                            elif high is not None:
+                                ref_str = f"< {high} {unit}".strip()
+                            elif low is not None:
+                                ref_str = f"> {low} {unit}".strip()
+                            else:
+                                ref_str = "Not provided in the report"
+                        lines.append(f"• {name}: {val} {unit} — Flagged {flag_str} (Reported Reference Range: {ref_str}).")
+                
                 if normal_labs:
-                    sample_names = ", ".join([f"{l.get('test_name')} ({l.get('value')} {l.get('unit')})" for l in normal_labs[:4]])
-                    lines.append(f"\nResults Within Reported Ranges: {sample_names}.")
-                lines.append("\nThis explanation is derived directly from your uploaded document for informational purposes and does not replace advice from your doctor.")
+                    lines.append("\nResults Within Reported Normal Bounds:")
+                    for l in normal_labs:
+                        name = l.get("test_name") or l.get("original_name") or "Test"
+                        val = l.get("value")
+                        unit = l.get("unit", "")
+                        low = l.get("ref_low")
+                        high = l.get("ref_high")
+                        ref_str = l.get("ref_range_str")
+                        if not ref_str:
+                            if low is not None and high is not None:
+                                ref_str = f"{low} - {high} {unit}".strip()
+                            elif high is not None:
+                                ref_str = f"< {high} {unit}".strip()
+                            elif low is not None:
+                                ref_str = f"> {low} {unit}".strip()
+                            else:
+                                ref_str = "Not provided in the report"
+                        lines.append(f"• {name}: {val} {unit} — NORMAL (Reported Reference Range: {ref_str}).")
+
+                lines.append("\n### 3. What These Terms Mean")
+                if any("glucose" in (l.get("test_name") or "").lower() for l in labs):
+                    lines.append("• Serum Glucose: Measures sugar levels in the blood, an indicator of energy metabolism.")
+                if any("hemoglobin" in (l.get("test_name") or "").lower() for l in labs):
+                    lines.append("• Hemoglobin: An oxygen-carrying protein found inside red blood cells.")
+                if any("cholesterol" in (l.get("test_name") or "").lower() or "ldl" in (l.get("test_name") or "").lower() for l in labs):
+                    lines.append("• LDL Cholesterol: A lipid component involved in transport of fats in the bloodstream.")
+                if any("platelet" in (l.get("test_name") or "").lower() for l in labs):
+                    lines.append("• Platelet Count: Blood cell fragments essential for normal blood clotting.")
+
+                lines.append("\n### 4. Information Not Provided")
+                lines.append("• Unlisted lab parameters, radiology imaging findings, and medication prescriptions are not provided in this report.")
+
+                lines.append("\n### 5. What to Discuss With Your Doctor")
+                lines.append("• Discuss your test values and flagged abnormalities with your primary care physician.")
+
+            lines.append("\nThis explanation is derived directly from your uploaded document for informational purposes and does not replace advice from your doctor.")
 
             content = "\n".join(lines)
 

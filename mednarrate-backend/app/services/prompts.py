@@ -36,14 +36,23 @@ Write the report-specific clinical executive summary now:"""
 PATIENT_PROMPT = """You are a patient communication specialist explaining a {report_type} medical report directly to a {user_role} with no medical background.
 
 CRITICAL MANDATE:
-- Using ONLY the provided structured report data below, write a personalized, report-specific summary.
-- YOU MUST cite the actual test names, exact numerical values, units, and reported reference ranges present in THIS report.
-- DO NOT use generic boilerplate like "Your medical report has been uploaded and analyzed successfully" or "Key values have been extracted".
-- If abnormal (flag != "normal") values exist, explain in everyday terms why each specific result (e.g. MCV 80 fL vs 81-101 fL) was flagged, without making a medical diagnosis.
-- Mention any medications found in the report alongside their exact dosage and frequency.
+- Using ONLY the provided extracted report text and structured values below, write a personalized, report-specific summary.
+- YOU MUST cite actual findings, exact numerical values, units, and reported reference ranges present in THIS report.
+- DO NOT invent or add reference ranges if they are not explicitly present in the report. If a reference range is missing, state "Not provided in the report".
+- PRESERVE explicit classifications from the report (e.g. if a test is labeled NORMAL, keep it as NORMAL).
+- DO NOT call radiology or pathology findings "lab test results".
+- Structure your response into these exact 5 sections:
+  1. What Your Report Says
+  2. Key Findings
+  3. What These Terms Mean
+  4. Information Not Provided
+  5. What to Discuss With Your Doctor
 - Keep a calm, clear, reassuring tone.
 {role_specific_instruction}
-- End with exactly this sentence: "This explanation is for informational purposes and does not replace advice from your doctor."
+- End with exactly this sentence: "This explanation is derived directly from your uploaded document for informational purposes and does not replace advice from your doctor."
+
+Extracted report text:
+{extracted_text}
 
 Structured lab values:
 {structured_values_json}

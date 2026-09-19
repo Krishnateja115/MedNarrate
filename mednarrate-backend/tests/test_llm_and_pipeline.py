@@ -17,6 +17,7 @@ from app.services.text_extraction import clean_extracted_text
 async def test_llm_provider_gemini_missing_key(monkeypatch):
     monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "gemini")
     monkeypatch.setattr(settings, "GEMINI_API_KEY", None)
+    monkeypatch.setattr(settings, "ENABLE_LLM_FALLBACK", False)
 
     with pytest.raises(LLMConfigurationError, match="Gemini API key is not configured"):
         await generate("Test prompt")
@@ -47,6 +48,7 @@ async def test_llm_provider_gemini_valid_mocked(monkeypatch):
 async def test_llm_provider_gemini_invalid_placeholder_key(monkeypatch):
     monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "gemini")
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "your_gemini_api_key_here")
+    monkeypatch.setattr(settings, "ENABLE_LLM_FALLBACK", False)
 
     with pytest.raises(LLMConfigurationError, match="Gemini API key is not configured or is invalid"):
         await generate("Test prompt")
@@ -56,6 +58,7 @@ async def test_llm_provider_gemini_invalid_placeholder_key(monkeypatch):
 async def test_llm_provider_ollama_unavailable(monkeypatch):
     monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "ollama")
     monkeypatch.setattr(settings, "OLLAMA_URL", "http://127.0.0.1:99999")
+    monkeypatch.setattr(settings, "ENABLE_LLM_FALLBACK", False)
 
     with pytest.raises(LLMConnectionError, match="Ollama LLM service error"):
         await generate("Test prompt", timeout=1.0)
@@ -102,6 +105,7 @@ def test_rag_context_insertion_in_prompts():
     patient_formatted = PATIENT_PROMPT.format(
         report_type="blood",
         structured_values_json="[]",
+        extracted_text="",
         user_role="patient",
         role_specific_instruction="",
         rag_context=rag_context,

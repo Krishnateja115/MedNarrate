@@ -11,17 +11,17 @@ DISCLAIMER_TEXT = (
 
 def verify_summary_grounding(summary: str, source_text: str, structured_lab_values: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Scans generated summary text for numerical values/claims and compares them against
-    source report facts to detect unsupported/hallucinated alterations.
+    Scans generated summary text for numerical values and medical diagnostic claims,
+    comparing them against source report facts to detect unsupported alterations or assertions.
     """
     if not summary:
-        return {"is_valid": True, "unsupported_numbers": []}
+        return {"is_valid": True, "unsupported_numbers": [], "unsupported_diagnoses": []}
 
-    # Find all standalone float/integer numbers in summary text
-    numbers_in_summary = re.findall(r'\b\d+(?:\.\d+)?\b', summary)
-    
-    # Collect all numbers from source text and structured lab values
     source_lower = source_text.lower()
+    summary_lower = summary.lower()
+
+    # 1. Numerical grounding check
+    numbers_in_summary = re.findall(r'\b\d+(?:\.\d+)?\b', summary)
     known_numbers = set(re.findall(r'\b\d+(?:\.\d+)?\b', source_text))
     
     for lab in structured_lab_values:
@@ -41,13 +41,29 @@ def verify_summary_grounding(summary: str, source_text: str, structured_lab_valu
         if num not in known_numbers and num not in ignored_numbers and num not in source_lower:
             unsupported_numbers.append(num)
 
-    is_valid = len(unsupported_numbers) == 0
+    # 2. High-risk medical diagnostic claims check
+    high_risk_diagnoses = [
+        "diabetes", "type 2 diabetes", "heart failure", "congestive heart failure",
+        "cancer", "leukemia", "lymphoma", "stroke", "kidney failure", "renal failure"
+    ]
+    unsupported_diagnoses = []
+    for diag in high_risk_diagnoses:
+        if diag in summary_lower and diag not in source_lower:
+            # Check if it was negated or explicitly stated as absent/educational
+            if f"no {diag}" not in summary_lower and f"not provided" not in summary_lower and "does not replace" not in summary_lower:
+                unsupported_diagnoses.append(diag)
+
+    is_valid = len(unsupported_numbers) == 0 and len(unsupported_diagnoses) == 0
     if not is_valid:
-        logger.warning(f"[VALIDATION:WARN] Found unsupported numerical claims in summary: {unsupported_numbers}")
+        logger.warning(
+            f"[VALIDATION:WARN] Unsupported claims detected. "
+            f"Numbers: {unsupported_numbers}, Diagnoses: {unsupported_diagnoses}"
+        )
 
     return {
         "is_valid": is_valid,
-        "unsupported_numbers": unsupported_numbers
+        "unsupported_numbers": unsupported_numbers,
+        "unsupported_diagnoses": unsupported_diagnoses
     }
 
 def validate_and_ground_analysis(
@@ -59,7 +75,7 @@ def validate_and_ground_analysis(
     """
     Validates generated analysis against source document fidelity:
     1. Ensures extracted lab values are grounded in the source text.
-    2. Verifies patient and clinician summaries against source numeric grounding.
+    2. Verifies patient and clinician summaries against source numeric and medical claim grounding.
     3. Ensures standard educational disclaimer is attached to patient summary.
     """
     text_lower = extracted_text.lower()
@@ -97,5 +113,8 @@ def validate_and_ground_analysis(
         "patient_summary": final_patient_summary,
         "clinician_summary": clinician_summary.strip() if clinician_summary else "",
         "patient_grounding_valid": patient_grounding["is_valid"],
-        "unsupported_claims": patient_grounding["unsupported_numbers"] + clinician_grounding["unsupported_numbers"]
+        "unsupported_claims": (
+            patient_grounding["unsupported_numbers"] + clinician_grounding["unsupported_numbers"] +
+            patient_grounding["unsupported_diagnoses"] + clinician_grounding["unsupported_diagnoses"]
+        )
     }
