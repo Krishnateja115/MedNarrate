@@ -27,6 +27,10 @@ class NotificationService {
 
   Future<void> initialize() async {
     if (_initialized) return;
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
 
     try {
       await Firebase.initializeApp();
