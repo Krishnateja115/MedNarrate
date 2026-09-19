@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from fastapi.responses import Response
 import csv
@@ -21,6 +22,8 @@ from app.schemas.report import ReportOut, ReportUpdate, ComparePoint, ComparePre
 from app.services.multilingual import translate_report_summary, LANGUAGE_MAP
 from app.services.lab_value_normalizer import normalize_parameter_name
 from app.services.prompts import TREND_NARRATIVE_PROMPT
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -187,14 +190,25 @@ async def delete_report(
 ):
     report = await verify_report_ownership(id, str(current_user.id), db)
         
-    # Delete uploaded physical file
-    await delete_file(report.file_path)
+    # Delete uploaded physical file safely
+    try:
+        await delete_file(report.file_path)
+    except Exception as fe:
+        logger.warning(f"File deletion warning for report {id}: {fe}")
     
-    # Explicit cascade cleanup of related records
-    stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == report.id)
-    analyses = (await db.execute(stmt_analysis)).scalars().all()
-    for a in analyses:
-        await db.delete(a)
+    # Explicit cascade cleanup of related records in proper dependency order
+    try:
+        from app.models.analysis_translation import AnalysisTranslation
+        stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == report.id)
+        analyses = (await db.execute(stmt_analysis)).scalars().all()
+        for a in analyses:
+            stmt_atrans = select(AnalysisTranslation).where(AnalysisTranslation.report_analysis_id == a.id)
+            atrans = (await db.execute(stmt_atrans)).scalars().all()
+            for at in atrans:
+                await db.delete(at)
+            await db.delete(a)
+    except Exception as ae:
+        logger.warning(f"Failed to delete ReportAnalysis for report {id}: {ae}")
 
     try:
         from app.models.medication_schedule import MedicationSchedule
@@ -202,8 +216,8 @@ async def delete_report(
         meds = (await db.execute(stmt_meds)).scalars().all()
         for m in meds:
             await db.delete(m)
-    except Exception:
-        pass
+    except Exception as me:
+        logger.warning(f"Failed to delete MedicationSchedule for report {id}: {me}")
 
     try:
         from app.models.report_translation import ReportTranslation
@@ -211,8 +225,26 @@ async def delete_report(
         trans = (await db.execute(stmt_trans)).scalars().all()
         for t in trans:
             await db.delete(t)
-    except Exception:
-        pass
+    except Exception as te:
+        logger.warning(f"Failed to delete ReportTranslation for report {id}: {te}")
+
+    try:
+        from app.models.rag_chunk import RagChunk
+        stmt_rag = select(RagChunk).where(RagChunk.report_id == report.id)
+        rag_chunks = (await db.execute(stmt_rag)).scalars().all()
+        for rc in rag_chunks:
+            await db.delete(rc)
+    except Exception as re:
+        logger.warning(f"Failed to delete RagChunk for report {id}: {re}")
+
+    try:
+        from app.models.chat import ChatSession
+        stmt_chats = select(ChatSession).where(ChatSession.report_id == report.id)
+        chats = (await db.execute(stmt_chats)).scalars().all()
+        for c in chats:
+            await db.delete(c)
+    except Exception as ce:
+        logger.warning(f"Failed to delete ChatSession for report {id}: {ce}")
 
     await db.delete(report)
     await db.commit()
