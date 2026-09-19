@@ -393,7 +393,13 @@ class LLMClient:
         # Explicit Provider Selection
         if provider_setting in ["vertex_ai", "ollama", "dev_gemini", "gemini", "fallback"]:
             provider = self.get_provider(provider_setting)
-            return await provider.generate(prompt, timeout=timeout, request_id=req_id)
+            try:
+                return await provider.generate(prompt, timeout=timeout, request_id=req_id)
+            except Exception as e:
+                if getattr(settings, "ENABLE_LLM_FALLBACK", True):
+                    logger.warning(f"[LLM:{provider_setting.upper()}:FAILED] {e}. Falling back to FallbackAIProvider.")
+                    return await self.providers["fallback"].generate(prompt, timeout=timeout, request_id=req_id)
+                raise
 
         # "auto" Mode Deterministic Order: Vertex AI -> Ollama -> Dev Gemini -> Fallback
         # 1. Try Vertex AI
