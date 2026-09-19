@@ -202,7 +202,7 @@ class DevGeminiProvider(LLMProvider):
         if (getattr(settings, "ENVIRONMENT", "development") or "").lower() == "production":
             raise LLMConfigurationError(
                 "Direct developer Gemini API keys (DevGeminiProvider) are strictly prohibited in production. "
-                "Configure LLM_PROVIDER=vertex_ai or ollama."
+                "Configure PRIMARY_LLM_PROVIDER=vertex_ai or ollama."
             )
 
     async def health_check(self) -> dict:
@@ -375,7 +375,7 @@ class LLMClient:
         }
 
     def get_provider(self, provider_name: str | None = None) -> LLMProvider:
-        name = (provider_name or getattr(settings, "LLM_PROVIDER", "auto") or "auto").lower().strip()
+        name = (provider_name or getattr(settings, "PRIMARY_LLM_PROVIDER", "gemini") or "auto").lower().strip()
         if name in ["gemini", "dev_gemini"]:
             return self.providers["dev_gemini"]
         elif name == "ollama":
@@ -388,7 +388,7 @@ class LLMClient:
 
     async def generate_with_metadata(self, prompt: str, timeout: float = 30.0, request_id: str | None = None) -> dict:
         req_id = request_id or str(uuid.uuid4())
-        provider_setting = (getattr(settings, "LLM_PROVIDER", "auto") or "auto").lower().strip()
+        provider_setting = (getattr(settings, "PRIMARY_LLM_PROVIDER", "gemini") or "auto").lower().strip()
 
         # Explicit Provider Selection
         if provider_setting in ["vertex_ai", "ollama", "dev_gemini", "gemini", "fallback"]:

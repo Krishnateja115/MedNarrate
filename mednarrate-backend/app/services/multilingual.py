@@ -36,21 +36,11 @@ async def translate_report_summary(report_id: str, summary_text: str, target_lan
     if cached:
         return cached.translated_text
         
-    # 2. Translate using Gemini
-    from app.services.llm_client import generate
-    
-    prompt = f"""Translate the following medical summary into {language_name}. 
-Preserve all medical values and numbers exactly. 
-Keep the structure (headings, bullet points). 
-Use simple, everyday language understandable by a non-medical person. 
-Do not add information not present in the original.
-
-Original Summary:
-{summary_text}
-"""
+    # 2. Translate using IndicTrans2
+    from app.services.llm_orchestrator import translate_text_indic
     
     try:
-        translated_text = await generate(prompt)
+        translated_text = await translate_text_indic(summary_text, target_language)
     except Exception as e:
         logger.error(f"Translation failed: {e}")
         raise e

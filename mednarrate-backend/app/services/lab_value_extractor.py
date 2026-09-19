@@ -136,7 +136,8 @@ Return ONLY a valid JSON array of objects. If no medications are found, return [
 Report text: {report_text}"""
 
     try:
-        response = await generate(prompt)
+        from app.services.llm_orchestrator import extract_structured_json
+        response = await extract_structured_json(prompt)
         response = response.strip()
         if response.startswith("```json"):
             response = response[7:]

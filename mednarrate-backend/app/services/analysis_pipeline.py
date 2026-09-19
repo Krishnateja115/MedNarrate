@@ -1,11 +1,14 @@
+import os
+import io
 import json
-import logging
-import re
 import uuid
+import logging
 from datetime import datetime, timezone
 import asyncio
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from app.core.config import settings
 
 from app.models.report import Report, ProcessingStatus
 from app.models.report_analysis import ReportAnalysis
@@ -34,7 +37,11 @@ logger = logging.getLogger(__name__)
 
 async def generate_with_timeout(prompt: str, timeout: int = 60, request_id: str | None = None):
     """Executes single LLM call with request timeout and request correlation tracking."""
-    return await asyncio.wait_for(generate(prompt, timeout=timeout, request_id=request_id), timeout=timeout)
+    from app.services.llm_orchestrator import generate_primary_reasoning
+    return await asyncio.wait_for(
+        generate_primary_reasoning(prompt, request_id=request_id),
+        timeout=timeout
+    )
 
 async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
     if db is None:
@@ -162,13 +169,15 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
 
         # 6. LLM Generation with Request Correlation
         logger.info(f"[STAGE:LLM] req_id={req_id} Generating summaries via configured LLM provider...")
-        clinician_summary = await generate_with_timeout(clinician_prompt, request_id=req_id)
-        patient_summary = await generate_with_timeout(patient_prompt, request_id=req_id)
+        from app.services.llm_orchestrator import verify_medical_facts
+        clinician_summary = await generate_with_timeout(clinician_prompt, timeout=settings.LLM_TIMEOUT_SECONDS, request_id=req_id)
+        patient_summary = await generate_with_timeout(patient_prompt, timeout=settings.LLM_TIMEOUT_SECONDS, request_id=req_id)
         logger.info(f"[STAGE:LLM:SUCCESS] req_id={req_id} Generated clinician and patient summaries.")
 
 
         # 7. Medical Validation & Grounding Layer
-        logger.info(f"[STAGE:VALIDATION] Validating generated analysis against source document...")
+        logger.info(f"[STAGE:VALIDATION] Validating generated analysis against source document using Medical Verifier...")
+        # Old synchronous regex/heuristic validation
         validation_res = validate_and_ground_analysis(
             extracted_text=cleaned_text,
             structured_lab_values=structured_lab_values,
@@ -178,6 +187,15 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         patient_summary = validation_res["patient_summary"]
         clinician_summary = validation_res["clinician_summary"]
         structured_lab_values = validation_res["structured_lab_values"]
+
+        # NEW LLM-based verification using MedGemma (Medical Verifier)
+        # We verify the clinician_summary as it is the most critical medical output
+        verification_result = await verify_medical_facts(clinician_summary, request_id=req_id)
+        if not verification_result["is_valid"]:
+            # If the verifier flags dangerous errors, we append the correction warning
+            clinician_summary += f"\n\n[WARNING from Medical Verifier]: {verification_result['correction']}"
+            patient_summary += "\n\n[Note: This summary has been flagged by the automated verification system and requires doctor review.]"
+            logger.warning(f"[STAGE:VALIDATION:FAILED] Medical Verifier flagged output. Correction: {verification_result['correction']}")
 
         # Pre-generate translations safely
         try:

@@ -15,7 +15,7 @@ from app.services.text_extraction import clean_extracted_text
 # 1. Missing GEMINI_API_KEY fail fast in gemini mode
 @pytest.mark.asyncio
 async def test_llm_provider_gemini_missing_key(monkeypatch):
-    monkeypatch.setattr(settings, "LLM_PROVIDER", "gemini")
+    monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "gemini")
     monkeypatch.setattr(settings, "GEMINI_API_KEY", None)
 
     with pytest.raises(LLMConfigurationError, match="Gemini API key is not configured"):
@@ -24,7 +24,7 @@ async def test_llm_provider_gemini_missing_key(monkeypatch):
 # 2. Valid Gemini configuration (mocked)
 @pytest.mark.asyncio
 async def test_llm_provider_gemini_valid_mocked(monkeypatch):
-    monkeypatch.setattr(settings, "LLM_PROVIDER", "gemini")
+    monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "gemini")
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "valid_test_key_12345")
     
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
@@ -45,7 +45,7 @@ async def test_llm_provider_gemini_valid_mocked(monkeypatch):
 # 3. Invalid Gemini configuration
 @pytest.mark.asyncio
 async def test_llm_provider_gemini_invalid_placeholder_key(monkeypatch):
-    monkeypatch.setattr(settings, "LLM_PROVIDER", "gemini")
+    monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "gemini")
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "your_gemini_api_key_here")
 
     with pytest.raises(LLMConfigurationError, match="Gemini API key is not configured or is invalid"):
@@ -54,7 +54,7 @@ async def test_llm_provider_gemini_invalid_placeholder_key(monkeypatch):
 # 4. Unavailable Ollama fail fast
 @pytest.mark.asyncio
 async def test_llm_provider_ollama_unavailable(monkeypatch):
-    monkeypatch.setattr(settings, "LLM_PROVIDER", "ollama")
+    monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "ollama")
     monkeypatch.setattr(settings, "OLLAMA_URL", "http://127.0.0.1:99999")
 
     with pytest.raises(LLMConnectionError, match="Ollama LLM service error"):
@@ -63,7 +63,7 @@ async def test_llm_provider_ollama_unavailable(monkeypatch):
 # 5. Valid Ollama configuration (mocked)
 @pytest.mark.asyncio
 async def test_llm_provider_ollama_valid_mocked(monkeypatch):
-    monkeypatch.setattr(settings, "LLM_PROVIDER", "ollama")
+    monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "ollama")
     monkeypatch.setattr(settings, "OLLAMA_URL", "http://localhost:11434")
 
     mock_json = {"response": "Mocked Ollama Response Text"}
@@ -82,7 +82,7 @@ async def test_llm_provider_ollama_valid_mocked(monkeypatch):
 # 6. Provider Selection logic in auto mode
 @pytest.mark.asyncio
 async def test_llm_provider_auto_selection(monkeypatch):
-    monkeypatch.setattr(settings, "LLM_PROVIDER", "auto")
+    monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "auto")
     monkeypatch.setattr(settings, "GEMINI_API_KEY", None)
     monkeypatch.setattr(settings, "OLLAMA_URL", "http://127.0.0.1:99999")
     monkeypatch.setattr(settings, "ENABLE_LLM_FALLBACK", False)

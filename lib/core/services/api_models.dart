@@ -359,6 +359,7 @@ class ReportAnalysisModel {
   final String? patientSummary;
   final String? translatedPatientSummary;
   final bool translationAvailable;
+  final String? verificationStatus;
   final String? errorReason;
   final DateTime? processedAt;
 
@@ -368,12 +369,13 @@ class ReportAnalysisModel {
     required this.structuredLabValues,
     required this.entities,
     required this.abnormalFindings,
-    this.medications = const [],
+    required this.medications,
     required this.evidenceSources,
     this.clinicianSummary,
     this.patientSummary,
     this.translatedPatientSummary,
     this.translationAvailable = false,
+    this.verificationStatus,
     this.errorReason,
     this.processedAt,
   });
@@ -395,9 +397,10 @@ class ReportAnalysisModel {
       patientSummary: map['patient_summary'] as String? ?? map['patient_friendly_summary'] as String? ?? map['patientSummary'] as String? ?? map['summary'] as String?,
       translatedPatientSummary: map['translated_patient_summary'] as String? ?? map['translatedPatientSummary'] as String?,
       translationAvailable: map['translation_available'] as bool? ?? map['translationAvailable'] as bool? ?? false,
+      verificationStatus: map['verification_status'] as String? ?? map['verificationStatus'] as String?,
       errorReason: map['error_reason'] as String? ?? map['errorReason'] as String?,
       processedAt: map['processed_at'] != null
-          ? DateTime.tryParse(map['processed_at'].toString())
+          ? DateTime.tryParse(map['processed_at'].toString())?.toLocal()
           : null,
     );
   }

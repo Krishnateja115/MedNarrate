@@ -88,6 +88,7 @@ class ReportAnalysisOut(BaseModel):
     patient_summary: Optional[str] = None
     translated_patient_summary: Optional[str] = None
     translation_available: bool = False
+    verification_status: Optional[str] = "unverified"
     error_reason: Optional[str] = None
     model_versions: Dict[str, Any]
     processed_at: Optional[datetime] = None

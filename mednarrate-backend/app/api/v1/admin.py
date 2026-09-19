@@ -30,7 +30,7 @@ async def get_admin_llm_status(admin_user: User = Depends(require_admin)):
     from app.services.llm_client import llm_client_instance
     from app.core.config import settings
 
-    provider_name = (settings.LLM_PROVIDER or "auto").lower().strip()
+    provider_name = (settings.PRIMARY_LLM_PROVIDER or "auto").lower().strip()
     provider = llm_client_instance.get_provider(provider_name)
     provider_health = await provider.health_check()
 

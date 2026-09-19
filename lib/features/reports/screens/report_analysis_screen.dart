@@ -237,7 +237,12 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
               ],
             ),
           ),
-          SizedBox(height: 24),
+          SizedBox(height: 16),
+          
+          // ── Verification Badge ─────────────────────────────────────────
+          _buildVerificationBadge(a.verificationStatus),
+          
+          SizedBox(height: 16),
 
           // ── Summary card with TTS ─────────────────────────────────────
           Row(
@@ -429,6 +434,53 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
     padding: EdgeInsets.only(bottom: 12),
     child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
   );
+
+  Widget _buildVerificationBadge(String? status) {
+    if (status == null || status.isEmpty || status == 'pending' || status == 'unverified') {
+      return SizedBox.shrink(); // Don't clutter UI if not yet verified
+    }
+    
+    IconData icon;
+    Color color;
+    String label;
+    
+    switch (status) {
+      case 'verified':
+        icon = Icons.verified_user;
+        color = Colors.green;
+        label = 'AI Fact-Checked & Verified';
+        break;
+      case 'needs_correction':
+        icon = Icons.warning_amber_rounded;
+        color = Colors.orange;
+        label = 'Summary Contains Minor Inaccuracies';
+        break;
+      case 'hallucination_detected':
+        icon = Icons.error_outline;
+        color = Colors.red;
+        label = 'Critical Inaccuracy Detected';
+        break;
+      default:
+        return SizedBox.shrink();
+    }
+    
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          SizedBox(width: 8),
+          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13)),
+        ],
+      ),
+    );
+  }
 
   Widget _card({required Widget child}) => Container(
     width: double.infinity,

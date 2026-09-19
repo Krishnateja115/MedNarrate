@@ -71,9 +71,10 @@ def test_extract_lab_values_edge_cases():
 
 @pytest.mark.asyncio
 @patch("app.services.analysis_pipeline.get_ner_pipeline")
-@patch("app.services.analysis_pipeline.generate")
+@patch("app.services.llm_orchestrator.verify_medical_facts")
+@patch("app.services.analysis_pipeline.generate_with_timeout")
 @patch("app.services.analysis_pipeline.extract_text_from_file")
-async def test_run_analysis_mocked(mock_extract, mock_generate, mock_ner, db_session):
+async def test_run_analysis_mocked(mock_extract, mock_generate, mock_verify, mock_ner, db_session):
     db = db_session
     from app.services.analysis_pipeline import run_analysis
     from app.models.report import Report, ProcessingStatus
@@ -82,6 +83,7 @@ async def test_run_analysis_mocked(mock_extract, mock_generate, mock_ner, db_ses
     # Mocks
     mock_extract.return_value = "Glucose 120 mg/dL (70-99)"
     mock_generate.return_value = "Mocked LLM summary"
+    mock_verify.return_value = {"is_valid": True, "correction": None, "verification_status": "verified"}
     mock_ner_pipeline = MagicMock()
     mock_ner_pipeline.return_value = [{"entity": "B-Test", "score": 0.99, "word": "Glucose"}]
     mock_ner.return_value = mock_ner_pipeline
@@ -117,11 +119,15 @@ async def test_run_analysis_mocked(mock_extract, mock_generate, mock_ner, db_ses
     stmt = select(Report).where(Report.id == report_id)
     result = await db.execute(stmt)
     report = result.scalars().first()
-    assert report.processing_status == ProcessingStatus.completed
     
     stmt = select(ReportAnalysis).where(ReportAnalysis.report_id == report_id)
     result = await db.execute(stmt)
     analysis = result.scalars().first()
+    
+    if report.processing_status != ProcessingStatus.completed:
+        print(f"FAILED ANALYSIS ERROR: {analysis.error_reason if analysis else 'No analysis object'}")
+        
+    assert report.processing_status == ProcessingStatus.completed
     
     assert analysis is not None
     assert len(analysis.structured_lab_values) == 1
@@ -135,16 +141,19 @@ async def test_run_analysis_mocked(mock_extract, mock_generate, mock_ner, db_ses
 @pytest.mark.asyncio
 @patch("app.services.analysis_pipeline.extract_lab_values")
 @patch("app.services.analysis_pipeline.get_ner_pipeline")
-@patch("app.services.analysis_pipeline.generate")
+@patch("app.services.llm_orchestrator.verify_medical_facts")
+@patch("app.services.analysis_pipeline.generate_with_timeout")
 @patch("app.services.analysis_pipeline.extract_text_from_file")
-async def test_run_analysis_defensive_filtering(mock_extract, mock_generate, mock_ner, mock_extract_lab_values, db_session):
+async def test_run_analysis_defensive_filtering(mock_extract, mock_generate, mock_verify, mock_ner, mock_extract_lab_values, db_session):
     db = db_session
     from app.services.analysis_pipeline import run_analysis
-    from app.models.report import Report
+    from app.models.report import Report, ProcessingStatus
     from app.models.report_analysis import ReportAnalysis
     
-    mock_extract.return_value = "dummy text"
+    # Mocks
+    mock_extract.return_value = "Cholesterol 220 mg/dL (150-199)"
     mock_generate.return_value = "Mocked LLM summary"
+    mock_verify.return_value = {"is_valid": True, "correction": None, "verification_status": "verified"}
     mock_ner_pipeline = MagicMock()
     mock_ner_pipeline.return_value = []
     mock_ner.return_value = mock_ner_pipeline
