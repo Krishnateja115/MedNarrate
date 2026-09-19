@@ -1,6 +1,7 @@
 import re
 import json
 import logging
+import asyncio
 from typing import List
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,7 +79,8 @@ async def process_report_for_rag(report_id: uuid.UUID, report_text: str, db: Asy
         embedding = None
         if settings.GEMINI_API_KEY:
             try:
-                result = genai.embed_content(
+                result = await asyncio.to_thread(
+                    genai.embed_content,
                     model="models/gemini-embedding-001",
                     content=chunk,
                     task_type="retrieval_document"
@@ -114,7 +116,8 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
     if has_embeddings and settings.GEMINI_API_KEY:
         try:
             # Get query embedding
-            q_res = genai.embed_content(
+            q_res = await asyncio.to_thread(
+                genai.embed_content,
                 model="models/gemini-embedding-001",
                 content=query,
                 task_type="retrieval_query"
@@ -170,7 +173,8 @@ async def retrieve_kb_context(query: str, top_k: int = 3) -> str:
     if not kb_collection:
         return ""
     try:
-        results = kb_collection.query(
+        results = await asyncio.to_thread(
+            kb_collection.query,
             query_texts=[query],
             n_results=top_k
         )

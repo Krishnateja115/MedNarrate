@@ -14,12 +14,24 @@ import re
 
 limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
 
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
+
 from app.services.scheduler import start_scheduler, stop_scheduler
+from app.services.model_registry import get_ner_pipeline
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
     start_scheduler()
+    try:
+        logger.info("Pre-warming NER ML model...")
+        await asyncio.to_thread(get_ner_pipeline)
+        logger.info("NER model pre-warmed successfully.")
+    except Exception as e:
+        logger.warning(f"Failed to pre-warm NER model at startup: {e}")
     yield
     stop_scheduler()
 

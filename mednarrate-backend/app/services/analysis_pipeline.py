@@ -70,7 +70,11 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
 
         logger.info(f"[STAGE:EXTRACTION] req_id={req_id} Processing file: {report.file_path} ({file_type_str})")
         if not report.extracted_text or len(report.extracted_text.strip()) == 0:
-            extracted = extract_text_from_file(report.file_path, file_type_str)
+            extracted = await asyncio.to_thread(
+                extract_text_from_file,
+                report.file_path,
+                file_type_str
+            )
             report.extracted_text = extracted
             
         cleaned_text = clean_extracted_text(report.extracted_text or "")
@@ -86,8 +90,17 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         logger.info(f"[STAGE:NLP] req_id={req_id} Running biomedical NER pipeline...")
         entities = []
         try:
-            ner_pipeline = get_ner_pipeline()
-            entities_raw = ner_pipeline(cleaned_text[:4000])
+            ner_pipeline = await asyncio.wait_for(
+                asyncio.to_thread(get_ner_pipeline),
+                timeout=30.0
+            )
+            entities_raw = await asyncio.wait_for(
+                asyncio.to_thread(
+                    ner_pipeline,
+                    cleaned_text[:4000]
+                ),
+                timeout=30.0
+            )
             for ent in entities_raw:
                 ent['score'] = float(ent['score'])
                 try:
@@ -96,6 +109,8 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
                 except ValidationError as ve:
                     logger.warning(f"[STAGE:NLP:WARN] req_id={req_id} Discarding invalid entity: {ve}")
             logger.info(f"[STAGE:NLP:SUCCESS] req_id={req_id} Identified {len(entities)} entities.")
+        except asyncio.TimeoutError:
+            logger.warning(f"[STAGE:NLP:TIMEOUT] req_id={req_id} NER loading or inference timed out after 30s. Continuing without NER entities.")
         except Exception as ner_e:
             logger.warning(f"[STAGE:NLP:FAIL] req_id={req_id} NER pipeline exception (continuing lab extraction): {ner_e}")
 
