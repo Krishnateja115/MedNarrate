@@ -170,7 +170,7 @@ def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
             else:
                 flag = "normal"
         else:
-            flag = "not_provided"
+            flag = "not_classified"
 
         raw_dict = {
             "test_name": name,
