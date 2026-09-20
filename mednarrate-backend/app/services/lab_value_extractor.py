@@ -42,13 +42,13 @@ VALID_LAB_UNITS = re.compile(
 )
 
 LAB_LINE_RE = re.compile(
-    r"^\s*(?P<name>[A-Za-z][A-Za-z0-9 /\-\(\)\.]{1,40}?)"
+    r"^[ \t]*(?P<name>[A-Za-z][A-Za-z0-9 /\-\(\)\.]{1,40}?)"
     r"\s*[:\-]?\s*"
     r"(?P<value>-?\d+\.?\d*)\s*"
-    r"(?P<unit>(?:x\s*)?[A-Za-z0-9\^/%/µuIU/L/g/dl/mg]+(?:/[A-Za-z0-9]+)?)*\s*"
+    r"(?P<unit>(?:x[ \t]*)?\d*\^?\d*[A-Za-z\^/%µ][A-Za-z0-9\^/%µ]*(?:/[A-Za-z0-9]+)?)*\s*"
     r"(?:\(?\s*(?:ref\s*range|reference\s*range|ref|reference|normal)?[:\s]*"
-    r"(?P<ref_str>(?:<=?|>=?|<|>)\s*\d+\.?\d*|\d+\.?\d*\s*(?:[\-–~]|\bto\b)\s*\d+\.?\d*|[\-–~])\s*(?P<ref_unit>(?:x\s*)?[A-Za-z0-9\^/%/µuIU/L/g/dl/mg]+(?:/[A-Za-z0-9]+)?)?\s*\)?)?"
-    r"\s*(?:(?:\[|\()*(?P<flag>LOW|HIGH|NORMAL|CRITICAL|ABNORMAL)(?:\]|\))*)?\s*$",
+    r"(?P<ref_str>(?:<=?|>=?|<|>)\s*\d+\.?\d*|\d+\.?\d*\s*(?:[\-–~]|\bto\b)\s*\d+\.?\d*)\s*(?P<ref_unit>(?:x[ \t]*)?\d*\^?\d*[A-Za-z\^/%µ][A-Za-z0-9\^/%µ]*(?:/[A-Za-z0-9]+)?)?\s*\)?)?"
+    r"\s*(?:(?:\[|\()*(?P<flag>LOW|HIGH|NORMAL|CRITICAL|ABNORMAL)(?:\]|\))*)?[ \t]*$",
     re.IGNORECASE | re.MULTILINE
 )
 
@@ -79,15 +79,7 @@ def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
         return []
 
     results = []
-    for line in text.splitlines():
-        line_clean = line.strip()
-        if not line_clean:
-            continue
-            
-        m = LAB_LINE_RE.match(line_clean)
-        if not m:
-            continue
-
+    for m in LAB_LINE_RE.finditer(text):
         name = m.group("name").strip()
         unit = (m.group("unit") or "").strip()
 

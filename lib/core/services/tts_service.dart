@@ -16,7 +16,7 @@ class TTSService {
   final ValueNotifier<TtsState> stateNotifier = ValueNotifier(TtsState.stopped);
 
   Future<void> init() async {
-    if (kIsWeb) return; // TTS limited on web
+    // kIsWeb check removed to allow web TTS
     await _tts.setLanguage('en-US');
     await _tts.setSpeechRate(0.5);
     await _tts.setVolume(1.0);
@@ -41,27 +41,25 @@ class TTSService {
   }
 
   Future<void> speak(String text) async {
-    if (kIsWeb) return;
     await _tts.stop();
-    await _tts.speak(text);
+    // Strip common markdown characters for cleaner TTS
+    final cleanText = text.replaceAll(RegExp(r'[\*\#\_]'), '').replaceAll(RegExp(r'\n+'), '. ');
+    await _tts.speak(cleanText);
   }
 
   Future<void> pause() async {
-    if (kIsWeb) return;
     await _tts.pause();
     _state = TtsState.paused;
     stateNotifier.value = TtsState.paused;
   }
 
   Future<void> stop() async {
-    if (kIsWeb) return;
     await _tts.stop();
     _state = TtsState.stopped;
     stateNotifier.value = TtsState.stopped;
   }
 
   Future<void> resume() async {
-    if (kIsWeb) return;
     if (_state == TtsState.paused) {
       await _tts.speak(''); // flutter_tts doesn't have resume; re-speak is needed at higher level
     }
