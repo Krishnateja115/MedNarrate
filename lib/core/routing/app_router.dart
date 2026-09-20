@@ -135,6 +135,7 @@ class AppRouter {
       ),
       GoRoute(
         path: Routes.reportDetails,
+        redirect: (context, state) => state.extra == null ? Routes.reports : null,
         builder: (context, state) {
           final reportId = state.extra as String;
           return ReportDetailsScreen(reportId: reportId);
@@ -142,6 +143,7 @@ class AppRouter {
       ),
       GoRoute(
         path: Routes.reportAnalysis,
+        redirect: (context, state) => state.extra == null ? Routes.reports : null,
         builder: (context, state) {
           final reportId = state.extra as String;
           return ReportAnalysisScreen(reportId: reportId);
@@ -149,6 +151,7 @@ class AppRouter {
       ),
       GoRoute(
         path: Routes.reportTimeline,
+        redirect: (context, state) => state.extra == null ? Routes.reports : null,
         builder: (context, state) {
           final reportId = state.extra as String;
           return ReportTimelineScreen(reportId: reportId);
