@@ -23,6 +23,7 @@ CRITICAL MANDATE:
 - Write in clinical note style with medical terminology, differential diagnostic considerations for the abnormalities, and clear documentation.
 - Assume the reader is a board-certified physician. Do NOT explain basic medical terms. Use standard medical abbreviations where appropriate.
 - Do not invent any values, diagnoses, or medications not present in the data.
+- Use rich Markdown formatting (**bolding** for critical values and headers, bullet points for lists) to make the clinical note highly scannable and easy to read. Do not use emojis in the clinical view.
 
 Structured lab values:
 {structured_values_json}
@@ -51,6 +52,7 @@ CRITICAL MANDATE:
   4. Information Not Provided
   5. What to Discuss With Your Doctor
 - Keep a calm, clear, reassuring tone.
+- Use rich Markdown formatting (e.g. **bolding** for important terms or exact numbers) and tasteful emojis (e.g. 🩺, 🩸, ⚠️, ✅, 💊) to make the text highly engaging, scannable, and modern.
 {role_specific_instruction}
 - End with exactly this sentence: "This explanation is derived directly from your uploaded document for informational purposes and does not replace advice from your doctor."
 

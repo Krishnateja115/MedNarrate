@@ -307,9 +307,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           if (a.structuredLabValues.isEmpty)
             _card(child: Text(AppLocalizations.of(context)!.noLabValues, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))))
           else
-            Column(
-              children: a.structuredLabValues.map((lv) => _buildLabGauge(lv)).toList(),
-            ),
+            _buildCategorizedLabGrids(a.structuredLabValues),
 
           SizedBox(height: 24),
 
@@ -431,9 +429,71 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
   }
 
   Widget _sectionTitle(String title) => Padding(
-    padding: EdgeInsets.only(bottom: 12),
+    padding: EdgeInsets.only(bottom: 12, top: 8),
     child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
   );
+
+  Widget _subSectionTitle(String title, Color color) => Padding(
+    padding: EdgeInsets.only(bottom: 12, top: 4),
+    child: Row(
+      children: [
+        Container(width: 4, height: 16, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+        SizedBox(width: 8),
+        Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8))),
+      ],
+    ),
+  );
+
+  Widget _buildCategorizedLabGrids(List<LabValue> allLabs) {
+    final groupedLabs = <String, List<LabValue>>{
+      'Critical / Abnormal': [],
+      'Out of Range (High/Low)': [],
+      'Normal': [],
+      'Unclassified': [],
+    };
+    
+    for (var lv in allLabs) {
+      final flag = lv.flag.toLowerCase();
+      if (flag == 'critical' || flag == 'abnormal') groupedLabs['Critical / Abnormal']!.add(lv);
+      else if (flag == 'high' || flag == 'low') groupedLabs['Out of Range (High/Low)']!.add(lv);
+      else if (flag == 'normal') groupedLabs['Normal']!.add(lv);
+      else groupedLabs['Unclassified']!.add(lv);
+    }
+
+    final groupColors = {
+      'Critical / Abnormal': Colors.red,
+      'Out of Range (High/Low)': Colors.orange,
+      'Normal': Colors.green,
+      'Unclassified': Colors.grey,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: groupedLabs.entries.where((e) => e.value.isNotEmpty).map((entry) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _subSectionTitle(entry.key, groupColors[entry.key]!),
+            LayoutBuilder(builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 600;
+              final crossAxisCount = isWide ? 3 : 2;
+              final spacing = 12.0;
+              final width = (constraints.maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: entry.value.map((lv) => SizedBox(
+                  width: width,
+                  child: _buildLabGauge(lv),
+                )).toList(),
+              );
+            }),
+            SizedBox(height: 20),
+          ],
+        );
+      }).toList(),
+    );
+  }
 
   Widget _buildVerificationBadge(String? status) {
     if (status == null || status.isEmpty || status == 'pending' || status == 'unverified') {
@@ -512,8 +572,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
     final color = _flagColor(lv.flag);
 
     return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -524,19 +583,22 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(lv.testName,
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                    maxLines: 2, overflow: TextOverflow.ellipsis),
               ),
+              SizedBox(width: 8),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(lv.flag.toUpperCase(),
-                    style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
               ),
             ],
           ),
@@ -544,40 +606,40 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('${lv.value}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
+              Flexible(
+                child: Text('${lv.value}', 
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
               SizedBox(width: 4),
               Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Text(lv.unit, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 12)),
+                padding: EdgeInsets.only(bottom: 3),
+                child: Text(lv.unit, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 10)),
               ),
-              Spacer(),
-              if (hasRange)
-                Padding(
-                  padding: EdgeInsets.only(bottom: 4),
-                  child: Text('${lv.refLow} - ${lv.refHigh}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 12)),
-                ),
             ],
           ),
           if (hasRange) ...[
-            SizedBox(height: 12),
+            SizedBox(height: 4),
+            Text('${lv.refLow} - ${lv.refHigh}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 10)),
+            SizedBox(height: 8),
             Stack(
               children: [
                 Container(
-                  height: 6,
+                  height: 4,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 Positioned(
                   left: 0,
                   child: Container(
-                    height: 6,
-                    width: MediaQuery.of(context).size.width * 0.8 * progress,
+                    height: 4,
+                    width: MediaQuery.of(context).size.width * 0.8 * progress, // Approximation for visual rendering
                     decoration: BoxDecoration(
                       color: color,
-                      borderRadius: BorderRadius.circular(3),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
