@@ -561,10 +561,12 @@ class LLMClient:
             f_provider = self.providers["fallback"]
             return await f_provider.generate(prompt, timeout=timeout, request_id=req_id)
 
-        raise RuntimeError(
+        err = RuntimeError(
             "AI analysis is currently unavailable. Please verify the LLM provider configuration "
             "(VERTEX_PROJECT_ID, OLLAMA_URL, or GEMINI_API_KEY) and try again."
         )
+        err.failure_category = "LLM_NOT_CONFIGURED"
+        raise err
 
 
     async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None) -> str:
