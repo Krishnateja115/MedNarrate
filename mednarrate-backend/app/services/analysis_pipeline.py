@@ -213,7 +213,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             # If the verifier flags dangerous errors, we append the correction warning
             clinician_summary += f"\n\n[WARNING from Medical Verifier]: {verification_result['correction']}"
             patient_summary += "\n\n[Note: This summary has been flagged by the automated verification system and requires doctor review.]"
-            logger.warning(f"[STAGE:VALIDATION:FAILED] Medical Verifier flagged output. Correction: {verification_result['correction']}")
+            logger.warning("[STAGE:VALIDATION:FAILED] Medical Verifier flagged output. (Correction text omitted for privacy).")
 
         # Pre-generate translations safely
         try:

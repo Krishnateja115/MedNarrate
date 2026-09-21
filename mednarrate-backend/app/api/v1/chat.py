@@ -85,6 +85,9 @@ async def send_chat_message(
     # 2. Run Safety Classifier
     classifier_prompt = CHAT_CLASSIFIER_PROMPT.format(user_query=req.content)
     classification = (await generate(classifier_prompt)).strip().lower()
+    allowed_categories = {"emergency", "diagnosis", "treatment", "report", "general"}
+    if classification not in allowed_categories:
+        classification = "general"
     
     sources = []
     

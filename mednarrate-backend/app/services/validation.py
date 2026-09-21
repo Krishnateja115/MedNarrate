@@ -56,8 +56,8 @@ def verify_summary_grounding(summary: str, source_text: str, structured_lab_valu
     is_valid = len(unsupported_numbers) == 0 and len(unsupported_diagnoses) == 0
     if not is_valid:
         logger.warning(
-            f"[VALIDATION:WARN] Unsupported claims detected. "
-            f"Numbers: {unsupported_numbers}, Diagnoses: {unsupported_diagnoses}"
+            "[VALIDATION:WARN] Unsupported claims detected in summary. "
+            "(Raw diagnoses and numerical claims omitted for privacy)"
         )
 
     return {
@@ -90,7 +90,7 @@ def validate_and_ground_analysis(
         if test_name in text_lower or (val is not None and str(val) in text_lower):
             is_grounded = True
         else:
-            logger.warning(f"Lab value {test_name}={val} could not be strictly grounded in extracted text.")
+            logger.warning("A lab value could not be strictly grounded in extracted text (validation error).")
             
         if is_grounded:
             validated_labs.append(lab)
