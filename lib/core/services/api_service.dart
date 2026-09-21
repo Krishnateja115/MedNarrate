@@ -23,7 +23,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 ///   - Real device     → use your machine's LAN IP, e.g. 192.168.x.x:8000
 class ApiService {
   ApiService._();
-  static final ApiService instance = ApiService._();
+  static ApiService instance = ApiService._();
 
   static String get _baseUrl {
     const envUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');

@@ -70,9 +70,9 @@ class ClinicalViewTab extends StatelessWidget {
           else
             ...abnormalList.map((item) {
               if (item is LabValue) {
-                return _buildAbnormalFindingRow(context, item.testName, '${item.value} ${item.unit}', item.flag, item.refLow, item.refHigh, null);
+                return ClinicalViewTab.buildAbnormalFindingRow(context, item.testName, '${item.value} ${item.unit}', item.flag, item.refLow, item.refHigh, null);
               } else if (item is Map<String, dynamic>) {
-                return _buildAbnormalFindingRow(
+                return ClinicalViewTab.buildAbnormalFindingRow(
                   context,
                   item['test_name']?.toString() ?? item['parameter']?.toString() ?? 'Finding',
                   '${item['value'] ?? ''} ${item['unit'] ?? ''}',
@@ -97,7 +97,7 @@ class ClinicalViewTab extends StatelessWidget {
           if (labs.isEmpty)
             _buildInfoBox(context, 'No laboratory results found in structured analysis.')
           else
-            _buildLabTable(context, labs),
+            ClinicalViewTab.buildLabTable(context, labs),
 
           const SizedBox(height: 24),
 
@@ -111,7 +111,7 @@ class ClinicalViewTab extends StatelessWidget {
           if (meds.isEmpty)
             _buildInfoBox(context, 'No medications recorded in report data.')
           else
-            _buildMedicationsTable(context, meds),
+            ClinicalViewTab.buildMedicationsTable(context, meds),
 
           const SizedBox(height: 24),
 
@@ -154,7 +154,7 @@ class ClinicalViewTab extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          _buildHistoricalComparison(context, comparison),
+          ClinicalViewTab.buildHistoricalComparison(context, comparison),
 
           const SizedBox(height: 24),
 
@@ -164,7 +164,7 @@ class ClinicalViewTab extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          _buildValidationMetadataCard(context, report, analysis),
+          ClinicalViewTab.buildValidationMetadataCard(context, report, analysis),
 
           const SizedBox(height: 40),
         ],
@@ -242,7 +242,7 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildAbnormalFindingRow(BuildContext context, String testName, String result, String flag, double? refLow, double? refHigh, String? explanation) {
+  static Widget buildAbnormalFindingRow(BuildContext context, String testName, String result, String flag, double? refLow, double? refHigh, String? explanation) {
     final theme = Theme.of(context);
     final flagLower = flag.toLowerCase();
 
@@ -328,7 +328,7 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildLabTable(BuildContext context, List<LabValue> labs) {
+  static Widget buildLabTable(BuildContext context, List<LabValue> labs) {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
@@ -374,7 +374,7 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildMedicationsTable(BuildContext context, List<Map<String, dynamic>> meds) {
+  static Widget buildMedicationsTable(BuildContext context, List<Map<String, dynamic>> meds) {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
@@ -417,7 +417,7 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildHistoricalComparison(BuildContext context, ComparePreviousResult? comp) {
+  static Widget buildHistoricalComparison(BuildContext context, ComparePreviousResult? comp) {
     final theme = Theme.of(context);
     if (comp == null || !comp.comparable) {
       return Container(
@@ -463,7 +463,7 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildValidationMetadataCard(BuildContext context, ReportModel report, ReportAnalysisModel? analysis) {
+  static Widget buildValidationMetadataCard(BuildContext context, ReportModel report, ReportAnalysisModel? analysis) {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
@@ -474,17 +474,17 @@ class ClinicalViewTab extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildMetaRow(context, 'Source Document', report.fileName),
-          _buildMetaRow(context, 'Report Date', Formatters.formatDate(report.reportDate)),
-          _buildMetaRow(context, 'Report Type', report.reportType),
-          _buildMetaRow(context, 'RAG Search Index', 'Active (TF-IDF Lexical Retriever)'),
-          _buildMetaRow(context, 'Medical Validation', 'Passed (Grounding & Range Rules)'),
+          ClinicalViewTab.buildMetaRow(context, 'Source Document', report.fileName),
+          ClinicalViewTab.buildMetaRow(context, 'Report Date', Formatters.formatDate(report.reportDate)),
+          ClinicalViewTab.buildMetaRow(context, 'Report Type', report.reportType),
+          ClinicalViewTab.buildMetaRow(context, 'RAG Search Index', 'Active (TF-IDF Lexical Retriever)'),
+          ClinicalViewTab.buildMetaRow(context, 'Medical Validation', 'Passed (Grounding & Range Rules)'),
         ],
       ),
     );
   }
 
-  Widget _buildMetaRow(BuildContext context, String label, String value) {
+  static Widget buildMetaRow(BuildContext context, String label, String value) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

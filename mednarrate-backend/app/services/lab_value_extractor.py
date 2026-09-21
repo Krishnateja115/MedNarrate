@@ -73,6 +73,8 @@ def classify_entity_category(name: str, unit: str = "") -> str:
     return "LabResult"
 
 
+VALID_SHORT_NAMES = frozenset({"ph"})
+
 def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
     # Non-blood report types (radiology, pathology) do not have numerical lab parameters
     if (report_type or "").lower().strip() not in ["blood", "lab", "laboratory"]:
@@ -82,6 +84,19 @@ def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
     for m in LAB_LINE_RE.finditer(text):
         name = m.group("name").strip()
         unit = (m.group("unit") or "").strip()
+        
+        if len(name) <= 2 and name.lower() not in VALID_SHORT_NAMES:
+            logger.debug(f"Skipping implausibly short candidate name: '{name}'")
+            continue
+            
+        raw_matched_segment = m.group(0)
+        name_start = m.start("name") - m.start(0)
+        name_end_idx = name_start + len(m.group("name"))
+        value_start_idx = m.start("value") - m.start(0)
+        between = raw_matched_segment[name_end_idx:value_start_idx]
+        if between.strip() == "" and between == "":
+            logger.debug(f"Skipping '{name}{m.group('value')}' — name and value are glued together with no separator, looks like an ID code.")
+            continue
 
         # Category-First Check: Ensure entity is genuinely a LabResult
         category = classify_entity_category(name, unit)
@@ -183,7 +198,16 @@ def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
             "category": "LabResult"
         }
         results.append(normalize_lab_value(raw_dict))
-    return results
+
+    seen = set()
+    deduped_results = []
+    for r in results:
+        key = (r["test_name"].strip().lower(), r["value"])
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped_results.append(r)
+    return deduped_results
 
 
 class MedicationScheduleModel(BaseModel):

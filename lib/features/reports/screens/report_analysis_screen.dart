@@ -12,6 +12,10 @@ import '../../../core/routing/routes.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
+import '../../../core/utils/markdown_formatter.dart';
+import '../models/report_model.dart';
+import '../widgets/clinical_view_tab.dart';
+import 'dart:async';
 
 /// ReportAnalysisScreen — shows AI analysis results.
 /// Handles polling (if not yet completed), failure with retry, and dual-mode summary toggle.
@@ -28,6 +32,7 @@ class ReportAnalysisScreen extends StatefulWidget {
 
 class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
   ReportAnalysisModel? _analysis;
+  ReportModel? _report;
   String _status = 'loading';
   String? _errorReason;
   bool _clinicalView = false;
@@ -52,6 +57,11 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
 
   Future<void> _init() async {
     try {
+      if (widget.report is ReportModel) {
+        _report = widget.report;
+      } else {
+        _report = await ApiService.instance.getReport(widget.reportId);
+      }
       final status = await ApiService.instance.getReportStatus(widget.reportId);
       if (!mounted) return;
       if (status.processingStatus == 'completed') {
@@ -81,6 +91,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
 
   Future<void> _loadAnalysis() async {
     try {
+      _report ??= await ApiService.instance.getReport(widget.reportId);
       final analysis = await ApiService.instance.getReportAnalysis(widget.reportId);
       if (!mounted) return;
       setState(() { _analysis = analysis; _status = 'completed'; });
@@ -131,7 +142,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: Text(AppLocalizations.of(context)!.aiAnalysis),
+        title: Text(AppLocalizations.of(context)?.aiAnalysis ?? 'AI Analysis'),
         actions: [
           if (_status == 'completed')
             IconButton(
@@ -161,30 +172,12 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
             child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
           ),
           SizedBox(height: 28),
-          Text(AppLocalizations.of(context)!.analyzingYourReport,
+          Text(AppLocalizations.of(context)?.analyzingYourReport ?? 'Analyzing your report',
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
-          SizedBox(height: 10),
-          Text(AppLocalizations.of(context)!.aiReadingDocument,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13)),
-          SizedBox(height: 32),
-          _processingStep('Reading document text', true),
-          _processingStep('Extracting medical data', true),
-          _processingStep('Running AI analysis', false),
+          SizedBox(height: 20),
+          const _ProcessingStages(),
         ],
       ),
-    );
-  }
-
-  Widget _processingStep(String label, bool done) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(done ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: done ? Color(0xFF00C48C) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24), size: 18),
-        SizedBox(width: 10),
-        Text(label, style: TextStyle(color: done ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.30), fontSize: 13)),
-      ]),
     );
   }
 
@@ -197,7 +190,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           children: [
             Icon(Icons.error_outline, color: Colors.red, size: 60),
             SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.analysisFailed, style: TextStyle(fontSize: 22, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)?.analysisFailed ?? 'Analysis Failed', style: TextStyle(fontSize: 22, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
             SizedBox(height: 12),
             Text(_errorReason ?? 'An unknown error occurred.',
                 textAlign: TextAlign.center,
@@ -206,7 +199,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
             FilledButton.icon(
               onPressed: _retry,
               icon: Icon(Icons.refresh),
-              label: Text(AppLocalizations.of(context)!.retryAnalysis),
+              label: Text(AppLocalizations.of(context)?.retryAnalysis ?? 'Retry Analysis'),
             ),
           ],
         ),
@@ -247,7 +240,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           // ── Summary card with TTS ─────────────────────────────────────
           Row(
             children: [
-              Expanded(child: Text(AppLocalizations.of(context)!.summary,
+              Expanded(child: Text(AppLocalizations.of(context)?.summary ?? 'Summary',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface))),
               ValueListenableBuilder<TtsState>(
                 valueListenable: _tts.stateNotifier,
@@ -270,8 +263,9 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           ),
           SizedBox(height: 8),
           _card(
-            child: Text(activeSummary.isEmpty ? 'No summary available.' : activeSummary,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), height: 1.6)),
+            child: activeSummary.isEmpty
+                ? Text('No summary available.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)))
+                : MarkdownFormatter.formatText(context, activeSummary),
           ),
           SizedBox(height: 12),
 
@@ -282,9 +276,9 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
                 children: [
                   Icon(Icons.translate, color: Colors.blue),
                   SizedBox(width: 12),
-                  Expanded(child: Text(AppLocalizations.of(context)!.translatedVersionAvailable,
+                  Expanded(child: Text(AppLocalizations.of(context)?.translatedVersionAvailable ?? 'Translated version available',
                       style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)))),
-                  TextButton(onPressed: _translate, child: Text(AppLocalizations.of(context)!.load)),
+                  TextButton(onPressed: _translate, child: Text(AppLocalizations.of(context)?.load ?? 'Load')),
                 ],
               ),
             ),
@@ -302,24 +296,48 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
 
           SizedBox(height: 24),
 
-          // ── Lab values table ─────────────────────────────────────────
-          _sectionTitle('Lab Values'),
-          if (a.structuredLabValues.isEmpty)
-            _card(child: Text(AppLocalizations.of(context)!.noLabValues, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))))
-          else
-            _buildCategorizedLabGrids(a.structuredLabValues),
-
-          SizedBox(height: 24),
-
-          // ── Abnormal findings ────────────────────────────────────────
-          if (a.abnormalFindings.isNotEmpty) ...[
-            _sectionTitle('Abnormal Findings'),
-            _buildAbnormalFindings(a),
-          ],
+          _clinicalView 
+            ? ClinicalViewTab(
+                report: _report!,
+                analysis: a,
+              )
+            : _buildPatientFriendlyFindings(a),
         ],
       ),
     );
   }
+
+  Widget _buildPatientFriendlyFindings(ReportAnalysisModel a) {
+    int normalCount = a.structuredLabValues.where((l) => l.flag.toLowerCase() == 'normal').length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (a.abnormalFindings.isNotEmpty) ...[
+          _sectionTitle('Abnormal Findings'),
+          _buildAbnormalFindings(a),
+          SizedBox(height: 20),
+        ],
+        if (normalCount > 0)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Text(
+              'Everything else was within the normal range ($normalCount results).',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
 
   Widget _buildBottomBar() {
     final a = _analysis!;
@@ -364,7 +382,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
                   reportDate: a.processedAt?.toLocal().toString().split(' ').first ?? '',
                 ),
                 icon: Icon(Icons.print_outlined),
-                label: Text(AppLocalizations.of(context)!.printPreview),
+                label: Text(AppLocalizations.of(context)?.printPreview ?? 'Print Preview'),
                 style: FilledButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 14)),
               ),
             ),
@@ -399,72 +417,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
     child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
   );
 
-  Widget _subSectionTitle(String title, Color color) => Padding(
-    padding: EdgeInsets.only(bottom: 12, top: 4),
-    child: Row(
-      children: [
-        Container(width: 4, height: 16, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
-        SizedBox(width: 8),
-        Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8))),
-      ],
-    ),
-  );
 
-  Widget _buildCategorizedLabGrids(List<LabValue> allLabs) {
-    final groupedLabs = <String, List<LabValue>>{
-      'Critical / Abnormal': [],
-      'Out of Range (High/Low)': [],
-      'Normal': [],
-      'Unclassified': [],
-    };
-    
-    for (var lv in allLabs) {
-      final flag = lv.flag.toLowerCase();
-      if (flag == 'critical' || flag == 'abnormal') {
-        groupedLabs['Critical / Abnormal']!.add(lv);
-      } else if (flag == 'high' || flag == 'low') {
-        groupedLabs['Out of Range (High/Low)']!.add(lv);
-      } else if (flag == 'normal') {
-        groupedLabs['Normal']!.add(lv);
-      } else {
-        groupedLabs['Unclassified']!.add(lv);
-      }
-    }
-
-    final groupColors = {
-      'Critical / Abnormal': Colors.red,
-      'Out of Range (High/Low)': Colors.orange,
-      'Normal': Colors.green,
-      'Unclassified': Colors.grey,
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: groupedLabs.entries.where((e) => e.value.isNotEmpty).map((entry) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _subSectionTitle(entry.key, groupColors[entry.key]!),
-            LayoutBuilder(builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 600;
-              final crossAxisCount = isWide ? 3 : 2;
-              final spacing = 12.0;
-              final width = (constraints.maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
-              return Wrap(
-                spacing: spacing,
-                runSpacing: spacing,
-                children: entry.value.map((lv) => SizedBox(
-                  width: width,
-                  child: _buildLabGauge(lv),
-                )).toList(),
-              );
-            }),
-            SizedBox(height: 20),
-          ],
-        );
-      }).toList(),
-    );
-  }
 
   int _flagSeverity(String flag) {
     switch (flag.toLowerCase()) {
@@ -649,100 +602,53 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
     ),
     child: child,
   );
+}
+class _ProcessingStages extends StatefulWidget {
+  const _ProcessingStages();
+  @override
+  State<_ProcessingStages> createState() => _ProcessingStagesState();
+}
 
-  Widget _buildLabGauge(LabValue lv) {
-    // A simple beautiful horizontal gauge for the "Nothing" aesthetic
-    final hasRange = lv.refLow != null && lv.refHigh != null;
-    double progress = 0.5;
-    
-    if (hasRange) {
-      final range = lv.refHigh! - lv.refLow!;
-      if (range > 0) {
-        progress = (lv.value - lv.refLow!) / range;
-        // Clamp for UI rendering
-        if (progress < 0) progress = 0.1;
-        if (progress > 1) progress = 0.9;
-      }
-    }
+class _ProcessingStagesState extends State<_ProcessingStages> with SingleTickerProviderStateMixin {
+  static const _stages = [
+    'Reading your document…',
+    'Extracting lab values…',
+    'Cross-referencing reference ranges…',
+    'Running AI analysis…',
+    'Preparing your summary…',
+  ];
+  int _index = 0;
+  late final Timer _timer;
 
-    final color = _flagColor(lv.flag);
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) setState(() => _index = (_index + 1) % _stages.length);
+    });
+  }
 
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(animation),
+          child: child,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(lv.testName,
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
-                    maxLines: 2, overflow: TextOverflow.ellipsis),
-              ),
-              SizedBox(width: 8),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(lv.flag.toUpperCase(),
-                    style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Flexible(
-                child: Text('${lv.value}', 
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-              ),
-              SizedBox(width: 4),
-              Padding(
-                padding: EdgeInsets.only(bottom: 3),
-                child: Text(lv.unit, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 10)),
-              ),
-            ],
-          ),
-          if (hasRange) ...[
-            SizedBox(height: 4),
-            Text('${lv.refLow} - ${lv.refHigh}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 10)),
-            SizedBox(height: 8),
-            Stack(
-              children: [
-                Container(
-                  height: 4,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  child: Container(
-                    height: 4,
-                    width: MediaQuery.of(context).size.width * 0.8 * progress, // Approximation for visual rendering
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ]
-        ],
+      child: Text(
+        _stages[_index],
+        key: ValueKey(_index),
+        style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75)),
       ),
     );
   }
