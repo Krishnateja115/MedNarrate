@@ -22,29 +22,40 @@ class StorageService {
   static const _keyProfessionalMode = 'professional_mode';
   static const _keyMedicalUnits = 'medical_units';
 
-  // ── Tokens (flutter_secure_storage) ──────────────────────────────────
+  // ── Tokens (shared_preferences) ──────────────────────────────────
 
   Future<void> saveTokens(String access, String refresh) async {
-    await _storage.write(key: _keyAccess, value: access);
-    await _storage.write(key: _keyRefresh, value: refresh);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyAccess, access);
+    await prefs.setString(_keyRefresh, refresh);
   }
 
-  Future<String?> getAccessToken() => _storage.read(key: _keyAccess);
-  Future<String?> getRefreshToken() => _storage.read(key: _keyRefresh);
+  Future<String?> getAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyAccess);
+  }
+  
+  Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyRefresh);
+  }
 
   Future<void> clearTokens() async {
-    await _storage.delete(key: _keyAccess);
-    await _storage.delete(key: _keyRefresh);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyAccess);
+    await prefs.remove(_keyRefresh);
   }
 
   // ─────────────────────────── App Preferences ────────────────────────
   
   Future<void> setMedicalUnits(String units) async {
-    await _storage.write(key: _keyMedicalUnits, value: units);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyMedicalUnits, units);
   }
 
   Future<String> getMedicalUnits() async {
-    return await _storage.read(key: _keyMedicalUnits) ?? 'metric';
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyMedicalUnits) ?? 'metric';
   }
 
   // ── Onboarding (shared_preferences) ──────────────────────────────────
