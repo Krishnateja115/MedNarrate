@@ -143,6 +143,16 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(Routes.dashboard);
+            }
+          },
+        ),
         title: Text(AppLocalizations.of(context)?.aiAnalysis ?? 'AI Analysis'),
         actions: [
           if (_status == 'completed')
