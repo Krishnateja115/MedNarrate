@@ -180,7 +180,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
         children: [
           Shimmer.fromColors(
             baseColor: AppColors.primary,
-            highlightColor: AppColors.primary.withOpacity(0.3),
+            highlightColor: AppColors.primary.withValues(alpha: 0.3),
             child: Icon(Icons.auto_awesome, size: 64),
           ),
           SizedBox(height: 28),

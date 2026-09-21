@@ -57,8 +57,6 @@ Future<bool> _isBackendHealthy() async {
 }
 
 Future<String?> _resolveBackendPath() async {
-  final appSupportDir = await getApplicationSupportDirectory();
-  final pathFile = File('${appSupportDir.path}/backend_path.txt');
   final prefs = await SharedPreferences.getInstance();
   return prefs.getString('macos_backend_path');
 }

@@ -5,7 +5,6 @@ import '../../../core/routing/routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/services/export_service.dart';
-import '../../../core/utils/helpers.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../models/report_model.dart';
 import '../controllers/report_detail_controller.dart';
@@ -157,12 +156,16 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
         leadingWidth: 140,
         leading: TextButton.icon(
           onPressed: () {
-            DashboardScreen.onRefreshRequested?.call();
-            context.go(Routes.dashboard);
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              DashboardScreen.onRefreshRequested?.call();
+              context.go(Routes.dashboard);
+            }
           },
           icon: const Icon(Icons.arrow_back_rounded, size: 18),
           label: const Text(
-            'Dashboard',
+            'Back',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
         ),

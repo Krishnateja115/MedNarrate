@@ -1,7 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../core/constants/app_colors.dart';
@@ -699,15 +698,15 @@ class _UploadScreenState extends State<UploadScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.05),
+        color: theme.colorScheme.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.15)),
+        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
           Shimmer.fromColors(
             baseColor: theme.colorScheme.primary,
-            highlightColor: theme.colorScheme.primary.withOpacity(0.3),
+            highlightColor: theme.colorScheme.primary.withValues(alpha: 0.3),
             child: Icon(Icons.document_scanner_rounded, size: 48, color: theme.colorScheme.primary),
           ),
           const SizedBox(height: 20),
@@ -718,7 +717,7 @@ class _UploadScreenState extends State<UploadScreen> {
           const SizedBox(height: 8),
           Text(
             'This usually takes 10–20 seconds. Please wait...',
-            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.60)),
+            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withValues(alpha: 0.60)),
             textAlign: TextAlign.center,
           ),
         ],
