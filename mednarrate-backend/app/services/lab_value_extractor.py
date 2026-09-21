@@ -87,7 +87,7 @@ def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
         unit = (m.group("unit") or "").strip()
         
         if len(name) <= 2 and name.lower() not in VALID_SHORT_NAMES:
-            logger.debug(f"Skipping implausibly short candidate name: '{name}'")
+            logger.debug("Skipping implausibly short candidate name.")
             continue
             
         raw_matched_segment = m.group(0)
@@ -96,32 +96,32 @@ def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
         value_start_idx = m.start("value") - m.start(0)
         between = raw_matched_segment[name_end_idx:value_start_idx]
         if between.strip() == "" and between == "":
-            logger.debug(f"Skipping '{name}{m.group('value')}' — name and value are glued together with no separator, looks like an ID code.")
+            logger.debug("Skipping candidate — name and value are glued together with no separator, looks like an ID code.")
             continue
 
         # Category-First Check: Ensure entity is genuinely a LabResult
         category = classify_entity_category(name, unit)
         if category != "LabResult":
-            logger.debug(f"Skipping non-lab entity '{name}' categorized as {category}")
+            logger.debug(f"Skipping non-lab entity categorized as {category}")
             continue
 
         # Known-non-lab name guard: reject specific recurring metadata rows
         # observed in real reports that survive the regex and category filters.
         if name.strip().lower() in KNOWN_NON_LAB_NAMES:
-            logger.debug(f"Skipping known non-lab row: '{name}'")
+            logger.debug("Skipping known non-lab row.")
             continue
 
         # Date-unit fragment guard: reject rows whose unit looks like a date/time
         # fragment (e.g. value=24, unit='/06/2023 08:49 PM') from date table rows.
         if re.search(r"\d{4}|\bam\b|\bpm\b|/\d{2}/", unit, re.IGNORECASE):
-            logger.debug(f"Skipping '{name}' — unit field looks like a date/time fragment: '{unit}'")
+            logger.debug("Skipping row — unit field looks like a date/time fragment.")
             continue
 
         # Ambiguous PCT guard: only skip PCT when its unit is clearly not a
         # hematology unit — catches the table-column-merge bug where the
         # next row's name ('MPV') leaks into PCT's unit field.
         if name.strip().lower() == "pct" and unit.strip() and not re.match(r"^(%|fl|pg|g/dl|mg/dl)?$", unit.strip(), re.IGNORECASE):
-            logger.debug(f"Skipping ambiguous 'PCT' row with implausible unit: '{unit}'")
+            logger.debug("Skipping ambiguous 'PCT' row with implausible unit.")
             continue
 
         try:

@@ -107,7 +107,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
                     valid_ent = Entity(**ent).model_dump()
                     entities.append(valid_ent)
                 except ValidationError as ve:
-                    logger.warning(f"[STAGE:NLP:WARN] req_id={req_id} Discarding invalid entity: {ve}")
+                    logger.warning(f"[STAGE:NLP:WARN] req_id={req_id} Discarding invalid entity (validation error).")
             logger.info(f"[STAGE:NLP:SUCCESS] req_id={req_id} Identified {len(entities)} entities.")
         except asyncio.TimeoutError:
             logger.warning(f"[STAGE:NLP:TIMEOUT] req_id={req_id} NER loading or inference timed out after 30s. Continuing without NER entities.")
@@ -130,9 +130,11 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
                         valid_abnormal = AbnormalFinding(**lab).model_dump()
                         abnormal_findings.append(valid_abnormal)
                     except ValidationError as ve2:
-                        logger.warning(f"[STAGE:LAB_EXTRACT:WARN] req_id={req_id} Discarding invalid abnormal finding: {ve2}")
-            except ValidationError as ve:
-                logger.warning(f"[STAGE:LAB_EXTRACT:WARN] req_id={req_id} Discarding invalid lab value: {ve}")
+                        logger.warning(f"[STAGE:LAB_EXTRACT:WARN] req_id={req_id} Discarding invalid abnormal finding (validation error).")
+                    except Exception as ve2:
+                        pass
+            except Exception as ve:
+                logger.warning(f"[STAGE:LAB_EXTRACT:WARN] req_id={req_id} Discarding invalid lab value (validation error).")
                 
         logger.info(f"[STAGE:LAB_EXTRACT:SUCCESS] req_id={req_id} Extracted {len(structured_lab_values)} lab values ({len(abnormal_findings)} abnormal).")
 

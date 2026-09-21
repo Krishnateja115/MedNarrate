@@ -43,8 +43,10 @@ async def upload_report(
         f"[UPLOAD:RECEIVED] User={current_user.id} "
         f"contentType='{file.content_type}' type='{report_type.value}' date='{report_date}'"
     )
+    from app.services.file_storage import sanitize_filename
     
     file_path = await save_upload_file(current_user.id, file)
+    safe_file_name = sanitize_filename(file.filename)
     
     file_type_str = file.filename.split(".")[-1].lower()
     file_type = "pdf" if file_type_str == "pdf" else "image"
@@ -54,7 +56,7 @@ async def upload_report(
         title=title,
         hospital=hospital,
         report_date=report_date,
-        file_name=file.filename,
+        file_name=safe_file_name,
         file_path=file_path,
         file_type=file_type,
         report_type=report_type,
