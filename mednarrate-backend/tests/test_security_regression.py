@@ -96,3 +96,38 @@ async def test_prompt_injection_chat_classifier(mock_generate, client: AsyncClie
     assert msg_resp.status_code == 200
     msg_data = msg_resp.json()
     assert msg_data["message"]["content"] != "This sounds like a medical emergency. Please call your local emergency services (like 911) or go to the nearest emergency room immediately. I am an AI and cannot provide emergency medical support."
+
+@pytest.fixture
+def mock_llm_client_fallback():
+    # Force auto mode and disable keys to trigger fallback
+    original_provider = getattr(settings, "PRIMARY_LLM_PROVIDER", None)
+    settings.PRIMARY_LLM_PROVIDER = "fallback"
+    yield
+    settings.PRIMARY_LLM_PROVIDER = original_provider
+
+async def test_chat_fallback_behavior(client: AsyncClient, auth_headers, mock_llm_client_fallback):
+    """
+    Test that when the LLM provider fails or is unconfigured (falling back to FallbackAIProvider),
+    a chat request does not return a medical report summary template, but rather a safe unavailable message.
+    """
+    # 1. Create a chat session
+    session_resp = await client.post(
+        "/api/v1/chat/sessions", headers=auth_headers,
+        json={"title": "Test Chat", "report_id": None}
+    )
+    assert session_resp.status_code == 201
+    session_id = session_resp.json()["id"]
+
+    # 2. Send "hello" message
+    chat_resp = await client.post(
+        f"/api/v1/chat/sessions/{session_id}/messages", headers=auth_headers,
+        json={"content": "hello"}
+    )
+    assert chat_resp.status_code == 200
+    resp_data = chat_resp.json()
+
+    # 3. Verify response is the safe unavailable message, NOT a report template
+    assistant_msg = resp_data["message"]["content"]
+    assert "What Your Report Says" not in assistant_msg
+    assert "Your blood report data has been processed" not in assistant_msg
+    assert assistant_msg == "AI service is temporarily unavailable. Please try again."

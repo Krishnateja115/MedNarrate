@@ -288,8 +288,14 @@ class FallbackAIProvider(LLMProvider):
         prompt_lower = prompt.lower()
         is_clinician = "clinician" in prompt_lower or "medical professional" in prompt_lower or "icd-10" in prompt_lower
         is_translation = "translate" in prompt_lower
+        is_classification = "classify the following medical query" in prompt_lower
+        is_chat = "you are mednarrate, a medical ai assistant" in prompt_lower or "you are a helpful medical ai assistant" in prompt_lower
 
-        if is_translation:
+        if is_classification:
+            content = "general"
+        elif is_chat:
+            content = "AI service is temporarily unavailable. Please try again."
+        elif is_translation:
             content = "This is an automated translation of the report summary into the selected language. All extracted numerical values and findings are preserved."
         else:
             import json
