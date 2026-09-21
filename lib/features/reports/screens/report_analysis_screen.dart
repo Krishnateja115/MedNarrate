@@ -356,46 +356,70 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _exporting ? null : () async {
-                  setState(() => _exporting = true);
-                  try {
-                    await ExportService.instance.shareSummaryPdf(
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _exporting ? null : () async {
+                      setState(() => _exporting = true);
+                      try {
+                        await ExportService.instance.shareSummaryPdf(
+                          analysis: a,
+                          reportTitle: 'Report Analysis',
+                          reportDate: a.processedAt?.toLocal().toString().split(' ').first ?? '',
+                        );
+                      } catch (e) {
+                        if (mounted) Helpers.showError(context, 'Export failed: $e');
+                      } finally {
+                        if (mounted) setState(() => _exporting = false);
+                      }
+                    },
+                    icon: _exporting
+                        ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Icon(Icons.picture_as_pdf_outlined),
+                    label: Text(_exporting ? 'Exporting…' : 'Export PDF'),
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(color: AppColors.primary),
+                      foregroundColor: AppColors.primary,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => ExportService.instance.printSummary(
                       analysis: a,
                       reportTitle: 'Report Analysis',
                       reportDate: a.processedAt?.toLocal().toString().split(' ').first ?? '',
-                    );
-                  } catch (e) {
-                    if (mounted) Helpers.showError(context, 'Export failed: $e');
-                  } finally {
-                    if (mounted) setState(() => _exporting = false);
+                    ),
+                    icon: Icon(Icons.print_outlined),
+                    label: Text(AppLocalizations.of(context)?.printPreview ?? 'Print Preview'),
+                    style: FilledButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 14)),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(Routes.dashboard);
                   }
                 },
-                icon: _exporting
-                    ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Icon(Icons.picture_as_pdf_outlined),
-                label: Text(_exporting ? 'Exporting…' : 'Export PDF'),
-                style: OutlinedButton.styleFrom(
+                icon: Icon(Icons.check_circle_outline),
+                label: Text('Done / Back to Home'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.green.shade600,
                   padding: EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: AppColors.primary),
-                  foregroundColor: AppColors.primary,
                 ),
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: () => ExportService.instance.printSummary(
-                  analysis: a,
-                  reportTitle: 'Report Analysis',
-                  reportDate: a.processedAt?.toLocal().toString().split(' ').first ?? '',
-                ),
-                icon: Icon(Icons.print_outlined),
-                label: Text(AppLocalizations.of(context)?.printPreview ?? 'Print Preview'),
-                style: FilledButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 14)),
               ),
             ),
           ],
