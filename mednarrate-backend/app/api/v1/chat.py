@@ -12,13 +12,34 @@ from app.schemas.chat import ChatSessionCreate, ChatSessionOut, ChatMessageCreat
 from app.services.rag import retrieve_chunks
 from app.services.llm_client import generate
 from app.services.prompts import (
-    CHAT_CLASSIFIER_PROMPT,
     CHAT_EMERGENCY_RESPONSE,
     CHAT_REFUSAL_RESPONSE,
     RAG_SYSTEM_PROMPT
 )
 from app.services.rag_safety import verify_response_against_source
 import json
+import re
+
+def local_classify_intent(query: str) -> str:
+    """
+    Deterministic intent classification to avoid LLM quota usage.
+    """
+    query_lower = query.lower()
+    
+    # Emergency keywords
+    emergency_patterns = ["emergency", "911", "heart attack", "bleeding", "stroke", "suicide", "dying", "chest pain", "difficulty breathing"]
+    if any(p in query_lower for p in emergency_patterns):
+        return "emergency"
+        
+    # Diagnosis/Treatment keywords
+    medical_advice_patterns = [
+        "do i have", "am i diagnosed", "what should i take", "how do i treat", 
+        "cure my", "prescribe", "dosage", "treatment for"
+    ]
+    if any(p in query_lower for p in medical_advice_patterns):
+        return "diagnosis"
+        
+    return "general"
 
 router = APIRouter()
 
@@ -82,9 +103,8 @@ async def send_chat_message(
     )
     db.add(user_msg)
     await db.commit()
-    # 2. Run Safety Classifier
-    classifier_prompt = CHAT_CLASSIFIER_PROMPT.format(user_query=req.content)
-    classification = (await generate(classifier_prompt)).strip().lower()
+    # 2. Run Safety Classifier (Local/Deterministic)
+    classification = local_classify_intent(req.content)
     allowed_categories = {"emergency", "diagnosis", "treatment", "report", "general"}
     if classification not in allowed_categories:
         classification = "general"
