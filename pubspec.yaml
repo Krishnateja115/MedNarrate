@@ -43,7 +43,6 @@ dependencies:
   shared_preferences: ^2.5.3
 
   # Secure Storage (for tokens)
-  flutter_secure_storage: ^10.3.1
 
   # Internationalization
   intl: ^0.20.2

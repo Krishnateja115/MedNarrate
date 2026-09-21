@@ -1,16 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_models.dart';
 
-/// StorageService — persists auth tokens in flutter_secure_storage;
-/// everything else (onboarding, language, cached profile) in shared_preferences.
+/// StorageService — persists auth tokens and preferences in shared_preferences.
 class StorageService {
   StorageService._();
   static final StorageService instance = StorageService._();
-
-  static const _storage = FlutterSecureStorage();
 
   static const _keyAccess = 'access_token';
   static const _keyRefresh = 'refresh_token';
