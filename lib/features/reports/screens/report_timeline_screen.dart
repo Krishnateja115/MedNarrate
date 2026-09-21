@@ -47,6 +47,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
         });
       }
       if (_selectedTest.isNotEmpty) {
+        if (!mounted) return;
         await _loadPoints(_selectedTest);
       }
     } on ApiException catch (e) {

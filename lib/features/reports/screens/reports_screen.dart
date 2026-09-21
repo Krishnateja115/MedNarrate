@@ -40,6 +40,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Future<void> _loadReports() async {
+    if (!mounted) return;
     setState(() { _loading = true; _error = null; });
     try {
       final reports = await ApiService.instance.listReports(

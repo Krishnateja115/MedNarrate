@@ -25,7 +25,9 @@ class InsightsController extends ChangeNotifier {
 
     try {
       // Fetch user's reports. Assuming listReports gets all we need.
-      availableReports = await _apiService.listReports(limit: 50);
+      final reports = await _apiService.listReports(limit: 50);
+      if (_disposed) return;
+      availableReports = reports;
       
       // Auto-select the first two if available to make testing easier
       if (availableReports.length >= 2) {
@@ -71,13 +73,15 @@ class InsightsController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      comparisonResult = await _apiService.compareReports(selectedReportIds.toList());
+      final comp = await _apiService.compareReports(selectedReportIds.toList());
+      if (_disposed) return;
+      comparisonResult = comp;
     } catch (e) {
       error = "Failed to generate comparison: ${e.toString()}";
       comparisonResult = null;
     } finally {
       isLoading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 

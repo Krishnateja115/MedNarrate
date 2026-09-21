@@ -40,10 +40,12 @@ class ReportDetailController extends ChangeNotifier {
   Future<void> _fetchLatest(String reportId) async {
     try {
       final r = await _apiService.getReport(reportId);
+      if (_disposed) return;
       report = r;
       if (r.processingStatus == 'completed') {
         try {
           final resAnalysis = await _apiService.getReportAnalysis(reportId);
+          if (_disposed) return;
           analysis = resAnalysis;
           report = report!.copyWith(
             aiSummary: resAnalysis.patientSummary,
@@ -60,7 +62,9 @@ class ReportDetailController extends ChangeNotifier {
             }).toList(),
           );
           try {
-            comparison = await _apiService.comparePrevious(reportId);
+            final comp = await _apiService.comparePrevious(reportId);
+            if (_disposed) return;
+            comparison = comp;
           } catch (_) {}
         } catch (_) {}
       }
@@ -80,8 +84,9 @@ class ReportDetailController extends ChangeNotifier {
         report!.id,
         isFavourite: !report!.isFavourite,
       );
+      if (_disposed) return;
       report = updated;
-      if (!_disposed) notifyListeners();
+      notifyListeners();
     } catch (_) {}
   }
 
