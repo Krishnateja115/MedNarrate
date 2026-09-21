@@ -4,11 +4,13 @@ class AppConfig {
     defaultValue: 'http://localhost:8000',
   );
   
-  static String get apiBaseUrl {
-    if (environment == 'production' && _rawApiBaseUrl.startsWith('http://')) {
-      throw AssertionError('Production environment MUST use HTTPS for apiBaseUrl.');
+  static String get apiBaseUrl => validateApiBaseUrl(environment, _rawApiBaseUrl);
+
+  static String validateApiBaseUrl(String env, String url) {
+    if (env == 'production' && url.startsWith('http://')) {
+      throw StateError('Production environment MUST use HTTPS for apiBaseUrl.');
     }
-    return _rawApiBaseUrl;
+    return url;
   }
   
   static const int apiTimeoutSeconds = int.fromEnvironment(
