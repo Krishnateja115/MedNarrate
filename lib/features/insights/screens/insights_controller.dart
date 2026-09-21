@@ -11,12 +11,14 @@ class InsightsController extends ChangeNotifier {
   bool isLoading = false;
   String? error;
   List<ReportModel> availableReports = [];
+  bool _disposed = false;
 
   InsightsController() {
     loadAvailableReports();
   }
 
   Future<void> loadAvailableReports() async {
+    if (_disposed) return;
     isLoading = true;
     error = null;
     notifyListeners();
@@ -35,7 +37,7 @@ class InsightsController extends ChangeNotifier {
       error = "Failed to load reports: ${e.toString()}";
     } finally {
       isLoading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -84,5 +86,11 @@ class InsightsController extends ChangeNotifier {
     comparisonResult = null;
     error = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

@@ -4,6 +4,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
+import '../../../core/services/export_service.dart';
+import '../../../core/utils/helpers.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../models/report_model.dart';
 import '../controllers/report_detail_controller.dart';
@@ -26,6 +28,7 @@ class ReportDetailsScreen extends StatefulWidget {
 class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ReportDetailController _controller = ReportDetailController();
+  bool _exporting = false;
   
   @override
   void initState() {
@@ -187,12 +190,68 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                   Icons.more_vert_rounded,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
                 ),
-                onSelected: (value) {
+                onSelected: (value) async {
                   if (value == 'delete') {
                     _handleDelete();
+                  } else if (value == 'export_pdf') {
+                    final analysis = _controller.analysis;
+                    final report = _controller.report;
+                    if (analysis == null || report == null) return;
+                    setState(() => _exporting = true);
+                    final messenger = ScaffoldMessenger.of(context);
+                    try {
+                      await ExportService.instance.shareSummaryPdf(
+                        analysis: analysis,
+                        reportTitle: report.title,
+                        reportDate: report.reportDate.toLocal().toString().split(' ').first,
+                      );
+                    } catch (e) {
+                      messenger.showSnackBar(SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.red));
+                    } finally {
+                      if (mounted) setState(() => _exporting = false);
+                    }
+                  } else if (value == 'print') {
+                    final analysis = _controller.analysis;
+                    final report = _controller.report;
+                    if (analysis == null || report == null) return;
+                    await ExportService.instance.printSummary(
+                      analysis: analysis,
+                      reportTitle: report.title,
+                      reportDate: report.reportDate.toLocal().toString().split(' ').first,
+                    );
                   }
                 },
                 itemBuilder: (_) => [
+                  if (_controller.analysis != null) ...[
+                    PopupMenuItem(
+                      value: 'export_pdf',
+                      child: Row(
+                        children: [
+                          Icon(Icons.picture_as_pdf_outlined,
+                              size: 20, color: theme.colorScheme.onSurface.withValues(alpha: 0.85)),
+                          const SizedBox(width: 12),
+                          Text(
+                            _exporting ? 'Exporting…' : 'Export PDF',
+                            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'print',
+                      child: Row(
+                        children: [
+                          Icon(Icons.print_outlined,
+                              size: 20, color: theme.colorScheme.onSurface.withValues(alpha: 0.85)),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Print / Preview',
+                            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   PopupMenuItem(
                     value: 'delete',
                     child: Row(

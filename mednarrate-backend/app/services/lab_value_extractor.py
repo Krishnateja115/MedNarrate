@@ -48,6 +48,7 @@ LAB_LINE_RE = re.compile(
     r"(?P<unit>(?:x[ \t]*)?\d*\^?\d*[A-Za-z\^/%µ][A-Za-z0-9\^/%µ]*(?:/[A-Za-z0-9]+)?)*\s*"
     r"(?:\(?\s*(?:ref\s*range|reference\s*range|ref|reference|normal)?[:\s]*"
     r"(?P<ref_str>(?:<=?|>=?|<|>)\s*\d+\.?\d*|\d+\.?\d*\s*(?:[\-–~]|\bto\b)\s*\d+\.?\d*)\s*(?P<ref_unit>(?:x[ \t]*)?\d*\^?\d*[A-Za-z\^/%µ][A-Za-z0-9\^/%µ]*(?:/[A-Za-z0-9]+)?)?\s*\)?)?"
+    r"\s*(?:\([^)]*\))?"  # swallow any trailing non-numeric parenthesised group (e.g. "( - )")
     r"\s*(?:(?:\[|\()*(?P<flag>LOW|HIGH|NORMAL|CRITICAL|ABNORMAL)(?:\]|\))*)?[ \t]*$",
     re.IGNORECASE | re.MULTILINE
 )

@@ -1,7 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mednarrate/features/insights/screens/insights_controller.dart';
 
 void main() {
+  setUpAll(() async {
+    // Initialize Hive with a temp path for tests so CacheService doesn't throw
+    // LateInitializationError when InsightsController constructor fires.
+    TestWidgetsFlutterBinding.ensureInitialized();
+    Hive.init('.');
+  });
+
   group('InsightsController Unit Tests', () {
     late InsightsController controller;
 
