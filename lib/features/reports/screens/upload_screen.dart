@@ -213,7 +213,7 @@ class _UploadScreenState extends State<UploadScreen> {
           final loc = AppLocalizations.of(context);
           final msg = loc != null ? loc.reportAnalyzedSuccessfully : 'Report analyzed successfully!';
           Helpers.showSuccess(context, msg);
-          context.pushReplacement(Routes.reportDetails, extra: report.id);
+          context.push(Routes.reportDetails, extra: report.id);
           return;
         } else if (status.processingStatus == 'failed') {
           setState(() {
@@ -261,7 +261,7 @@ class _UploadScreenState extends State<UploadScreen> {
           final loc = AppLocalizations.of(context);
           final msg = loc != null ? loc.reportAnalyzedSuccessfully : 'Report analyzed successfully!';
           Helpers.showSuccess(context, msg);
-          context.pushReplacement(Routes.reportDetails, extra: _createdReportId);
+          context.push(Routes.reportDetails, extra: _createdReportId);
           return;
         } else if (status.processingStatus == 'failed') {
           setState(() {
