@@ -42,10 +42,14 @@ class Helpers {
 
   /// Maps a flag string to a color for lab value badges.
   static Color flagColor(String flag) {
-    switch (flag) {
+    switch (flag.toLowerCase()) {
+      case 'critical':
+      case 'abnormal':
       case 'high':
         return Colors.red.shade600;
       case 'low':
+      case 'moderate':
+      case 'borderline':
         return Colors.orange.shade700;
       default:
         return Colors.green.shade600;

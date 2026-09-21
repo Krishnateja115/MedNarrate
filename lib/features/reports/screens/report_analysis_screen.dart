@@ -314,41 +314,7 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
           // ── Abnormal findings ────────────────────────────────────────
           if (a.abnormalFindings.isNotEmpty) ...[
             _sectionTitle('Abnormal Findings'),
-            ...a.abnormalFindings.map((f) {
-              final name = f['test_name']?.toString() ?? '';
-              final sources = a.evidenceSources
-                  .where((e) => e.finding == name)
-                  .expand((e) => e.sources)
-                  .toSet()
-                  .toList();
-              return _card(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: _flagColor(f['flag']?.toString() ?? 'normal').withValues(alpha: .2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(name, style: TextStyle(
-                            color: _flagColor(f['flag']?.toString() ?? 'normal'), fontWeight: FontWeight.bold)),
-                      ),
-                    ]),
-                    if (sources.isNotEmpty) ...[
-                      SizedBox(height: 8),
-                      Wrap(spacing: 6, children: sources.map((s) => Chip(
-                        label: Text('Based on: $s',
-                            style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70))),
-                        backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
-                        padding: EdgeInsets.zero,
-                      )).toList()),
-                    ],
-                  ],
-                ),
-              );
-            }),
+            _buildAbnormalFindings(a),
           ],
         ],
       ),
@@ -454,10 +420,15 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
     
     for (var lv in allLabs) {
       final flag = lv.flag.toLowerCase();
-      if (flag == 'critical' || flag == 'abnormal') groupedLabs['Critical / Abnormal']!.add(lv);
-      else if (flag == 'high' || flag == 'low') groupedLabs['Out of Range (High/Low)']!.add(lv);
-      else if (flag == 'normal') groupedLabs['Normal']!.add(lv);
-      else groupedLabs['Unclassified']!.add(lv);
+      if (flag == 'critical' || flag == 'abnormal') {
+        groupedLabs['Critical / Abnormal']!.add(lv);
+      } else if (flag == 'high' || flag == 'low') {
+        groupedLabs['Out of Range (High/Low)']!.add(lv);
+      } else if (flag == 'normal') {
+        groupedLabs['Normal']!.add(lv);
+      } else {
+        groupedLabs['Unclassified']!.add(lv);
+      }
     }
 
     final groupColors = {
@@ -490,6 +461,131 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
             }),
             SizedBox(height: 20),
           ],
+        );
+      }).toList(),
+    );
+  }
+
+  int _flagSeverity(String flag) {
+    switch (flag.toLowerCase()) {
+      case 'critical':
+        return 4;
+      case 'abnormal':
+      case 'high':
+        return 3;
+      case 'low':
+      case 'moderate':
+      case 'borderline':
+        return 2;
+      case 'normal':
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
+  Widget _buildAbnormalFindings(ReportAnalysisModel a) {
+    // Deduplicate findings by name + flag
+    final seen = <String>{};
+    final uniqueFindings = <Map<String, dynamic>>[];
+    for (var f in a.abnormalFindings) {
+      final name = f['test_name']?.toString().trim() ?? '';
+      final flag = f['flag']?.toString().trim().toLowerCase() ?? '';
+      final key = '$name-$flag';
+      if (!seen.contains(key) && name.isNotEmpty) {
+        seen.add(key);
+        uniqueFindings.add(f);
+      }
+    }
+
+    // Sort decreasing severity: critical/abnormal/high first, then low/moderate, then normal
+    uniqueFindings.sort((x, y) {
+      final sevX = _flagSeverity(x['flag']?.toString() ?? '');
+      final sevY = _flagSeverity(y['flag']?.toString() ?? '');
+      if (sevY != sevX) return sevY.compareTo(sevX);
+      return (x['test_name']?.toString() ?? '').compareTo(y['test_name']?.toString() ?? '');
+    });
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: uniqueFindings.map((f) {
+        final name = f['test_name']?.toString() ?? '';
+        final flagStr = f['flag']?.toString().toLowerCase() ?? 'abnormal';
+        final color = _flagColor(flagStr);
+        final val = f['value'] != null ? '${f['value']}${f['unit'] != null ? ' ${f['unit']}' : ''}'.trim() : '';
+        final sources = a.evidenceSources
+            .where((e) => e.finding == name)
+            .expand((e) => e.sources)
+            .toSet()
+            .toList();
+
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              SizedBox(width: 6),
+              Text(
+                name,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+              if (val.isNotEmpty) ...[
+                SizedBox(width: 4),
+                Text(
+                  val,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+              if (flagStr != 'normal' && flagStr.isNotEmpty) ...[
+                SizedBox(width: 5),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    flagStr.toUpperCase(),
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ),
+              ],
+              if (sources.isNotEmpty) ...[
+                SizedBox(width: 5),
+                Tooltip(
+                  message: 'Sources: ${sources.join(', ')}',
+                  child: Icon(Icons.info_outline, size: 12, color: color.withValues(alpha: 0.7)),
+                ),
+              ],
+            ],
+          ),
         );
       }).toList(),
     );
