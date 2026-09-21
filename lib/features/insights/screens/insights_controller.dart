@@ -36,10 +36,12 @@ class InsightsController extends ChangeNotifier {
         await compareSelected();
       }
     } catch (e) {
-      error = "Failed to load reports: ${e.toString()}";
+      if (!_disposed) error = "Failed to load reports: ${e.toString()}";
     } finally {
-      isLoading = false;
-      if (!_disposed) notifyListeners();
+      if (!_disposed) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -77,11 +79,15 @@ class InsightsController extends ChangeNotifier {
       if (_disposed) return;
       comparisonResult = comp;
     } catch (e) {
-      error = "Failed to generate comparison: ${e.toString()}";
-      comparisonResult = null;
+      if (!_disposed) {
+        error = "Failed to generate comparison: ${e.toString()}";
+        comparisonResult = null;
+      }
     } finally {
-      isLoading = false;
-      if (!_disposed) notifyListeners();
+      if (!_disposed) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
   }
 

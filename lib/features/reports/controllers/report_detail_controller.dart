@@ -25,7 +25,9 @@ class ReportDetailController extends ChangeNotifier {
   }
   
   Future<void> init(String reportId, ReportModel? initialReport) async {
-    professionalMode = await _storageService.getProfessionalMode();
+    final profMode = await _storageService.getProfessionalMode();
+    if (_disposed) return;
+    professionalMode = profMode;
     if (initialReport != null) {
       report = initialReport;
       isLoading = false;
@@ -70,10 +72,12 @@ class ReportDetailController extends ChangeNotifier {
       }
       error = null;
     } on ApiException catch (e) {
-      if (report == null) error = e.message;
+      if (!_disposed && report == null) error = e.message;
     } finally {
-      isLoading = false;
-      if (!_disposed) notifyListeners();
+      if (!_disposed) {
+        isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
