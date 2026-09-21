@@ -39,9 +39,9 @@ class ExportService {
     required String reportDate,
   }) async {
     final doc = pw.Document();
-    final font = await PdfGoogleFonts.interRegular();
-    final fontBold = await PdfGoogleFonts.interBold();
-    final fontMono = await PdfGoogleFonts.jetBrainsMonoRegular();
+    final font = pw.Font.helvetica();
+    final fontBold = pw.Font.helveticaBold();
+    final fontMono = pw.Font.courier();
 
     final baseStyle = pw.TextStyle(font: font, fontSize: 11, color: _textDark);
     final mutedStyle = pw.TextStyle(font: font, fontSize: 10, color: _textMuted);

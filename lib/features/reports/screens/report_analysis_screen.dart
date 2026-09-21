@@ -15,6 +15,7 @@ import 'package:mednarrate/l10n/app_localizations.dart';
 import '../../../core/utils/markdown_formatter.dart';
 import '../models/report_model.dart';
 import '../widgets/clinical_view_tab.dart';
+import 'package:shimmer/shimmer.dart';
 import 'dart:async';
 
 /// ReportAnalysisScreen — shows AI analysis results.
@@ -167,14 +168,15 @@ class _ReportAnalysisScreenState extends State<ReportAnalysisScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 56, height: 56,
-            child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.primary),
+          Shimmer.fromColors(
+            baseColor: AppColors.primary,
+            highlightColor: AppColors.primary.withOpacity(0.3),
+            child: Icon(Icons.auto_awesome, size: 64),
           ),
           SizedBox(height: 28),
           Text(AppLocalizations.of(context)?.analyzingYourReport ?? 'Analyzing your report',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
-          SizedBox(height: 20),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+          SizedBox(height: 16),
           const _ProcessingStages(),
         ],
       ),

@@ -1,6 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/routing/routes.dart';
@@ -211,7 +213,7 @@ class _UploadScreenState extends State<UploadScreen> {
           final loc = AppLocalizations.of(context);
           final msg = loc != null ? loc.reportAnalyzedSuccessfully : 'Report analyzed successfully!';
           Helpers.showSuccess(context, msg);
-          context.go(Routes.reportAnalysis, extra: report.id);
+          context.pushReplacement(Routes.reportAnalysis, extra: report.id);
           return;
         } else if (status.processingStatus == 'failed') {
           setState(() {
@@ -259,7 +261,7 @@ class _UploadScreenState extends State<UploadScreen> {
           final loc = AppLocalizations.of(context);
           final msg = loc != null ? loc.reportAnalyzedSuccessfully : 'Report analyzed successfully!';
           Helpers.showSuccess(context, msg);
-          context.go(Routes.reportAnalysis, extra: _createdReportId);
+          context.pushReplacement(Routes.reportAnalysis, extra: _createdReportId);
           return;
         } else if (status.processingStatus == 'failed') {
           setState(() {
@@ -695,24 +697,28 @@ class _UploadScreenState extends State<UploadScreen> {
 
   Widget _buildProcessingCard(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.08),
+        color: theme.colorScheme.primary.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.25)),
+        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.15)),
       ),
       child: Column(
         children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 16),
+          Shimmer.fromColors(
+            baseColor: theme.colorScheme.primary,
+            highlightColor: theme.colorScheme.primary.withOpacity(0.3),
+            child: Icon(Icons.document_scanner_rounded, size: 48, color: theme.colorScheme.primary),
+          ),
+          const SizedBox(height: 20),
           Text(
             _processingStatusText,
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
-            'This usually takes 10–20 seconds. Please keep this screen open.',
-            style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.60)),
+            'This usually takes 10–20 seconds. Please wait...',
+            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.60)),
             textAlign: TextAlign.center,
           ),
         ],
