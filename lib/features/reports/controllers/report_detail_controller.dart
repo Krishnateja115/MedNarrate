@@ -16,13 +16,20 @@ class ReportDetailController extends ChangeNotifier {
   bool isLoading = true;
   String? error;
   bool professionalMode = false;
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
   
   Future<void> init(String reportId, ReportModel? initialReport) async {
     professionalMode = await _storageService.getProfessionalMode();
     if (initialReport != null) {
       report = initialReport;
       isLoading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
       // Still fetch latest in background
       _fetchLatest(reportId);
     } else {
@@ -62,7 +69,7 @@ class ReportDetailController extends ChangeNotifier {
       if (report == null) error = e.message;
     } finally {
       isLoading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -74,7 +81,7 @@ class ReportDetailController extends ChangeNotifier {
         isFavourite: !report!.isFavourite,
       );
       report = updated;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     } catch (_) {}
   }
 
