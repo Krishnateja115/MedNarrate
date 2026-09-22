@@ -12,7 +12,6 @@ class Routes {
   static const String reports = "/reports";
   static const String upload = "/upload";
   static const String reportDetails = "/report-details";
-  static const String reportAnalysis = "/report-analysis";
   static const String reportTimeline = "/report-timeline";
 
   static const String insights = "/insights";

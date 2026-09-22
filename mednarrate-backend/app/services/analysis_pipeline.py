@@ -25,7 +25,7 @@ from app.services.model_registry import get_ner_pipeline
 from app.services.lab_value_extractor import extract_lab_values, extract_medication_schedule
 from app.services.privacy import deidentify_prompt_text
 from app.services.prompts import CLINICIAN_PROMPT, PATIENT_PROMPT, ROLE_INSTRUCTIONS, get_examples_text
-from app.services.llm_client import generate, LLMConfigurationError, LLMConnectionError
+from app.services.llm_client import generate, generate_with_metadata, LLMConfigurationError, LLMConnectionError
 from app.services.rag import process_report_for_rag, retrieve_chunks
 from app.services.multilingual import translate_report_summary
 from app.services.validation import validate_and_ground_analysis
@@ -35,13 +35,27 @@ from app.schemas.report import LabValue, AbnormalFinding, Entity
 
 logger = logging.getLogger(__name__)
 
-async def generate_with_timeout(prompt: str, timeout: int = 60, request_id: str | None = None):
-    """Executes single LLM call with request timeout and request correlation tracking."""
-    from app.services.llm_orchestrator import generate_primary_reasoning
-    return await asyncio.wait_for(
-        generate_primary_reasoning(prompt, request_id=request_id),
-        timeout=timeout
-    )
+async def generate_with_timeout_metadata(
+    prompt: str,
+    timeout: int = 60,
+    request_id: str | None = None,
+    system_instruction: str | None = None,
+    thinking_level: str = "LOW"
+):
+    """Executes single LLM call with request timeout and request correlation tracking, returning full metadata dict."""
+    try:
+        return await asyncio.wait_for(
+            generate_with_metadata(
+                prompt,
+                timeout=timeout,
+                request_id=request_id,
+                system_instruction=system_instruction,
+                thinking_level=thinking_level
+            ),
+            timeout=timeout + 2.0
+        )
+    except Exception:
+        raise
 
 async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
     if db is None:
@@ -188,8 +202,30 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         # 6. LLM Generation with Request Correlation
         logger.info(f"[STAGE:LLM] req_id={req_id} Generating summaries via configured LLM provider...")
         from app.services.llm_orchestrator import verify_medical_facts
-        clinician_summary = await generate_with_timeout(clinician_prompt, timeout=settings.LLM_TIMEOUT_SECONDS, request_id=req_id)
-        patient_summary = await generate_with_timeout(patient_prompt, timeout=settings.LLM_TIMEOUT_SECONDS, request_id=req_id)
+        
+        clinician_sys = "You are a specialized medical analysis AI. Strictly format your response according to the provided instructions. Do not hallucinate data. Maintain a formal, clinical tone."
+        clinician_res = await generate_with_timeout_metadata(
+            clinician_prompt, 
+            timeout=settings.LLM_TIMEOUT_SECONDS, 
+            request_id=req_id,
+            system_instruction=clinician_sys,
+            thinking_level="HIGH"
+        )
+        clinician_summary = clinician_res["content"]
+        
+        patient_sys = "You are an empathetic medical assistant. Explain medical terms clearly to a patient. Strictly follow the structure requested. Do not give direct medical advice."
+        patient_res = await generate_with_timeout_metadata(
+            patient_prompt, 
+            timeout=settings.LLM_TIMEOUT_SECONDS, 
+            request_id=req_id,
+            system_instruction=patient_sys,
+            thinking_level="HIGH"
+        )
+        patient_summary = patient_res["content"]
+        
+        llm_provider = clinician_res.get("provider")
+        llm_model = clinician_res.get("model")
+        
         logger.info(f"[STAGE:LLM:SUCCESS] req_id={req_id} Generated clinician and patient summaries.")
 
 
@@ -256,6 +292,8 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         analysis.evidence_sources = []
         analysis.clinician_summary = clinician_summary
         analysis.patient_summary = patient_summary
+        analysis.llm_provider = llm_provider
+        analysis.llm_model = llm_model
         analysis.processed_at = datetime.now(timezone.utc)
         analysis.error_reason = None
 

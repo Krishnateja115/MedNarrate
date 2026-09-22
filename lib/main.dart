@@ -31,7 +31,7 @@ class AppLifecycleObserver extends WidgetsBindingObserver {
     } else if (state == AppLifecycleState.resumed) {
       if (_backgroundedAt != null) {
         final diff = DateTime.now().difference(_backgroundedAt!);
-        if (diff.inSeconds > 30) {
+        if (diff.inMinutes >= 3) {
           final isEnabled = await BiometricService.instance.isBiometricEnabled();
           if (isEnabled) {
             BiometricService.instance.isUnlocked = false;

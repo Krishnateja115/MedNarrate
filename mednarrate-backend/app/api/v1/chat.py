@@ -127,7 +127,8 @@ async def send_chat_message(
             context=context,
             question=req.content
         )
-        ai_response = await generate(prompt)
+        chat_sys = "You are a helpful medical AI assistant. Answer conversationally, concisely, and clearly based on the context. Do not offer diagnoses or prescribe medication."
+        ai_response = await generate(prompt, system_instruction=chat_sys, thinking_level="LOW")
         
         # 5. Hallucination guard
         if context:

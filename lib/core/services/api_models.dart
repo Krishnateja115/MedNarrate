@@ -361,6 +361,8 @@ class ReportAnalysisModel {
   final bool translationAvailable;
   final String? verificationStatus;
   final String? errorReason;
+  final String? llmProvider;
+  final String? llmModel;
   final DateTime? processedAt;
 
   const ReportAnalysisModel({
@@ -377,6 +379,8 @@ class ReportAnalysisModel {
     this.translationAvailable = false,
     this.verificationStatus,
     this.errorReason,
+    this.llmProvider,
+    this.llmModel,
     this.processedAt,
   });
 
@@ -399,6 +403,8 @@ class ReportAnalysisModel {
       translationAvailable: map['translation_available'] as bool? ?? map['translationAvailable'] as bool? ?? false,
       verificationStatus: map['verification_status'] as String? ?? map['verificationStatus'] as String?,
       errorReason: map['error_reason'] as String? ?? map['errorReason'] as String?,
+      llmProvider: map['llm_provider'] as String? ?? map['llmProvider'] as String?,
+      llmModel: map['llm_model'] as String? ?? map['llmModel'] as String?,
       processedAt: map['processed_at'] != null
           ? DateTime.tryParse(map['processed_at'].toString())?.toLocal()
           : null,

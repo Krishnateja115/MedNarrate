@@ -13,9 +13,9 @@ async def test_end_to_end_analysis_persistence(db_session, monkeypatch):
     
     # Mock LLM response for test double
     async def mock_generate(prompt, timeout=30, request_id=None, **kwargs):
-        return "Patient summary: Hemoglobin is 14.2 g/dL which is normal."
+        return {"content": "Patient summary: Hemoglobin is 14.2 g/dL which is normal.", "provider": "gemini", "model": "gemini-1.5-flash"}
     
-    monkeypatch.setattr("app.services.analysis_pipeline.generate_with_timeout", mock_generate)
+    monkeypatch.setattr("app.services.analysis_pipeline.generate_with_timeout_metadata", mock_generate)
 
 
     # 1. Create User & Report

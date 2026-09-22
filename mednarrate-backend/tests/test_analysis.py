@@ -72,7 +72,7 @@ def test_extract_lab_values_edge_cases():
 @pytest.mark.asyncio
 @patch("app.services.analysis_pipeline.get_ner_pipeline")
 @patch("app.services.llm_orchestrator.verify_medical_facts")
-@patch("app.services.analysis_pipeline.generate_with_timeout")
+@patch("app.services.analysis_pipeline.generate_with_timeout_metadata")
 @patch("app.services.analysis_pipeline.extract_text_from_file")
 async def test_run_analysis_mocked(mock_extract, mock_generate, mock_verify, mock_ner, db_session):
     db = db_session
@@ -82,7 +82,7 @@ async def test_run_analysis_mocked(mock_extract, mock_generate, mock_verify, moc
     
     # Mocks
     mock_extract.return_value = "Glucose 120 mg/dL (70-99)"
-    mock_generate.return_value = "Mocked LLM summary"
+    mock_generate.return_value = {"content": "Mocked LLM summary", "provider": "gemini", "model": "gemini-1.5-flash"}
     mock_verify.return_value = {"is_valid": True, "correction": None, "verification_status": "verified"}
     mock_ner_pipeline = MagicMock()
     mock_ner_pipeline.return_value = [{"entity": "B-Test", "score": 0.99, "word": "Glucose"}]
@@ -142,7 +142,7 @@ async def test_run_analysis_mocked(mock_extract, mock_generate, mock_verify, moc
 @patch("app.services.analysis_pipeline.extract_lab_values")
 @patch("app.services.analysis_pipeline.get_ner_pipeline")
 @patch("app.services.llm_orchestrator.verify_medical_facts")
-@patch("app.services.analysis_pipeline.generate_with_timeout")
+@patch("app.services.analysis_pipeline.generate_with_timeout_metadata")
 @patch("app.services.analysis_pipeline.extract_text_from_file")
 async def test_run_analysis_defensive_filtering(mock_extract, mock_generate, mock_verify, mock_ner, mock_extract_lab_values, db_session):
     db = db_session
@@ -152,7 +152,7 @@ async def test_run_analysis_defensive_filtering(mock_extract, mock_generate, moc
     
     # Mocks
     mock_extract.return_value = "Cholesterol 220 mg/dL (150-199)"
-    mock_generate.return_value = "Mocked LLM summary"
+    mock_generate.return_value = {"content": "Mocked LLM summary", "provider": "gemini", "model": "gemini-1.5-flash"}
     mock_verify.return_value = {"is_valid": True, "correction": None, "verification_status": "verified"}
     mock_ner_pipeline = MagicMock()
     mock_ner_pipeline.return_value = []

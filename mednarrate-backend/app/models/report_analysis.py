@@ -19,6 +19,8 @@ class ReportAnalysis(Base):
     failure_category: Mapped[str | None] = mapped_column(Text, nullable=True)
     verification_status: Mapped[str | None] = mapped_column(Text, nullable=True, default="unverified")
     model_versions: Mapped[dict] = mapped_column(JSONB, default=dict)
+    llm_provider: Mapped[str | None] = mapped_column(Text, nullable=True)
+    llm_model: Mapped[str | None] = mapped_column(Text, nullable=True)
     processed_at: Mapped[object | None] = mapped_column(DateTime, nullable=True)
     
     created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())

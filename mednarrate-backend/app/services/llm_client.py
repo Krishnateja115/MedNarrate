@@ -27,7 +27,7 @@ def _is_valid_dev_gemini_key(key: str | None) -> bool:
 # Abstract Provider Interface
 class LLMProvider(abc.ABC):
     @abc.abstractmethod
-    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None) -> dict:
+    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None, system_instruction: str | None = None, thinking_level: str = "LOW") -> dict:
         """Executes LLM text generation and returns structured metadata response."""
         pass
 
@@ -74,7 +74,7 @@ class VertexAIProvider(LLMProvider):
             "model_available": has_auth,
         }
 
-    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None) -> dict:
+    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None, system_instruction: str | None = None, thinking_level: str = "LOW") -> dict:
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
         
@@ -91,8 +91,16 @@ class VertexAIProvider(LLMProvider):
             if settings.GEMINI_API_KEY and _is_valid_dev_gemini_key(settings.GEMINI_API_KEY):
                 genai.configure(api_key=settings.GEMINI_API_KEY.strip())
             
-            model = genai.GenerativeModel(self.model_name)
-            response = await model.generate_content_async(prompt)
+            # Use basic GenerationConfig. Gemini 3 ignores temperature/topP/topK and throws errors for penalties.
+            generation_config = genai.types.GenerationConfig(
+                max_output_tokens=2048,
+            )
+            
+            model = genai.GenerativeModel(
+                model_name=self.model_name,
+                system_instruction=system_instruction
+            )
+            response = await model.generate_content_async(prompt, generation_config=generation_config)
             latency_ms = int((time.time() - start_time) * 1000)
 
             if response and response.text:
@@ -151,7 +159,7 @@ class OllamaProvider(LLMProvider):
             "model_available": model_available,
         }
 
-    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None) -> dict:
+    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None, system_instruction: str | None = None, thinking_level: str = "LOW") -> dict:
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
         url = f"{self.base_url}/api/generate"
@@ -219,7 +227,7 @@ class DevGeminiProvider(LLMProvider):
             "model_available": valid_key,
         }
 
-    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None) -> dict:
+    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None, system_instruction: str | None = None, thinking_level: str = "LOW") -> dict:
         self._check_production_restriction()
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
@@ -229,43 +237,61 @@ class DevGeminiProvider(LLMProvider):
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key.strip()}"
         
-        try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                resp = await client.post(
-                    url,
-                    json={
-                        "contents": [{"parts": [{"text": prompt}]}]
+        max_retries = 1
+        for attempt in range(max_retries + 1):
+            try:
+                payload = {
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {
+                        "thinkingConfig": {"thinkingLevel": thinking_level},
+                        "maxOutputTokens": 2048,
                     }
-                )
-            
-            resp.raise_for_status()
-            data = resp.json()
-            
-            latency_ms = int((time.time() - start_time) * 1000)
-            
-            content = ""
-            if "candidates" in data and len(data["candidates"]) > 0:
-                content = data["candidates"][0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            
-            if content:
-                logger.info(f"[LLM:DEV_GEMINI:SUCCESS] req_id={req_id} latency={latency_ms}ms model={self.model_name}")
-                return {
-                    "provider": "dev_gemini",
-                    "model": self.model_name,
-                    "request_success": True,
-                    "response_received": True,
-                    "error_category": None,
-                    "content": content.strip(),
-                    "latency_ms": latency_ms,
-                    "request_id": req_id,
                 }
-            raise ValueError(f"Empty or invalid response from Gemini API: {data}")
-        except httpx.HTTPStatusError as e:
-            logger.error(f"[LLM:DEV_GEMINI:FAIL] HTTP {e.response.status_code}: {e.response.text}")
-            raise ValueError(f"Gemini API returned error {e.response.status_code}: {e.response.text}")
-        except Exception as e:
-            logger.error(f"[LLM:DEV_GEMINI:FAIL] req_id={req_id} error={e}")
-            raise LLMConnectionError(f"Gemini developer API error: {e}")
+                
+                if system_instruction:
+                    payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
+                
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    resp = await client.post(
+                        url,
+                        json=payload
+                    )
+                
+                resp.raise_for_status()
+                data = resp.json()
+                
+                latency_ms = int((time.time() - start_time) * 1000)
+                content = ""
+                if "candidates" in data and len(data["candidates"]) > 0:
+                    content = data["candidates"][0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                
+                if content:
+                    logger.info(f"[LLM:DEV_GEMINI:SUCCESS] req_id={req_id} latency={latency_ms}ms model={self.model_name}")
+                    return {
+                        "provider": "dev_gemini",
+                        "model": self.model_name,
+                        "request_success": True,
+                        "response_received": True,
+                        "error_category": None,
+                        "content": content.strip(),
+                        "latency_ms": latency_ms,
+                        "request_id": req_id,
+                    }
+                raise ValueError(f"Empty or invalid response from Gemini API: {data}")
+
+            except Exception as e:
+                if attempt < max_retries:
+                    logger.warning(f"[LLM:DEV_GEMINI:RETRY] Attempt {attempt + 1} failed: {e}. Retrying...")
+                    import asyncio
+                    await asyncio.sleep(1.5)
+                else:
+                    if isinstance(e, httpx.HTTPStatusError):
+                        logger.error(f"[LLM:DEV_GEMINI:FAIL] HTTP {e.response.status_code}: {e.response.text}")
+                        raise ValueError(f"Gemini API returned error {e.response.status_code}: {e.response.text}")
+                    else:
+                        logger.error(f"[LLM:DEV_GEMINI:FAIL] req_id={req_id} error={e}")
+                        raise LLMConnectionError(f"Gemini developer API error: {e}")
+
 
 # Standalone Fallback Provider for Development & Offline Execution
 class FallbackAIProvider(LLMProvider):
@@ -281,15 +307,16 @@ class FallbackAIProvider(LLMProvider):
             "model_available": True,
         }
 
-    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None) -> dict:
+    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None, system_instruction: str | None = None, thinking_level: str = "LOW") -> dict:
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
 
         prompt_lower = prompt.lower()
-        is_clinician = "clinician" in prompt_lower or "medical professional" in prompt_lower or "icd-10" in prompt_lower
+        sys_lower = (system_instruction or "").lower()
+        is_clinician = "clinician" in prompt_lower or "medical professional" in prompt_lower or "icd-10" in prompt_lower or "clinical tone" in sys_lower
         is_translation = "translate" in prompt_lower
         is_classification = "classify the following medical query" in prompt_lower
-        is_chat = "you are mednarrate, a medical ai assistant" in prompt_lower or "you are a helpful medical ai assistant" in prompt_lower
+        is_chat = "ai assistant" in sys_lower or "you are mednarrate" in prompt_lower or "you are a helpful medical ai assistant" in prompt_lower
 
         if is_classification:
             content = "general"
@@ -519,7 +546,7 @@ class LLMClient:
             return self.providers["fallback"]
         return self.providers["vertex_ai"]
 
-    async def generate_with_metadata(self, prompt: str, timeout: float = 30.0, request_id: str | None = None) -> dict:
+    async def generate_with_metadata(self, prompt: str, timeout: float = 30.0, request_id: str | None = None, system_instruction: str | None = None, thinking_level: str = "LOW") -> dict:
         req_id = request_id or str(uuid.uuid4())
         provider_setting = (getattr(settings, "PRIMARY_LLM_PROVIDER", "gemini") or "auto").lower().strip()
 
@@ -527,11 +554,11 @@ class LLMClient:
         if provider_setting in ["vertex_ai", "ollama", "dev_gemini", "gemini", "fallback"]:
             provider = self.get_provider(provider_setting)
             try:
-                return await provider.generate(prompt, timeout=timeout, request_id=req_id)
+                return await provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
             except Exception as e:
                 if getattr(settings, "ENABLE_LLM_FALLBACK", True):
                     logger.warning(f"[LLM:{provider_setting.upper()}:FAILED] {e}. Falling back to FallbackAIProvider.")
-                    return await self.providers["fallback"].generate(prompt, timeout=timeout, request_id=req_id)
+                    return await self.providers["fallback"].generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
                 raise
 
         # "auto" Mode Deterministic Order: Vertex AI -> Ollama -> Dev Gemini -> Fallback
@@ -540,7 +567,7 @@ class LLMClient:
         v_health = await v_provider.health_check()
         if v_health["configured"] and v_health["authenticated"]:
             try:
-                return await v_provider.generate(prompt, timeout=timeout, request_id=req_id)
+                return await v_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
             except Exception as e:
                 logger.warning(f"[LLM:AUTO:VERTEX_FAILED] Vertex AI failed in auto mode: {e}")
 
@@ -549,7 +576,7 @@ class LLMClient:
         o_health = await o_provider.health_check()
         if o_health["reachable"]:
             try:
-                return await o_provider.generate(prompt, timeout=timeout, request_id=req_id)
+                return await o_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
             except Exception as e:
                 logger.warning(f"[LLM:AUTO:OLLAMA_FAILED] Ollama failed in auto mode: {e}")
 
@@ -558,14 +585,14 @@ class LLMClient:
         g_health = await g_provider.health_check()
         if g_health["configured"]:
             try:
-                return await g_provider.generate(prompt, timeout=timeout, request_id=req_id)
+                return await g_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
             except Exception as e:
                 logger.warning(f"[LLM:AUTO:DEV_GEMINI_FAILED] Dev Gemini failed in auto mode: {e}")
 
         # 4. Fallback Provider if enabled
         if getattr(settings, "ENABLE_LLM_FALLBACK", True):
             f_provider = self.providers["fallback"]
-            return await f_provider.generate(prompt, timeout=timeout, request_id=req_id)
+            return await f_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
 
         err = RuntimeError(
             "AI analysis is currently unavailable. Please verify the LLM provider configuration "
@@ -575,15 +602,15 @@ class LLMClient:
         raise err
 
 
-    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None) -> str:
-        res = await self.generate_with_metadata(prompt, timeout=timeout, request_id=request_id)
+    async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None, system_instruction: str | None = None, thinking_level: str = "LOW") -> str:
+        res = await self.generate_with_metadata(prompt, timeout=timeout, request_id=request_id, system_instruction=system_instruction, thinking_level=thinking_level)
         return res["content"]
 
 llm_client_instance = LLMClient()
 
-async def generate_with_metadata(prompt: str, timeout: float = 30.0, request_id: str | None = None) -> dict:
-    return await llm_client_instance.generate_with_metadata(prompt, timeout=timeout, request_id=request_id)
+async def generate_with_metadata(prompt: str, timeout: float = 30.0, request_id: str | None = None, system_instruction: str | None = None, thinking_level: str = "LOW") -> dict:
+    return await llm_client_instance.generate_with_metadata(prompt, timeout=timeout, request_id=request_id, system_instruction=system_instruction, thinking_level=thinking_level)
 
-async def generate(prompt: str, timeout: float = 30.0, request_id: str | None = None) -> str:
-    return await llm_client_instance.generate(prompt, timeout=timeout, request_id=request_id)
+async def generate(prompt: str, timeout: float = 30.0, request_id: str | None = None, system_instruction: str | None = None, thinking_level: str = "LOW") -> str:
+    return await llm_client_instance.generate(prompt, timeout=timeout, request_id=request_id, system_instruction=system_instruction, thinking_level=thinking_level)
 

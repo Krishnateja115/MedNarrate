@@ -9,7 +9,6 @@ import '../../features/auth/screens/app_lock_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 import '../../features/reports/screens/upload_screen.dart';
 import '../../features/reports/screens/report_details_screen.dart';
-import '../../features/reports/screens/report_analysis_screen.dart';
 import '../../features/reports/screens/report_timeline_screen.dart';
 import '../../features/ai_chat/screens/ai_chat_screen.dart';
 import '../../features/insights/screens/insights_screen.dart';
@@ -37,14 +36,14 @@ class AppRouter {
       final isUnlocked = BiometricService.instance.isUnlocked;
 
       if (isBioEnabled && !isUnlocked) {
-        final loc = state.matchedLocation;
-        if (loc != '/app-lock' &&
+        final loc = state.uri.toString();
+        if (!loc.startsWith('/app-lock') &&
             loc != Routes.login &&
             loc != Routes.signup &&
             loc != Routes.forgotPassword &&
             loc != Routes.splash &&
             loc != Routes.onboarding) {
-          return '/app-lock';
+          return '/app-lock?redirect=${Uri.encodeComponent(loc)}';
         }
       }
       return null;
@@ -72,7 +71,10 @@ class AppRouter {
       ),
       GoRoute(
         path: '/app-lock',
-        builder: (context, state) => const AppLockScreen(),
+        builder: (context, state) {
+          final redirect = state.uri.queryParameters['redirect'];
+          return AppLockScreen(redirectUrl: redirect);
+        },
       ),
       GoRoute(
         path: Routes.dashboard,
@@ -141,14 +143,7 @@ class AppRouter {
           return ReportDetailsScreen(reportId: reportId);
         },
       ),
-      GoRoute(
-        path: Routes.reportAnalysis,
-        redirect: (context, state) => state.extra == null ? Routes.reports : null,
-        builder: (context, state) {
-          final reportId = state.extra as String;
-          return ReportAnalysisScreen(reportId: reportId);
-        },
-      ),
+
       GoRoute(
         path: Routes.reportTimeline,
         redirect: (context, state) => state.extra == null ? Routes.reports : null,

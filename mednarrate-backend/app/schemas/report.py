@@ -91,6 +91,8 @@ class ReportAnalysisOut(BaseModel):
     verification_status: Optional[str] = "unverified"
     error_reason: Optional[str] = None
     model_versions: Dict[str, Any]
+    llm_provider: Optional[str] = None
+    llm_model: Optional[str] = None
     processed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime

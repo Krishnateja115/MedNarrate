@@ -9,7 +9,8 @@ import 'dart:async';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
 class AppLockScreen extends StatefulWidget {
-  const AppLockScreen({super.key});
+  final String? redirectUrl;
+  const AppLockScreen({super.key, this.redirectUrl});
 
   @override
   State<AppLockScreen> createState() => _AppLockScreenState();
@@ -50,7 +51,9 @@ class _AppLockScreenState extends State<AppLockScreen> {
     if (!mounted) return;
 
     if (result == BiometricResult.success) {
-      if (context.canPop()) {
+      if (widget.redirectUrl != null && widget.redirectUrl!.isNotEmpty) {
+        context.go(widget.redirectUrl!);
+      } else if (context.canPop()) {
         context.pop();
       } else {
         context.go(Routes.dashboard);

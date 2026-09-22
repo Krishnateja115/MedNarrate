@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+
+import '../../../core/utils/markdown_formatter.dart';
 import '../../../models/comparison_models.dart';
 import '../../../shared/widgets/glassmorphism_card.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
@@ -107,11 +109,9 @@ class ParameterCard extends StatelessWidget {
                       const Icon(Icons.auto_awesome, color: Color(0xFFE8183C), size: 20),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
+                        child: MarkdownFormatter.formatText(
+                          context,
                           comparison.aiSummary!,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.85),
-                          ),
                         ),
                       ),
                     ],
