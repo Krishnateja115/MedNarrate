@@ -1,7 +1,9 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_strings.dart';
-
 class BootScreen extends StatelessWidget {
   final String status;
   const BootScreen({super.key, required this.status});
@@ -75,6 +77,235 @@ class BootErrorScreen extends StatelessWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class BootSetupScreen extends StatefulWidget {
+  final String backendPath;
+  final VoidCallback onComplete;
+
+  const BootSetupScreen({
+    super.key,
+    required this.backendPath,
+    required this.onComplete,
+  });
+
+  @override
+  State<BootSetupScreen> createState() => _BootSetupScreenState();
+}
+
+class _BootSetupScreenState extends State<BootSetupScreen> {
+  final List<String> _logs = [];
+  bool _isSettingUp = false;
+  bool _setupFailed = false;
+  bool _needsApiKey = false;
+  final TextEditingController _apiKeyController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkApiKey();
+  }
+
+  Future<void> _checkApiKey() async {
+    final envFile = File('${widget.backendPath}/.env');
+    if (await envFile.exists()) {
+      final content = await envFile.readAsString();
+      if (!content.contains('GEMINI_API_KEY=') || 
+          content.contains('GEMINI_API_KEY=""') || 
+          content.contains("GEMINI_API_KEY=''")) {
+        setState(() => _needsApiKey = true);
+      }
+    } else {
+      setState(() => _needsApiKey = true);
+    }
+  }
+
+  void _onOutput(String line) {
+    File('/tmp/mednarrate_setup.log').writeAsStringSync('$line\n', mode: FileMode.append);
+    if (mounted) {
+      setState(() {
+        _logs.add(line);
+      });
+      Future.delayed(const Duration(milliseconds: 50), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  Future<bool> _runFirstTimeBackendSetup(String backendPath) async {
+    final pythonCheck = await Process.run('which', ['python3']);
+    if (pythonCheck.exitCode != 0) {
+      _onOutput('ERROR: python3 not found on this system. Please install Python 3.11+ from python.org and try again.');
+      return false;
+    }
+
+    final venvPath = '$backendPath/venv';
+    final venvDir = Directory(venvPath);
+    if (!await venvDir.exists()) {
+      _onOutput('Creating virtual environment...');
+      final venvResult = await Process.run('python3', ['-m', 'venv', 'venv'], workingDirectory: backendPath);
+      if (venvResult.exitCode != 0) {
+        _onOutput('ERROR creating venv: ${venvResult.stderr}');
+        return false;
+      }
+    } else {
+      _onOutput('Virtual environment already exists, resuming setup...');
+    }
+
+    _onOutput('Installing dependencies (this may take several minutes)...');
+    final pipProcess = await Process.start(
+      '$venvPath/bin/pip',
+      ['install', '-r', 'requirements.txt'],
+      workingDirectory: backendPath,
+    );
+    
+    pipProcess.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen(_onOutput);
+    pipProcess.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen(_onOutput);
+    
+    final exitCode = await pipProcess.exitCode;
+    if (exitCode != 0) {
+      _onOutput('ERROR: dependency installation failed with exit code $exitCode.');
+      return false;
+    }
+
+    _onOutput('Setup complete!');
+    return true;
+  }
+
+  Future<void> _startSetup() async {
+    setState(() {
+      _isSettingUp = true;
+      _setupFailed = false;
+      _logs.clear();
+    });
+
+    if (_needsApiKey && _apiKeyController.text.isNotEmpty) {
+      final envFile = File('${widget.backendPath}/.env');
+      final exampleEnv = File('${widget.backendPath}/.env.example');
+      String envContent = '';
+      if (await exampleEnv.exists()) {
+        envContent = await exampleEnv.readAsString();
+      }
+      
+      if (envContent.contains('GEMINI_API_KEY=')) {
+        envContent = envContent.replaceFirst(RegExp(r'GEMINI_API_KEY=.*'), 'GEMINI_API_KEY="${_apiKeyController.text.trim()}"');
+      } else {
+        envContent += '\nGEMINI_API_KEY="${_apiKeyController.text.trim()}"\n';
+      }
+      await envFile.writeAsString(envContent);
+    }
+
+    try {
+      final success = await _runFirstTimeBackendSetup(widget.backendPath);
+      if (success && mounted) {
+        widget.onComplete();
+      } else {
+        if (mounted) setState(() => _setupFailed = true);
+      }
+    } catch (e) {
+      _onOutput('Exception: $e');
+      if (mounted) setState(() => _setupFailed = true);
+    }
+  }
+
+  Future<void> _onChangeBackend() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('macos_backend_path');
+    widget.onComplete(); // Triggers boot sequence retry which prompts for path
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('First-Time Setup'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'MedNarrate needs to set up its local AI backend the first time it runs on this computer. This installs some required components and may take several minutes. You only need to do this once.',
+              style: TextStyle(fontSize: 16, color: Colors.black87),
+            ),
+            const SizedBox(height: 24),
+            if (_needsApiKey && !_isSettingUp && !_setupFailed) ...[
+              const Text('Gemini API Key (Optional but recommended)', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _apiKeyController,
+                decoration: InputDecoration(
+                  hintText: 'Paste API key from aistudio.google.com/apikey',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 24),
+            ],
+            if (!_isSettingUp && !_setupFailed)
+              ElevatedButton(
+                onPressed: _startSetup,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: AppColors.primary,
+                ),
+                child: const Text('Set Up Now', style: TextStyle(fontSize: 16)),
+              ),
+            if (_setupFailed) ...[
+              ElevatedButton.icon(
+                onPressed: _startSetup,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry Setup'),
+                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _onChangeBackend,
+                icon: const Icon(Icons.folder_open),
+                label: const Text('Change Backend Folder'),
+              ),
+            ],
+            if (_isSettingUp || _setupFailed) ...[
+              const SizedBox(height: 24),
+              const Text('Setup Progress:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount: _logs.length,
+                    itemBuilder: (context, index) {
+                      return Text(
+                        _logs[index],
+                        style: const TextStyle(color: Colors.greenAccent, fontFamily: 'monospace', fontSize: 12),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

@@ -106,10 +106,19 @@ Future<void> _ensureBackendRunningOnMacOS() async {
 
   if (await venvPython.exists()) {
     pythonExe = venvPython.path;
+    // Check if uvicorn is installed to verify venv is complete
+    final uvicornCheck = await Process.run(pythonExe, ['-c', 'import uvicorn']);
+    if (uvicornCheck.exitCode != 0) {
+      throw NeedsSetupException(backendPath);
+    }
   } else if (await dotVenvPython.exists()) {
     pythonExe = dotVenvPython.path;
+    final uvicornCheck = await Process.run(pythonExe, ['-c', 'import uvicorn']);
+    if (uvicornCheck.exitCode != 0) {
+      throw NeedsSetupException(backendPath);
+    }
   } else {
-    throw Exception("Missing virtual environment. Neither 'venv' nor '.venv' found in backend directory ($backendPath). Please create one and install requirements.");
+    throw NeedsSetupException(backendPath);
   }
 
   await Process.start(
@@ -178,6 +187,17 @@ Future<void> _runBootSequence() async {
     localeModeNotifier.value = Locale(savedLanguage);
 
     runApp(const MedNarrateApp());
+  } on NeedsSetupException catch (e) {
+    runApp(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: BootSetupScreen(
+        backendPath: e.backendPath,
+        onComplete: () {
+          runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: BootScreen(status: 'Starting local server...')));
+          _runBootSequence();
+        },
+      ),
+    ));
   } catch (e) {
     File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: ${e.toString()}\n', mode: FileMode.append);
     runApp(MaterialApp(
@@ -237,4 +257,9 @@ class MedNarrateApp extends StatelessWidget {
       },
     );
   }
+}
+
+class NeedsSetupException implements Exception {
+  final String backendPath;
+  NeedsSetupException(this.backendPath);
 }

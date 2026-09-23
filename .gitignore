@@ -97,3 +97,4 @@ key.properties
 mednarrate-backend/data/kb_index/
 data/
 __pycache__/
+.env.bak
