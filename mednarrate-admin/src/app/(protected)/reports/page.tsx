@@ -86,7 +86,7 @@ export default function ReportsPage() {
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <Select value={typeFilter} onValueChange={(val) => setTypeFilter(val || 'all')}>
                 <SelectTrigger className="w-full sm:w-[130px]">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
@@ -99,7 +99,7 @@ export default function ReportsPage() {
                 </SelectContent>
               </Select>
               
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || 'all')}>
                 <SelectTrigger className="w-full sm:w-[130px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>

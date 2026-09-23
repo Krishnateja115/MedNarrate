@@ -44,9 +44,11 @@ setup_exception_handlers(app)
 from app.core.middleware import CorrelationIdMiddleware
 app.add_middleware(CorrelationIdMiddleware)
 
+is_wildcard = "*" in settings.CORS_ORIGINS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=not is_wildcard,
     allow_methods=["*"],
     allow_headers=["*"],
 )

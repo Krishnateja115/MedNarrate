@@ -130,7 +130,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                   <Shield className="mr-2 h-4 w-4" /> Manage Security
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="right" className="w-56">
                 <DropdownMenuLabel>Account Actions</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleAction('reset_password', 'Generate a one-time password reset link?')}>

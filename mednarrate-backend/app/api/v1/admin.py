@@ -97,6 +97,11 @@ from app.api.v1.admin_chat_ops import router as chat_ops_router
 from app.api.v1.admin_rag_ops import router as rag_ops_router
 from app.api.v1.admin_automation_ops import router as automation_ops_router
 
+# Release Governance & Operations Routers
+from app.api.v1.admin_analytics import router as analytics_router
+from app.api.v1.admin_search import router as search_router
+from app.api.v1.admin_alerts import router as alerts_router
+
 # Privileged Governance Layer Routers
 from app.api.v1.admin_security import router as security_router
 from app.api.v1.admin_admins import router as admins_router
@@ -110,6 +115,9 @@ from app.api.v1.admin_settings import router as settings_router
 from app.api.v1.admin_announcements import router as announcements_router
 
 router.include_router(dashboard_router, prefix="/dashboard", tags=["Admin Dashboard"])
+router.include_router(analytics_router, prefix="/analytics", tags=["Admin Analytics"])
+router.include_router(search_router, prefix="/search", tags=["Admin Search"])
+router.include_router(alerts_router, prefix="/alerts", tags=["Admin Alerts"])
 router.include_router(health_router, prefix="/system", tags=["Admin System"])
 router.include_router(jobs_router, prefix="/jobs", tags=["Admin Jobs"])
 router.include_router(diagnostics_router, prefix="/diagnostics", tags=["Admin Diagnostics"])
@@ -134,4 +142,5 @@ router.include_router(feature_flags_router, prefix="", tags=["Admin Feature Flag
 router.include_router(ai_config_router, prefix="", tags=["Admin AI Configuration"])
 router.include_router(settings_router, prefix="", tags=["Admin Settings & Maintenance"])
 router.include_router(announcements_router, prefix="", tags=["Admin Announcements"])
+
 

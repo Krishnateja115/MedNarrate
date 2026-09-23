@@ -93,3 +93,6 @@ export async function fetchApi<T = any>(endpoint: string, options: FetchOptions 
 
   return response.json();
 }
+
+export const apiFetch = fetchApi;
+

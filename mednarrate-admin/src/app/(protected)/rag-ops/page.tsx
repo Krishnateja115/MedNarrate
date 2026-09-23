@@ -170,7 +170,7 @@ export default function RagOpsPage() {
                         <TableCell className="text-right">
                           <Select 
                             value={doc.status} 
-                            onValueChange={(val) => updateStatusMutation.mutate({ id: doc.id, status: val })}
+                            onValueChange={(val) => { if (val) updateStatusMutation.mutate({ id: doc.id, status: val }); }}
                             disabled={updatingId === doc.id}
                           >
                             <SelectTrigger className="w-[130px] ml-auto h-8 text-xs">
