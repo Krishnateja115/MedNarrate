@@ -56,6 +56,47 @@ async def get_incidents(
         }
     }
 
+@router.get("/{incident_id}")
+async def get_incident(
+    incident_id: uuid.UUID,
+    admin_ctx: AdminContext = Depends(require_permission("incidents.view")),
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(Incident).where(Incident.id == incident_id)
+    incident = (await db.execute(stmt)).scalars().first()
+    
+    if not incident:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
+        
+    events_stmt = select(IncidentEvent).where(IncidentEvent.incident_id == incident_id).order_by(IncidentEvent.timestamp)
+    events = (await db.execute(events_stmt)).scalars().all()
+    
+    return {
+        "status": "ok",
+        "incident": {
+            "id": incident.id,
+            "title": incident.title,
+            "severity": incident.severity,
+            "status": incident.status,
+            "affected_service": incident.affected_service,
+            "started_at": incident.started_at.isoformat(),
+            "resolved_at": incident.resolved_at.isoformat() if incident.resolved_at else None,
+            "created_by_id": incident.created_by_id,
+            "assigned_to_id": incident.assigned_to_id,
+            "summary": incident.summary,
+            "resolution": incident.resolution
+        },
+        "events": [
+            {
+                "id": e.id,
+                "event_type": e.event_type,
+                "message": e.message,
+                "actor_id": e.actor_id,
+                "timestamp": e.timestamp.isoformat()
+            } for e in events
+        ]
+    }
+
 @router.post("")
 async def create_incident(
     payload: IncidentCreate,

@@ -49,7 +49,7 @@ def upgrade() -> None:
     sa.Column('medication_name', sa.String(), nullable=False),
     sa.Column('dosage', sa.String(), nullable=True),
     sa.Column('frequency', sa.String(), nullable=True),
-    sa.Column('times_of_day', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('times_of_day', sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), 'postgresql'), nullable=False),
     sa.Column('duration_days', sa.Integer(), nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
@@ -58,7 +58,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.drop_table('analysis_translations')
+    # op.drop_table('analysis_translations')
     # ### end Alembic commands ###
 
 
@@ -69,7 +69,7 @@ def downgrade() -> None:
     sa.Column('report_analysis_id', sa.UUID(), autoincrement=False, nullable=False),
     sa.Column('language', sa.VARCHAR(), autoincrement=False, nullable=False),
     sa.Column('patient_summary', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('findings_json', postgresql.JSONB(astext_type=sa.Text()), autoincrement=False, nullable=False),
+    sa.Column('findings_json', sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), 'postgresql'), autoincrement=False, nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=False),
     sa.ForeignKeyConstraint(['report_analysis_id'], ['report_analyses.id'], name=op.f('analysis_translations_report_analysis_id_fkey'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('analysis_translations_pkey')),

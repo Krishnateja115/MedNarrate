@@ -10,6 +10,7 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 import pgvector
+import pgvector.sqlalchemy
 
 revision: str = '003_part3_models'
 down_revision: Union[str, None] = '002_add_report_analysis_columns'
@@ -24,7 +25,7 @@ def upgrade() -> None:
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('content_hash', sa.String(), nullable=False),
     sa.Column('embedding', pgvector.sqlalchemy.Vector(dim=768), nullable=False),
-    sa.Column('metadata_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('metadata_json', sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), 'postgresql'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
@@ -36,7 +37,7 @@ def upgrade() -> None:
     sa.Column('report_analysis_id', sa.UUID(as_uuid=True), nullable=False),
     sa.Column('language', sa.String(), nullable=False),
     sa.Column('patient_summary', sa.Text(), nullable=False),
-    sa.Column('findings_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('findings_json', sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), 'postgresql'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['report_analysis_id'], ['report_analyses.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),

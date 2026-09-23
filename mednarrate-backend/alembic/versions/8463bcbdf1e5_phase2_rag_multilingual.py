@@ -54,7 +54,7 @@ def downgrade() -> None:
     sa.Column('report_analysis_id', sa.UUID(), autoincrement=False, nullable=False),
     sa.Column('language', sa.VARCHAR(), autoincrement=False, nullable=False),
     sa.Column('patient_summary', sa.TEXT(), autoincrement=False, nullable=False),
-    sa.Column('findings_json', postgresql.JSONB(astext_type=sa.Text()), autoincrement=False, nullable=False),
+    sa.Column('findings_json', sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), 'postgresql'), autoincrement=False, nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=False),
     sa.ForeignKeyConstraint(['report_analysis_id'], ['report_analyses.id'], name=op.f('analysis_translations_report_analysis_id_fkey'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('analysis_translations_pkey')),
@@ -66,7 +66,7 @@ def downgrade() -> None:
     sa.Column('content', sa.TEXT(), autoincrement=False, nullable=False),
     sa.Column('content_hash', sa.VARCHAR(), autoincrement=False, nullable=False),
     sa.Column('embedding', pgvector.sqlalchemy.vector.VECTOR(dim=768), autoincrement=False, nullable=True),
-    sa.Column('metadata_json', postgresql.JSONB(astext_type=sa.Text()), autoincrement=False, nullable=False),
+    sa.Column('metadata_json', sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), 'postgresql'), autoincrement=False, nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), autoincrement=False, nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('knowledge_chunks_pkey'))
     )

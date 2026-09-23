@@ -8,6 +8,8 @@ from app.core.admin_auth import AdminContext, require_permission
 from app.models.user import User
 from app.models.report import Report, ProcessingStatus
 from app.models.incidents import Incident, IncidentStatus
+from app.models.job_execution import JobExecution, JobStatus
+from sqlalchemy import desc
 
 router = APIRouter()
 
@@ -49,6 +51,11 @@ async def get_dashboard_summary(
     )
     critical_incidents = (await db.execute(critical_incidents_stmt)).scalar() or 0
 
+    open_incidents_stmt = select(func.count(Incident.id)).where(
+        Incident.status.in_([IncidentStatus.open, IncidentStatus.investigating, IncidentStatus.identified])
+    )
+    open_incidents = (await db.execute(open_incidents_stmt)).scalar() or 0
+
     return {
         "status": "ok",
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -69,6 +76,58 @@ async def get_dashboard_summary(
             "open_support_tickets": None  # Not currently instrumented
         },
         "incidents": {
-            "critical_incidents": critical_incidents
+            "critical_incidents": critical_incidents,
+            "open_incidents": open_incidents
         }
+    }
+
+@router.get("/alerts")
+async def get_dashboard_alerts(
+    admin_ctx: AdminContext = Depends(require_permission("dashboard.view")),
+    db: AsyncSession = Depends(get_db)
+):
+    """Aggregate recent critical errors, failed jobs, and incidents into an operational feed."""
+    
+    feed = []
+    
+    # 1. Fetch recently failed jobs
+    yesterday = datetime.now(timezone.utc) - timedelta(hours=24)
+    failed_jobs_stmt = select(JobExecution).where(
+        JobExecution.status == JobStatus.failed,
+        JobExecution.started_at >= yesterday
+    ).order_by(desc(JobExecution.started_at)).limit(10)
+    failed_jobs = (await db.execute(failed_jobs_stmt)).scalars().all()
+    
+    for job in failed_jobs:
+        feed.append({
+            "id": f"job-{job.id}",
+            "type": "job_failure",
+            "title": f"Job Failed: {job.job_name}",
+            "description": job.error_message or "Unknown error",
+            "severity": "medium",
+            "timestamp": job.started_at.isoformat()
+        })
+        
+    # 2. Fetch open incidents
+    incidents_stmt = select(Incident).where(
+        Incident.status.in_([IncidentStatus.open, IncidentStatus.investigating, IncidentStatus.identified])
+    ).order_by(desc(Incident.created_at)).limit(10)
+    incidents = (await db.execute(incidents_stmt)).scalars().all()
+    
+    for inc in incidents:
+        feed.append({
+            "id": f"inc-{inc.id}",
+            "type": "incident",
+            "title": inc.title,
+            "description": f"Severity: {inc.severity} - Status: {inc.status.value}",
+            "severity": "high" if inc.severity in ["SEV-1", "SEV-2"] else "medium",
+            "timestamp": inc.created_at.isoformat()
+        })
+        
+    # Sort combined feed by timestamp descending
+    feed.sort(key=lambda x: x["timestamp"], reverse=True)
+    
+    return {
+        "status": "ok",
+        "alerts": feed[:20]
     }

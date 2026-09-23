@@ -7,45 +7,81 @@ from app.services.fcm_service import send_push_notification
 from sqlalchemy import select
 from datetime import datetime, timezone
 import logging
-
+import uuid
+import time
+from app.models.job_execution import JobExecution, JobStatus
 logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler()
 
 async def check_medication_reminders():
     logger.info("Checking medication reminders...")
-    async with AsyncSessionLocal() as session:
-        # Fetch due schedules (simplified for mock purposes)
-        # In a real app we would check active=True and time matching
-        stmt = select(MedicationSchedule).where(MedicationSchedule.is_active == True)
-        result = await session.execute(stmt)
-        schedules = result.scalars().all()
-        
-        now = datetime.now(timezone.utc)
-        current_hour = now.hour
-        current_minute = now.minute
+    start_time = time.time()
+    now = datetime.now(timezone.utc)
+    try:
+        async with AsyncSessionLocal() as session:
 
-        for schedule in schedules:
-            for reminder_time in (schedule.times_of_day or []):
-                try:
-                    # Parse times like "08:00 AM" or "14:30"
-                    from dateutil.parser import parse
-                    dt = parse(reminder_time)
-                    h, m = dt.hour, dt.minute
-                    
-                    if h == current_hour and m == current_minute:
-                        # Find push tokens for this user
-                        token_stmt = select(PushToken).where(PushToken.user_id == schedule.user_id)
-                        token_res = await session.execute(token_stmt)
-                        tokens = token_res.scalars().all()
-                        for t in tokens:
-                            await send_push_notification(
-                                t.token,
-                                "Medication Reminder",
-                                f"It's time to take {schedule.medication_name} ({schedule.dosage})",
-                                {"type": "medication_reminder", "schedule_id": str(schedule.id)}
-                            )
-                except Exception as e:
-                    logger.error(f"Invalid reminder time format for schedule {schedule.id}: {reminder_time} - {e}")
+            # Fetch due schedules (simplified for mock purposes)
+            # In a real app we would check active=True and time matching
+            stmt = select(MedicationSchedule).where(MedicationSchedule.is_active == True)
+            result = await session.execute(stmt)
+            schedules = result.scalars().all()
+            
+            now = datetime.now(timezone.utc)
+            current_hour = now.hour
+            current_minute = now.minute
+    
+            for schedule in schedules:
+                for reminder_time in (schedule.times_of_day or []):
+                    try:
+                        # Parse times like "08:00 AM" or "14:30"
+                        from dateutil.parser import parse
+                        dt = parse(reminder_time)
+                        h, m = dt.hour, dt.minute
+                        
+                        if h == current_hour and m == current_minute:
+                            # Find push tokens for this user
+                            token_stmt = select(PushToken).where(PushToken.user_id == schedule.user_id)
+                            token_res = await session.execute(token_stmt)
+                            tokens = token_res.scalars().all()
+                            for t in tokens:
+                                await send_push_notification(
+                                    t.token,
+                                    "Medication Reminder",
+                                    f"It's time to take {schedule.medication_name} ({schedule.dosage})",
+                                    {"type": "medication_reminder", "schedule_id": str(schedule.id)}
+                                )
+                    except Exception as e:
+                        logger.error(f"Invalid reminder time format for schedule {schedule.id}: {reminder_time} - {e}")
+            
+            # Log successful execution
+            duration = time.time() - start_time
+            exec_record = JobExecution(
+                id=str(uuid.uuid4()),
+                job_name="check_medication_reminders",
+                status=JobStatus.completed,
+                started_at=now,
+                finished_at=datetime.now(timezone.utc),
+                duration_seconds=duration,
+            )
+            session.add(exec_record)
+            await session.commit()
+    except Exception as e:
+        duration = time.time() - start_time
+        async with AsyncSessionLocal() as session:
+            exec_record = JobExecution(
+                id=str(uuid.uuid4()),
+                job_name="check_medication_reminders",
+                status=JobStatus.failed,
+                started_at=now,
+                finished_at=datetime.now(timezone.utc),
+                duration_seconds=duration,
+                error_message=str(e)
+            )
+            session.add(exec_record)
+            await session.commit()
+        logger.error(f"Job failed: {e}")
+
+
 
 def start_scheduler():
     scheduler.add_job(check_medication_reminders, 'cron', minute='*', id="medication_reminders")

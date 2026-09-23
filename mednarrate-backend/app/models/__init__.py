@@ -17,3 +17,4 @@ from app.models.caregiver_profile import CaregiverProfile
 from app.models.admin import AdminRole, AdminPermission, AdminRolePermission, AdminRoleAssignment, AdminAuditLog, SensitiveAccessGrant
 from app.models.incidents import Incident, IncidentEvent
 from app.models.llm_telemetry import LLMDiagnosticEvent
+from app.models.job_execution import JobExecution
