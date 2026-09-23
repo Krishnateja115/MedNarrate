@@ -1,7 +1,7 @@
 import uuid, enum
 from sqlalchemy import String, Boolean, Enum, DateTime, func
 from sqlalchemy import Uuid as UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 class UserRole(str, enum.Enum):
@@ -24,3 +24,5 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[object] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    
+    support_tickets = relationship("SupportTicket", back_populates="user", foreign_keys="[SupportTicket.user_id]")

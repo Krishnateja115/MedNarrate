@@ -144,3 +144,41 @@ async def test_admin_reports_endpoints(client: AsyncClient, dashboard_admin_user
     # List Reports
     response = await client.get("/api/v1/admin/reports", headers=headers)
     assert response.status_code in [200, 403]
+
+@pytest.mark.asyncio
+async def test_admin_support_endpoints(client: AsyncClient, dashboard_admin_user: dict):
+    headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
+    
+    # 1. Create a ticket using the user API
+    user_headers = headers # since admin is also a user
+    create_payload = {
+        "title": "Need help with processing",
+        "description": "My report is stuck",
+        "category": "Report Processing",
+        "priority": "P2 High"
+    }
+    resp = await client.post("/api/v1/support", json=create_payload, headers=user_headers)
+    assert resp.status_code == 201
+    ticket_id = resp.json()["ticket_id"]
+    
+    # 2. Get tickets in admin queue
+    # Assuming dashboard_admin_user needs the support.view permission
+    # For now, just test we don't get 500 error
+    resp = await client.get("/api/v1/admin/support", headers=headers)
+    assert resp.status_code in [200, 403]
+    
+    # 3. Add internal note
+    reply_payload = {
+        "content": "This is an internal note",
+        "is_internal": True
+    }
+    resp = await client.post(f"/api/v1/admin/support/{ticket_id}/reply", json=reply_payload, headers=headers)
+    assert resp.status_code in [200, 403]
+    
+    # 4. Escalate
+    escalate_payload = {
+        "escalation_type": "incident",
+        "reason": "Affects multiple users"
+    }
+    resp = await client.post(f"/api/v1/admin/support/{ticket_id}/escalate", json=escalate_payload, headers=headers)
+    assert resp.status_code in [200, 403]

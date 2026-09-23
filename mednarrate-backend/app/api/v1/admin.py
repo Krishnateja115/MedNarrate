@@ -90,6 +90,8 @@ from app.api.v1.admin_diagnostics import router as diagnostics_router
 from app.api.v1.admin_incidents import router as incidents_router
 from app.api.v1.admin_users import router as users_router
 from app.api.v1.admin_reports import router as reports_router
+from app.api.v1.admin_support import router as support_router
+from app.api.v1.admin_help_center import router as help_center_router
 
 router.include_router(dashboard_router, prefix="/dashboard", tags=["Admin Dashboard"])
 router.include_router(health_router, prefix="/system", tags=["Admin System"])
@@ -98,3 +100,5 @@ router.include_router(diagnostics_router, prefix="/diagnostics", tags=["Admin Di
 router.include_router(incidents_router, prefix="/incidents", tags=["Admin Incidents"])
 router.include_router(users_router, prefix="/users", tags=["Admin Users"])
 router.include_router(reports_router, prefix="/reports", tags=["Admin Reports"])
+router.include_router(support_router, prefix="/support", tags=["Admin Support"])
+router.include_router(help_center_router, prefix="/help-center", tags=["Admin Help Center"])

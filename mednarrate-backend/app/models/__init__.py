@@ -18,3 +18,5 @@ from app.models.admin import AdminRole, AdminPermission, AdminRolePermission, Ad
 from app.models.incidents import Incident, IncidentEvent
 from app.models.llm_telemetry import LLMDiagnosticEvent
 from app.models.job_execution import JobExecution
+from app.models.support import SupportTicket, SupportTicketMessage, SupportTicketEvent
+from app.models.help_center import HelpArticle
