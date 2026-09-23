@@ -20,3 +20,5 @@ from app.models.llm_telemetry import LLMDiagnosticEvent
 from app.models.job_execution import JobExecution
 from app.models.support import SupportTicket, SupportTicketMessage, SupportTicketEvent
 from app.models.help_center import HelpArticle
+from app.models.knowledge_document import KnowledgeDocument
+from app.models.chat_safety import ChatSafetyEvent

@@ -92,6 +92,10 @@ from app.api.v1.admin_users import router as users_router
 from app.api.v1.admin_reports import router as reports_router
 from app.api.v1.admin_support import router as support_router
 from app.api.v1.admin_help_center import router as help_center_router
+from app.api.v1.admin_ai_ops import router as ai_ops_router
+from app.api.v1.admin_chat_ops import router as chat_ops_router
+from app.api.v1.admin_rag_ops import router as rag_ops_router
+from app.api.v1.admin_automation_ops import router as automation_ops_router
 
 router.include_router(dashboard_router, prefix="/dashboard", tags=["Admin Dashboard"])
 router.include_router(health_router, prefix="/system", tags=["Admin System"])
@@ -102,3 +106,7 @@ router.include_router(users_router, prefix="/users", tags=["Admin Users"])
 router.include_router(reports_router, prefix="/reports", tags=["Admin Reports"])
 router.include_router(support_router, prefix="/support", tags=["Admin Support"])
 router.include_router(help_center_router, prefix="/help-center", tags=["Admin Help Center"])
+router.include_router(ai_ops_router, prefix="/ai-ops", tags=["Admin AI Ops"])
+router.include_router(chat_ops_router, prefix="/chat-ops", tags=["Admin Chat Ops"])
+router.include_router(rag_ops_router, prefix="/rag-ops", tags=["Admin RAG Ops"])
+router.include_router(automation_ops_router, prefix="/automation-ops", tags=["Admin Automation Ops"])
