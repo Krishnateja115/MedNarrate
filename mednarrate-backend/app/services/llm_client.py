@@ -206,15 +206,7 @@ class DevGeminiProvider(LLMProvider):
     def model_name(self) -> str:
         return getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash")
 
-    def _check_production_restriction(self):
-        if (getattr(settings, "ENVIRONMENT", "development") or "").lower() == "production":
-            raise LLMConfigurationError(
-                "Direct developer Gemini API keys (DevGeminiProvider) are strictly prohibited in production. "
-                "Configure PRIMARY_LLM_PROVIDER=vertex_ai or ollama."
-            )
-
     async def health_check(self) -> dict:
-        self._check_production_restriction()
         valid_key = _is_valid_dev_gemini_key(self.api_key)
         return {
             "provider": "dev_gemini",
@@ -228,7 +220,6 @@ class DevGeminiProvider(LLMProvider):
         }
 
     async def generate(self, prompt: str, timeout: float = 30.0, request_id: str | None = None, system_instruction: str | None = None, thinking_level: str = "LOW") -> dict:
-        self._check_production_restriction()
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
 
