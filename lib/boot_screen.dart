@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/config/app_config.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_strings.dart';
 class BootScreen extends StatelessWidget {
@@ -227,6 +228,13 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!AppConfig.isLocalDevMode) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: Text("ERROR: Setup screen is not available in production mode.", style: TextStyle(color: Colors.red))),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(

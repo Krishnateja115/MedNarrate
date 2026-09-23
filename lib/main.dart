@@ -86,7 +86,7 @@ Future<void> _saveBackendPath(String path) async {
 }
 
 Future<void> _ensureBackendRunningOnMacOS() async {
-  if (!Platform.isMacOS) return;
+  if (!Platform.isMacOS || !AppConfig.isLocalDevMode) return;
   if (await _isBackendHealthy()) return;
 
   String? backendPath = await _resolveBackendPath();
@@ -141,7 +141,7 @@ Future<void> _ensureBackendRunningOnMacOS() async {
 }
 
 Future<void> _ensureBackendRunningOnWindows() async {
-  if (!Platform.isWindows) return;
+  if (!Platform.isWindows || !AppConfig.isLocalDevMode) return;
   if (await _isBackendHealthy()) return;
 
   final exeDir = File(Platform.resolvedExecutable).parent.path;

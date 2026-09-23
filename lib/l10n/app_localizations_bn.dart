@@ -48,8 +48,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get createAccount => 'অ্যাকাউন্ট তৈরি করুন';
 
   @override
-  String get personalizeHealthJourney =>
-      'আসুন আপনার স্বাস্থ্য ভ্রমণকে ব্যক্তিগতকৃত করি।';
+  String get personalizeHealthJourney => 'আসুন আপনার স্বাস্থ্য ভ্রমণকে ব্যক্তিগতকৃত করি।';
 
   @override
   String get fullName => 'পুরো নাম';
@@ -115,8 +114,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get noReportsFound => 'কোন রিপোর্ট পাওয়া যায়নি';
 
   @override
-  String get uploadFirstReport =>
-      'শুরু করতে আপনার প্রথম মেডিকেল রিপোর্ট আপলোড করুন';
+  String get uploadFirstReport => 'শুরু করতে আপনার প্রথম মেডিকেল রিপোর্ট আপলোড করুন';
 
   @override
   String get uploadReport => 'রিপোর্ট আপলোড করুন';
@@ -173,8 +171,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get deleteReportTitle => 'রিপোর্ট মুছে ফেলবেন?';
 
   @override
-  String get deleteReportConfirm =>
-      'এটি এই রিপোর্ট এবং এর বিশ্লেষণ স্থায়ীভাবে মুছে ফেলবে। এটি বাতিল করা যাবে না।';
+  String get deleteReportConfirm => 'এটি এই রিপোর্ট এবং এর বিশ্লেষণ স্থায়ীভাবে মুছে ফেলবে। এটি বাতিল করা যাবে না।';
 
   @override
   String get cancel => 'বাতিল';
@@ -189,8 +186,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get analyzingYourReport => 'আপনার রিপোর্ট বিশ্লেষণ করা হচ্ছে…';
 
   @override
-  String get aiReadingDocument =>
-      'AI আপনার নথিটি পড়ছে। এতে এক মিনিট সময় লাগতে পারে।';
+  String get aiReadingDocument => 'AI আপনার নথিটি পড়ছে। এতে এক মিনিট সময় লাগতে পারে।';
 
   @override
   String get analysisFailed => 'বিশ্লেষণ ব্যর্থ হয়েছে';
@@ -217,12 +213,10 @@ class AppLocalizationsBn extends AppLocalizations {
   String get abnormalValuesDetected => 'অস্বাভাবিক মান সনাক্ত করা হয়েছে';
 
   @override
-  String get someParametersOutOfRange =>
-      'কিছু প্যারামিটার সাধারণ রেফারেন্স রেঞ্জের বাইরে।';
+  String get someParametersOutOfRange => 'কিছু প্যারামিটার সাধারণ রেফারেন্স রেঞ্জের বাইরে।';
 
   @override
-  String get consultYourDoctor =>
-      'এই ফলাফলগুলি সম্পর্কে আপনার ডাক্তারের সাথে পরামর্শ করুন।';
+  String get consultYourDoctor => 'এই ফলাফলগুলি সম্পর্কে আপনার ডাক্তারের সাথে পরামর্শ করুন।';
 
   @override
   String get keyFindings => 'মূল ফলাফল';
@@ -252,8 +246,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get translateSummary => 'সারসংক্ষেপ অনুবাদ করুন';
 
   @override
-  String get translationFailed =>
-      'অনুবাদ ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।';
+  String get translationFailed => 'অনুবাদ ব্যর্থ হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।';
 
   @override
   String get translatedVersionAvailable => 'অনূদিত সংস্করণ উপলব্ধ আছে';
@@ -274,8 +267,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get noEarlierReport => 'তুলনা করার জন্য পূর্ববর্তী কোন রিপোর্ট নেই।';
 
   @override
-  String get needTwoReports =>
-      'ট্রেন্ড গ্রাফ দেখানোর জন্য অন্তত ২ টি রিপোর্ট প্রয়োজন।';
+  String get needTwoReports => 'ট্রেন্ড গ্রাফ দেখানোর জন্য অন্তত ২ টি রিপোর্ট প্রয়োজন।';
 
   @override
   String get noHistoricalData => 'এই পরীক্ষার জন্য কোন ঐতিহাসিক ডেটা নেই।';
@@ -311,15 +303,13 @@ class AppLocalizationsBn extends AppLocalizations {
   String get deleteReminder => 'রিমাইন্ডার মুছে ফেলুন';
 
   @override
-  String get deleteReminderConfirm =>
-      'আপনি কি সত্যিই এই রিমাইন্ডারটি মুছে ফেলতে চান?';
+  String get deleteReminderConfirm => 'আপনি কি সত্যিই এই রিমাইন্ডারটি মুছে ফেলতে চান?';
 
   @override
   String get medicalProfile => 'মেডিকেল তথ্য';
 
   @override
-  String get keepMedicalHistoryUpdated =>
-      'উন্নত বিশ্লেষণের জন্য আপনার মেডিকেল ইতিহাস আপডেট রাখুন।';
+  String get keepMedicalHistoryUpdated => 'উন্নত বিশ্লেষণের জন্য আপনার মেডিকেল ইতিহাস আপডেট রাখুন।';
 
   @override
   String get bloodGroup => 'রক্তের গ্রুপ';
@@ -340,8 +330,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get emergencyContact => 'জরুরী যোগাযোগ';
 
   @override
-  String get emergencyContactSubtitle =>
-      'আমরা এটি শুধুমাত্র জরুরী সময়ে ব্যবহার করব।';
+  String get emergencyContactSubtitle => 'আমরা এটি শুধুমাত্র জরুরী সময়ে ব্যবহার করব।';
 
   @override
   String get phoneNumber => 'ফোন নম্বর';
@@ -353,12 +342,10 @@ class AppLocalizationsBn extends AppLocalizations {
   String get personalInformation => 'ব্যক্তিগত তথ্য';
 
   @override
-  String get viewEditPersonalDetails =>
-      'আপনার ব্যক্তিগত বিবরণ দেখুন এবং সম্পাদনা করুন';
+  String get viewEditPersonalDetails => 'আপনার ব্যক্তিগত বিবরণ দেখুন এবং সম্পাদনা করুন';
 
   @override
-  String get bloodGroupAllergiesHistory =>
-      'রক্তের গ্রুপ, অ্যালার্জি এবং ইতিহাস';
+  String get bloodGroupAllergiesHistory => 'রক্তের গ্রুপ, অ্যালার্জি এবং ইতিহাস';
 
   @override
   String get emergencyContactInfo => 'জরুরী যোগাযোগের তথ্য';
@@ -445,8 +432,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get professionalMode => 'পেশাদার মোড';
 
   @override
-  String get professionalModeSubtitle =>
-      'ডিফল্টরূপে ক্লিনিকাল সারসংক্ষেপ দেখান';
+  String get professionalModeSubtitle => 'ডিফল্টরূপে ক্লিনিকাল সারসংক্ষেপ দেখান';
 
   @override
   String get appLock => 'অ্যাপ লক';
@@ -458,8 +444,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get disableAppLock => 'অ্যাপ লক অক্ষম করবেন?';
 
   @override
-  String get appLockReportsAccessible =>
-      'আপনার রিপোর্টগুলি বায়োমেট্রিক্স ছাড়াই অ্যাক্সেসযোগ্য হবে।';
+  String get appLockReportsAccessible => 'আপনার রিপোর্টগুলি বায়োমেট্রিক্স ছাড়াই অ্যাক্সেসযোগ্য হবে।';
 
   @override
   String get disable => 'অক্ষম করুন';
@@ -468,15 +453,13 @@ class AppLocalizationsBn extends AppLocalizations {
   String get notifications => 'বিজ্ঞপ্তি';
 
   @override
-  String get notificationsSubtitle =>
-      'ওষুধের রিমাইন্ডার এবং সতর্কতা সক্ষম করুন';
+  String get notificationsSubtitle => 'ওষুধের রিমাইন্ডার এবং সতর্কতা সক্ষম করুন';
 
   @override
   String get medicationSchedules => 'ওষুধের সময়সূচী';
 
   @override
-  String get managePillReminders =>
-      'আপনার স্বয়ংক্রিয় বড়ির রিমাইন্ডারগুলি পরিচালনা করুন';
+  String get managePillReminders => 'আপনার স্বয়ংক্রিয় বড়ির রিমাইন্ডারগুলি পরিচালনা করুন';
 
   @override
   String get reminderSound => 'রিমাইন্ডার সাউন্ড';
@@ -518,8 +501,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get goToReports => 'রিপোর্টে যান';
 
   @override
-  String get noMedicationSchedules =>
-      'আপনার রিপোর্টে এখনও কোন ওষুধের সময়সূচী পাওয়া যায়নি। ট্র্যাকিং শুরু করতে প্রেসক্রিপশন সম্বলিত একটি রিপোর্ট আপলোড করুন।';
+  String get noMedicationSchedules => 'আপনার রিপোর্টে এখনও কোন ওষুধের সময়সূচী পাওয়া যায়নি। ট্র্যাকিং শুরু করতে প্রেসক্রিপশন সম্বলিত একটি রিপোর্ট আপলোড করুন।';
 
   @override
   String get messageCopied => 'বার্তা অনুলিপি করা হয়েছে';
@@ -540,8 +522,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get exportData => 'ডেটা এক্সপোর্ট করুন';
 
   @override
-  String get requestArchive =>
-      'আপনার মেডিকেল ইতিহাসের সংরক্ষণাগারের জন্য অনুরোধ করবেন?';
+  String get requestArchive => 'আপনার মেডিকেল ইতিহাসের সংরক্ষণাগারের জন্য অনুরোধ করবেন?';
 
   @override
   String get languageUpdated => 'ভাষা সফলভাবে আপডেট করা হয়েছে';
@@ -562,6 +543,5 @@ class AppLocalizationsBn extends AppLocalizations {
   String get professionalModeDisabled => 'পেশাদার মোড অক্ষম করা হয়েছে';
 
   @override
-  String get reportAnalyzedSuccessfully =>
-      'রিপোর্ট সফলভাবে বিশ্লেষণ করা হয়েছে!';
+  String get reportAnalyzedSuccessfully => 'রিপোর্ট সফলভাবে বিশ্লেষণ করা হয়েছে!';
 }

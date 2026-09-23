@@ -48,8 +48,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createAccount => 'Create Account';
 
   @override
-  String get personalizeHealthJourney =>
-      'Let\'s personalize your health journey.';
+  String get personalizeHealthJourney => 'Let\'s personalize your health journey.';
 
   @override
   String get fullName => 'Full Name';
@@ -115,8 +114,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noReportsFound => 'No reports found';
 
   @override
-  String get uploadFirstReport =>
-      'Upload your first medical report to get started';
+  String get uploadFirstReport => 'Upload your first medical report to get started';
 
   @override
   String get uploadReport => 'Upload Report';
@@ -173,8 +171,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteReportTitle => 'Delete Report?';
 
   @override
-  String get deleteReportConfirm =>
-      'This will permanently delete this report and all its analysis. This cannot be undone.';
+  String get deleteReportConfirm => 'This will permanently delete this report and all its analysis. This cannot be undone.';
 
   @override
   String get cancel => 'Cancel';
@@ -189,8 +186,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyzingYourReport => 'Analyzing your report…';
 
   @override
-  String get aiReadingDocument =>
-      'AI is reading your document. This may take a minute.';
+  String get aiReadingDocument => 'AI is reading your document. This may take a minute.';
 
   @override
   String get analysisFailed => 'Analysis Failed';
@@ -217,8 +213,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get abnormalValuesDetected => 'Abnormal Values Detected';
 
   @override
-  String get someParametersOutOfRange =>
-      'Some parameters are outside the normal reference range.';
+  String get someParametersOutOfRange => 'Some parameters are outside the normal reference range.';
 
   @override
   String get consultYourDoctor => 'Consult your doctor about these findings.';
@@ -308,15 +303,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteReminder => 'Delete Reminder';
 
   @override
-  String get deleteReminderConfirm =>
-      'Are you sure you want to delete this reminder?';
+  String get deleteReminderConfirm => 'Are you sure you want to delete this reminder?';
 
   @override
   String get medicalProfile => 'Medical Information';
 
   @override
-  String get keepMedicalHistoryUpdated =>
-      'Keep your medical history up to date for better analysis.';
+  String get keepMedicalHistoryUpdated => 'Keep your medical history up to date for better analysis.';
 
   @override
   String get bloodGroup => 'Blood Group';
@@ -337,8 +330,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emergencyContact => 'Emergency Contact';
 
   @override
-  String get emergencyContactSubtitle =>
-      'We\'ll use this only during emergencies.';
+  String get emergencyContactSubtitle => 'We\'ll use this only during emergencies.';
 
   @override
   String get phoneNumber => 'Phone Number';
@@ -452,8 +444,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disableAppLock => 'Disable App Lock?';
 
   @override
-  String get appLockReportsAccessible =>
-      'Your reports will be accessible without biometrics.';
+  String get appLockReportsAccessible => 'Your reports will be accessible without biometrics.';
 
   @override
   String get disable => 'Disable';
@@ -510,8 +501,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goToReports => 'Go to Reports';
 
   @override
-  String get noMedicationSchedules =>
-      'No medication schedules found in your reports yet. Upload a report that contains prescriptions to start tracking.';
+  String get noMedicationSchedules => 'No medication schedules found in your reports yet. Upload a report that contains prescriptions to start tracking.';
 
   @override
   String get messageCopied => 'Message copied';

@@ -48,8 +48,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get createAccount => 'खाता बनाएं';
 
   @override
-  String get personalizeHealthJourney =>
-      'आइए आपकी स्वास्थ्य यात्रा को निजीकृत करें।';
+  String get personalizeHealthJourney => 'आइए आपकी स्वास्थ्य यात्रा को निजीकृत करें।';
 
   @override
   String get fullName => 'पूरा नाम';
@@ -115,8 +114,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get noReportsFound => 'कोई रिपोर्ट नहीं मिली';
 
   @override
-  String get uploadFirstReport =>
-      'शुरू करने के लिए अपनी पहली चिकित्सा रिपोर्ट अपलोड करें';
+  String get uploadFirstReport => 'शुरू करने के लिए अपनी पहली चिकित्सा रिपोर्ट अपलोड करें';
 
   @override
   String get uploadReport => 'रिपोर्ट अपलोड करें';
@@ -173,8 +171,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get deleteReportTitle => 'रिपोर्ट हटाएं?';
 
   @override
-  String get deleteReportConfirm =>
-      'यह रिपोर्ट और उसका सारा विश्लेषण स्थायी रूप से हट जाएगा। यह क्रिया पूर्ववत नहीं की जा सकती।';
+  String get deleteReportConfirm => 'यह रिपोर्ट और उसका सारा विश्लेषण स्थायी रूप से हट जाएगा। यह क्रिया पूर्ववत नहीं की जा सकती।';
 
   @override
   String get cancel => 'रद्द करें';
@@ -189,8 +186,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get analyzingYourReport => 'आपकी रिपोर्ट का विश्लेषण हो रहा है…';
 
   @override
-  String get aiReadingDocument =>
-      'AI आपका दस्तावेज़ पढ़ रहा है। इसमें एक मिनट लग सकता है।';
+  String get aiReadingDocument => 'AI आपका दस्तावेज़ पढ़ रहा है। इसमें एक मिनट लग सकता है।';
 
   @override
   String get analysisFailed => 'विश्लेषण विफल';
@@ -217,19 +213,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get abnormalValuesDetected => 'असामान्य मान पाए गए';
 
   @override
-  String get someParametersOutOfRange =>
-      'कुछ मापदंड सामान्य संदर्भ सीमा से बाहर हैं।';
+  String get someParametersOutOfRange => 'कुछ मापदंड सामान्य संदर्भ सीमा से बाहर हैं।';
 
   @override
-  String get consultYourDoctor =>
-      'इन निष्कर्षों के बारे में अपने डॉक्टर से परामर्श करें।';
+  String get consultYourDoctor => 'इन निष्कर्षों के बारे में अपने डॉक्टर से परामर्श करें।';
 
   @override
   String get keyFindings => 'मुख्य निष्कर्ष';
 
   @override
-  String get noKeyFindings =>
-      'इस रिपोर्ट के लिए कोई मुख्य निष्कर्ष उपलब्ध नहीं है।';
+  String get noKeyFindings => 'इस रिपोर्ट के लिए कोई मुख्य निष्कर्ष उपलब्ध नहीं है।';
 
   @override
   String get noLabValues => 'कोई प्रयोगशाला मान नहीं मिले।';
@@ -271,12 +264,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get comparedToPreviousReport => 'पिछली रिपोर्ट से तुलना';
 
   @override
-  String get noEarlierReport =>
-      'तुलना के लिए कोई पहले की रिपोर्ट उपलब्ध नहीं है।';
+  String get noEarlierReport => 'तुलना के लिए कोई पहले की रिपोर्ट उपलब्ध नहीं है।';
 
   @override
-  String get needTwoReports =>
-      'ट्रेंड ग्राफ दिखाने के लिए कम से कम 2 रिपोर्ट की जरूरत है।';
+  String get needTwoReports => 'ट्रेंड ग्राफ दिखाने के लिए कम से कम 2 रिपोर्ट की जरूरत है।';
 
   @override
   String get noHistoricalData => 'इस परीक्षण के लिए कोई पुराना डेटा नहीं है।';
@@ -312,15 +303,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get deleteReminder => 'अनुस्मारक हटाएं';
 
   @override
-  String get deleteReminderConfirm =>
-      'क्या आप वाकई इस अनुस्मारक को हटाना चाहते हैं?';
+  String get deleteReminderConfirm => 'क्या आप वाकई इस अनुस्मारक को हटाना चाहते हैं?';
 
   @override
   String get medicalProfile => 'चिकित्सा जानकारी';
 
   @override
-  String get keepMedicalHistoryUpdated =>
-      'बेहतर विश्लेषण के लिए अपना चिकित्सा इतिहास अद्यतन रखें।';
+  String get keepMedicalHistoryUpdated => 'बेहतर विश्लेषण के लिए अपना चिकित्सा इतिहास अद्यतन रखें।';
 
   @override
   String get bloodGroup => 'रक्त समूह';
@@ -341,8 +330,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get emergencyContact => 'आपातकालीन संपर्क';
 
   @override
-  String get emergencyContactSubtitle =>
-      'हम इसका उपयोग केवल आपात स्थिति में करेंगे।';
+  String get emergencyContactSubtitle => 'हम इसका उपयोग केवल आपात स्थिति में करेंगे।';
 
   @override
   String get phoneNumber => 'फ़ोन नंबर';
@@ -354,8 +342,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get personalInformation => 'व्यक्तिगत जानकारी';
 
   @override
-  String get viewEditPersonalDetails =>
-      'अपनी व्यक्तिगत जानकारी देखें और संपादित करें';
+  String get viewEditPersonalDetails => 'अपनी व्यक्तिगत जानकारी देखें और संपादित करें';
 
   @override
   String get bloodGroupAllergiesHistory => 'रक्त समूह, एलर्जी और इतिहास';
@@ -445,8 +432,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get professionalMode => 'पेशेवर मोड';
 
   @override
-  String get professionalModeSubtitle =>
-      'डिफ़ॉल्ट रूप से नैदानिक सारांश दिखाएं';
+  String get professionalModeSubtitle => 'डिफ़ॉल्ट रूप से नैदानिक सारांश दिखाएं';
 
   @override
   String get appLock => 'ऐप लॉक';
@@ -458,8 +444,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get disableAppLock => 'ऐप लॉक अक्षम करें?';
 
   @override
-  String get appLockReportsAccessible =>
-      'आपकी रिपोर्ट बायोमेट्रिक्स के बिना सुलभ होंगी।';
+  String get appLockReportsAccessible => 'आपकी रिपोर्ट बायोमेट्रिक्स के बिना सुलभ होंगी।';
 
   @override
   String get disable => 'अक्षम करें';
@@ -516,8 +501,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get goToReports => 'रिपोर्ट पर जाएं';
 
   @override
-  String get noMedicationSchedules =>
-      'आपकी रिपोर्ट में अभी तक कोई दवा अनुसूची नहीं मिली। ट्रैकिंग शुरू करने के लिए नुस्खे वाली रिपोर्ट अपलोड करें।';
+  String get noMedicationSchedules => 'आपकी रिपोर्ट में अभी तक कोई दवा अनुसूची नहीं मिली। ट्रैकिंग शुरू करने के लिए नुस्खे वाली रिपोर्ट अपलोड करें।';
 
   @override
   String get messageCopied => 'संदेश कॉपी किया गया';
@@ -559,6 +543,5 @@ class AppLocalizationsHi extends AppLocalizations {
   String get professionalModeDisabled => 'पेशेवर मोड अक्षम किया गया';
 
   @override
-  String get reportAnalyzedSuccessfully =>
-      'रिपोर्ट का सफलतापूर्वक विश्लेषण किया गया!';
+  String get reportAnalyzedSuccessfully => 'रिपोर्ट का सफलतापूर्वक विश्लेषण किया गया!';
 }

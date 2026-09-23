@@ -1,7 +1,9 @@
 class AppConfig {
+  static const bool isLocalDevMode = bool.fromEnvironment('LOCAL_DEV_MODE', defaultValue: false);
+
   static const String _rawApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:8000',
+    defaultValue: isLocalDevMode ? 'http://127.0.0.1:8000' : 'https://api.mednarrate.com', // TODO: replace with real deployed backend URL
   );
   
   static String get apiBaseUrl => validateApiBaseUrl(environment, _rawApiBaseUrl);

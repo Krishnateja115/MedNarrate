@@ -48,8 +48,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get createAccount => 'கணக்கு உருவாக்கு';
 
   @override
-  String get personalizeHealthJourney =>
-      'உங்கள் ஆரோக்கிய பயணத்தை தனிப்பயனாக்குவோம்.';
+  String get personalizeHealthJourney => 'உங்கள் ஆரோக்கிய பயணத்தை தனிப்பயனாக்குவோம்.';
 
   @override
   String get fullName => 'முழு பெயர்';
@@ -115,8 +114,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get noReportsFound => 'அறிக்கைகள் எதுவும் கிடைக்கவில்லை';
 
   @override
-  String get uploadFirstReport =>
-      'தொடங்க உங்கள் முதல் மருத்துவ அறிக்கையை பதிவேற்றவும்';
+  String get uploadFirstReport => 'தொடங்க உங்கள் முதல் மருத்துவ அறிக்கையை பதிவேற்றவும்';
 
   @override
   String get uploadReport => 'அறிக்கை பதிவேற்று';
@@ -137,8 +135,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get uploading => 'பதிவேற்றப்படுகிறது…';
 
   @override
-  String get analyzingReport =>
-      'AI மூலம் உங்கள் அறிக்கை பகுப்பாய்வு செய்யப்படுகிறது…';
+  String get analyzingReport => 'AI மூலம் உங்கள் அறிக்கை பகுப்பாய்வு செய்யப்படுகிறது…';
 
   @override
   String get thisMayTakeAMinute => 'இதற்கு ஒரு நிமிடம் ஆகலாம்.';
@@ -174,8 +171,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get deleteReportTitle => 'அறிக்கையை நீக்கவா?';
 
   @override
-  String get deleteReportConfirm =>
-      'இந்த அறிக்கை மற்றும் அதன் பகுப்பாய்வு நிரந்தரமாக நீக்கப்படும். இதை மீட்டெடுக்க முடியாது.';
+  String get deleteReportConfirm => 'இந்த அறிக்கை மற்றும் அதன் பகுப்பாய்வு நிரந்தரமாக நீக்கப்படும். இதை மீட்டெடுக்க முடியாது.';
 
   @override
   String get cancel => 'ரத்து செய்';
@@ -187,12 +183,10 @@ class AppLocalizationsTa extends AppLocalizations {
   String get aiAnalysis => 'AI பகுப்பாய்வு';
 
   @override
-  String get analyzingYourReport =>
-      'உங்கள் அறிக்கை பகுப்பாய்வு செய்யப்படுகிறது…';
+  String get analyzingYourReport => 'உங்கள் அறிக்கை பகுப்பாய்வு செய்யப்படுகிறது…';
 
   @override
-  String get aiReadingDocument =>
-      'AI உங்கள் ஆவணத்தை படிக்கிறது. ஒரு நிமிடம் ஆகலாம்.';
+  String get aiReadingDocument => 'AI உங்கள் ஆவணத்தை படிக்கிறது. ஒரு நிமிடம் ஆகலாம்.';
 
   @override
   String get analysisFailed => 'பகுப்பாய்வு தோல்வியடைந்தது';
@@ -219,19 +213,16 @@ class AppLocalizationsTa extends AppLocalizations {
   String get abnormalValuesDetected => 'அசாதாரண மதிப்புகள் கண்டறியப்பட்டன';
 
   @override
-  String get someParametersOutOfRange =>
-      'சில அளவுருக்கள் சாதாரண குறிப்பு வரம்பிற்கு வெளியே உள்ளன.';
+  String get someParametersOutOfRange => 'சில அளவுருக்கள் சாதாரண குறிப்பு வரம்பிற்கு வெளியே உள்ளன.';
 
   @override
-  String get consultYourDoctor =>
-      'இந்த கண்டுபிடிப்புகள் குறித்து உங்கள் மருத்துவரை ஆலோசிக்கவும்.';
+  String get consultYourDoctor => 'இந்த கண்டுபிடிப்புகள் குறித்து உங்கள் மருத்துவரை ஆலோசிக்கவும்.';
 
   @override
   String get keyFindings => 'முக்கிய கண்டுபிடிப்புகள்';
 
   @override
-  String get noKeyFindings =>
-      'இந்த அறிக்கைக்கு முக்கிய கண்டுபிடிப்புகள் இல்லை.';
+  String get noKeyFindings => 'இந்த அறிக்கைக்கு முக்கிய கண்டுபிடிப்புகள் இல்லை.';
 
   @override
   String get noLabValues => 'ஆய்வக மதிப்புகள் எதுவும் கிடைக்கவில்லை.';
@@ -255,12 +246,10 @@ class AppLocalizationsTa extends AppLocalizations {
   String get translateSummary => 'சுருக்கத்தை மொழிபெயர்';
 
   @override
-  String get translationFailed =>
-      'மொழிபெயர்ப்பு தோல்வியடைந்தது. மீண்டும் முயற்சிக்கவும்.';
+  String get translationFailed => 'மொழிபெயர்ப்பு தோல்வியடைந்தது. மீண்டும் முயற்சிக்கவும்.';
 
   @override
-  String get translatedVersionAvailable =>
-      'மொழிபெயர்க்கப்பட்ட பதிப்பு கிடைக்கிறது';
+  String get translatedVersionAvailable => 'மொழிபெயர்க்கப்பட்ட பதிப்பு கிடைக்கிறது';
 
   @override
   String get load => 'ஏற்று';
@@ -278,8 +267,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get noEarlierReport => 'ஒப்பிட முந்தைய அறிக்கை இல்லை.';
 
   @override
-  String get needTwoReports =>
-      'ட்ரெண்ட் வரைபடம் காட்ட குறைந்தது 2 அறிக்கைகள் தேவை.';
+  String get needTwoReports => 'ட்ரெண்ட் வரைபடம் காட்ட குறைந்தது 2 அறிக்கைகள் தேவை.';
 
   @override
   String get noHistoricalData => 'இந்த பரிசோதனைக்கு வரலாற்று தரவு இல்லை.';
@@ -297,8 +285,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get medicationReminders => 'மருந்து நினைவூட்டல்கள்';
 
   @override
-  String get setDailyReminders =>
-      'உங்கள் மருந்துகளுக்கு தினசரி நினைவூட்டல்கள் அமைக்கவும்';
+  String get setDailyReminders => 'உங்கள் மருந்துகளுக்கு தினசரி நினைவூட்டல்கள் அமைக்கவும்';
 
   @override
   String get noRemindersSet => 'நினைவூட்டல்கள் அமைக்கப்படவில்லை';
@@ -316,15 +303,13 @@ class AppLocalizationsTa extends AppLocalizations {
   String get deleteReminder => 'நினைவூட்டலை நீக்கு';
 
   @override
-  String get deleteReminderConfirm =>
-      'இந்த நினைவூட்டலை நீக்க விரும்புகிறீர்களா?';
+  String get deleteReminderConfirm => 'இந்த நினைவூட்டலை நீக்க விரும்புகிறீர்களா?';
 
   @override
   String get medicalProfile => 'மருத்துவ தகவல்';
 
   @override
-  String get keepMedicalHistoryUpdated =>
-      'சிறந்த பகுப்பாய்வுக்கு உங்கள் மருத்துவ வரலாற்றை புதுப்பித்து வையுங்கள்.';
+  String get keepMedicalHistoryUpdated => 'சிறந்த பகுப்பாய்வுக்கு உங்கள் மருத்துவ வரலாற்றை புதுப்பித்து வையுங்கள்.';
 
   @override
   String get bloodGroup => 'இரத்தக் குழு';
@@ -345,8 +330,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get emergencyContact => 'அவசர தொடர்பு';
 
   @override
-  String get emergencyContactSubtitle =>
-      'அவசர நிலைகளில் மட்டுமே இதைப் பயன்படுத்துவோம்.';
+  String get emergencyContactSubtitle => 'அவசர நிலைகளில் மட்டுமே இதைப் பயன்படுத்துவோம்.';
 
   @override
   String get phoneNumber => 'தொலைபேசி எண்';
@@ -358,12 +342,10 @@ class AppLocalizationsTa extends AppLocalizations {
   String get personalInformation => 'தனிப்பட்ட தகவல்';
 
   @override
-  String get viewEditPersonalDetails =>
-      'உங்கள் தனிப்பட்ட விவரங்களை பார்க்கவும் திருத்தவும்';
+  String get viewEditPersonalDetails => 'உங்கள் தனிப்பட்ட விவரங்களை பார்க்கவும் திருத்தவும்';
 
   @override
-  String get bloodGroupAllergiesHistory =>
-      'இரத்தக் குழு, ஒவ்வாமை மற்றும் வரலாறு';
+  String get bloodGroupAllergiesHistory => 'இரத்தக் குழு, ஒவ்வாமை மற்றும் வரலாறு';
 
   @override
   String get emergencyContactInfo => 'அவசர தொடர்பு தகவல்';
@@ -381,8 +363,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get lightMode => 'ஒளி முறை';
 
   @override
-  String get languageAndPreferences =>
-      'மொழி மற்றும் மேம்பட்ட விருப்பத்தேர்வுகள்';
+  String get languageAndPreferences => 'மொழி மற்றும் மேம்பட்ட விருப்பத்தேர்வுகள்';
 
   @override
   String get logout => 'வெளியேறு';
@@ -463,8 +444,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get disableAppLock => 'பயன்பாட்டு பூட்டை முடக்கவா?';
 
   @override
-  String get appLockReportsAccessible =>
-      'உங்கள் அறிக்கைகள் உயிரிமை இல்லாமல் அணுகலாம்.';
+  String get appLockReportsAccessible => 'உங்கள் அறிக்கைகள் உயிரிமை இல்லாமல் அணுகலாம்.';
 
   @override
   String get disable => 'முடக்கு';
@@ -473,15 +453,13 @@ class AppLocalizationsTa extends AppLocalizations {
   String get notifications => 'அறிவிப்புகள்';
 
   @override
-  String get notificationsSubtitle =>
-      'மருந்து நினைவூட்டல்கள் மற்றும் விழிப்பூட்டல்களை இயக்கு';
+  String get notificationsSubtitle => 'மருந்து நினைவூட்டல்கள் மற்றும் விழிப்பூட்டல்களை இயக்கு';
 
   @override
   String get medicationSchedules => 'மருந்து அட்டவணைகள்';
 
   @override
-  String get managePillReminders =>
-      'உங்கள் தானியங்கி மருந்து நினைவூட்டல்களை நிர்வகிக்கவும்';
+  String get managePillReminders => 'உங்கள் தானியங்கி மருந்து நினைவூட்டல்களை நிர்வகிக்கவும்';
 
   @override
   String get reminderSound => 'நினைவூட்டல் ஒலி';
@@ -523,8 +501,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get goToReports => 'அறிக்கைகளுக்கு செல்';
 
   @override
-  String get noMedicationSchedules =>
-      'உங்கள் அறிக்கைகளில் இன்னும் மருந்து அட்டவணைகள் இல்லை. கண்காணிப்பைத் தொடங்க மருந்துச் சீட்டு கொண்ட அறிக்கையை பதிவேற்றவும்.';
+  String get noMedicationSchedules => 'உங்கள் அறிக்கைகளில் இன்னும் மருந்து அட்டவணைகள் இல்லை. கண்காணிப்பைத் தொடங்க மருந்துச் சீட்டு கொண்ட அறிக்கையை பதிவேற்றவும்.';
 
   @override
   String get messageCopied => 'செய்தி நகலெடுக்கப்பட்டது';
@@ -566,6 +543,5 @@ class AppLocalizationsTa extends AppLocalizations {
   String get professionalModeDisabled => 'தொழில்முறை பயன்முறை முடக்கப்பட்டது';
 
   @override
-  String get reportAnalyzedSuccessfully =>
-      'அறிக்கை வெற்றிகரமாக பகுப்பாய்வு செய்யப்பட்டது!';
+  String get reportAnalyzedSuccessfully => 'அறிக்கை வெற்றிகரமாக பகுப்பாய்வு செய்யப்பட்டது!';
 }
