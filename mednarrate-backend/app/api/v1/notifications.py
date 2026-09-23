@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.push_token import PushToken
 from app.models.medication_schedule import MedicationSchedule
 from app.schemas.notification import RegisterTokenRequest, UnregisterTokenRequest, GenericResponse, MedicationScheduleOut
+import uuid
 from typing import List
 
 router = APIRouter()
@@ -70,7 +71,7 @@ async def get_medication_schedules(
 
 @router.patch("/medication-schedules/{schedule_id}/toggle", response_model=GenericResponse)
 async def toggle_medication_schedule(
-    schedule_id: str,
+    schedule_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
