@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:file_picker/file_picker.dart';
@@ -50,8 +51,19 @@ Future<bool> _isBackendHealthy() async {
         .getUrl(Uri.parse('${AppConfig.apiBaseUrl}/health'))
         .then((req) => req.close())
         .timeout(const Duration(seconds: 2));
-    return result.statusCode == 200;
-  } catch (_) {
+    
+    if (result.statusCode == 200) {
+      final body = await result.transform(utf8.decoder).join();
+      if (body.contains('"service":"mednarrate"') || body.contains('"service": "mednarrate"')) {
+        return true;
+      }
+      throw Exception("Port 8000 is occupied by an unknown service. Please free the port.");
+    }
+    return false;
+  } catch (e) {
+    if (e.toString().contains("unknown service")) {
+      rethrow;
+    }
     return false;
   }
 }
