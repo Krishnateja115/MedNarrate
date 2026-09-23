@@ -88,9 +88,13 @@ from app.api.v1.admin_health import router as health_router
 from app.api.v1.admin_jobs import router as jobs_router
 from app.api.v1.admin_diagnostics import router as diagnostics_router
 from app.api.v1.admin_incidents import router as incidents_router
+from app.api.v1.admin_users import router as users_router
+from app.api.v1.admin_reports import router as reports_router
 
 router.include_router(dashboard_router, prefix="/dashboard", tags=["Admin Dashboard"])
 router.include_router(health_router, prefix="/system", tags=["Admin System"])
 router.include_router(jobs_router, prefix="/jobs", tags=["Admin Jobs"])
 router.include_router(diagnostics_router, prefix="/diagnostics", tags=["Admin Diagnostics"])
 router.include_router(incidents_router, prefix="/incidents", tags=["Admin Incidents"])
+router.include_router(users_router, prefix="/users", tags=["Admin Users"])
+router.include_router(reports_router, prefix="/reports", tags=["Admin Reports"])

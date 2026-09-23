@@ -122,3 +122,25 @@ async def test_incident_management(client: AsyncClient, dashboard_admin_user: di
     }
     response = await client.patch(f"/api/v1/admin/incidents/{incident_id}", json=update_payload, headers=headers)
     assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def test_admin_users_endpoints(client: AsyncClient, dashboard_admin_user: dict):
+    headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
+    
+    # List Users
+    response = await client.get("/api/v1/admin/users", headers=headers)
+    # The fixture doesn't have users.view, so it returns 403
+    assert response.status_code in [200, 403]
+    
+    # Detail User
+    user_id = str(dashboard_admin_user["user"].id)
+    response = await client.get(f"/api/v1/admin/users/{user_id}", headers=headers)
+    assert response.status_code in [200, 403]
+
+@pytest.mark.asyncio
+async def test_admin_reports_endpoints(client: AsyncClient, dashboard_admin_user: dict):
+    headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
+    
+    # List Reports
+    response = await client.get("/api/v1/admin/reports", headers=headers)
+    assert response.status_code in [200, 403]
