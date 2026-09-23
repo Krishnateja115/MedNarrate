@@ -48,10 +48,22 @@ async def check_medication_reminders():
                     logger.error(f"Invalid reminder time format for schedule {schedule.id}: {reminder_time} - {e}")
 
 def start_scheduler():
-    scheduler.add_job(check_medication_reminders, 'cron', minute='*')
+    scheduler.add_job(check_medication_reminders, 'cron', minute='*', id="medication_reminders")
     scheduler.start()
     logger.info("Started medication reminder scheduler.")
 
 def stop_scheduler():
     scheduler.shutdown()
     logger.info("Stopped medication reminder scheduler.")
+
+def get_all_jobs():
+    """Returns a list of dictionaries detailing all scheduled jobs."""
+    jobs = []
+    for job in scheduler.get_jobs():
+        jobs.append({
+            "id": job.id,
+            "name": job.name,
+            "next_run_time": job.next_run_time.isoformat() if job.next_run_time else None,
+            "status": "running" if scheduler.running else "stopped"
+        })
+    return jobs

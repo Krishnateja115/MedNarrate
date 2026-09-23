@@ -541,15 +541,41 @@ class LLMClient:
         req_id = request_id or str(uuid.uuid4())
         provider_setting = (getattr(settings, "PRIMARY_LLM_PROVIDER", "gemini") or "auto").lower().strip()
 
+        from app.models.llm_telemetry import LLMDiagnosticEvent
+        from app.core.database import AsyncSessionLocal
+        
+        async def _log_event(provider_name: str, model_name: str, status: str, latency: float, error_category: str = None, fallback: bool = False):
+            try:
+                async with AsyncSessionLocal() as session:
+                    evt = LLMDiagnosticEvent(
+                        request_id=req_id,
+                        provider=provider_name,
+                        model_name=model_name,
+                        feature="analysis",
+                        status=status,
+                        latency_ms=latency,
+                        error_category=error_category,
+                        fallback_used=fallback
+                    )
+                    session.add(evt)
+                    await session.commit()
+            except Exception as e:
+                logger.error(f"Failed to log LLM telemetry: {e}")
+
         # Explicit Provider Selection
         if provider_setting in ["vertex_ai", "ollama", "dev_gemini", "gemini", "fallback"]:
             provider = self.get_provider(provider_setting)
             try:
-                return await provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+                res = await provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+                await _log_event(res.get("provider", provider_setting), res.get("model", "unknown"), "success", res.get("latency_ms", 0.0), fallback=False)
+                return res
             except Exception as e:
                 if getattr(settings, "ENABLE_LLM_FALLBACK", True):
                     logger.warning(f"[LLM:{provider_setting.upper()}:FAILED] {e}. Falling back to FallbackAIProvider.")
-                    return await self.providers["fallback"].generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+                    res = await self.providers["fallback"].generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+                    await _log_event("fallback", res.get("model", "mednarrate-fallback-v1"), "success", res.get("latency_ms", 0.0), fallback=True)
+                    return res
+                await _log_event(provider_setting, "unknown", "error", 0.0, error_category=type(e).__name__, fallback=False)
                 raise
 
         # "auto" Mode Deterministic Order: Vertex AI -> Ollama -> Dev Gemini -> Fallback
@@ -558,32 +584,43 @@ class LLMClient:
         v_health = await v_provider.health_check()
         if v_health["configured"] and v_health["authenticated"]:
             try:
-                return await v_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+                res = await v_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+                await _log_event(res.get("provider", "vertex_ai"), res.get("model", "unknown"), "success", res.get("latency_ms", 0.0), fallback=False)
+                return res
             except Exception as e:
                 logger.warning(f"[LLM:AUTO:VERTEX_FAILED] Vertex AI failed in auto mode: {e}")
+                await _log_event("vertex_ai", "unknown", "error", 0.0, error_category=type(e).__name__, fallback=False)
 
         # 2. Try Ollama
         o_provider = self.providers["ollama"]
         o_health = await o_provider.health_check()
         if o_health["reachable"]:
             try:
-                return await o_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+                res = await o_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+                await _log_event(res.get("provider", "ollama"), res.get("model", "unknown"), "success", res.get("latency_ms", 0.0), fallback=False)
+                return res
             except Exception as e:
                 logger.warning(f"[LLM:AUTO:OLLAMA_FAILED] Ollama failed in auto mode: {e}")
+                await _log_event("ollama", "unknown", "error", 0.0, error_category=type(e).__name__, fallback=False)
 
         # 3. Try Dev Gemini if key present
         g_provider = self.providers["dev_gemini"]
         g_health = await g_provider.health_check()
         if g_health["configured"]:
             try:
-                return await g_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+                res = await g_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+                await _log_event(res.get("provider", "dev_gemini"), res.get("model", "unknown"), "success", res.get("latency_ms", 0.0), fallback=False)
+                return res
             except Exception as e:
                 logger.warning(f"[LLM:AUTO:DEV_GEMINI_FAILED] Dev Gemini failed in auto mode: {e}")
+                await _log_event("dev_gemini", "unknown", "error", 0.0, error_category=type(e).__name__, fallback=False)
 
         # 4. Fallback Provider if enabled
         if getattr(settings, "ENABLE_LLM_FALLBACK", True):
             f_provider = self.providers["fallback"]
-            return await f_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+            res = await f_provider.generate(prompt, timeout=timeout, request_id=req_id, system_instruction=system_instruction, thinking_level=thinking_level)
+            await _log_event("fallback", res.get("model", "mednarrate-fallback-v1"), "success", res.get("latency_ms", 0.0), fallback=True)
+            return res
 
         err = RuntimeError(
             "AI analysis is currently unavailable. Please verify the LLM provider configuration "

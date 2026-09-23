@@ -1,23 +1,42 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from app.core.database import get_db
-from app.core.security import get_current_user
-from app.models.user import User
+from app.core.admin_auth import AdminContext, get_admin_context, require_permission, require_any_permission
+from app.services.audit import log_admin_action
 
 router = APIRouter()
 
-def require_admin(current_user: User = Depends(get_current_user)):
-    if current_user.role.value != "admin":
-        raise HTTPException(status_code=403, detail="Not enough privileges")
-    return current_user
-
 @router.get("/health")
-async def admin_health(admin_user: User = Depends(require_admin)):
+async def admin_health(
+    request: Request,
+    admin_ctx: AdminContext = Depends(get_admin_context),
+    db: AsyncSession = Depends(get_db)
+):
+    # This is accessible by any valid admin, but we log the action
+    await log_admin_action(
+        db=db,
+        action="ADMIN_HEALTH_CHECK",
+        actor_admin_id=admin_ctx.user.id,
+        request=request,
+        metadata={"permissions": list(admin_ctx.permissions)}
+    )
+    await db.commit()
     return {"status": "ok", "message": "Admin services are running"}
 
 @router.get("/kb-stats")
-async def get_kb_stats(admin_user: User = Depends(require_admin)):
+async def get_kb_stats(
+    request: Request,
+    admin_ctx: AdminContext = Depends(require_permission("knowledge_base.view")),
+    db: AsyncSession = Depends(get_db)
+):
+    await log_admin_action(
+        db=db,
+        action="VIEW_KB_STATS",
+        actor_admin_id=admin_ctx.user.id,
+        permission_used="knowledge_base.view",
+        request=request
+    )
+    await db.commit()
     # Mock KB stats for now
     return {
         "status": "ok",
@@ -26,13 +45,27 @@ async def get_kb_stats(admin_user: User = Depends(require_admin)):
     }
 
 @router.get("/llm-status")
-async def get_admin_llm_status(admin_user: User = Depends(require_admin)):
+async def get_admin_llm_status(
+    request: Request,
+    admin_ctx: AdminContext = Depends(require_any_permission(["ai.view", "ai.manage"])),
+    db: AsyncSession = Depends(get_db)
+):
     from app.services.llm_client import llm_client_instance
     from app.core.config import settings
 
     provider_name = (settings.PRIMARY_LLM_PROVIDER or "auto").lower().strip()
     provider = llm_client_instance.get_provider(provider_name)
     provider_health = await provider.health_check()
+    
+    await log_admin_action(
+        db=db,
+        action="VIEW_LLM_STATUS",
+        actor_admin_id=admin_ctx.user.id,
+        permission_used="ai.view",
+        request=request,
+        metadata={"provider": provider_name}
+    )
+    await db.commit()
 
     return {
         "status": "ok",
@@ -50,3 +83,14 @@ async def get_admin_llm_status(admin_user: User = Depends(require_admin)):
         }
     }
 
+from app.api.v1.admin_dashboard import router as dashboard_router
+from app.api.v1.admin_health import router as health_router
+from app.api.v1.admin_jobs import router as jobs_router
+from app.api.v1.admin_diagnostics import router as diagnostics_router
+from app.api.v1.admin_incidents import router as incidents_router
+
+router.include_router(dashboard_router, prefix="/dashboard", tags=["Admin Dashboard"])
+router.include_router(health_router, prefix="/system", tags=["Admin System"])
+router.include_router(jobs_router, prefix="/jobs", tags=["Admin Jobs"])
+router.include_router(diagnostics_router, prefix="/diagnostics", tags=["Admin Diagnostics"])
+router.include_router(incidents_router, prefix="/incidents", tags=["Admin Incidents"])

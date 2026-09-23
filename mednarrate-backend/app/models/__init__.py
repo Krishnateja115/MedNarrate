@@ -14,3 +14,6 @@ from app.models.analysis_translation import AnalysisTranslation
 from app.models.password_reset_token import PasswordResetToken
 from app.models.doctor_profile import DoctorProfile
 from app.models.caregiver_profile import CaregiverProfile
+from app.models.admin import AdminRole, AdminPermission, AdminRolePermission, AdminRoleAssignment, AdminAuditLog, SensitiveAccessGrant
+from app.models.incidents import Incident, IncidentEvent
+from app.models.llm_telemetry import LLMDiagnosticEvent
