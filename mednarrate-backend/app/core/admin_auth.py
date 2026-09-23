@@ -16,6 +16,10 @@ class AdminContext:
         self.permissions = set(permissions)
         self.is_super_admin = "super_admin" in self.permissions or "Super Admin" in self.permissions # Simplified check
         
+    @property
+    def user_id(self) -> uuid.UUID:
+        return self.user.id
+
     def has_permission(self, permission: str) -> bool:
         if self.is_super_admin:
             return True

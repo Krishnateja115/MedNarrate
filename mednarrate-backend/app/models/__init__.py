@@ -22,3 +22,7 @@ from app.models.support import SupportTicket, SupportTicketMessage, SupportTicke
 from app.models.help_center import HelpArticle
 from app.models.knowledge_document import KnowledgeDocument
 from app.models.chat_safety import ChatSafetyEvent
+from app.models.privacy import PrivacyDataRequest
+from app.models.feature_flag import FeatureFlag
+from app.models.system_setting import SystemSetting, MaintenanceMode
+from app.models.announcement import Announcement

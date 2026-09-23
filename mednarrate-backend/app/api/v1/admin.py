@@ -97,6 +97,18 @@ from app.api.v1.admin_chat_ops import router as chat_ops_router
 from app.api.v1.admin_rag_ops import router as rag_ops_router
 from app.api.v1.admin_automation_ops import router as automation_ops_router
 
+# Privileged Governance Layer Routers
+from app.api.v1.admin_security import router as security_router
+from app.api.v1.admin_admins import router as admins_router
+from app.api.v1.admin_roles import router as roles_router
+from app.api.v1.admin_audit import router as audit_router
+from app.api.v1.admin_breakglass import router as breakglass_router
+from app.api.v1.admin_privacy import router as privacy_router
+from app.api.v1.admin_feature_flags import router as feature_flags_router
+from app.api.v1.admin_ai_config import router as ai_config_router
+from app.api.v1.admin_settings import router as settings_router
+from app.api.v1.admin_announcements import router as announcements_router
+
 router.include_router(dashboard_router, prefix="/dashboard", tags=["Admin Dashboard"])
 router.include_router(health_router, prefix="/system", tags=["Admin System"])
 router.include_router(jobs_router, prefix="/jobs", tags=["Admin Jobs"])
@@ -110,3 +122,16 @@ router.include_router(ai_ops_router, prefix="/ai-ops", tags=["Admin AI Ops"])
 router.include_router(chat_ops_router, prefix="/chat-ops", tags=["Admin Chat Ops"])
 router.include_router(rag_ops_router, prefix="/rag-ops", tags=["Admin RAG Ops"])
 router.include_router(automation_ops_router, prefix="/automation-ops", tags=["Admin Automation Ops"])
+
+# Register Privileged Governance Routers
+router.include_router(security_router, prefix="/security", tags=["Admin Security Center"])
+router.include_router(admins_router, prefix="/admins", tags=["Admin Accounts"])
+router.include_router(roles_router, prefix="/roles", tags=["Admin RBAC Roles & Permissions"])
+router.include_router(audit_router, prefix="", tags=["Admin Audit Logs"])
+router.include_router(breakglass_router, prefix="", tags=["Admin Break-Glass Temporary Access"])
+router.include_router(privacy_router, prefix="", tags=["Admin Privacy Center"])
+router.include_router(feature_flags_router, prefix="", tags=["Admin Feature Flags"])
+router.include_router(ai_config_router, prefix="", tags=["Admin AI Configuration"])
+router.include_router(settings_router, prefix="", tags=["Admin Settings & Maintenance"])
+router.include_router(announcements_router, prefix="", tags=["Admin Announcements"])
+

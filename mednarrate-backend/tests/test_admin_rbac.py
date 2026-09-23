@@ -57,15 +57,18 @@ async def super_admin(db_session: AsyncSession):
         role=UserRole.admin
     )
     db_session.add(user)
-    
-    role = AdminRole(name=f"Super Admin")
-    db_session.add(role)
-    
+
+    # Get or create "Super Admin" role (unique constraint on name)
+    role = (await db_session.execute(select(AdminRole).where(AdminRole.name == "Super Admin"))).scalar_one_or_none()
+    if not role:
+        role = AdminRole(name="Super Admin")
+        db_session.add(role)
+
     await db_session.flush()
-    
+
     assignment = AdminRoleAssignment(user_id=user.id, role_id=role.id)
     db_session.add(assignment)
-    
+
     await db_session.commit()
     return user
 

@@ -22,19 +22,17 @@ import {
 
 const NAV_ITEMS = [
   { name: 'Overview', href: '/', icon: LayoutDashboard },
-  { name: 'Support', href: '/support', icon: LifeBuoy },
-  { name: 'Users', href: '/users', icon: Users },
-  { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'AI Operations', href: '/ai', icon: Bot },
-  { name: 'Chat', href: '/chat', icon: MessageSquare },
-  { name: 'Notifications', href: '/notifications', icon: Bell },
-  { name: 'Knowledge Base', href: '/knowledge', icon: BookOpen },
+  { name: 'Security Overview', href: '/security', icon: Shield },
+  { name: 'Admin Accounts', href: '/admins', icon: Users },
+  { name: 'Roles & Permissions', href: '/roles', icon: Lock },
+  { name: 'Audit Logs', href: '/audit', icon: FileText },
+  { name: 'Break-Glass Access', href: '/breakglass', icon: AlertTriangle },
+  { name: 'Privacy Center', href: '/privacy', icon: Lock },
+  { name: 'Feature Flags', href: '/feature-flags', icon: BarChart3 },
+  { name: 'AI Configuration', href: '/ai-config', icon: Bot },
+  { name: 'App Settings', href: '/settings', icon: Settings },
+  { name: 'Announcements', href: '/announcements', icon: Bell },
   { name: 'System Health', href: '/health', icon: Activity },
-  { name: 'Incidents', href: '/incidents', icon: AlertTriangle },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Security', href: '/security', icon: Shield },
-  { name: 'Privacy', href: '/privacy', icon: Lock },
-  { name: 'Configuration', href: '/config', icon: Settings },
 ];
 
 export function Sidebar() {

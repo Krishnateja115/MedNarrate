@@ -3,6 +3,7 @@ from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from app.core.database import Base, get_db
+import app.models  # Register all models with Base.metadata
 from app.main import app
 from app.core.config import settings
 import asyncio
