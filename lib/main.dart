@@ -54,14 +54,20 @@ Future<bool> _isBackendHealthy() async {
     
     if (result.statusCode == 200) {
       final body = await result.transform(utf8.decoder).join();
-      if (body.contains('"service":"mednarrate"') || body.contains('"service": "mednarrate"')) {
+      final isMedNarrate = body.contains('"service":"mednarrate"') || body.contains('"service": "mednarrate"');
+      final isCorrectVersion = body.contains('"version":"1.0.0"') || body.contains('"version": "1.0.0"');
+      
+      if (isMedNarrate && isCorrectVersion) {
         return true;
+      } else if (isMedNarrate && !isCorrectVersion) {
+        throw Exception("Stale MedNarrate backend version detected on port 8000. Please restart your application or kill the old backend process.");
       }
+      
       throw Exception("Port 8000 is occupied by an unknown service. Please free the port.");
     }
     return false;
   } catch (e) {
-    if (e.toString().contains("unknown service")) {
+    if (e.toString().contains("unknown service") || e.toString().contains("Stale MedNarrate")) {
       rethrow;
     }
     return false;
