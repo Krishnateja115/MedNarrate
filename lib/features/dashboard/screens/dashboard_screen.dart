@@ -238,7 +238,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               reminders: _remindersList,
                               reportedMedications: _reportedMedications,
                               onAddTap: () async {
-                                await context.push(Routes.upload);
+                                await context.push(Routes.reminders, extra: {'autoOpenAdd': true});
+                                _loadData();
+                              },
+                              onConfirmTap: (med) async {
+                                await context.push(Routes.reminders, extra: {'prefillMed': med});
                                 _loadData();
                               },
                             ),

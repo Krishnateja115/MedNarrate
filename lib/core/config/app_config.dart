@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
+
 class AppConfig {
-  static const bool isLocalDevMode = bool.fromEnvironment('LOCAL_DEV_MODE', defaultValue: false);
+  static const bool isLocalDevMode = bool.fromEnvironment('LOCAL_DEV_MODE', defaultValue: kDebugMode);
 
   static const String _rawApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
