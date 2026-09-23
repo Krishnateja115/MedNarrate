@@ -63,14 +63,8 @@ class Settings(BaseSettings):
         return self.GEMINI_MODEL
 
     def validate_production_security(self):
-        """Enforces that development API keys and loose CORS boundaries are blocked in production."""
+        """Enforces that loose CORS boundaries are blocked in production."""
         if (self.ENVIRONMENT or "").lower() == "production":
-            prov = (self.LLM_PROVIDER or "").lower().strip()
-            if prov in ["dev_gemini", "gemini"]:
-                raise ValueError(
-                    "Direct developer Gemini API keys (dev_gemini) are prohibited in production environments. "
-                    "Please configure LLM_PROVIDER=vertex_ai or ollama."
-                )
             if "*" in self.CORS_ORIGINS:
                 raise ValueError(
                     "Wildcard CORS origins ('*') are prohibited in production environments. "

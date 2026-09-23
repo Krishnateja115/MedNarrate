@@ -48,7 +48,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get createAccount => 'ఖాతాను సృష్టించండి';
 
   @override
-  String get personalizeHealthJourney => 'మీ ఆరోగ్య ప్రయాణాన్ని వ్యక్తిగతీకరిద్దాం.';
+  String get personalizeHealthJourney =>
+      'మీ ఆరోగ్య ప్రయాణాన్ని వ్యక్తిగతీకరిద్దాం.';
 
   @override
   String get fullName => 'పూర్తి పేరు';
@@ -114,7 +115,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get noReportsFound => 'నివేదికలు కనుగొనబడలేదు';
 
   @override
-  String get uploadFirstReport => 'ప్రారంభించడానికి మీ మొదటి వైద్య నివేదికను అప్‌లోడ్ చేయండి';
+  String get uploadFirstReport =>
+      'ప్రారంభించడానికి మీ మొదటి వైద్య నివేదికను అప్‌లోడ్ చేయండి';
 
   @override
   String get uploadReport => 'నివేదికను అప్‌లోడ్ చేయండి';
@@ -171,7 +173,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get deleteReportTitle => 'నివేదికను తొలగించాలా?';
 
   @override
-  String get deleteReportConfirm => 'ఇది ఈ నివేదికను మరియు దాని విశ్లేషణను శాశ్వతంగా తొలగిస్తుంది. ఇది వెనక్కి తీసుకోబడదు.';
+  String get deleteReportConfirm =>
+      'ఇది ఈ నివేదికను మరియు దాని విశ్లేషణను శాశ్వతంగా తొలగిస్తుంది. ఇది వెనక్కి తీసుకోబడదు.';
 
   @override
   String get cancel => 'రద్దు చేయండి';
@@ -186,7 +189,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get analyzingYourReport => 'మీ నివేదిక విశ్లేషించబడుతోంది…';
 
   @override
-  String get aiReadingDocument => 'AI మీ పత్రాన్ని చదువుతోంది. దీనికి ఒక నిమిషం పట్టవచ్చు.';
+  String get aiReadingDocument =>
+      'AI మీ పత్రాన్ని చదువుతోంది. దీనికి ఒక నిమిషం పట్టవచ్చు.';
 
   @override
   String get analysisFailed => 'విశ్లేషణ విఫలమైంది';
@@ -213,16 +217,19 @@ class AppLocalizationsTe extends AppLocalizations {
   String get abnormalValuesDetected => 'అసాధారణ విలువలు కనుగొనబడ్డాయి';
 
   @override
-  String get someParametersOutOfRange => 'కొన్ని పారామితులు సాధారణ రిఫరెన్స్ పరిధికి వెలుపల ఉన్నాయి.';
+  String get someParametersOutOfRange =>
+      'కొన్ని పారామితులు సాధారణ రిఫరెన్స్ పరిధికి వెలుపల ఉన్నాయి.';
 
   @override
-  String get consultYourDoctor => 'ఈ ఫలితాల గురించి మీ వైద్యుడిని సంప్రదించండి.';
+  String get consultYourDoctor =>
+      'ఈ ఫలితాల గురించి మీ వైద్యుడిని సంప్రదించండి.';
 
   @override
   String get keyFindings => 'ముఖ్యమైన ఫలితాలు';
 
   @override
-  String get noKeyFindings => 'ఈ నివేదిక కోసం ముఖ్యమైన ఫలితాలు ఏవీ అందుబాటులో లేవు.';
+  String get noKeyFindings =>
+      'ఈ నివేదిక కోసం ముఖ్యమైన ఫలితాలు ఏవీ అందుబాటులో లేవు.';
 
   @override
   String get noLabValues => 'ల్యాబ్ విలువలు కనుగొనబడలేదు.';
@@ -246,10 +253,12 @@ class AppLocalizationsTe extends AppLocalizations {
   String get translateSummary => 'సారాంశాన్ని అనువదించండి';
 
   @override
-  String get translationFailed => 'అనువాదం విఫలమైంది. దయచేసి మళ్లీ ప్రయత్నించండి.';
+  String get translationFailed =>
+      'అనువాదం విఫలమైంది. దయచేసి మళ్లీ ప్రయత్నించండి.';
 
   @override
-  String get translatedVersionAvailable => 'అనువదించబడిన వెర్షన్ అందుబాటులో ఉంది';
+  String get translatedVersionAvailable =>
+      'అనువదించబడిన వెర్షన్ అందుబాటులో ఉంది';
 
   @override
   String get load => 'లోడ్ చేయండి';
@@ -264,10 +273,12 @@ class AppLocalizationsTe extends AppLocalizations {
   String get comparedToPreviousReport => 'మునుపటి నివేదికతో పోలిస్తే';
 
   @override
-  String get noEarlierReport => 'పోలిక కోసం మునుపటి నివేదిక ఏదీ అందుబాటులో లేదు.';
+  String get noEarlierReport =>
+      'పోలిక కోసం మునుపటి నివేదిక ఏదీ అందుబాటులో లేదు.';
 
   @override
-  String get needTwoReports => 'ట్రెండ్ గ్రాఫ్‌ని చూపించడానికి కనీసం 2 నివేదికలు అవసరం.';
+  String get needTwoReports =>
+      'ట్రెండ్ గ్రాఫ్‌ని చూపించడానికి కనీసం 2 నివేదికలు అవసరం.';
 
   @override
   String get noHistoricalData => 'ఈ పరీక్షకు చారిత్రక డేటా లేదు.';
@@ -285,7 +296,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get medicationReminders => 'మందుల రిమైండర్‌లు';
 
   @override
-  String get setDailyReminders => 'మీ మందుల కోసం రోజువారీ రిమైండర్‌లను సెట్ చేయండి';
+  String get setDailyReminders =>
+      'మీ మందుల కోసం రోజువారీ రిమైండర్‌లను సెట్ చేయండి';
 
   @override
   String get noRemindersSet => 'రిమైండర్‌లు సెట్ చేయబడలేదు';
@@ -303,13 +315,15 @@ class AppLocalizationsTe extends AppLocalizations {
   String get deleteReminder => 'రిమైండర్‌ను తొలగించండి';
 
   @override
-  String get deleteReminderConfirm => 'మీరు ఖచ్చితంగా ఈ రిమైండర్‌ను తొలగించాలనుకుంటున్నారా?';
+  String get deleteReminderConfirm =>
+      'మీరు ఖచ్చితంగా ఈ రిమైండర్‌ను తొలగించాలనుకుంటున్నారా?';
 
   @override
   String get medicalProfile => 'వైద్య సమాచారం';
 
   @override
-  String get keepMedicalHistoryUpdated => 'మెరుగైన విశ్లేషణ కోసం మీ వైద్య చరిత్రను అప్‌డేట్‌గా ఉంచండి.';
+  String get keepMedicalHistoryUpdated =>
+      'మెరుగైన విశ్లేషణ కోసం మీ వైద్య చరిత్రను అప్‌డేట్‌గా ఉంచండి.';
 
   @override
   String get bloodGroup => 'రక్త వర్గం';
@@ -330,7 +344,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get emergencyContact => 'అత్యవసర సంప్రదింపు';
 
   @override
-  String get emergencyContactSubtitle => 'మేము అత్యవసర సమయాల్లో మాత్రమే దీనిని ఉపయోగిస్తాము.';
+  String get emergencyContactSubtitle =>
+      'మేము అత్యవసర సమయాల్లో మాత్రమే దీనిని ఉపయోగిస్తాము.';
 
   @override
   String get phoneNumber => 'ఫోన్ నంబర్';
@@ -342,7 +357,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get personalInformation => 'వ్యక్తిగత సమాచారం';
 
   @override
-  String get viewEditPersonalDetails => 'మీ వ్యక్తిగత వివరాలను వీక్షించండి మరియు సవరించండి';
+  String get viewEditPersonalDetails =>
+      'మీ వ్యక్తిగత వివరాలను వీక్షించండి మరియు సవరించండి';
 
   @override
   String get bloodGroupAllergiesHistory => 'రక్త వర్గం, అలర్జీలు మరియు చరిత్ర';
@@ -375,7 +391,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get logOutTitle => 'లాగ్ అవుట్ చేయాలా?';
 
   @override
-  String get logOutConfirm => 'మీరు ఖచ్చితంగా MedNarrate నుండి లాగ్ అవుట్ చేయాలనుకుంటున్నారా?';
+  String get logOutConfirm =>
+      'మీరు ఖచ్చితంగా MedNarrate నుండి లాగ్ అవుట్ చేయాలనుకుంటున్నారా?';
 
   @override
   String get failedToLoadProfile => 'ప్రొఫైల్ లోడ్ చేయడంలో విఫలమైంది';
@@ -432,7 +449,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get professionalMode => 'ప్రొఫెషనల్ మోడ్';
 
   @override
-  String get professionalModeSubtitle => 'అప్రమేయంగా క్లినికల్ సారాంశాలను చూపించు';
+  String get professionalModeSubtitle =>
+      'అప్రమేయంగా క్లినికల్ సారాంశాలను చూపించు';
 
   @override
   String get appLock => 'యాప్ లాక్';
@@ -444,7 +462,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get disableAppLock => 'యాప్ లాక్‌ను నిలిపివేయాలా?';
 
   @override
-  String get appLockReportsAccessible => 'మీ నివేదికలు బయోమెట్రిక్స్ లేకుండా అందుబాటులో ఉంటాయి.';
+  String get appLockReportsAccessible =>
+      'మీ నివేదికలు బయోమెట్రిక్స్ లేకుండా అందుబాటులో ఉంటాయి.';
 
   @override
   String get disable => 'నిలిపివేయండి';
@@ -453,13 +472,15 @@ class AppLocalizationsTe extends AppLocalizations {
   String get notifications => 'నోటిఫికేషన్‌లు';
 
   @override
-  String get notificationsSubtitle => 'మందుల రిమైండర్‌లు & హెచ్చరికలను ప్రారంభించండి';
+  String get notificationsSubtitle =>
+      'మందుల రిమైండర్‌లు & హెచ్చరికలను ప్రారంభించండి';
 
   @override
   String get medicationSchedules => 'మందుల షెడ్యూల్‌లు';
 
   @override
-  String get managePillReminders => 'మీ ఆటోమేటెడ్ మాత్రల రిమైండర్‌లను నిర్వహించండి';
+  String get managePillReminders =>
+      'మీ ఆటోమేటెడ్ మాత్రల రిమైండర్‌లను నిర్వహించండి';
 
   @override
   String get reminderSound => 'రిమైండర్ సౌండ్';
@@ -501,7 +522,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get goToReports => 'నివేదికలకు వెళ్లండి';
 
   @override
-  String get noMedicationSchedules => 'మీ నివేదికలలో ఇంకా మందుల షెడ్యూల్‌లు ఏవీ కనుగొనబడలేదు. ట్రాకింగ్ ప్రారంభించడానికి ప్రిస్క్రిప్షన్‌లను కలిగి ఉన్న నివేదికను అప్‌లోడ్ చేయండి.';
+  String get noMedicationSchedules =>
+      'మీ నివేదికలలో ఇంకా మందుల షెడ్యూల్‌లు ఏవీ కనుగొనబడలేదు. ట్రాకింగ్ ప్రారంభించడానికి ప్రిస్క్రిప్షన్‌లను కలిగి ఉన్న నివేదికను అప్‌లోడ్ చేయండి.';
 
   @override
   String get messageCopied => 'సందేశం కాపీ చేయబడింది';
@@ -522,7 +544,8 @@ class AppLocalizationsTe extends AppLocalizations {
   String get exportData => 'డేటాను ఎగుమతి చేయండి';
 
   @override
-  String get requestArchive => 'మీ వైద్య చరిత్ర యొక్క ఆర్కైవ్‌ను అభ్యర్థించాలా?';
+  String get requestArchive =>
+      'మీ వైద్య చరిత్ర యొక్క ఆర్కైవ్‌ను అభ్యర్థించాలా?';
 
   @override
   String get languageUpdated => 'భాష విజయవంతంగా అప్‌డేట్ చేయబడింది';
@@ -543,5 +566,6 @@ class AppLocalizationsTe extends AppLocalizations {
   String get professionalModeDisabled => 'ప్రొఫెషనల్ మోడ్ నిలిపివేయబడింది';
 
   @override
-  String get reportAnalyzedSuccessfully => 'నివేదిక విజయవంతంగా విశ్లేషించబడింది!';
+  String get reportAnalyzedSuccessfully =>
+      'నివేదిక విజయవంతంగా విశ్లేషించబడింది!';
 }

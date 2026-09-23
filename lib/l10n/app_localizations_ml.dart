@@ -48,7 +48,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get createAccount => 'അക്കൗണ്ട് സൃഷ്ടിക്കുക';
 
   @override
-  String get personalizeHealthJourney => 'നിങ്ങളുടെ ആരോഗ്യ യാത്ര വ്യക്തിഗതമാക്കാം.';
+  String get personalizeHealthJourney =>
+      'നിങ്ങളുടെ ആരോഗ്യ യാത്ര വ്യക്തിഗതമാക്കാം.';
 
   @override
   String get fullName => 'പൂർണ്ണമായ പേര്';
@@ -57,7 +58,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get creatingAccount => 'അക്കൗണ്ട് സൃഷ്ടിക്കുന്നു…';
 
   @override
-  String get alreadyHaveAccount => 'നേരത്തെ തന്നെ അക്കൗണ്ട് ഉണ്ടോ? ലോഗിൻ ചെയ്യുക';
+  String get alreadyHaveAccount =>
+      'നേരത്തെ തന്നെ അക്കൗണ്ട് ഉണ്ടോ? ലോഗിൻ ചെയ്യുക';
 
   @override
   String get resetPassword => 'പാസ്‌വേഡ് റീസെറ്റ് ചെയ്യുക';
@@ -114,7 +116,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get noReportsFound => 'റിപ്പോർട്ടുകളൊന്നും കണ്ടെത്തിയില്ല';
 
   @override
-  String get uploadFirstReport => 'ആരംഭിക്കുന്നതിന് നിങ്ങളുടെ ആദ്യ മെഡിക്കൽ റിപ്പോർട്ട് അപ്‌ലോഡ് ചെയ്യുക';
+  String get uploadFirstReport =>
+      'ആരംഭിക്കുന്നതിന് നിങ്ങളുടെ ആദ്യ മെഡിക്കൽ റിപ്പോർട്ട് അപ്‌ലോഡ് ചെയ്യുക';
 
   @override
   String get uploadReport => 'റിപ്പോർട്ട് അപ്‌ലോഡ് ചെയ്യുക';
@@ -135,7 +138,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get uploading => 'അപ്‌ലോഡ് ചെയ്യുന്നു…';
 
   @override
-  String get analyzingReport => 'AI ഉപയോഗിച്ച് നിങ്ങളുടെ റിപ്പോർട്ട് വിശകലനം ചെയ്യുന്നു…';
+  String get analyzingReport =>
+      'AI ഉപയോഗിച്ച് നിങ്ങളുടെ റിപ്പോർട്ട് വിശകലനം ചെയ്യുന്നു…';
 
   @override
   String get thisMayTakeAMinute => 'ഇതിന് ഒരു മിനിറ്റ് എടുത്തേക്കാം.';
@@ -171,7 +175,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get deleteReportTitle => 'റിപ്പോർട്ട് ഇല്ലാതാക്കണോ?';
 
   @override
-  String get deleteReportConfirm => 'ഇത് ഈ റിപ്പോർട്ടും അതിൻ്റെ വിശകലനവും ശാശ്വതമായി ഇല്ലാതാക്കും. ഇത് പഴയപടിയാക്കാനാവില്ല.';
+  String get deleteReportConfirm =>
+      'ഇത് ഈ റിപ്പോർട്ടും അതിൻ്റെ വിശകലനവും ശാശ്വതമായി ഇല്ലാതാക്കും. ഇത് പഴയപടിയാക്കാനാവില്ല.';
 
   @override
   String get cancel => 'റദ്ദാക്കുക';
@@ -186,7 +191,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get analyzingYourReport => 'നിങ്ങളുടെ റിപ്പോർട്ട് വിശകലനം ചെയ്യുന്നു…';
 
   @override
-  String get aiReadingDocument => 'AI നിങ്ങളുടെ രേഖ വായിക്കുന്നു. ഇതിന് ഒരു മിനിറ്റ് എടുത്തേക്കാം.';
+  String get aiReadingDocument =>
+      'AI നിങ്ങളുടെ രേഖ വായിക്കുന്നു. ഇതിന് ഒരു മിനിറ്റ് എടുത്തേക്കാം.';
 
   @override
   String get analysisFailed => 'വിശകലനം പരാജയപ്പെട്ടു';
@@ -213,16 +219,19 @@ class AppLocalizationsMl extends AppLocalizations {
   String get abnormalValuesDetected => 'അസാധാരണമായ മൂല്യങ്ങൾ കണ്ടെത്തി';
 
   @override
-  String get someParametersOutOfRange => 'ചില പാരാമീറ്ററുകൾ സാധാരണ റഫറൻസ് ശ്രേണിക്ക് പുറത്താണ്.';
+  String get someParametersOutOfRange =>
+      'ചില പാരാമീറ്ററുകൾ സാധാരണ റഫറൻസ് ശ്രേണിക്ക് പുറത്താണ്.';
 
   @override
-  String get consultYourDoctor => 'ഈ കണ്ടെത്തലുകളെക്കുറിച്ച് നിങ്ങളുടെ ഡോക്ടറെ സമീപിക്കുക.';
+  String get consultYourDoctor =>
+      'ഈ കണ്ടെത്തലുകളെക്കുറിച്ച് നിങ്ങളുടെ ഡോക്ടറെ സമീപിക്കുക.';
 
   @override
   String get keyFindings => 'പ്രധാന കണ്ടെത്തലുകൾ';
 
   @override
-  String get noKeyFindings => 'ഈ റിപ്പോർട്ടിനായി പ്രധാന കണ്ടെത്തലുകളൊന്നും ലഭ്യമല്ല.';
+  String get noKeyFindings =>
+      'ഈ റിപ്പോർട്ടിനായി പ്രധാന കണ്ടെത്തലുകളൊന്നും ലഭ്യമല്ല.';
 
   @override
   String get noLabValues => 'ലാബ് മൂല്യങ്ങളൊന്നും കണ്ടെത്തിയില്ല.';
@@ -246,7 +255,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get translateSummary => 'സംഗ്രഹം വിവർത്തനം ചെയ്യുക';
 
   @override
-  String get translationFailed => 'വിവർത്തനം പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.';
+  String get translationFailed =>
+      'വിവർത്തനം പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.';
 
   @override
   String get translatedVersionAvailable => 'വിവർത്തനം ചെയ്ത പതിപ്പ് ലഭ്യമാണ്';
@@ -261,16 +271,20 @@ class AppLocalizationsMl extends AppLocalizations {
   String get compareSelected => 'തിരഞ്ഞെടുത്തവ താരതമ്യം ചെയ്യുക';
 
   @override
-  String get comparedToPreviousReport => 'മുമ്പത്തെ റിപ്പോർട്ടുമായി താരതമ്യം ചെയ്യുമ്പോൾ';
+  String get comparedToPreviousReport =>
+      'മുമ്പത്തെ റിപ്പോർട്ടുമായി താരതമ്യം ചെയ്യുമ്പോൾ';
 
   @override
-  String get noEarlierReport => 'താരതമ്യത്തിനായി മുമ്പത്തെ റിപ്പോർട്ടൊന്നും ലഭ്യമല്ല.';
+  String get noEarlierReport =>
+      'താരതമ്യത്തിനായി മുമ്പത്തെ റിപ്പോർട്ടൊന്നും ലഭ്യമല്ല.';
 
   @override
-  String get needTwoReports => 'ട്രെൻഡ് ഗ്രാഫ് കാണിക്കാൻ കുറഞ്ഞത് 2 റിപ്പോർട്ടുകളെങ്കിലും ആവശ്യമാണ്.';
+  String get needTwoReports =>
+      'ട്രെൻഡ് ഗ്രാഫ് കാണിക്കാൻ കുറഞ്ഞത് 2 റിപ്പോർട്ടുകളെങ്കിലും ആവശ്യമാണ്.';
 
   @override
-  String get noHistoricalData => 'ഈ പരിശോധനയ്ക്കായി ചരിത്രപരമായ ഡാറ്റയൊന്നുമില്ല.';
+  String get noHistoricalData =>
+      'ഈ പരിശോധനയ്ക്കായി ചരിത്രപരമായ ഡാറ്റയൊന്നുമില്ല.';
 
   @override
   String get testTrend => 'ടെസ്റ്റ് ട്രെൻഡ്';
@@ -285,7 +299,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get medicationReminders => 'മരുന്ന് ഓർമ്മപ്പെടുത്തലുകൾ';
 
   @override
-  String get setDailyReminders => 'നിങ്ങളുടെ മരുന്നുകൾക്കായി ദൈനംദിന ഓർമ്മപ്പെടുത്തലുകൾ സജ്ജമാക്കുക';
+  String get setDailyReminders =>
+      'നിങ്ങളുടെ മരുന്നുകൾക്കായി ദൈനംദിന ഓർമ്മപ്പെടുത്തലുകൾ സജ്ജമാക്കുക';
 
   @override
   String get noRemindersSet => 'ഓർമ്മപ്പെടുത്തലുകളൊന്നും സജ്ജമാക്കിയിട്ടില്ല';
@@ -303,13 +318,15 @@ class AppLocalizationsMl extends AppLocalizations {
   String get deleteReminder => 'ഓർമ്മപ്പെടുത്തൽ ഇല്ലാതാക്കുക';
 
   @override
-  String get deleteReminderConfirm => 'ഈ ഓർമ്മപ്പെടുത്തൽ ഇല്ലാതാക്കണമെന്ന് നിങ്ങൾക്ക് ഉറപ്പാണോ?';
+  String get deleteReminderConfirm =>
+      'ഈ ഓർമ്മപ്പെടുത്തൽ ഇല്ലാതാക്കണമെന്ന് നിങ്ങൾക്ക് ഉറപ്പാണോ?';
 
   @override
   String get medicalProfile => 'മെഡിക്കൽ വിവരങ്ങൾ';
 
   @override
-  String get keepMedicalHistoryUpdated => 'മികച്ച വിശകലനത്തിനായി നിങ്ങളുടെ മെഡിക്കൽ ചരിത്രം അപ്‌ഡേറ്റ് ചെയ്യുക.';
+  String get keepMedicalHistoryUpdated =>
+      'മികച്ച വിശകലനത്തിനായി നിങ്ങളുടെ മെഡിക്കൽ ചരിത്രം അപ്‌ഡേറ്റ് ചെയ്യുക.';
 
   @override
   String get bloodGroup => 'രക്ത ഗ്രൂപ്പ്';
@@ -330,7 +347,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get emergencyContact => 'അടിയന്തര സമ്പർക്കം';
 
   @override
-  String get emergencyContactSubtitle => 'അടിയന്തര സാഹചര്യങ്ങളിൽ മാത്രമേ ഞങ്ങൾ ഇത് ഉപയോഗിക്കൂ.';
+  String get emergencyContactSubtitle =>
+      'അടിയന്തര സാഹചര്യങ്ങളിൽ മാത്രമേ ഞങ്ങൾ ഇത് ഉപയോഗിക്കൂ.';
 
   @override
   String get phoneNumber => 'ഫോൺ നമ്പർ';
@@ -342,7 +360,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get personalInformation => 'വ്യക്തിഗത വിവരങ്ങൾ';
 
   @override
-  String get viewEditPersonalDetails => 'നിങ്ങളുടെ വ്യക്തിഗത വിവരങ്ങൾ കാണുകയും എഡിറ്റുചെയ്യുകയും ചെയ്യുക';
+  String get viewEditPersonalDetails =>
+      'നിങ്ങളുടെ വ്യക്തിഗത വിവരങ്ങൾ കാണുകയും എഡിറ്റുചെയ്യുകയും ചെയ്യുക';
 
   @override
   String get bloodGroupAllergiesHistory => 'രക്ത ഗ്രൂപ്പ്, അലർജികൾ, ചരിത്രം';
@@ -375,7 +394,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get logOutTitle => 'ലോഗ് ഔട്ട് ചെയ്യണോ?';
 
   @override
-  String get logOutConfirm => 'MedNarrate-ൽ നിന്ന് ലോഗ് ഔട്ട് ചെയ്യണമെന്ന് നിങ്ങൾക്ക് ഉറപ്പാണോ?';
+  String get logOutConfirm =>
+      'MedNarrate-ൽ നിന്ന് ലോഗ് ഔട്ട് ചെയ്യണമെന്ന് നിങ്ങൾക്ക് ഉറപ്പാണോ?';
 
   @override
   String get failedToLoadProfile => 'പ്രൊഫൈൽ ലോഡുചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു';
@@ -432,7 +452,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get professionalMode => 'പ്രൊഫഷണൽ മോഡ്';
 
   @override
-  String get professionalModeSubtitle => 'സ്ഥിരസ്ഥിതിയായി ക്ലിനിക്കൽ സംഗ്രഹങ്ങൾ കാണിക്കുക';
+  String get professionalModeSubtitle =>
+      'സ്ഥിരസ്ഥിതിയായി ക്ലിനിക്കൽ സംഗ്രഹങ്ങൾ കാണിക്കുക';
 
   @override
   String get appLock => 'ആപ്പ് ലോക്ക്';
@@ -444,7 +465,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get disableAppLock => 'ആപ്പ് ലോക്ക് പ്രവർത്തനരഹിതമാക്കണോ?';
 
   @override
-  String get appLockReportsAccessible => 'ബയോമെട്രിക്സ് ഇല്ലാതെ നിങ്ങളുടെ റിപ്പോർട്ടുകൾ ആക്സസ് ചെയ്യാൻ കഴിയും.';
+  String get appLockReportsAccessible =>
+      'ബയോമെട്രിക്സ് ഇല്ലാതെ നിങ്ങളുടെ റിപ്പോർട്ടുകൾ ആക്സസ് ചെയ്യാൻ കഴിയും.';
 
   @override
   String get disable => 'പ്രവർത്തനരഹിതമാക്കുക';
@@ -453,13 +475,15 @@ class AppLocalizationsMl extends AppLocalizations {
   String get notifications => 'അറിയിപ്പുകൾ';
 
   @override
-  String get notificationsSubtitle => 'മരുന്ന് ഓർമ്മപ്പെടുത്തലുകളും അലർട്ടുകളും പ്രവർത്തനക്ഷമമാക്കുക';
+  String get notificationsSubtitle =>
+      'മരുന്ന് ഓർമ്മപ്പെടുത്തലുകളും അലർട്ടുകളും പ്രവർത്തനക്ഷമമാക്കുക';
 
   @override
   String get medicationSchedules => 'മരുന്ന് ഷെഡ്യൂളുകൾ';
 
   @override
-  String get managePillReminders => 'നിങ്ങളുടെ യാന്ത്രിക ഗുളിക ഓർമ്മപ്പെടുത്തലുകൾ നിയന്ത്രിക്കുക';
+  String get managePillReminders =>
+      'നിങ്ങളുടെ യാന്ത്രിക ഗുളിക ഓർമ്മപ്പെടുത്തലുകൾ നിയന്ത്രിക്കുക';
 
   @override
   String get reminderSound => 'ഓർമ്മപ്പെടുത്തൽ ശബ്ദം';
@@ -501,7 +525,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get goToReports => 'റിപ്പോർട്ടുകളിലേക്ക് പോകുക';
 
   @override
-  String get noMedicationSchedules => 'നിങ്ങളുടെ റിപ്പോർട്ടുകളിൽ ഇതുവരെ മരുന്ന് ഷെഡ്യൂളുകളൊന്നും കണ്ടെത്തിയില്ല. ട്രാക്കിംഗ് ആരംഭിക്കുന്നതിന് കുറിപ്പടികൾ അടങ്ങിയ ഒരു റിപ്പോർട്ട് അപ്‌ലോഡ് ചെയ്യുക.';
+  String get noMedicationSchedules =>
+      'നിങ്ങളുടെ റിപ്പോർട്ടുകളിൽ ഇതുവരെ മരുന്ന് ഷെഡ്യൂളുകളൊന്നും കണ്ടെത്തിയില്ല. ട്രാക്കിംഗ് ആരംഭിക്കുന്നതിന് കുറിപ്പടികൾ അടങ്ങിയ ഒരു റിപ്പോർട്ട് അപ്‌ലോഡ് ചെയ്യുക.';
 
   @override
   String get messageCopied => 'സന്ദേശം പകർത്തി';
@@ -522,7 +547,8 @@ class AppLocalizationsMl extends AppLocalizations {
   String get exportData => 'ഡാറ്റ എക്സ്പോർട്ട് ചെയ്യുക';
 
   @override
-  String get requestArchive => 'നിങ്ങളുടെ മെഡിക്കൽ ചരിത്രത്തിൻ്റെ ആർക്കൈവ് അഭ്യർത്ഥിക്കണോ?';
+  String get requestArchive =>
+      'നിങ്ങളുടെ മെഡിക്കൽ ചരിത്രത്തിൻ്റെ ആർക്കൈവ് അഭ്യർത്ഥിക്കണോ?';
 
   @override
   String get languageUpdated => 'ഭാഷ വിജയകരമായി അപ്‌ഡേറ്റ് ചെയ്‌തു';
@@ -543,5 +569,6 @@ class AppLocalizationsMl extends AppLocalizations {
   String get professionalModeDisabled => 'പ്രൊഫഷണൽ മോഡ് പ്രവർത്തനരഹിതമാക്കി';
 
   @override
-  String get reportAnalyzedSuccessfully => 'റിപ്പോർട്ട് വിജയകരമായി വിശകലനം ചെയ്തു!';
+  String get reportAnalyzedSuccessfully =>
+      'റിപ്പോർട്ട് വിജയകരമായി വിശകലനം ചെയ്തു!';
 }
