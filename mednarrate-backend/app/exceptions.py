@@ -10,19 +10,30 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     # Surface per-field Pydantic validation errors to the client so callers get
     # actionable messages (e.g. "report_date: invalid date format") instead of
     # a generic "Validation error" that masks our specific HTTPException details.
+    # NEVER include raw "input" values in the response as they might contain secrets.
     errors = exc.errors()
+    safe_errors = []
     if errors:
+        for error in errors:
+            loc = " → ".join(str(l) for l in error.get("loc", []) if l != "body")
+            msg = error.get("msg", "Validation error")
+            safe_errors.append({
+                "field": loc,
+                "message": msg,
+                "type": error.get("type", "value_error"),
+            })
+        
         # Build a readable string from the first error for single-error responses
-        first = errors[0]
-        loc = " → ".join(str(l) for l in first.get("loc", []) if l != "body")
-        msg = first.get("msg", "Validation error")
+        first = safe_errors[0]
+        loc = first.get("field", "")
+        msg = first.get("message", "Validation error")
         detail = f"{loc}: {msg}" if loc else msg
     else:
         detail = "Validation error"
-    from fastapi.encoders import jsonable_encoder
+    
     return JSONResponse(
         status_code=422,
-        content={"detail": detail, "code": "validation_error", "errors": jsonable_encoder(errors)}
+        content={"detail": detail, "code": "validation_error", "errors": safe_errors}
     )
 
 async def unhandled_exception_handler(request: Request, exc: Exception):
@@ -34,10 +45,17 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
             content={"detail": exc.detail},
             headers=getattr(exc, "headers", None) or {},
         )
-    logger.error(f"Unhandled exception: {exc}")
+    
+    request_id = getattr(request.state, "request_id", None) or request.headers.get("x-request-id", "unknown")
+    logger.error(f"Unhandled exception on {request.method} {request.url.path} (request_id={request_id}): {type(exc).__name__}: {exc}", exc_info=True)
+    
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error", "code": "internal_server_error"}
+        content={
+            "detail": "An internal error occurred. Please contact support if this persists.", 
+            "code": "internal_server_error",
+            "request_id": request_id
+        }
     )
 
 async def integrity_exception_handler(request: Request, exc: IntegrityError):

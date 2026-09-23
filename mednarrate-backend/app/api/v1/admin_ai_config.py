@@ -45,7 +45,8 @@ async def get_ai_configuration(
 
     raw_key = settings_records.get("ai_api_key", getattr(settings, "GEMINI_API_KEY", None))
     key_is_set = bool(raw_key and raw_key.strip())
-    masked_key = mask_secret(raw_key) if key_is_set else None
+    # Never return any portion of the key — even partial reveals are a security risk
+    # Admins see only: is_set: true/false
 
     return {
         "primary_provider": primary_provider,
@@ -55,7 +56,7 @@ async def get_ai_configuration(
         "fallback_provider": fallback_provider,
         "api_key_status": {
             "is_set": key_is_set,
-            "masked_key": masked_key,
+            # No masked_key field — do not return any key fragment
         }
     }
 
@@ -110,9 +111,7 @@ async def update_ai_configuration(
         await _upsert_setting("ai_api_key", payload.api_key.strip(), True, "AI Provider API Key")
         changes["api_key"] = "[UPDATED_SENSITIVE]"
 
-    await db.commit()
-
-    # Log action (automatically sanitizes sensitive keys)
+    # Audit BEFORE commit — both config change and audit record are atomic
     await log_admin_action(
         db=db,
         actor_admin_id=admin_ctx.user_id,
@@ -123,8 +122,68 @@ async def update_ai_configuration(
         result="success",
         reason="Updated AI operational configuration",
         request=request,
+        # api_key value is never included — sanitize_metadata also covers this
         metadata={"changes": changes},
         sensitive_access_flag=True if "api_key" in changes else False
     )
 
+    # Single commit: settings + audit event together
+    await db.commit()
+
     return {"message": "AI configuration updated successfully", "updated_fields": list(changes.keys())}
+
+
+@router.post("/ai-config/test-credential")
+async def test_ai_credential(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    admin_ctx: AdminContext = Depends(require_permission("ai_config:manage"))
+):
+    """
+    Tests the currently configured AI provider credential without returning or exposing it.
+    Returns: {reachable, authenticated, model_available, request_successful}
+    """
+    from app.services.llm_client import llm_client_instance
+    from app.core.config import settings as cfg
+
+    provider_name = (getattr(cfg, "PRIMARY_LLM_PROVIDER", "auto") or "auto").lower().strip()
+    try:
+        provider = llm_client_instance.get_provider(provider_name)
+        health = await provider.health_check()
+        
+        await log_admin_action(
+            db=db,
+            actor_admin_id=admin_ctx.user_id,
+            action="ai_config_test_credential",
+            resource_type="system_setting",
+            resource_id="ai_config",
+            permission_used="ai_config:manage",
+            result="success",
+            request=request,
+            metadata={"provider": provider_name, "health_result": {k: v for k, v in health.items() if k != "api_key"}}
+        )
+        await db.commit()
+
+        # Never return the key — only return diagnostic flags
+        return {
+            "provider": provider_name,
+            "reachable": health.get("reachable", False),
+            "configured": health.get("configured", False),
+            "request_successful": health.get("request_successful", False),
+            "error_summary": health.get("error_summary", None) if not health.get("request_successful") else None
+        }
+    except Exception as e:
+        await log_admin_action(
+            db=db,
+            actor_admin_id=admin_ctx.user_id,
+            action="ai_config_test_credential",
+            resource_type="system_setting",
+            resource_id="ai_config",
+            permission_used="ai_config:manage",
+            result="failure",
+            request=request,
+            metadata={"provider": provider_name}
+        )
+        await db.commit()
+        return {"provider": provider_name, "reachable": False, "configured": False, "request_successful": False, "error_summary": "Provider check failed"}
+

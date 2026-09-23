@@ -121,8 +121,19 @@ async def test_superadmin_governance_flow(client: AsyncClient, db_session):
     assert bg_resp.status_code == 200
     grant_id = bg_resp.json()["grant"]["id"]
 
+    # Mark as active manually since self-approval is blocked
+    from app.models.admin import SensitiveAccessGrant
+    import uuid
+    grant = (await db_session.execute(select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == uuid.UUID(grant_id)))).scalar_one()
+    grant.status = "active"
+    await db_session.commit()
+
     # Revoke grant
-    revoke_resp = await client.post(f"/api/v1/admin/break-glass/grants/{grant_id}/revoke", headers=headers)
+    revoke_resp = await client.post(
+        f"/api/v1/admin/break-glass/grants/{grant_id}/revoke", 
+        json={"reason": "No longer needed"},
+        headers=headers
+    )
     assert revoke_resp.status_code == 200
 
     # 7. Audit Log Read-Only Inspection

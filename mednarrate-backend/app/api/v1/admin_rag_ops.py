@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func, desc
@@ -10,6 +10,7 @@ from app.core.admin_auth import AdminContext, require_permission
 from app.models.knowledge_document import KnowledgeDocument, DocLifecycleStatus
 from app.models.rag_chunk import RagChunk
 from app.services.audit import log_admin_action
+from app.core.pagination import build_pagination_response, page_to_offset, clamp_limit
 
 router = APIRouter()
 
@@ -20,30 +21,37 @@ class DocumentStatusUpdate(BaseModel):
 @router.get("/documents")
 async def list_documents(
     status: Optional[DocLifecycleStatus] = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
     admin_ctx: AdminContext = Depends(require_permission("rag.view")),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(KnowledgeDocument).order_by(desc(KnowledgeDocument.updated_at))
+    limit = clamp_limit(limit)
+    stmt = select(KnowledgeDocument)
     if status:
         stmt = stmt.where(KnowledgeDocument.status == status)
-        
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    stmt = stmt.order_by(desc(KnowledgeDocument.updated_at)).offset(page_to_offset(page, limit)).limit(limit)
     result = await db.execute(stmt)
     docs = result.scalars().all()
-    
-    return {
-        "status": "ok",
-        "documents": [
-            {
-                "id": d.id,
-                "name": d.name,
-                "version": d.version,
-                "status": d.status,
-                "approval_state": d.approval_state,
-                "created_at": d.created_at,
-                "updated_at": d.updated_at
-            } for d in docs
-        ]
-    }
+
+    items = [
+        {
+            "id": str(d.id),
+            "name": d.name,
+            "version": d.version,
+            "status": d.status,
+            "approval_state": d.approval_state,
+            "created_at": d.created_at,
+            "updated_at": d.updated_at
+        }
+        for d in docs
+    ]
+
+    return build_pagination_response(items, total, page, limit)
 
 @router.patch("/documents/{doc_id}/status")
 async def update_document_status(
@@ -77,19 +85,39 @@ async def get_rag_status(
     admin_ctx: AdminContext = Depends(require_permission("rag.view")),
     db: AsyncSession = Depends(get_db)
 ):
+    """RAG index status. Distinguishes: healthy, empty, down, unknown."""
     total_chunks = (await db.execute(select(func.count(RagChunk.id)))).scalar() or 0
     total_docs = (await db.execute(select(func.count(KnowledgeDocument.id)))).scalar() or 0
-    published_docs = (await db.execute(select(func.count(KnowledgeDocument.id)).where(KnowledgeDocument.status == DocLifecycleStatus.published))).scalar() or 0
-    
-    # In a real system, we'd query the vector DB for true index health
-    index_health = "healthy" if total_chunks > 0 else "empty"
-    
+    published_docs = (await db.execute(
+        select(func.count(KnowledgeDocument.id)).where(KnowledgeDocument.status == DocLifecycleStatus.published)
+    )).scalar() or 0
+    failed_docs = (await db.execute(
+        select(func.count(KnowledgeDocument.id)).where(KnowledgeDocument.status == DocLifecycleStatus.failed)
+    )).scalar() or 0
+
+    # Real RAG health probe
+    rag_index_status = "unknown"
+    rag_error = None
+    try:
+        from app.services.rag import rag_service
+        rag_health = await rag_service.health_check()
+        if rag_health.get("reachable"):
+            rag_index_status = "healthy" if total_chunks > 0 else "empty"
+        else:
+            rag_index_status = "down"
+            rag_error = rag_health.get("error_summary", "Vector store not reachable")
+    except Exception:
+        rag_index_status = "unknown"
+        rag_error = "RAG service health check unavailable"
+
     return {
         "status": "ok",
         "overview": {
-            "index_status": index_health,
+            "index_status": rag_index_status,
+            "error_summary": rag_error,
             "total_chunks": total_chunks,
             "total_documents": total_docs,
-            "published_documents": published_docs
+            "published_documents": published_docs,
+            "failed_documents": failed_docs,
         }
     }

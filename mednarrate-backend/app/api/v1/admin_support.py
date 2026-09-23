@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-from sqlalchemy import or_, and_, desc
+from sqlalchemy import or_, and_, desc, func
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
@@ -11,6 +11,8 @@ from app.core.admin_auth import AdminContext, get_admin_context, require_permiss
 from app.models.support import SupportTicket, SupportTicketMessage, SupportTicketEvent, TicketCategory, TicketPriority, TicketStatus
 from app.models.incidents import Incident, IncidentSeverity, IncidentStatus, IncidentEvent
 from app.services.audit import log_admin_action
+from app.services.support_diagnostics import build_diagnostic_snapshot
+from app.core.pagination import build_pagination_response, page_to_offset, clamp_limit
 
 router = APIRouter()
 
@@ -34,10 +36,13 @@ async def list_tickets(
     assigned_admin_id: Optional[str] = None,
     unassigned: Optional[bool] = False,
     search: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
     admin_ctx: AdminContext = Depends(require_permission("support.view")),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(SupportTicket).order_by(SupportTicket.updated_at.desc())
+    limit = clamp_limit(limit)
+    stmt = select(SupportTicket)
     
     if status:
         stmt = stmt.where(SupportTicket.status == status)
@@ -49,7 +54,6 @@ async def list_tickets(
         stmt = stmt.where(SupportTicket.assigned_admin_id == assigned_admin_id)
         
     if search:
-        # Simple search across title or ID
         stmt = stmt.where(
             or_(
                 SupportTicket.title.ilike(f"%{search}%"),
@@ -57,27 +61,33 @@ async def list_tickets(
                 SupportTicket.user_id.ilike(f"%{search}%")
             )
         )
-        
+
+    # Count total
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    # Paginate
+    offset = page_to_offset(page, limit)
+    stmt = stmt.order_by(SupportTicket.updated_at.desc()).offset(offset).limit(limit)
     result = await db.execute(stmt.options(selectinload(SupportTicket.user)))
     tickets = result.scalars().all()
     
-    return {
-        "status": "ok",
-        "tickets": [
-            {
-                "id": t.id,
-                "user_id": t.user_id,
-                "user_email": t.user.email if t.user else None,
-                "title": t.title,
-                "category": t.category,
-                "priority": t.priority,
-                "status": t.status,
-                "assigned_admin_id": t.assigned_admin_id,
-                "created_at": t.created_at,
-                "updated_at": t.updated_at
-            } for t in tickets
-        ]
-    }
+    items = [
+        {
+            "id": t.id,
+            "user_id": t.user_id,
+            "user_email": t.user.email if t.user else None,
+            "title": t.title,
+            "category": t.category,
+            "priority": t.priority,
+            "status": t.status,
+            "assigned_admin_id": t.assigned_admin_id,
+            "created_at": t.created_at,
+            "updated_at": t.updated_at
+        } for t in tickets
+    ]
+    
+    return build_pagination_response(items, total, page, limit)
 
 @router.get("/{ticket_id}")
 async def get_ticket(
@@ -95,10 +105,13 @@ async def get_ticket(
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
         
-    # Build automatic diagnostic snapshot if related_report_id exists and not yet snapshotted
-    if ticket.related_report_id:
-        # Just fetching basic info for diagnostic, ideally we would generate a snapshot here if it doesn't exist
-        pass
+    # Build real diagnostic snapshot for any ticket with a related resource
+    diagnostic_snapshot = await build_diagnostic_snapshot(
+        ticket=ticket,
+        db=db,
+        admin_can_manage_reports=admin_ctx.has_permission("reports.manage"),
+        admin_can_manage_support=admin_ctx.has_permission("support.manage")
+    )
 
     return {
         "status": "ok",
@@ -117,6 +130,7 @@ async def get_ticket(
             "created_at": ticket.created_at,
             "updated_at": ticket.updated_at
         },
+        "diagnostic_snapshot": diagnostic_snapshot,
         "messages": [
             {
                 "id": m.id,

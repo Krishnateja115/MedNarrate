@@ -146,6 +146,20 @@ async def test_admin_llm_status_endpoint_auth_and_privileges(client, token_heade
     usr = (await db_session.execute(stmt)).scalars().first()
     if usr:
         usr.role = UserRole.admin
+        
+        # Add ai.view permission
+        from app.models.admin import AdminRole, AdminPermission, AdminRolePermission, AdminRoleAssignment
+        import uuid
+        role = AdminRole(name=f"Temp Role_{uuid.uuid4()}")
+        db_session.add(role)
+        perm = (await db_session.execute(select(AdminPermission).where(AdminPermission.name == "ai.view"))).scalars().first()
+        if not perm:
+            perm = AdminPermission(name="ai.view")
+            db_session.add(perm)
+        await db_session.flush()
+        db_session.add(AdminRolePermission(role_id=role.id, permission_id=perm.id))
+        db_session.add(AdminRoleAssignment(user_id=usr.id, role_id=role.id))
+        
         await db_session.commit()
 
     # Admin user should succeed with 200 and return safe diagnostics

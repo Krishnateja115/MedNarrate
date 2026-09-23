@@ -73,9 +73,14 @@ class SensitiveAccessGrant(Base):
     admin_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     resource_type: Mapped[str] = mapped_column(String, nullable=False)
     resource_id: Mapped[str] = mapped_column(String, nullable=False)
-    reason: Mapped[Text] = mapped_column(Text, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    # Approval fields — populated when an approver acts on a REQUESTED grant
     approved_by_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    status: Mapped[str] = mapped_column(String, default="active")  # active, expired, revoked
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Status lifecycle: requested → approved → active → expired / revoked
+    status: Mapped[str] = mapped_column(String, default="requested", index=True)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    revoker_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    revoke_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
