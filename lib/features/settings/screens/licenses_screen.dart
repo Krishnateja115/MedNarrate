@@ -152,7 +152,7 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
                       : ListView.separated(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           itemCount: filteredPackages.length,
-                          separatorBuilder: (_, _) => const Divider(height: 1, indent: 20),
+                          separatorBuilder: (context, index) => const Divider(height: 1, indent: 20),
                           itemBuilder: (context, index) {
                             final package = filteredPackages[index];
                             final count = _packageLicenses[package]!.length;
@@ -220,7 +220,7 @@ class _PackageLicenseDetailScreen extends StatelessWidget {
       body: ListView.separated(
         padding: const EdgeInsets.all(20),
         itemCount: entries.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 24),
+        separatorBuilder: (context, index) => const SizedBox(height: 24),
         itemBuilder: (context, index) {
           final entry = entries[index];
           final text = entry.paragraphs.map((p) => p.text).join('\n\n');

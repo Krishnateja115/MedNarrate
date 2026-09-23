@@ -71,7 +71,7 @@ Future<void> _ensureBackendRunningOnMacOS() async {
   if (await _isBackendHealthy()) return;
 
   String? backendPath = await _resolveBackendPath();
-  if (backendPath == null || !await Directory(backendPath).exists()) {
+  if (backendPath == null || !await Directory(backendPath).exists() || backendPath == '/') {
     String? selectedDirectory = await FilePicker.platform.getDirectoryPath(dialogTitle: 'Select mednarrate-backend folder');
     if (selectedDirectory != null) {
       await _saveBackendPath(selectedDirectory);
@@ -81,9 +81,21 @@ Future<void> _ensureBackendRunningOnMacOS() async {
     }
   }
 
+  final venvActivate = File('$backendPath/venv/bin/activate');
+  final dotVenvActivate = File('$backendPath/.venv/bin/activate');
+  String activateCmd = '';
+
+  if (await venvActivate.exists()) {
+    activateCmd = 'source venv/bin/activate';
+  } else if (await dotVenvActivate.exists()) {
+    activateCmd = 'source .venv/bin/activate';
+  } else {
+    throw Exception("Missing virtual environment. Neither 'venv' nor '.venv' found in backend directory ($backendPath). Please create one and install requirements.");
+  }
+
   await Process.start(
     '/bin/bash',
-    ['-lc', 'cd "$backendPath" && (export PATH="/opt/homebrew/bin:/opt/anaconda3/bin:/usr/local/bin:\$PATH"; source venv/bin/activate 2>/dev/null; python3 run_server.py > /tmp/mednarrate_backend.log 2>&1)'],
+    ['-lc', 'cd "$backendPath" && (export PATH="/opt/homebrew/bin:/opt/anaconda3/bin:/usr/local/bin:\$PATH"; $activateCmd; python3 run_server.py > /tmp/mednarrate_backend.log 2>&1)'],
     mode: ProcessStartMode.detached,
   );
 
@@ -150,10 +162,17 @@ Future<void> _runBootSequence() async {
       home: BootErrorScreen(
         error: e.toString(),
         onRetry: () {
-          File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: ${e.toString()}\n', mode: FileMode.append);
+          File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: Retrying\n', mode: FileMode.append);
           runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: BootScreen(status: 'Retrying connection...')));
           _runBootSequence();
         },
+        onChangeBackend: Platform.isMacOS ? () async {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('macos_backend_path');
+          File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: Reset backend path\n', mode: FileMode.append);
+          runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: BootScreen(status: 'Retrying connection...')));
+          _runBootSequence();
+        } : null,
       ),
     ));
   }

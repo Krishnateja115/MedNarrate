@@ -41,7 +41,8 @@ class BootScreen extends StatelessWidget {
 class BootErrorScreen extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;
-  const BootErrorScreen({super.key, required this.error, required this.onRetry});
+  final VoidCallback? onChangeBackend;
+  const BootErrorScreen({super.key, required this.error, required this.onRetry, this.onChangeBackend});
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +65,14 @@ class BootErrorScreen extends StatelessWidget {
                 icon: const Icon(Icons.refresh),
                 label: const Text('Retry'),
               ),
+              if (onChangeBackend != null) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: onChangeBackend,
+                  icon: const Icon(Icons.folder_open),
+                  label: const Text('Change Backend Folder'),
+                ),
+              ],
             ],
           ),
         ),
