@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.admin_auth import AdminContext, get_admin_context, require_permission, require_any_permission
 from app.services.audit import log_admin_action
+from app.schemas.user import AdminIdentityOut
 
 router = APIRouter()
 
@@ -22,6 +23,14 @@ async def admin_health(
     )
     await db.commit()
     return {"status": "ok", "message": "Admin services are running"}
+
+@router.get("/me", response_model=AdminIdentityOut)
+async def get_admin_me(
+    admin_ctx: AdminContext = Depends(get_admin_context)
+):
+    user_data = admin_ctx.user.__dict__.copy()
+    user_data["permissions"] = list(admin_ctx.permissions)
+    return user_data
 
 @router.get("/kb-stats")
 async def get_kb_stats(

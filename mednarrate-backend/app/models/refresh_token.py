@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import String, Boolean, ForeignKey, DateTime, func
+from sqlalchemy import String, Boolean, ForeignKey, DateTime
 from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
@@ -12,4 +12,4 @@ class RefreshToken(Base):
     token_hash: Mapped[str] = mapped_column(String, index=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)

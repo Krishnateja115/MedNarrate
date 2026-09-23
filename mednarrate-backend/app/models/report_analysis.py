@@ -1,5 +1,6 @@
+from datetime import datetime
 import uuid
-from sqlalchemy import ForeignKey, DateTime, Text, func
+from sqlalchemy import ForeignKey, DateTime, Text
 from sqlalchemy import Uuid as UUID, JSON as JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
@@ -23,5 +24,5 @@ class ReportAnalysis(Base):
     llm_model: Mapped[str | None] = mapped_column(Text, nullable=True)
     processed_at: Mapped[object | None] = mapped_column(DateTime, nullable=True)
     
-    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[object] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

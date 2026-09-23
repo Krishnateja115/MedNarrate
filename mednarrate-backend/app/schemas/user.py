@@ -146,6 +146,12 @@ class UserOut(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AdminIdentityOut(UserOut):
+    permissions: list[str] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserWithProfileOut(UserOut):
     medical_profile: Optional[MedicalProfileOut] = None
     doctor_profile: Optional[DoctorProfileBase] = None

@@ -1,6 +1,7 @@
+from datetime import datetime
 import uuid, enum
 from datetime import date
-from sqlalchemy import String, Text, Boolean, Date, Enum, ForeignKey, DateTime, func
+from sqlalchemy import String, Text, Boolean, Date, Enum, ForeignKey, DateTime
 from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
@@ -35,5 +36,5 @@ class Report(Base):
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     processing_status: Mapped[ProcessingStatus] = mapped_column(Enum(ProcessingStatus), default=ProcessingStatus.uploaded)
     is_favourite: Mapped[bool] = mapped_column(Boolean, default=False)
-    uploaded_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[object] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    uploaded_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

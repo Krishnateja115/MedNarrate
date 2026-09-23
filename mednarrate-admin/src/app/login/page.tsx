@@ -28,7 +28,7 @@ export default function LoginPage() {
       });
 
       if (response.access_token) {
-        const userResp = await fetchApi('/api/v1/users/me', {
+        const userResp = await fetchApi('/api/v1/admin/me', {
           headers: { Authorization: `Bearer ${response.access_token}` },
         });
 
@@ -38,7 +38,7 @@ export default function LoginPage() {
           return;
         }
 
-        login(response.access_token, userResp);
+        login(response.access_token, response.refresh_token, userResp);
       }
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');

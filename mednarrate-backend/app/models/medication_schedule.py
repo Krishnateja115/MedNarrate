@@ -1,5 +1,6 @@
+from datetime import datetime
 import uuid
-from sqlalchemy import String, Text, DateTime, Boolean, func, ForeignKey, Integer
+from sqlalchemy import String, Text, DateTime, Boolean, ForeignKey, Integer
 from sqlalchemy import Uuid as UUID, JSON as JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
@@ -27,4 +28,4 @@ class MedicationSchedule(Base):
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)

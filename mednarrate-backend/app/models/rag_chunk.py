@@ -1,5 +1,6 @@
+from datetime import datetime
 import uuid
-from sqlalchemy import String, Text, DateTime, func, JSON, ForeignKey, Integer
+from sqlalchemy import String, Text, DateTime, JSON, ForeignKey, Integer
 from sqlalchemy import Uuid as UUID, JSON as JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
@@ -21,4 +22,4 @@ class RagChunk(Base):
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
     embedding_json: Mapped[object] = _emb_col()
-    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)

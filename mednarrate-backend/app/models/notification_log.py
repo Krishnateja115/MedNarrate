@@ -1,5 +1,6 @@
+from datetime import datetime
 import uuid
-from sqlalchemy import String, Text, DateTime, func, ForeignKey, Boolean
+from sqlalchemy import String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
@@ -15,4 +16,4 @@ class NotificationLog(Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False) # 'sent', 'failed'
     error_message: Mapped[str] = mapped_column(Text, nullable=True)
-    sent_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
+    sent_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)

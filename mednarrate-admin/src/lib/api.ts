@@ -34,7 +34,7 @@ export async function fetchApi<T = any>(endpoint: string, options: FetchOptions 
     url += `?${searchParams.toString()}`;
   }
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('admin_token') : null;
 
   const config: RequestInit = {
     method: data ? 'POST' : 'GET',

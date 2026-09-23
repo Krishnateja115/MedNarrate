@@ -33,7 +33,11 @@ interface UsersResponse {
   };
 }
 
+import { useAuth } from '@/contexts/AuthContext';
+import { Forbidden } from '@/components/ui/forbidden';
+
 export default function UsersPage() {
+  const { can } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -48,6 +52,7 @@ export default function UsersPage() {
   const { data, isLoading, error } = useQuery<UsersResponse>({
     queryKey: ['users', searchTerm, roleFilter, statusFilter],
     queryFn: () => fetchApi(`/api/v1/admin/users?${queryParams.toString()}`),
+    enabled: can('users.view'),
   });
 
   const getRoleBadge = (role: string) => {
@@ -64,6 +69,10 @@ export default function UsersPage() {
         return <Badge variant="secondary">{role}</Badge>;
     }
   };
+
+  if (!can('users.view')) {
+    return <Forbidden />;
+  }
 
   return (
     <div className="space-y-6 fade-in">

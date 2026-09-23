@@ -1,5 +1,6 @@
+from datetime import datetime
 import uuid
-from sqlalchemy import String, Text, DateTime, func, ForeignKey, UniqueConstraint
+from sqlalchemy import String, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
@@ -13,8 +14,8 @@ class PushToken(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     device_token: Mapped[str] = mapped_column(Text, nullable=False)
     platform: Mapped[str] = mapped_column(String(20), nullable=False) # 'ios' or 'android'
-    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[object] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     __table_args__ = (
         UniqueConstraint('user_id', 'device_token', name='_user_device_token_uc'),

@@ -1,5 +1,6 @@
+from datetime import datetime
 import uuid
-from sqlalchemy import String, Text, DateTime, func, ForeignKey, UniqueConstraint
+from sqlalchemy import String, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy import Uuid as UUID, JSON as JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
@@ -11,7 +12,7 @@ class AnalysisTranslation(Base):
     language: Mapped[str] = mapped_column(String, nullable=False)
     patient_summary: Mapped[str] = mapped_column(Text, nullable=False)
     findings_json: Mapped[list] = mapped_column(JSONB, default=list)
-    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)
     
     __table_args__ = (
         UniqueConstraint('report_analysis_id', 'language', name='_report_lang_uc'),

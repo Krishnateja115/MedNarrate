@@ -1,5 +1,6 @@
+from datetime import datetime
 import uuid
-from sqlalchemy import String, DateTime, ForeignKey, Boolean, func
+from sqlalchemy import String, DateTime, ForeignKey, Boolean
 from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
@@ -11,4 +12,4 @@ class PasswordResetToken(Base):
     token_hash: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     expires_at: Mapped[object] = mapped_column(DateTime, nullable=False)
     used: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[object] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)
