@@ -8,12 +8,12 @@ class MainFlutterWindow: NSWindow {
     self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
 
-    let phoneAspectRatio = NSSize(width: 9, height: 19.5)
+    let phoneAspectRatio = NSSize(width: 1080, height: 2400)
     self.contentAspectRatio = phoneAspectRatio
 
-    let defaultSize = NSSize(width: 420, height: 910)
+    let defaultSize = NSSize(width: 405, height: 900)
     self.setContentSize(defaultSize)
-    self.minSize = NSSize(width: 360, height: 780)
+    self.minSize = NSSize(width: 360, height: 800)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
