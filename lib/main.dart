@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:file_picker/file_picker.dart';
@@ -46,6 +47,7 @@ class AppLifecycleObserver extends WidgetsBindingObserver {
 }
 
 Future<bool> _isBackendHealthy() async {
+  if (kIsWeb) return true;
   try {
     final result = await HttpClient()
         .getUrl(Uri.parse('${AppConfig.apiBaseUrl}/health'))
@@ -76,6 +78,7 @@ Future<bool> _isBackendHealthy() async {
 }
 
 Future<String?> _resolveBackendPath() async {
+  if (kIsWeb) return null;
   final defaultPath = '${Directory.current.path}/mednarrate-backend';
   if (await Directory(defaultPath).exists()) {
     return defaultPath;
@@ -89,7 +92,7 @@ Future<void> _saveBackendPath(String path) async {
 }
 
 Future<void> _ensureBackendRunningOnMacOS() async {
-  if (!Platform.isMacOS || !AppConfig.isLocalDevMode) return;
+  if (kIsWeb || !Platform.isMacOS || !AppConfig.isLocalDevMode) return;
   if (await _isBackendHealthy()) return;
 
   String? backendPath = await _resolveBackendPath();
@@ -144,7 +147,7 @@ Future<void> _ensureBackendRunningOnMacOS() async {
 }
 
 Future<void> _ensureBackendRunningOnWindows() async {
-  if (!Platform.isWindows || !AppConfig.isLocalDevMode) return;
+  if (kIsWeb || !Platform.isWindows || !AppConfig.isLocalDevMode) return;
   if (await _isBackendHealthy()) return;
 
   final exeDir = File(Platform.resolvedExecutable).parent.path;
@@ -172,10 +175,12 @@ Future<void> _ensureBackendRunningOnWindows() async {
 
 Future<void> _runBootSequence() async {
   try {
-    if (Platform.isMacOS) {
-      await _ensureBackendRunningOnMacOS();
-    } else if (Platform.isWindows) {
-      await _ensureBackendRunningOnWindows();
+    if (!kIsWeb) {
+      if (Platform.isMacOS) {
+        await _ensureBackendRunningOnMacOS();
+      } else if (Platform.isWindows) {
+        await _ensureBackendRunningOnWindows();
+      }
     }
     
     // Proceed to app init
@@ -202,20 +207,32 @@ Future<void> _runBootSequence() async {
       ),
     ));
   } catch (e) {
-    File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: ${e.toString()}\n', mode: FileMode.append);
+    if (!kIsWeb) {
+      try {
+        File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: ${e.toString()}\n', mode: FileMode.append);
+      } catch (_) {}
+    }
     runApp(MaterialApp(
       debugShowCheckedModeBanner: false,
       home: BootErrorScreen(
         error: e.toString(),
         onRetry: () {
-          File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: Retrying\n', mode: FileMode.append);
+          if (!kIsWeb) {
+            try {
+              File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: Retrying\n', mode: FileMode.append);
+            } catch (_) {}
+          }
           runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: BootScreen(status: 'Retrying connection...')));
           _runBootSequence();
         },
-        onChangeBackend: Platform.isMacOS ? () async {
+        onChangeBackend: (!kIsWeb && Platform.isMacOS) ? () async {
           final prefs = await SharedPreferences.getInstance();
           await prefs.remove('macos_backend_path');
-          File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: Reset backend path\n', mode: FileMode.append);
+          if (!kIsWeb) {
+            try {
+              File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: Reset backend path\n', mode: FileMode.append);
+            } catch (_) {}
+          }
           runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: BootScreen(status: 'Retrying connection...')));
           _runBootSequence();
         } : null,

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/config/app_config.dart';
@@ -113,6 +114,7 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
   }
 
   Future<void> _checkApiKey() async {
+    if (kIsWeb) return;
     final envFile = File('${widget.backendPath}/.env');
     if (await envFile.exists()) {
       final content = await envFile.readAsString();
@@ -127,7 +129,11 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
   }
 
   void _onOutput(String line) {
-    File('/tmp/mednarrate_setup.log').writeAsStringSync('$line\n', mode: FileMode.append);
+    if (!kIsWeb) {
+      try {
+        File('/tmp/mednarrate_setup.log').writeAsStringSync('$line\n', mode: FileMode.append);
+      } catch (_) {}
+    }
     if (mounted) {
       setState(() {
         _logs.add(line);
@@ -191,7 +197,7 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
       _logs.clear();
     });
 
-    if (_needsApiKey && _apiKeyController.text.isNotEmpty) {
+    if (!kIsWeb && _needsApiKey && _apiKeyController.text.isNotEmpty) {
       final envFile = File('${widget.backendPath}/.env');
       final exampleEnv = File('${widget.backendPath}/.env.example');
       String envContent = '';
