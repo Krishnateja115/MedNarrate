@@ -77,8 +77,9 @@ def classify_entity_category(name: str, unit: str = "") -> str:
 VALID_SHORT_NAMES = frozenset({"ph"})
 
 def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
-    # Non-blood report types (radiology, pathology) do not have numerical lab parameters
-    if (report_type or "").lower().strip() not in ["blood", "lab", "laboratory"]:
+    # Skip only for explicit imaging/radiology report types
+    rt = (report_type or "").lower().strip()
+    if rt in ["radiology", "mri", "xray", "ct", "ultrasound", "imaging"]:
         return []
 
     results = []

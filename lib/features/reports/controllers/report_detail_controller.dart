@@ -41,9 +41,25 @@ class ReportDetailController extends ChangeNotifier {
 
   Future<void> _fetchLatest(String reportId) async {
     try {
-      final r = await _apiService.getReport(reportId);
+      var r = await _apiService.getReport(reportId);
       if (_disposed) return;
       report = r;
+
+      // Poll if report is currently processing or uploaded
+      int attempts = 0;
+      while ((r.processingStatus == 'processing' || r.processingStatus == 'uploaded') && attempts < 15) {
+        await Future.delayed(const Duration(seconds: 2));
+        if (_disposed) return;
+        attempts++;
+        try {
+          r = await _apiService.getReport(reportId);
+          report = r;
+          if (!_disposed) notifyListeners();
+        } catch (_) {
+          break;
+        }
+      }
+
       if (r.processingStatus == 'completed') {
         try {
           final resAnalysis = await _apiService.getReportAnalysis(reportId);
@@ -68,6 +84,14 @@ class ReportDetailController extends ChangeNotifier {
             if (_disposed) return;
             comparison = comp;
           } catch (_) {}
+        } catch (analysisErr) {
+          debugPrint('Error fetching report analysis: $analysisErr');
+        }
+      } else if (r.processingStatus == 'failed') {
+        try {
+          final status = await _apiService.getReportStatus(reportId);
+          if (_disposed) return;
+          error = status.errorReason ?? 'Report processing failed.';
         } catch (_) {}
       }
       error = null;

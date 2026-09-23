@@ -508,14 +508,15 @@ class ApiService {
       'id': m['id'],
       'title': m['title'],
       'hospital': m['hospital'] ?? '',
-      'reportDate': m['report_date'],
-      'fileName': m['file_name'],
-      'filePath': m['file_path'],
-      'fileType': m['file_type'],
-      'reportType': m['report_type'],
-      'extractedText': m['extracted_text'] ?? '',
-      'isFavourite': m['is_favourite'] ?? false,
-      'uploadedAt': m['uploaded_at'],
+      'reportDate': m['report_date'] ?? m['reportDate'],
+      'fileName': m['file_name'] ?? m['fileName'],
+      'filePath': m['file_path'] ?? m['filePath'],
+      'fileType': m['file_type'] ?? m['fileType'],
+      'reportType': m['report_type'] ?? m['reportType'],
+      'extractedText': m['extracted_text'] ?? m['extractedText'] ?? '',
+      'processingStatus': m['processing_status'] ?? m['processingStatus'] ?? 'uploaded',
+      'isFavourite': m['is_favourite'] ?? m['isFavourite'] ?? false,
+      'uploadedAt': m['uploaded_at'] ?? m['uploadedAt'],
     };
   }
 
