@@ -16,8 +16,9 @@ class ReminderCreate(BaseModel):
     dosage: str
     frequency: str
     times_of_day: List[str]
-    duration_days: Optional[int]
-    notes: Optional[str]
+    duration_days: Optional[int] = None
+    notes: Optional[str] = None
+    report_id: Optional[uuid.UUID] = None
 
 class ReminderOut(ReminderCreate):
     id: uuid.UUID

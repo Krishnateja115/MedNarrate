@@ -30,7 +30,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
     });
 
     try {
-      final data = await ApiService.instance.getMedicationSchedules();
+      final data = await ApiService.instance.getReminders();
       setState(() {
         _schedules = data.map((e) => MedicationScheduleModel.fromMap(e)).toList();
       });

@@ -1,6 +1,6 @@
 class MedicationScheduleModel {
   final String id;
-  final String reportId;
+  final String? reportId;
   final String medicationName;
   final String? dosage;
   final String? frequency;
@@ -12,7 +12,7 @@ class MedicationScheduleModel {
 
   MedicationScheduleModel({
     required this.id,
-    required this.reportId,
+    this.reportId,
     required this.medicationName,
     this.dosage,
     this.frequency,
@@ -26,7 +26,7 @@ class MedicationScheduleModel {
   factory MedicationScheduleModel.fromMap(Map<String, dynamic> map) {
     return MedicationScheduleModel(
       id: map['id'] as String,
-      reportId: map['report_id'] as String,
+      reportId: map['report_id'] as String?,
       medicationName: map['medication_name'] as String,
       dosage: map['dosage'] as String?,
       frequency: map['frequency'] as String?,
@@ -34,7 +34,7 @@ class MedicationScheduleModel {
       durationDays: map['duration_days'] as int?,
       notes: map['notes'] as String?,
       isActive: map['is_active'] as bool,
-      createdAt: DateTime.parse(map['created_at'] as String),
+      createdAt: map['created_at'] != null ? DateTime.parse(map['created_at'] as String) : DateTime.now(),
     );
   }
 }

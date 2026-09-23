@@ -113,7 +113,13 @@ class AppRouter {
       ),
       GoRoute(
         path: Routes.reminders,
-        builder: (context, state) => const ReminderScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return ReminderScreen(
+            autoOpenAdd: extra?['autoOpenAdd'] as bool? ?? false,
+            prefillMed: extra?['prefillMed'] as Map<String, dynamic>?,
+          );
+        }
       ),
       GoRoute(
         path: Routes.medications,

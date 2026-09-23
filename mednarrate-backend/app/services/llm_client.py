@@ -48,7 +48,7 @@ class VertexAIProvider(LLMProvider):
 
     @property
     def model_name(self) -> str:
-        return getattr(settings, "VERTEX_MODEL", "gemini-1.5-flash")
+        return getattr(settings, "VERTEX_MODEL", "gemini-3.8-flash")
 
     async def health_check(self) -> dict:
         has_project = bool(self.project and self.project.strip())
@@ -204,7 +204,7 @@ class DevGeminiProvider(LLMProvider):
 
     @property
     def model_name(self) -> str:
-        return getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash")
+        return getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash")
 
     def _check_production_restriction(self):
         if (getattr(settings, "ENVIRONMENT", "development") or "").lower() == "production":

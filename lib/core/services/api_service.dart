@@ -546,6 +546,45 @@ class ApiService {
     await _patch('/notifications/medication-schedules/$id/toggle');
   }
 
+  // ─────────────────────────── Reminders ───────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getReminders() async {
+    final resp = await _get('/reminders/');
+    return List<Map<String, dynamic>>.from(jsonDecode(resp.body));
+  }
+
+  Future<Map<String, dynamic>> createReminder({
+    required String medicationName,
+    required String dosage,
+    required String frequency,
+    required List<String> timesOfDay,
+    int? durationDays,
+    String? notes,
+    String? reportId,
+  }) async {
+    final body = <String, dynamic>{
+      'medication_name': medicationName,
+      'dosage': dosage,
+      'frequency': frequency,
+      'times_of_day': timesOfDay,
+    };
+    if (durationDays != null) body['duration_days'] = durationDays;
+    if (notes != null) body['notes'] = notes;
+    if (reportId != null) body['report_id'] = reportId;
+    
+    final resp = await _post('/reminders/', body: body);
+    return jsonDecode(resp.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> updateReminder(String id, Map<String, dynamic> fields) async {
+    final resp = await _patch('/reminders/$id', body: fields);
+    return jsonDecode(resp.body) as Map<String, dynamic>;
+  }
+
+  Future<void> deleteReminder(String id) async {
+    await _delete('/reminders/$id');
+  }
+
   Future<void> executeOfflineAction(OfflineAction action) async {
     if (action.method == 'POST_MULTIPART') {
       await uploadReport(

@@ -5,12 +5,14 @@ class MedicineReminderCard extends StatelessWidget {
   final List<ReminderModel> reminders;
   final List<Map<String, dynamic>> reportedMedications;
   final VoidCallback? onAddTap;
+  final void Function(Map<String, dynamic>)? onConfirmTap;
 
   const MedicineReminderCard({
     super.key,
     required this.reminders,
     this.reportedMedications = const [],
     this.onAddTap,
+    this.onConfirmTap,
   });
 
   @override
@@ -72,7 +74,7 @@ class MedicineReminderCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (onAddTap != null && (hasReportedMeds || hasManualMeds))
+              if (onAddTap != null)
                 IconButton(
                   onPressed: onAddTap,
                   icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.orange),
@@ -120,6 +122,19 @@ class MedicineReminderCard extends StatelessWidget {
                       ),
                       textAlign: TextAlign.center,
                     ),
+                    if (onAddTap != null) ...[
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: onAddTap,
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text("Add a Medication"),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -208,6 +223,12 @@ class MedicineReminderCard extends StatelessWidget {
                           ],
                         ),
                       ),
+                      if (onConfirmTap != null)
+                        IconButton(
+                          onPressed: () => onConfirmTap!(med),
+                          icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                          tooltip: "Confirm to Schedule",
+                        ),
                     ],
                   ),
                 );
