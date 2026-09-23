@@ -46,7 +46,7 @@ jobs:
       - name: Run tests (SQLite in-memory)
         env:
           DATABASE_URL: "sqlite+aiosqlite:///:memory:"
-          SECRET_KEY: "ci-test-secret-key-32-chars-min!!"
+          JWT_SECRET: "ci-test-secret-key-32-chars-min!!"
           GEMINI_API_KEY: ""
           UPLOAD_DIR: "uploads"
           ALGORITHM: "HS256"
