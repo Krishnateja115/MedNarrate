@@ -186,7 +186,11 @@ Future<void> _runBootSequence() async {
     // Proceed to app init
     WidgetsBinding.instance.addObserver(AppLifecycleObserver());
     await NotificationService.instance.initialize();
-    await CacheService.instance.initialize();
+    try {
+      await CacheService.instance.initialize();
+    } catch (e) {
+      debugPrint("CacheService init error: $e");
+    }
     
     final savedThemeMode = await StorageService.instance.getThemeMode();
     themeModeNotifier.value = savedThemeMode;

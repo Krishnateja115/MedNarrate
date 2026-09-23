@@ -10,13 +10,18 @@ class KeystoreService {
     final prefs = await SharedPreferences.getInstance();
     final keyString = prefs.getString('hive_encryption_key');
     if (keyString != null) {
-      return base64Url.decode(keyString);
-    } else {
-      final secureRandom = Random.secure();
-      final newKey = List<int>.generate(32, (i) => secureRandom.nextInt(256));
-      await prefs.setString('hive_encryption_key', base64Url.encode(newKey));
-      return newKey;
+      try {
+        final decoded = base64Url.decode(keyString);
+        if (decoded.length == 32) {
+          return decoded;
+        }
+      } catch (_) {}
     }
+    
+    final secureRandom = Random.secure();
+    final newKey = List<int>.generate(32, (i) => secureRandom.nextInt(256));
+    await prefs.setString('hive_encryption_key', base64Url.encode(newKey));
+    return newKey;
   }
 
   Future<void> saveToken(String token) async {

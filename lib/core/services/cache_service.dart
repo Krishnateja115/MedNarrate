@@ -32,12 +32,21 @@ class CacheService {
     if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(CachedChatMessageAdapter());
 
     // Open boxes with scoped names and encryption
-    _reportsBox = await Hive.openBox<CachedReport>('reports_$_currentUserId', encryptionCipher: cipher);
-    _labValuesBox = await Hive.openBox<CachedLabValue>('lab_values_$_currentUserId', encryptionCipher: cipher);
-    _chatMessagesBox = await Hive.openBox<CachedChatMessage>('chat_messages_$_currentUserId', encryptionCipher: cipher);
-    _metadataBox = await Hive.openBox<dynamic>('metadata_$_currentUserId', encryptionCipher: cipher);
+    _reportsBox = await _openBoxSafely<CachedReport>('reports_$_currentUserId', cipher);
+    _labValuesBox = await _openBoxSafely<CachedLabValue>('lab_values_$_currentUserId', cipher);
+    _chatMessagesBox = await _openBoxSafely<CachedChatMessage>('chat_messages_$_currentUserId', cipher);
+    _metadataBox = await _openBoxSafely<dynamic>('metadata_$_currentUserId', cipher);
 
     _initialized = true;
+  }
+
+  Future<Box<T>> _openBoxSafely<T>(String name, HiveAesCipher cipher) async {
+    try {
+      return await Hive.openBox<T>(name, encryptionCipher: cipher);
+    } catch (e) {
+      await Hive.deleteBoxFromDisk(name);
+      return await Hive.openBox<T>(name, encryptionCipher: cipher);
+    }
   }
 
   Future<void> saveReports(List<ReportModel> reports) async {

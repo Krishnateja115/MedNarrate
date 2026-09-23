@@ -12,7 +12,12 @@ class OfflineQueueService {
   Future<void> initialize() async {
     if (_initialized) return;
     if (!Hive.isAdapterRegistered(3)) Hive.registerAdapter(OfflineActionAdapter());
-    _queueBox = await Hive.openBox<OfflineAction>('offline_queue');
+    try {
+      _queueBox = await Hive.openBox<OfflineAction>('offline_queue');
+    } catch (e) {
+      await Hive.deleteBoxFromDisk('offline_queue');
+      _queueBox = await Hive.openBox<OfflineAction>('offline_queue');
+    }
     _initialized = true;
   }
 
