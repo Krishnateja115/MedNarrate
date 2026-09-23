@@ -96,5 +96,6 @@ async def health():
     return {
         "service": "mednarrate",
         "status": "ok",
-        "version": "1.0.0"
+        "version": os.environ.get("MEDNARRATE_VERSION", "1.0.0"),
+        "commit": os.environ.get("MEDNARRATE_COMMIT", "unknown")
     }

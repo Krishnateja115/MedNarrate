@@ -55,11 +55,12 @@ Future<bool> _isBackendHealthy() async {
     if (result.statusCode == 200) {
       final body = await result.transform(utf8.decoder).join();
       final isMedNarrate = body.contains('"service":"mednarrate"') || body.contains('"service": "mednarrate"');
-      final isCorrectVersion = body.contains('"version":"1.0.0"') || body.contains('"version": "1.0.0"');
+      final isCorrectVersion = body.contains('"version":"${AppConfig.appVersion}"') || body.contains('"version": "${AppConfig.appVersion}"');
+      final isCorrectCommit = body.contains('"commit":"${AppConfig.appCommit}"') || body.contains('"commit": "${AppConfig.appCommit}"');
       
-      if (isMedNarrate && isCorrectVersion) {
+      if (isMedNarrate && isCorrectVersion && isCorrectCommit) {
         return true;
-      } else if (isMedNarrate && !isCorrectVersion) {
+      } else if (isMedNarrate) {
         throw Exception("Stale MedNarrate backend version detected on port 8000. Please restart your application or kill the old backend process.");
       }
       
@@ -115,6 +116,10 @@ Future<void> _ensureBackendRunningOnMacOS() async {
     '/bin/sh',
     ['-c', 'cd "$backendPath" && "$pythonExe" run_server.py > /tmp/mednarrate_backend.log 2>&1'],
     mode: ProcessStartMode.detached,
+    environment: {
+      'MEDNARRATE_VERSION': AppConfig.appVersion,
+      'MEDNARRATE_COMMIT': AppConfig.appCommit,
+    },
   );
 
   const maxWait = Duration(seconds: 20);

@@ -27,4 +27,14 @@ class AppConfig {
     'SENTRY_DSN',
     defaultValue: '',
   );
+
+  static const String appVersion = String.fromEnvironment(
+    'APP_VERSION',
+    defaultValue: '1.0.0',
+  );
+
+  static const String appCommit = String.fromEnvironment(
+    'APP_COMMIT',
+    defaultValue: 'dev',
+  );
 }
