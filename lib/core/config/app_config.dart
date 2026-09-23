@@ -1,7 +1,7 @@
 class AppConfig {
   static const String _rawApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8000',
+    defaultValue: 'http://127.0.0.1:8000',
   );
   
   static String get apiBaseUrl => validateApiBaseUrl(environment, _rawApiBaseUrl);

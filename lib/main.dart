@@ -81,21 +81,21 @@ Future<void> _ensureBackendRunningOnMacOS() async {
     }
   }
 
-  final venvActivate = File('$backendPath/venv/bin/activate');
-  final dotVenvActivate = File('$backendPath/.venv/bin/activate');
-  String activateCmd = '';
+  final venvPython = File('$backendPath/venv/bin/python3');
+  final dotVenvPython = File('$backendPath/.venv/bin/python3');
+  String pythonExe = '';
 
-  if (await venvActivate.exists()) {
-    activateCmd = 'source venv/bin/activate';
-  } else if (await dotVenvActivate.exists()) {
-    activateCmd = 'source .venv/bin/activate';
+  if (await venvPython.exists()) {
+    pythonExe = venvPython.path;
+  } else if (await dotVenvPython.exists()) {
+    pythonExe = dotVenvPython.path;
   } else {
     throw Exception("Missing virtual environment. Neither 'venv' nor '.venv' found in backend directory ($backendPath). Please create one and install requirements.");
   }
 
   await Process.start(
-    '/bin/bash',
-    ['-lc', 'cd "$backendPath" && (export PATH="/opt/homebrew/bin:/opt/anaconda3/bin:/usr/local/bin:\$PATH"; $activateCmd; python3 run_server.py > /tmp/mednarrate_backend.log 2>&1)'],
+    '/bin/sh',
+    ['-c', 'cd "$backendPath" && "$pythonExe" run_server.py > /tmp/mednarrate_backend.log 2>&1'],
     mode: ProcessStartMode.detached,
   );
 
