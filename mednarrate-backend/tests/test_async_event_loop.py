@@ -1,19 +1,20 @@
-import pytest
 import asyncio
 import time
 from datetime import date
 from unittest.mock import patch
+
+import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+from app.models.report import FileType, ProcessingStatus, Report, ReportType
 from app.models.user import User
-from app.models.report import Report, ReportType, FileType, ProcessingStatus
+
 
 @pytest.mark.asyncio
 async def test_status_endpoint_responsive_during_background_processing(
-    client: AsyncClient,
-    token_headers: dict,
-    db_session: AsyncSession
+    client: AsyncClient, token_headers: dict, db_session: AsyncSession
 ):
     """
     Verifies that GET /api/v1/reports/{id}/status remains responsive (< 200ms)
@@ -34,7 +35,7 @@ async def test_status_endpoint_responsive_during_background_processing(
         report_type=ReportType.blood,
         file_type=FileType.pdf,
         extracted_text="Patient Test Result: Hemoglobin 14.2 g/dL",
-        processing_status=ProcessingStatus.uploaded
+        processing_status=ProcessingStatus.uploaded,
     )
     db_session.add(report)
     await db_session.commit()
@@ -49,11 +50,13 @@ async def test_status_endpoint_responsive_during_background_processing(
         time.sleep(0.5)
         return "Patient Test Result: Hemoglobin 14.2 g/dL"
 
-    with patch("app.services.analysis_pipeline.extract_text_from_file", side_effect=blocking_heavy_work):
+    with patch(
+        "app.services.analysis_pipeline.extract_text_from_file",
+        side_effect=blocking_heavy_work,
+    ):
         # 4. Trigger processing
         process_resp = await client.post(
-            f"/api/v1/reports/{report_id}/process",
-            headers=token_headers
+            f"/api/v1/reports/{report_id}/process", headers=token_headers
         )
         assert process_resp.status_code == 202
         assert process_resp.json()["processing_status"] == "processing"
@@ -62,25 +65,22 @@ async def test_status_endpoint_responsive_during_background_processing(
         async def fetch_status():
             start = time.perf_counter()
             resp = await client.get(
-                f"/api/v1/reports/{report_id}/status",
-                headers=token_headers
+                f"/api/v1/reports/{report_id}/status", headers=token_headers
             )
             elapsed = time.perf_counter() - start
             return resp, elapsed
 
         # Send 3 concurrent status requests
-        results = await asyncio.gather(
-            fetch_status(),
-            fetch_status(),
-            fetch_status()
-        )
+        results = await asyncio.gather(fetch_status(), fetch_status(), fetch_status())
 
         # 6. Verify all status requests responded promptly and returned valid status
         for resp, elapsed in results:
             assert resp.status_code == 200
             assert resp.json()["processing_status"] in ["processing", "completed"]
             # Assert each status request responded in under 200ms (0.2s)
-            assert elapsed < 0.200, f"Status endpoint blocked: took {elapsed:.4f}s (expected < 0.200s)"
+            assert (
+                elapsed < 0.200
+            ), f"Status endpoint blocked: took {elapsed:.4f}s (expected < 0.200s)"
 
     # Allow background task to clean up
     await asyncio.sleep(0.6)

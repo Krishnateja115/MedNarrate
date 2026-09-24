@@ -1,6 +1,8 @@
 import asyncio
-from app.services.llm_client import DevGeminiProvider
+
 from app.core.config import settings
+from app.services.llm_client import DevGeminiProvider
+
 
 async def main():
     print("Key in settings:", settings.GEMINI_API_KEY)
@@ -12,5 +14,6 @@ async def main():
         print("Success:", res)
     except Exception as e:
         print("Failed:", repr(e))
+
 
 asyncio.run(main())

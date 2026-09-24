@@ -1,9 +1,11 @@
 import abc
+import logging
 import time
 import uuid
-import logging
-import httpx
+
 import google.auth
+import httpx
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -309,7 +311,6 @@ class FallbackAIProvider(LLMProvider):
 
         prompt_lower = prompt.lower()
         sys_lower = (system_instruction or "").lower()
-        is_clinician = "clinician" in prompt_lower or "medical professional" in prompt_lower or "icd-10" in prompt_lower or "clinical tone" in sys_lower
         is_translation = "translate" in prompt_lower
         is_classification = "classify the following medical query" in prompt_lower
         is_chat = "ai assistant" in sys_lower or "you are mednarrate" in prompt_lower or "you are a helpful medical ai assistant" in prompt_lower
@@ -425,7 +426,7 @@ class FallbackAIProvider(LLMProvider):
                 lines.append("Pathology Examination Summary:")
                 lines.append(f"{extracted_text}")
                 lines.append("\n### 2. Key Findings")
-                lines.append(f"• Diagnostic findings derived directly from specimen analysis.")
+                lines.append("• Diagnostic findings derived directly from specimen analysis.")
                 lines.append("\n### 3. What These Terms Mean")
                 lines.append("• Pathological terms describe tissue structure and cellular features evaluated under microscopic examination.")
                 lines.append("\n### 4. Information Not Provided")
@@ -436,8 +437,8 @@ class FallbackAIProvider(LLMProvider):
             else:
                 # Blood / Laboratory Report
                 total_count = len(labs)
-                abnormal_labs = [l for l in labs if l.get("flag") in ["low", "high", "abnormal", "critical"]]
-                normal_labs = [l for l in labs if l.get("flag") == "normal"]
+                abnormal_labs = [val for val in labs if val.get("flag") in ["low", "high", "abnormal", "critical"]]
+                normal_labs = [val for val in labs if val.get("flag") == "normal"]
 
                 lines.append("### 1. What Your Report Says")
                 if total_count > 0:
@@ -448,14 +449,14 @@ class FallbackAIProvider(LLMProvider):
                 lines.append("\n### 2. Key Findings")
                 if abnormal_labs:
                     lines.append("Results Outside Reported Reference Ranges / Flagged Results:")
-                    for l in abnormal_labs:
-                        name = l.get("test_name") or l.get("original_name") or "Test"
-                        val = l.get("value")
-                        unit = l.get("unit", "")
-                        flag_str = (l.get("flag") or "").upper()
-                        low = l.get("ref_low")
-                        high = l.get("ref_high")
-                        ref_str = l.get("ref_range_str")
+                    for val in abnormal_labs:
+                        name = val.get("test_name") or val.get("original_name") or "Test"
+                        val = val.get("value")
+                        unit = val.get("unit", "")
+                        flag_str = (val.get("flag") or "").upper()
+                        low = val.get("ref_low")
+                        high = val.get("ref_high")
+                        ref_str = val.get("ref_range_str")
                         if not ref_str:
                             if low is not None and high is not None:
                                 ref_str = f"{low} - {high} {unit}".strip()
@@ -469,13 +470,13 @@ class FallbackAIProvider(LLMProvider):
                 
                 if normal_labs:
                     lines.append("\nResults Within Reported Normal Bounds:")
-                    for l in normal_labs:
-                        name = l.get("test_name") or l.get("original_name") or "Test"
-                        val = l.get("value")
-                        unit = l.get("unit", "")
-                        low = l.get("ref_low")
-                        high = l.get("ref_high")
-                        ref_str = l.get("ref_range_str")
+                    for val in normal_labs:
+                        name = val.get("test_name") or val.get("original_name") or "Test"
+                        val = val.get("value")
+                        unit = val.get("unit", "")
+                        low = val.get("ref_low")
+                        high = val.get("ref_high")
+                        ref_str = val.get("ref_range_str")
                         if not ref_str:
                             if low is not None and high is not None:
                                 ref_str = f"{low} - {high} {unit}".strip()
@@ -488,13 +489,13 @@ class FallbackAIProvider(LLMProvider):
                         lines.append(f"• {name}: {val} {unit} — NORMAL (Reported Reference Range: {ref_str}).")
 
                 lines.append("\n### 3. What These Terms Mean")
-                if any("glucose" in (l.get("test_name") or "").lower() for l in labs):
+                if any("glucose" in (val.get("test_name") or "").lower() for val in labs):
                     lines.append("• Serum Glucose: Measures sugar levels in the blood, an indicator of energy metabolism.")
-                if any("hemoglobin" in (l.get("test_name") or "").lower() for l in labs):
+                if any("hemoglobin" in (val.get("test_name") or "").lower() for val in labs):
                     lines.append("• Hemoglobin: An oxygen-carrying protein found inside red blood cells.")
-                if any("cholesterol" in (l.get("test_name") or "").lower() or "ldl" in (l.get("test_name") or "").lower() for l in labs):
+                if any("cholesterol" in (val.get("test_name") or "").lower() or "ldl" in (val.get("test_name") or "").lower() for val in labs):
                     lines.append("• LDL Cholesterol: A lipid component involved in transport of fats in the bloodstream.")
-                if any("platelet" in (l.get("test_name") or "").lower() for l in labs):
+                if any("platelet" in (val.get("test_name") or "").lower() for val in labs):
                     lines.append("• Platelet Count: Blood cell fragments essential for normal blood clotting.")
 
                 lines.append("\n### 4. Information Not Provided")
@@ -546,8 +547,8 @@ class LLMClient:
         req_id = request_id or str(uuid.uuid4())
         provider_setting = (getattr(settings, "PRIMARY_LLM_PROVIDER", "gemini") or "auto").lower().strip()
 
-        from app.models.llm_telemetry import LLMDiagnosticEvent
         from app.core.database import AsyncSessionLocal
+        from app.models.llm_telemetry import LLMDiagnosticEvent
         
         async def _log_event(provider_name: str, model_name: str, status: str, latency: float, error_category: str = None, fallback: bool = False):
             try:

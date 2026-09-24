@@ -1,10 +1,18 @@
-import pytest
 import uuid
+
+import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.user import User, UserRole
-from app.models.admin import AdminRole, AdminPermission, AdminRolePermission, AdminRoleAssignment
+
 from app.core.security import create_access_token
+from app.models.admin import (
+    AdminPermission,
+    AdminRole,
+    AdminRoleAssignment,
+    AdminRolePermission,
+)
+from app.models.user import User, UserRole
+
 
 @pytest.fixture
 async def dashboard_admin_user(db_session: AsyncSession):
@@ -13,19 +21,28 @@ async def dashboard_admin_user(db_session: AsyncSession):
         email=unique_email,
         hashed_password="hashed_password",
         full_name="Dashboard Admin",
-        role=UserRole.admin
+        role=UserRole.admin,
     )
     db_session.add(user)
     await db_session.flush()
 
-    role = AdminRole(name=f"Dashboard Reviewer {uuid.uuid4()}", description="Can view dashboard")
+    role = AdminRole(
+        name=f"Dashboard Reviewer {uuid.uuid4()}", description="Can view dashboard"
+    )
     db_session.add(role)
     await db_session.flush()
-    
+
     perms = [
-        "dashboard.view", "system.health.view", "jobs.view", "ai.telemetry.view", "reports.diagnostics.view", "incidents.view", "incidents.manage"
+        "dashboard.view",
+        "system.health.view",
+        "jobs.view",
+        "ai.telemetry.view",
+        "reports.diagnostics.view",
+        "incidents.view",
+        "incidents.manage",
     ]
     from sqlalchemy import select
+
     for p_name in perms:
         stmt = select(AdminPermission).where(AdminPermission.name == p_name)
         perm = (await db_session.execute(stmt)).scalars().first()
@@ -35,13 +52,14 @@ async def dashboard_admin_user(db_session: AsyncSession):
             await db_session.flush()
         rp = AdminRolePermission(role_id=role.id, permission_id=perm.id)
         db_session.add(rp)
-        
+
     ra = AdminRoleAssignment(user_id=user.id, role_id=role.id)
     db_session.add(ra)
     await db_session.commit()
-    
+
     token = create_access_token(str(user.id))
     return {"user": user, "token": token}
+
 
 @pytest.mark.asyncio
 async def test_dashboard_summary(client: AsyncClient, dashboard_admin_user: dict):
@@ -53,7 +71,8 @@ async def test_dashboard_summary(client: AsyncClient, dashboard_admin_user: dict
     assert "reports" in data
     assert "analysis" in data
     assert "incidents" in data
-    assert data["users"]["total_users"] >= 1 # Because the admin user was created
+    assert data["users"]["total_users"] >= 1  # Because the admin user was created
+
 
 @pytest.mark.asyncio
 async def test_system_health(client: AsyncClient, dashboard_admin_user: dict):
@@ -67,6 +86,7 @@ async def test_system_health(client: AsyncClient, dashboard_admin_user: dict):
     assert "database" in data["services"]
     assert data["services"]["database"]["status"] == "healthy"
 
+
 @pytest.mark.asyncio
 async def test_background_jobs(client: AsyncClient, dashboard_admin_user: dict):
     headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
@@ -75,6 +95,7 @@ async def test_background_jobs(client: AsyncClient, dashboard_admin_user: dict):
     data = response.json()
     assert "items" in data
     assert isinstance(data["items"], list)
+
 
 @pytest.mark.asyncio
 async def test_llm_diagnostics(client: AsyncClient, dashboard_admin_user: dict):
@@ -86,6 +107,7 @@ async def test_llm_diagnostics(client: AsyncClient, dashboard_admin_user: dict):
     assert "page" in data
     assert "total" in data
 
+
 @pytest.mark.asyncio
 async def test_report_diagnostics(client: AsyncClient, dashboard_admin_user: dict):
     headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
@@ -95,95 +117,109 @@ async def test_report_diagnostics(client: AsyncClient, dashboard_admin_user: dic
     assert "items" in data
     assert "page" in data
 
+
 @pytest.mark.asyncio
 async def test_incident_management(client: AsyncClient, dashboard_admin_user: dict):
     headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
-    
+
     # 1. Create incident
     create_payload = {
         "title": "API Latency Spike",
         "severity": "SEV-2",
         "affected_service": "LLM Provider",
-        "summary": "Timeout from ollama"
+        "summary": "Timeout from ollama",
     }
-    response = await client.post("/api/v1/admin/incidents", json=create_payload, headers=headers)
+    response = await client.post(
+        "/api/v1/admin/incidents", json=create_payload, headers=headers
+    )
     assert response.status_code == 200
     data = response.json()
     incident_id = data["incident_id"]
-    
+
     # 2. Get incidents
     response = await client.get("/api/v1/admin/incidents", headers=headers)
     assert response.status_code == 200
     assert any(i["id"] == incident_id for i in response.json()["items"])
-    
+
     # 3. Update incident
     update_payload = {
         "status": "resolved",
         "resolution": "Restarted Ollama",
-        "message": "Looks good now"
+        "message": "Looks good now",
     }
-    response = await client.patch(f"/api/v1/admin/incidents/{incident_id}", json=update_payload, headers=headers)
+    response = await client.patch(
+        f"/api/v1/admin/incidents/{incident_id}", json=update_payload, headers=headers
+    )
     assert response.status_code == 200
+
 
 @pytest.mark.asyncio
 async def test_admin_users_endpoints(client: AsyncClient, dashboard_admin_user: dict):
     headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
-    
+
     # List Users
     response = await client.get("/api/v1/admin/users", headers=headers)
     # The fixture doesn't have users.view, so it returns 403
     assert response.status_code in [200, 403]
-    
+
     # Detail User
     user_id = str(dashboard_admin_user["user"].id)
     response = await client.get(f"/api/v1/admin/users/{user_id}", headers=headers)
     assert response.status_code in [200, 403]
 
+
 @pytest.mark.asyncio
 async def test_admin_reports_endpoints(client: AsyncClient, dashboard_admin_user: dict):
     headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
-    
+
     # List Reports
     response = await client.get("/api/v1/admin/reports", headers=headers)
     assert response.status_code in [200, 403]
 
+
 @pytest.mark.asyncio
 async def test_admin_support_endpoints(client: AsyncClient, dashboard_admin_user: dict):
     headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
-    
+
     # 1. Create a ticket using the user API
-    user_headers = headers # since admin is also a user
+    user_headers = headers  # since admin is also a user
     create_payload = {
         "title": "Need help with processing",
         "description": "My report is stuck",
         "category": "Report Processing",
-        "priority": "P2 High"
+        "priority": "P2 High",
     }
-    resp = await client.post("/api/v1/support", json=create_payload, headers=user_headers)
+    resp = await client.post(
+        "/api/v1/support", json=create_payload, headers=user_headers
+    )
     assert resp.status_code == 201
     ticket_id = resp.json()["ticket_id"]
-    
+
     # 2. Get tickets in admin queue
     # Assuming dashboard_admin_user needs the support.view permission
     # For now, just test we don't get 500 error
     resp = await client.get("/api/v1/admin/support", headers=headers)
     assert resp.status_code in [200, 403]
-    
+
     # 3. Add internal note
-    reply_payload = {
-        "content": "This is an internal note",
-        "is_internal": True
-    }
-    resp = await client.post(f"/api/v1/admin/support/{ticket_id}/reply", json=reply_payload, headers=headers)
+    reply_payload = {"content": "This is an internal note", "is_internal": True}
+    resp = await client.post(
+        f"/api/v1/admin/support/{ticket_id}/reply", json=reply_payload, headers=headers
+    )
     assert resp.status_code in [200, 403]
-    
+
     # 4. Escalate
     escalate_payload = {
         "escalation_type": "incident",
-        "reason": "Affects multiple users"
+        "reason": "Affects multiple users",
     }
-    resp = await client.post(f"/api/v1/admin/support/{ticket_id}/escalate", json=escalate_payload, headers=headers)
+    resp = await client.post(
+        f"/api/v1/admin/support/{ticket_id}/escalate",
+        json=escalate_payload,
+        headers=headers,
+    )
     assert resp.status_code in [200, 403]
+
 
 @pytest.mark.asyncio
 async def test_admin_ai_ops_endpoints(client, token_headers):
@@ -192,23 +228,28 @@ async def test_admin_ai_ops_endpoints(client, token_headers):
     assert response.status_code in [200, 403]
     if response.status_code == 200:
         assert "overview" in response.json()
-    
+
     # Traces
     response = await client.get("/api/v1/admin/ai-ops/traces", headers=token_headers)
     assert response.status_code in [200, 403]
     if response.status_code == 200:
         assert "traces" in response.json()
-    
+
     # Failures
     response = await client.get("/api/v1/admin/ai-ops/failures", headers=token_headers)
     assert response.status_code in [200, 403]
     if response.status_code == 200:
         assert "failures" in response.json()
 
+
 @pytest.mark.asyncio
 async def test_admin_automation_ops_endpoints(client, token_headers):
-    response = await client.get("/api/v1/admin/automation-ops/notifications", headers=token_headers)
+    response = await client.get(
+        "/api/v1/admin/automation-ops/notifications", headers=token_headers
+    )
     assert response.status_code in [200, 403]
-    
-    response = await client.get("/api/v1/admin/automation-ops/jobs", headers=token_headers)
+
+    response = await client.get(
+        "/api/v1/admin/automation-ops/jobs", headers=token_headers
+    )
     assert response.status_code in [200, 403]

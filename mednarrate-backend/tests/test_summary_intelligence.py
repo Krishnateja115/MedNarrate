@@ -1,9 +1,10 @@
-import pytest
-import asyncio
 import json
-from app.services.llm_client import FallbackAIProvider
+
+import pytest
+
 from app.services.lab_value_extractor import extract_lab_values
-from app.services.prompts import PATIENT_PROMPT, CLINICIAN_PROMPT, ROLE_INSTRUCTIONS
+from app.services.llm_client import FallbackAIProvider
+from app.services.prompts import PATIENT_PROMPT, ROLE_INSTRUCTIONS
 
 # Generic boilerplate phrases to guard against
 GENERIC_BOILERPLATE_PHRASES = [
@@ -77,7 +78,6 @@ async def test_cross_report_contamination_protection():
     """Verify Report B summary never leaks Report A patient information or laboratory values."""
     provider = FallbackAIProvider()
 
-    report_a_labs = [{"test_name": "Cholesterol", "original_name": "Cholesterol", "value": 240.0, "unit": "mg/dL", "ref_low": 0.0, "ref_high": 200.0, "flag": "high"}]
     report_b_labs = [{"test_name": "Platelets", "original_name": "Platelets", "value": 250.0, "unit": "10^3/uL", "ref_low": 150.0, "ref_high": 450.0, "flag": "normal"}]
 
     prompt_b = build_patient_summary_prompt("Blood Test B", report_b_labs)
@@ -101,7 +101,7 @@ def test_medication_extraction_preserves_dose_and_frequency():
     labs = extract_lab_values(ocr_text)
     
     # Ensure medication frequencies like "Once daily" are not treated as independent numerical lab values
-    lab_names = [l["test_name"].lower() for l in labs]
+    lab_names = [val["test_name"].lower() for val in labs]
     assert "once daily" not in lab_names
     assert "8:00 am" not in lab_names
     assert "twice daily" not in lab_names

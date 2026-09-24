@@ -1,21 +1,30 @@
-from datetime import datetime
 import uuid
-from sqlalchemy import String, Text, DateTime, ForeignKey, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
-from app.core.database import Base
+
 from app.core.config import settings
+from app.core.database import Base
 
 _IS_PG = settings.DATABASE_URL.startswith("postgresql")
 
+
 class ReportTranslation(Base):
     __tablename__ = "report_translations"
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    report_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("reports.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    report_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("reports.id", ondelete="CASCADE"), nullable=False
+    )
     language_code: Mapped[str] = mapped_column(String(10), nullable=False)
     translated_text: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)
-    
+
     __table_args__ = (
-        UniqueConstraint('report_id', 'language_code', name='_report_translation_lang_uc'),
+        UniqueConstraint(
+            "report_id", "language_code", name="_report_translation_lang_uc"
+        ),
     )

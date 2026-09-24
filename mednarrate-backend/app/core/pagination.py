@@ -11,8 +11,8 @@ All list endpoints should use these helpers for a consistent pagination contract
     "has_previous": bool
 }
 """
-from typing import Any, Dict, List
 
+from typing import Any, Dict, List
 
 DEFAULT_LIMIT = 25
 MAX_LIMIT = 100
@@ -24,10 +24,7 @@ def clamp_limit(limit: int) -> int:
 
 
 def build_pagination_response(
-    items: List[Any],
-    total: int,
-    page: int,
-    limit: int
+    items: List[Any], total: int, page: int, limit: int
 ) -> Dict[str, Any]:
     """Build a consistent pagination response envelope."""
     return {

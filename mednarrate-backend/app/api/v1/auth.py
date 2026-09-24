@@ -1,23 +1,29 @@
-from datetime import datetime, timezone, timedelta
+import sys
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from app.core.database import get_db
-from app.core.security import (
-    hash_password, verify_password, create_access_token,
-    create_refresh_token, hash_token, get_current_user
-)
-from app.models.user import User
-from app.models.refresh_token import RefreshToken
-from app.schemas.auth import SignupRequest, Token, RefreshRequest
-from app.schemas.user import UserOut
-from app.core.config import settings
-
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
-import sys
+from app.core.config import settings
+from app.core.database import get_db
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    get_current_user,
+    hash_password,
+    hash_token,
+    verify_password,
+)
+from app.models.refresh_token import RefreshToken
+from app.models.user import User
+from app.schemas.auth import RefreshRequest, SignupRequest, Token
+from app.schemas.user import UserOut
+
 limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
 
 router = APIRouter()
@@ -95,8 +101,10 @@ async def login(
         "token_type": "bearer"
     }
 
-from typing import Optional
-from fastapi import Response
+
+
+
+
 
 @router.post("/refresh", response_model=Token)
 async def refresh_token(

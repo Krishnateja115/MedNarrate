@@ -1,16 +1,26 @@
 import logging
 import uuid
-from typing import Any, Dict, Optional
 from datetime import datetime, timezone
+from typing import Any, Dict, Optional
+
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.admin import AdminAuditLog
-from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 # Keys that should never be stored in the audit log metadata
-SENSITIVE_KEYS = {"password", "secret", "token", "key", "authorization", "ssn", "medical_record"}
+SENSITIVE_KEYS = {
+    "password",
+    "secret",
+    "token",
+    "key",
+    "authorization",
+    "ssn",
+    "medical_record",
+}
+
 
 def sanitize_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
     """Recursively strip sensitive data from metadata."""
@@ -24,10 +34,13 @@ def sanitize_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
         elif isinstance(v, dict):
             sanitized[k] = sanitize_metadata(v)
         elif isinstance(v, list):
-            sanitized[k] = [sanitize_metadata(i) if isinstance(i, dict) else i for i in v]
+            sanitized[k] = [
+                sanitize_metadata(i) if isinstance(i, dict) else i for i in v
+            ]
         else:
             sanitized[k] = v
     return sanitized
+
 
 async def log_admin_action(
     db: AsyncSession,
@@ -40,7 +53,7 @@ async def log_admin_action(
     reason: Optional[str] = None,
     request: Optional[Request] = None,
     metadata: Optional[Dict[str, Any]] = None,
-    sensitive_access_flag: bool = False
+    sensitive_access_flag: bool = False,
 ) -> AdminAuditLog:
     """
     Append an immutable audit log entry.
@@ -55,10 +68,12 @@ async def log_admin_action(
         forwarded = request.headers.get("x-forwarded-for")
         if forwarded:
             ip_address = forwarded.split(",")[0].strip()
-            
+
         user_agent = request.headers.get("user-agent")
         # Support common request ID patterns if middleware injects them
-        request_id = getattr(request.state, "request_id", None) or request.headers.get("x-request-id")
+        request_id = getattr(request.state, "request_id", None) or request.headers.get(
+            "x-request-id"
+        )
 
     safe_metadata = sanitize_metadata(metadata or {})
 
@@ -75,13 +90,13 @@ async def log_admin_action(
         user_agent=user_agent,
         metadata_payload=safe_metadata,
         sensitive_access_flag=sensitive_access_flag,
-        timestamp=datetime.now(timezone.utc)
+        timestamp=datetime.now(timezone.utc),
     )
 
     db.add(audit_entry)
-    
+
     # We purposefully don't commit here so that the audit log is committed
     # atomically with the action itself in the endpoint. If the endpoint fails and rolls back,
     # the success log rolls back. The endpoint should explicitly catch errors and log failures.
-    
+
     return audit_entry

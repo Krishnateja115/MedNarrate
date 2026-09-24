@@ -1,9 +1,45 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.v1.admin_admins import router as admins_router
+from app.api.v1.admin_ai_config import router as ai_config_router
+from app.api.v1.admin_ai_ops import router as ai_ops_router
+from app.api.v1.admin_alerts import router as alerts_router
+
+# Release Governance & Operations Routers
+from app.api.v1.admin_analytics import router as analytics_router
+from app.api.v1.admin_announcements import router as announcements_router
+from app.api.v1.admin_audit import router as audit_router
+from app.api.v1.admin_automation_ops import router as automation_ops_router
+from app.api.v1.admin_breakglass import router as breakglass_router
+from app.api.v1.admin_chat_ops import router as chat_ops_router
+from app.api.v1.admin_dashboard import router as dashboard_router
+from app.api.v1.admin_diagnostics import router as diagnostics_router
+from app.api.v1.admin_feature_flags import router as feature_flags_router
+from app.api.v1.admin_health import router as health_router
+from app.api.v1.admin_help_center import router as help_center_router
+from app.api.v1.admin_incidents import router as incidents_router
+from app.api.v1.admin_jobs import router as jobs_router
+from app.api.v1.admin_privacy import router as privacy_router
+from app.api.v1.admin_rag_ops import router as rag_ops_router
+from app.api.v1.admin_reports import router as reports_router
+from app.api.v1.admin_roles import router as roles_router
+from app.api.v1.admin_search import router as search_router
+
+# Privileged Governance Layer Routers
+from app.api.v1.admin_security import router as security_router
+from app.api.v1.admin_settings import router as settings_router
+from app.api.v1.admin_support import router as support_router
+from app.api.v1.admin_users import router as users_router
+from app.core.admin_auth import (
+    AdminContext,
+    get_admin_context,
+    require_any_permission,
+    require_permission,
+)
 from app.core.database import get_db
-from app.core.admin_auth import AdminContext, get_admin_context, require_permission, require_any_permission
-from app.services.audit import log_admin_action
 from app.schemas.user import AdminIdentityOut
+from app.services.audit import log_admin_action
 
 router = APIRouter()
 
@@ -59,8 +95,8 @@ async def get_admin_llm_status(
     admin_ctx: AdminContext = Depends(require_any_permission(["ai.view", "ai.manage"])),
     db: AsyncSession = Depends(get_db)
 ):
-    from app.services.llm_client import llm_client_instance
     from app.core.config import settings
+    from app.services.llm_client import llm_client_instance
 
     provider_name = (settings.PRIMARY_LLM_PROVIDER or "auto").lower().strip()
     provider = llm_client_instance.get_provider(provider_name)
@@ -92,36 +128,8 @@ async def get_admin_llm_status(
         }
     }
 
-from app.api.v1.admin_dashboard import router as dashboard_router
-from app.api.v1.admin_health import router as health_router
-from app.api.v1.admin_jobs import router as jobs_router
-from app.api.v1.admin_diagnostics import router as diagnostics_router
-from app.api.v1.admin_incidents import router as incidents_router
-from app.api.v1.admin_users import router as users_router
-from app.api.v1.admin_reports import router as reports_router
-from app.api.v1.admin_support import router as support_router
-from app.api.v1.admin_help_center import router as help_center_router
-from app.api.v1.admin_ai_ops import router as ai_ops_router
-from app.api.v1.admin_chat_ops import router as chat_ops_router
-from app.api.v1.admin_rag_ops import router as rag_ops_router
-from app.api.v1.admin_automation_ops import router as automation_ops_router
 
-# Release Governance & Operations Routers
-from app.api.v1.admin_analytics import router as analytics_router
-from app.api.v1.admin_search import router as search_router
-from app.api.v1.admin_alerts import router as alerts_router
 
-# Privileged Governance Layer Routers
-from app.api.v1.admin_security import router as security_router
-from app.api.v1.admin_admins import router as admins_router
-from app.api.v1.admin_roles import router as roles_router
-from app.api.v1.admin_audit import router as audit_router
-from app.api.v1.admin_breakglass import router as breakglass_router
-from app.api.v1.admin_privacy import router as privacy_router
-from app.api.v1.admin_feature_flags import router as feature_flags_router
-from app.api.v1.admin_ai_config import router as ai_config_router
-from app.api.v1.admin_settings import router as settings_router
-from app.api.v1.admin_announcements import router as announcements_router
 
 router.include_router(dashboard_router, prefix="/dashboard", tags=["Admin Dashboard"])
 router.include_router(analytics_router, prefix="/analytics", tags=["Admin Analytics"])

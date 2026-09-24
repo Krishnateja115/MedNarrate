@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     DATABASE_URL: str
     JWT_SECRET: str
@@ -20,20 +21,22 @@ class Settings(BaseSettings):
     ADMIN_APP_ORIGIN: str = "http://localhost:3001"
 
     # LLM Provider Architecture Configuration
-    PRIMARY_LLM_PROVIDER: str = "gemini" 
+    PRIMARY_LLM_PROVIDER: str = "gemini"
     PRIMARY_LLM_MODEL: str = "gemini-3.8-flash"
-    
+
     MEDICAL_VERIFIER_PROVIDER: str = "ollama"
     MEDICAL_VERIFIER_MODEL: str = "medgemma-1.5:4b"
-    
+
     STRUCTURED_MODEL_PROVIDER: str = "ollama"
     STRUCTURED_MODEL_MODEL: str = "qwen3:14b"
-    
+
     TRANSLATION_MODEL_PROVIDER: str = "indictrans2"
-    TRANSLATION_MODEL_URL: str | None = "http://localhost:8001/translate" # Placeholder for local IndicTrans2 service
+    TRANSLATION_MODEL_URL: str | None = (
+        "http://localhost:8001/translate"  # Placeholder for local IndicTrans2 service
+    )
 
     ENABLE_LLM_FALLBACK: bool = True
-    
+
     # Vertex AI (Primary Production Provider - Fallback for Gemini)
     VERTEX_PROJECT_ID: str | None = None
     VERTEX_LOCATION: str = "us-central1"
@@ -42,7 +45,9 @@ class Settings(BaseSettings):
 
     # Ollama (Secondary Private/Local Provider)
     OLLAMA_URL: str | None = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3:8b" # Default fallback, should use specific models instead
+    OLLAMA_MODEL: str = (
+        "llama3:8b"  # Default fallback, should use specific models instead
+    )
 
     # Development-Only Gemini Provider
     GEMINI_API_KEY: str | None = None
@@ -86,6 +91,6 @@ class Settings(BaseSettings):
         env_file = ".env"
         extra = "ignore"
 
+
 settings = Settings()
 settings.validate_production_security()
-

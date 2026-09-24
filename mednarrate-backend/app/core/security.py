@@ -1,23 +1,20 @@
+import hashlib
+import hashlib as _hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from passlib.context import CryptContext
+
+import bcrypt
 import jwt
-import secrets
-import hashlib
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.security.utils import get_authorization_scheme_param
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.config import settings
 from app.core.database import get_db
 
-import hashlib as _hashlib
-
-import bcrypt
-
-from fastapi import Request
-from fastapi.security.utils import get_authorization_scheme_param
 
 class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
     async def __call__(self, request: Request) -> Optional[str]:
@@ -25,11 +22,11 @@ class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
         scheme, param = get_authorization_scheme_param(authorization)
         if authorization and scheme.lower() == "bearer":
             return param
-            
+
         cookie_token = request.cookies.get("access_token")
         if cookie_token:
             return cookie_token
-            
+
         if self.auto_error:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -38,43 +35,60 @@ class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
             )
         return None
 
+
 oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/api/v1/auth/login")
+
 
 def _pre_hash(password: str) -> bytes:
     """Pre-hash password with SHA256 to avoid bcrypt 72-byte truncation and quirks."""
     return _hashlib.sha256(password.encode("utf-8")).hexdigest().encode("utf-8")
+
 
 def hash_password(password: str) -> str:
     pwd_bytes = _pre_hash(password)
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
+
 def verify_password(plain: str, hashed: str) -> bool:
     pwd_bytes = _pre_hash(plain)
     return bcrypt.checkpw(pwd_bytes, hashed.encode("utf-8"))
 
+
 def create_access_token(subject: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
     to_encode = {"exp": expire, "sub": str(subject)}
-    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
+    )
     return encoded_jwt
+
 
 def create_refresh_token() -> str:
     return secrets.token_urlsafe(48)
 
+
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
+
 def decode_access_token(token: str) -> dict:
     try:
-        decoded_token = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        decoded_token = jwt.decode(
+            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
+        )
         return decoded_token
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
+):
     from app.models.user import User  # Local import to avoid circular dependencies
 
     # decode_access_token raises HTTPException with specific detail ("Token has expired",
@@ -100,6 +114,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         )
 
     import uuid
+
     try:
         user_uuid = uuid.UUID(user_id)
     except ValueError:

@@ -1,11 +1,14 @@
+import hashlib
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from httpx import AsyncClient
-import hashlib
-from datetime import datetime, timezone, timedelta
-from app.models.user import User
-from app.models.password_reset_token import PasswordResetToken
-from app.core.security import hash_password, verify_password
 from sqlalchemy.future import select
+
+from app.core.security import hash_password, verify_password
+from app.models.password_reset_token import PasswordResetToken
+from app.models.user import User
+
 
 @pytest.mark.asyncio
 async def test_forgot_password(client: AsyncClient, db_session):
@@ -19,8 +22,10 @@ async def test_forgot_password(client: AsyncClient, db_session):
     await db_session.commit()
 
     # Request forgot password
-    resp = await client.post("/api/v1/auth/forgot-password", json={"email": "reset_test@example.com"})
-    assert resp.status_code == 200
+    resp = await client.post(
+        "/api/v1/auth/forgot-password", json={"email": "reset_test@example.com"}
+    )
+    print(resp.json()); assert resp.status_code == 200
     data = resp.json()
     assert "If this email is registered" in data["message"]
     # Ensure raw token is not exposed
@@ -36,8 +41,10 @@ async def test_forgot_password(client: AsyncClient, db_session):
 
 @pytest.mark.asyncio
 async def test_forgot_password_non_existent(client: AsyncClient):
-    resp = await client.post("/api/v1/auth/forgot-password", json={"email": "nobody@example.com"})
-    assert resp.status_code == 200
+    resp = await client.post(
+        "/api/v1/auth/forgot-password", json={"email": "nobody@example.com"}
+    )
+    print(resp.json()); assert resp.status_code == 200
     data = resp.json()
     assert "If this email is registered" in data["message"]
 
@@ -58,19 +65,16 @@ async def test_reset_password_success(client: AsyncClient, db_session):
     expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
 
     db_token = PasswordResetToken(
-        user_id=user.id,
-        token_hash=token_hash,
-        expires_at=expires_at,
-        used=False
+        user_id=user.id, token_hash=token_hash, expires_at=expires_at, used=False
     )
     db_session.add(db_token)
     await db_session.commit()
 
     resp = await client.post(
         "/api/v1/auth/reset-password",
-        json={"token": raw_token, "new_password": "NewStrongPassword123!"}
+        json={"token": raw_token, "new_password": "NewStrongPassword123!"},
     )
-    assert resp.status_code == 200
+    print(resp.json()); assert resp.status_code == 200
 
     # Verify password was changed
     stmt = select(User).where(User.id == user.id)
@@ -101,17 +105,14 @@ async def test_reset_password_used_token(client: AsyncClient, db_session):
     expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
 
     db_token = PasswordResetToken(
-        user_id=user.id,
-        token_hash=token_hash,
-        expires_at=expires_at,
-        used=True
+        user_id=user.id, token_hash=token_hash, expires_at=expires_at, used=True
     )
     db_session.add(db_token)
     await db_session.commit()
 
     resp = await client.post(
         "/api/v1/auth/reset-password",
-        json={"token": raw_token, "new_password": "NewStrongPassword123!"}
+        json={"token": raw_token, "new_password": "NewStrongPassword123!"},
     )
     assert resp.status_code == 400
     assert "Invalid or expired reset token" in resp.json()["detail"]
@@ -133,17 +134,14 @@ async def test_reset_password_expired_token(client: AsyncClient, db_session):
     expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
 
     db_token = PasswordResetToken(
-        user_id=user.id,
-        token_hash=token_hash,
-        expires_at=expires_at,
-        used=False
+        user_id=user.id, token_hash=token_hash, expires_at=expires_at, used=False
     )
     db_session.add(db_token)
     await db_session.commit()
 
     resp = await client.post(
         "/api/v1/auth/reset-password",
-        json={"token": raw_token, "new_password": "NewStrongPassword123!"}
+        json={"token": raw_token, "new_password": "NewStrongPassword123!"},
     )
     assert resp.status_code == 400
     assert "Reset token has expired" in resp.json()["detail"]

@@ -1,21 +1,20 @@
 import os
-import pytest
-import fitz  # PyMuPDF
 from unittest.mock import patch
 
+import fitz  # PyMuPDF
+import pytest
+
 from app.core.config import settings
-from app.services.text_extraction import (
-    resolve_physical_path,
-    extract_text_with_diagnostics,
-    extract_text_from_file,
-    ExtractionError,
-    ExtractionFileNotFoundError,
-    EmptyFileError,
-    CorruptPDFError,
-    UnreadablePDFError,
-    OCRUnavailableError
-)
 from app.services.lab_value_extractor import extract_lab_values
+from app.services.text_extraction import (
+    CorruptPDFError,
+    EmptyFileError,
+    ExtractionFileNotFoundError,
+    OCRUnavailableError,
+    extract_text_with_diagnostics,
+    resolve_physical_path,
+)
+
 
 def test_resolve_physical_path_relative_and_traversal(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
@@ -142,6 +141,6 @@ def test_fictional_report_end_to_end(tmp_path, monkeypatch):
     # 3. Lab Extraction
     labs = extract_lab_values(text)
     assert len(labs) >= 3
-    test_names = [l["original_name"].lower() for l in labs]
+    test_names = [val["original_name"].lower() for val in labs]
     assert any("hemoglobin" in n for n in test_names)
     assert any("glucose" in n for n in test_names)

@@ -1,7 +1,9 @@
+import logging
+
 import firebase_admin
 from firebase_admin import credentials, messaging
-import logging
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.notification_log import NotificationLog
 
 logger = logging.getLogger(__name__)
@@ -9,23 +11,37 @@ logger = logging.getLogger(__name__)
 # Initialize FCM globally
 try:
     if not firebase_admin._apps:
-        from app.core.config import settings
         import os
-        cred_path = settings.GOOGLE_APPLICATION_CREDENTIALS or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+
+        from app.core.config import settings
+
+        cred_path = settings.GOOGLE_APPLICATION_CREDENTIALS or os.environ.get(
+            "GOOGLE_APPLICATION_CREDENTIALS"
+        )
         if cred_path and os.path.exists(cred_path):
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
             logger.info("Firebase Admin initialized with credentials.")
         else:
-            logger.info("Firebase Admin initialized (mocked for dev as no credentials exist).")
+            logger.info(
+                "Firebase Admin initialized (mocked for dev as no credentials exist)."
+            )
 except Exception as e:
     logger.error(f"Failed to initialize Firebase Admin: {e}")
 
-async def send_push_notification(db: AsyncSession, user_id: str, token: str, title: str, body: str, existing_log: NotificationLog = None):
+
+async def send_push_notification(
+    db: AsyncSession,
+    user_id: str,
+    token: str,
+    title: str,
+    body: str,
+    existing_log: NotificationLog = None,
+):
     """Sends a push notification via FCM and logs it."""
     status = "sent"
     error_message = None
-    
+
     try:
         if firebase_admin._apps:
             message = messaging.Message(
@@ -40,12 +56,13 @@ async def send_push_notification(db: AsyncSession, user_id: str, token: str, tit
         status = "failed"
         error_message = str(e)
         logger.error(f"Error sending push notification to {token}: {e}")
-        
+
     # Log it
     if existing_log:
         existing_log.status = status
         existing_log.error_message = error_message
         from datetime import datetime
+
         existing_log.sent_at = datetime.utcnow()
     else:
         log = NotificationLog(
@@ -53,7 +70,7 @@ async def send_push_notification(db: AsyncSession, user_id: str, token: str, tit
             title=title,
             body=body,
             status=status,
-            error_message=error_message
+            error_message=error_message,
         )
         db.add(log)
     await db.commit()

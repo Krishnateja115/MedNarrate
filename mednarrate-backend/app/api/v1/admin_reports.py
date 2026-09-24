@@ -15,15 +15,17 @@ Privileged mutations (reports.manage):
 
 All mutations are atomic: business mutation + audit event in one transaction.
 """
+
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, HTTPException, status, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, func, or_, String
 
-from app.core.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy import String, desc, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.admin_auth import AdminContext, require_permission, validate_access_grant
-from app.models.report import Report, ReportType, ProcessingStatus
+from app.core.database import get_db
+from app.models.report import ProcessingStatus, Report, ReportType
 from app.models.report_analysis import ReportAnalysis
 from app.models.user import User
 from app.services.audit import log_admin_action
@@ -40,52 +42,60 @@ async def get_reports(
     search: Optional[str] = None,
     report_type: Optional[ReportType] = None,
     processing_status: Optional[ProcessingStatus] = None,
-    user_id: Optional[uuid.UUID] = None
+    user_id: Optional[uuid.UUID] = None,
 ):
     """List reports. Sensitive fields (extracted_text, findings) are never returned here."""
     stmt = select(Report, User.email).outerjoin(User, Report.user_id == User.id)
-    
+
     if search:
         search_term = f"%{search}%"
         stmt = stmt.where(
             or_(
                 Report.title.ilike(search_term),
-                Report.id.cast(String).ilike(search_term) if search.replace('-', '').isalnum() else False,
-                User.email.ilike(search_term)
+                Report.id.cast(String).ilike(search_term)
+                if search.replace("-", "").isalnum()
+                else False,
+                User.email.ilike(search_term),
             )
         )
-        
+
     if report_type:
         stmt = stmt.where(Report.report_type == report_type)
-        
+
     if processing_status:
         stmt = stmt.where(Report.processing_status == processing_status)
-        
+
     if user_id:
         stmt = stmt.where(Report.user_id == user_id)
-        
+
     # Count total matching records
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total_count = (await db.execute(count_stmt)).scalar() or 0
-    
+
     # Paginate and fetch
     stmt = stmt.order_by(desc(Report.uploaded_at)).offset(offset).limit(limit)
     results = (await db.execute(stmt)).all()
-    
+
     reports = []
     for report, user_email in results:
-        reports.append({
-            "id": str(report.id),
-            "user_id": str(report.user_id),
-            "user_email": user_email,
-            "title": report.title,
-            "report_type": report.report_type.value,
-            "processing_status": report.processing_status.value,
-            "uploaded_at": report.uploaded_at.isoformat() if report.uploaded_at else None,
-            "updated_at": report.updated_at.isoformat() if report.updated_at else None
-            # NOTE: extracted_text, clinician_summary, patient_summary intentionally omitted
-        })
-    
+        reports.append(
+            {
+                "id": str(report.id),
+                "user_id": str(report.user_id),
+                "user_email": user_email,
+                "title": report.title,
+                "report_type": report.report_type.value,
+                "processing_status": report.processing_status.value,
+                "uploaded_at": report.uploaded_at.isoformat()
+                if report.uploaded_at
+                else None,
+                "updated_at": report.updated_at.isoformat()
+                if report.updated_at
+                else None,
+                # NOTE: extracted_text, clinician_summary, patient_summary intentionally omitted
+            }
+        )
+
     return {
         "status": "ok",
         "reports": reports,
@@ -94,8 +104,8 @@ async def get_reports(
             "limit": limit,
             "offset": offset,
             "has_next": (offset + limit) < total_count,
-            "has_previous": offset > 0
-        }
+            "has_previous": offset > 0,
+        },
     }
 
 
@@ -103,24 +113,28 @@ async def get_reports(
 async def get_report_detail(
     report_id: uuid.UUID,
     admin_ctx: AdminContext = Depends(require_permission("reports.view")),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Report metadata + analysis summary. Sensitive fields are redacted.
     Use GET /reports/{id}/sensitive with an active break-glass grant for full content.
     """
-    stmt = select(Report, User.email).outerjoin(User, Report.user_id == User.id).where(Report.id == report_id)
+    stmt = (
+        select(Report, User.email)
+        .outerjoin(User, Report.user_id == User.id)
+        .where(Report.id == report_id)
+    )
     result = (await db.execute(stmt)).first()
-    
+
     if not result:
         raise HTTPException(status_code=404, detail="Report not found")
-        
+
     report, user_email = result
-    
+
     # Fetch analysis (operational metadata only — no clinical content)
     analysis_stmt = select(ReportAnalysis).where(ReportAnalysis.report_id == report_id)
     analysis = (await db.execute(analysis_stmt)).scalars().first()
-    
+
     return {
         "status": "ok",
         "report": {
@@ -129,12 +143,16 @@ async def get_report_detail(
             "user_email": user_email,
             "title": report.title,
             "hospital": report.hospital,
-            "report_date": report.report_date.isoformat() if report.report_date else None,
+            "report_date": report.report_date.isoformat()
+            if report.report_date
+            else None,
             "file_name": report.file_name,
             "file_type": report.file_type.value,
             "report_type": report.report_type.value,
             "processing_status": report.processing_status.value,
-            "uploaded_at": report.uploaded_at.isoformat() if report.uploaded_at else None,
+            "uploaded_at": report.uploaded_at.isoformat()
+            if report.uploaded_at
+            else None,
             # Sensitive fields intentionally excluded — require break-glass
             "sensitive_content_available": bool(report.extracted_text),
         },
@@ -142,12 +160,18 @@ async def get_report_detail(
             "id": str(analysis.id) if analysis else None,
             "error_reason": analysis.error_reason if analysis else None,
             "failure_category": analysis.failure_category if analysis else None,
-            "verification_status": analysis.verification_status if analysis else "unverified",
+            "verification_status": analysis.verification_status
+            if analysis
+            else "unverified",
             "llm_provider": analysis.llm_provider if analysis else None,
             "llm_model": analysis.llm_model if analysis else None,
-            "processed_at": analysis.processed_at.isoformat() if analysis and analysis.processed_at else None
+            "processed_at": analysis.processed_at.isoformat()
+            if analysis and analysis.processed_at
+            else None,
             # NOTE: clinician_summary, patient_summary, abnormal_findings excluded — require break-glass
-        } if analysis else None
+        }
+        if analysis
+        else None,
     }
 
 
@@ -156,14 +180,14 @@ async def get_report_sensitive_content(
     report_id: uuid.UUID,
     request: Request,
     admin_ctx: AdminContext = Depends(require_permission("reports.sensitive_view")),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Returns sensitive report content: extracted_text, clinician_summary, patient_summary,
     abnormal_findings, lab values. Requires:
       1. reports.sensitive_view permission
       2. Active, unexpired, scope-matching break-glass grant
-    
+
     Every access is audited with sensitive_access_flag=True.
     """
     # Enforce break-glass grant — validate_access_grant raises 403 if not met
@@ -171,17 +195,21 @@ async def get_report_sensitive_content(
         admin_ctx=admin_ctx,
         resource_type="medical_report",
         resource_id=str(report_id),
-        db=db
+        db=db,
     )
 
-    stmt = select(Report, User.email).outerjoin(User, Report.user_id == User.id).where(Report.id == report_id)
+    stmt = (
+        select(Report, User.email)
+        .outerjoin(User, Report.user_id == User.id)
+        .where(Report.id == report_id)
+    )
     result = (await db.execute(stmt)).first()
-    
+
     if not result:
         raise HTTPException(status_code=404, detail="Report not found")
-        
+
     report, user_email = result
-    
+
     analysis_stmt = select(ReportAnalysis).where(ReportAnalysis.report_id == report_id)
     analysis = (await db.execute(analysis_stmt)).scalars().first()
 
@@ -198,7 +226,7 @@ async def get_report_sensitive_content(
         request=request,
         # NEVER include extracted_text or clinical content in audit metadata
         metadata={"grant_id": str(grant.id), "report_title": report.title},
-        sensitive_access_flag=True
+        sensitive_access_flag=True,
     )
     await db.commit()
 
@@ -212,12 +240,16 @@ async def get_report_sensitive_content(
             "user_email": user_email,
             "title": report.title,
             "hospital": report.hospital,
-            "report_date": report.report_date.isoformat() if report.report_date else None,
+            "report_date": report.report_date.isoformat()
+            if report.report_date
+            else None,
             "file_name": report.file_name,
             "file_type": report.file_type.value,
             "report_type": report.report_type.value,
             "processing_status": report.processing_status.value,
-            "uploaded_at": report.uploaded_at.isoformat() if report.uploaded_at else None,
+            "uploaded_at": report.uploaded_at.isoformat()
+            if report.uploaded_at
+            else None,
             # Sensitive fields — only returned with active break-glass grant
             "extracted_text": report.extracted_text,
         },
@@ -232,7 +264,9 @@ async def get_report_sensitive_content(
             "failure_category": analysis.failure_category if analysis else None,
             "llm_provider": analysis.llm_provider if analysis else None,
             "llm_model": analysis.llm_model if analysis else None,
-        } if analysis else None
+        }
+        if analysis
+        else None,
     }
 
 
@@ -241,22 +275,26 @@ async def retry_report(
     request: Request,
     report_id: uuid.UUID,
     admin_ctx: AdminContext = Depends(require_permission("reports.manage")),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Reset a failed/stuck report back to 'uploaded' for reprocessing.
     Business mutation and audit are in the same transaction.
     """
-    report = (await db.execute(select(Report).where(Report.id == report_id))).scalars().first()
+    report = (
+        (await db.execute(select(Report).where(Report.id == report_id)))
+        .scalars()
+        .first()
+    )
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
-        
+
     if report.processing_status == ProcessingStatus.completed:
         raise HTTPException(status_code=400, detail="Cannot retry a completed report")
-    
+
     previous_status = report.processing_status.value
     report.processing_status = ProcessingStatus.uploaded
-    
+
     # Audit within same transaction as status change
     await log_admin_action(
         db=db,
@@ -267,13 +305,17 @@ async def retry_report(
         permission_used="reports.manage",
         result="success",
         request=request,
-        metadata={"previous_status": previous_status, "new_status": "uploaded"}
+        metadata={"previous_status": previous_status, "new_status": "uploaded"},
     )
-    
+
     # Single commit: status change + audit
     await db.commit()
-    
-    return {"status": "ok", "message": "Report retry initiated", "new_status": "uploaded"}
+
+    return {
+        "status": "ok",
+        "message": "Report retry initiated",
+        "new_status": "uploaded",
+    }
 
 
 @router.post("/{report_id}/actions/reprocess")
@@ -281,24 +323,36 @@ async def reprocess_report(
     request: Request,
     report_id: uuid.UUID,
     admin_ctx: AdminContext = Depends(require_permission("reports.manage")),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Delete existing analysis and reset report to 'uploaded' for full reprocessing.
     Business mutations and audit are in the same transaction.
     """
-    report = (await db.execute(select(Report).where(Report.id == report_id))).scalars().first()
+    report = (
+        (await db.execute(select(Report).where(Report.id == report_id)))
+        .scalars()
+        .first()
+    )
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
-        
+
     # Delete existing analysis if it exists
-    analysis = (await db.execute(select(ReportAnalysis).where(ReportAnalysis.report_id == report_id))).scalars().first()
+    analysis = (
+        (
+            await db.execute(
+                select(ReportAnalysis).where(ReportAnalysis.report_id == report_id)
+            )
+        )
+        .scalars()
+        .first()
+    )
     had_analysis = bool(analysis)
     if analysis:
         await db.delete(analysis)
-        
+
     report.processing_status = ProcessingStatus.uploaded
-    
+
     # Audit within same transaction
     await log_admin_action(
         db=db,
@@ -309,10 +363,14 @@ async def reprocess_report(
         permission_used="reports.manage",
         result="success",
         request=request,
-        metadata={"analysis_deleted": had_analysis, "new_status": "uploaded"}
+        metadata={"analysis_deleted": had_analysis, "new_status": "uploaded"},
     )
-    
+
     # Single commit: all mutations + audit
     await db.commit()
-    
-    return {"status": "ok", "message": "Report reprocessing initiated", "analysis_deleted": had_analysis}
+
+    return {
+        "status": "ok",
+        "message": "Report reprocessing initiated",
+        "analysis_deleted": had_analysis,
+    }

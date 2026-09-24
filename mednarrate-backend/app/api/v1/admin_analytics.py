@@ -7,23 +7,25 @@ Missing/zero denominators handled correctly — never silently converted.
 
 Metric definitions are documented inline.
 """
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, distinct, case, text
 
+from datetime import datetime, timedelta, timezone
+from typing import Dict, Optional
+
+from fastapi import APIRouter, Depends, Query, Request
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.admin_auth import AdminContext, require_any_permission
 from app.core.database import get_db
-from app.core.admin_auth import AdminContext, get_admin_context, require_any_permission
-from app.services.audit import log_admin_action
-from app.models.user import User
-from app.models.report import Report, ProcessingStatus
-from app.models.report_analysis import ReportAnalysis
-from app.models.chat import ChatSession, ChatMessage
+from app.models.chat import ChatMessage, ChatSession
 from app.models.chat_safety import ChatSafetyEvent
 from app.models.llm_telemetry import LLMDiagnosticEvent
 from app.models.notification_log import NotificationLog
+from app.models.report import ProcessingStatus, Report
+from app.models.report_analysis import ReportAnalysis
 from app.models.support import SupportTicket
+from app.models.user import User
+from app.services.audit import log_admin_action
 
 router = APIRouter()
 
@@ -54,8 +56,10 @@ def _parse_since(timeframe: str, now: datetime) -> datetime:
 async def get_admin_analytics(
     request: Request,
     timeframe: str = Query("7d", description="Timeframe: 24h, 7d, 30d, 90d, all"),
-    admin_ctx: AdminContext = Depends(require_any_permission(["analytics.view", "dashboard.view", "system.view"])),
-    db: AsyncSession = Depends(get_db)
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["analytics.view", "dashboard.view", "system.view"])
+    ),
+    db: AsyncSession = Depends(get_db),
 ):
     now = datetime.now(timezone.utc)
     since_dt = _parse_since(timeframe, now)
@@ -64,59 +68,87 @@ async def get_admin_analytics(
 
     # ---- 1. USER METRICS ----
     # Definition: total users ever registered
-    total_users = (await db.execute(select(func.count(User.id)))).scalar_one_or_none() or 0
+    total_users = (
+        await db.execute(select(func.count(User.id)))
+    ).scalar_one_or_none() or 0
     # Definition: users registered within the timeframe
-    new_registrations = (await db.execute(
-        select(func.count(User.id)).where(User.created_at >= since_naive)
-    )).scalar_one_or_none() or 0
+    new_registrations = (
+        await db.execute(
+            select(func.count(User.id)).where(User.created_at >= since_naive)
+        )
+    ).scalar_one_or_none() or 0
 
     # Active users: those who uploaded a report OR started a chat in the period
     active_report_users = set(
-        (await db.execute(
-            select(Report.user_id).where(Report.uploaded_at >= since_naive).distinct()
-        )).scalars().all()
+        (
+            await db.execute(
+                select(Report.user_id)
+                .where(Report.uploaded_at >= since_naive)
+                .distinct()
+            )
+        )
+        .scalars()
+        .all()
     )
     active_chat_users = set(
-        (await db.execute(
-            select(ChatSession.user_id).where(ChatSession.created_at >= since_naive).distinct()
-        )).scalars().all()
+        (
+            await db.execute(
+                select(ChatSession.user_id)
+                .where(ChatSession.created_at >= since_naive)
+                .distinct()
+            )
+        )
+        .scalars()
+        .all()
     )
     active_users_count = len(active_report_users | active_chat_users)
 
     # Retention: of users who existed BEFORE the period, how many are still active?
-    old_users_count = (await db.execute(
-        select(func.count(User.id)).where(User.created_at < since_naive)
-    )).scalar_one_or_none() or 0
+    old_users_count = (
+        await db.execute(
+            select(func.count(User.id)).where(User.created_at < since_naive)
+        )
+    ).scalar_one_or_none() or 0
     # Active old users (approximation via report/chat activity)
-    active_old_users = len(active_report_users | active_chat_users) if old_users_count > 0 else 0
+    active_old_users = (
+        len(active_report_users | active_chat_users) if old_users_count > 0 else 0
+    )
     retention_rate = _safe_pct(active_old_users, old_users_count)
 
     # ---- 2. REPORT METRICS ----
     # Source: reports table, filtered by timeframe
-    rep_total = (await db.execute(
-        select(func.count(Report.id)).where(Report.uploaded_at >= since_naive)
-    )).scalar_one_or_none() or 0
-
-    rep_completed = (await db.execute(
-        select(func.count(Report.id)).where(
-            Report.uploaded_at >= since_naive,
-            Report.processing_status == ProcessingStatus.completed
+    rep_total = (
+        await db.execute(
+            select(func.count(Report.id)).where(Report.uploaded_at >= since_naive)
         )
-    )).scalar_one_or_none() or 0
+    ).scalar_one_or_none() or 0
 
-    rep_failed = (await db.execute(
-        select(func.count(Report.id)).where(
-            Report.uploaded_at >= since_naive,
-            Report.processing_status == ProcessingStatus.failed
+    rep_completed = (
+        await db.execute(
+            select(func.count(Report.id)).where(
+                Report.uploaded_at >= since_naive,
+                Report.processing_status == ProcessingStatus.completed,
+            )
         )
-    )).scalar_one_or_none() or 0
+    ).scalar_one_or_none() or 0
 
-    rep_processing = (await db.execute(
-        select(func.count(Report.id)).where(
-            Report.uploaded_at >= since_naive,
-            Report.processing_status == ProcessingStatus.processing
+    rep_failed = (
+        await db.execute(
+            select(func.count(Report.id)).where(
+                Report.uploaded_at >= since_naive,
+                Report.processing_status == ProcessingStatus.failed,
+            )
         )
-    )).scalar_one_or_none() or 0
+    ).scalar_one_or_none() or 0
+
+    rep_processing = (
+        await db.execute(
+            select(func.count(Report.id)).where(
+                Report.uploaded_at >= since_naive,
+                Report.processing_status == ProcessingStatus.processing,
+            )
+        )
+    ).scalar_one_or_none() or 0
 
     # Real failure category breakdown from report_analyses.failure_category
     # Source: JOIN reports + report_analyses on reports in failure state this period
@@ -126,12 +158,14 @@ async def get_admin_analytics(
         .where(
             Report.uploaded_at >= since_naive,
             Report.processing_status == ProcessingStatus.failed,
-            ReportAnalysis.failure_category.isnot(None)
+            ReportAnalysis.failure_category.isnot(None),
         )
         .group_by(ReportAnalysis.failure_category)
     )
     # Build real breakdown — no invented categories
-    failure_categories: Dict[str, int] = {row[0]: row[1] for row in failure_cat_rows.all()}
+    failure_categories: Dict[str, int] = {
+        row[0]: row[1] for row in failure_cat_rows.all()
+    }
     # Count failures with no category recorded
     uncategorized_failures = rep_failed - sum(failure_categories.values())
     if uncategorized_failures > 0:
@@ -139,31 +173,45 @@ async def get_admin_analytics(
 
     # Real average processing time (seconds): processed_at - reports.uploaded_at
     avg_time_res = await db.execute(
-        select(func.avg(
-            func.julianday(ReportAnalysis.processed_at) - func.julianday(Report.uploaded_at)
-        ) * 86400)
+        select(
+            func.avg(
+                func.julianday(ReportAnalysis.processed_at)
+                - func.julianday(Report.uploaded_at)
+            )
+            * 86400
+        )
         .join(Report, ReportAnalysis.report_id == Report.id)
         .where(
             Report.uploaded_at >= since_naive,
             ReportAnalysis.processed_at.isnot(None),
-            Report.processing_status == ProcessingStatus.completed
+            Report.processing_status == ProcessingStatus.completed,
         )
     )
     avg_processing_time_sec_raw = avg_time_res.scalar_one_or_none()
-    avg_processing_time_sec = round(avg_processing_time_sec_raw, 1) if avg_processing_time_sec_raw is not None else None
+    avg_processing_time_sec = (
+        round(avg_processing_time_sec_raw, 1)
+        if avg_processing_time_sec_raw is not None
+        else None
+    )
 
     # ---- 3. AI / LLM METRICS ----
     # Source: llm_diagnostic_events table
-    ai_total = (await db.execute(
-        select(func.count(LLMDiagnosticEvent.id)).where(LLMDiagnosticEvent.timestamp >= since_naive)
-    )).scalar_one_or_none() or 0
-
-    ai_success = (await db.execute(
-        select(func.count(LLMDiagnosticEvent.id)).where(
-            LLMDiagnosticEvent.timestamp >= since_naive,
-            LLMDiagnosticEvent.status == "success"
+    ai_total = (
+        await db.execute(
+            select(func.count(LLMDiagnosticEvent.id)).where(
+                LLMDiagnosticEvent.timestamp >= since_naive
+            )
         )
-    )).scalar_one_or_none() or 0
+    ).scalar_one_or_none() or 0
+
+    ai_success = (
+        await db.execute(
+            select(func.count(LLMDiagnosticEvent.id)).where(
+                LLMDiagnosticEvent.timestamp >= since_naive,
+                LLMDiagnosticEvent.status == "success",
+            )
+        )
+    ).scalar_one_or_none() or 0
 
     ai_failed = ai_total - ai_success
 
@@ -176,7 +224,11 @@ async def get_admin_analytics(
 
     # Real provider/model distribution
     model_dist_rows = await db.execute(
-        select(LLMDiagnosticEvent.provider, LLMDiagnosticEvent.model_name, func.count(LLMDiagnosticEvent.id))
+        select(
+            LLMDiagnosticEvent.provider,
+            LLMDiagnosticEvent.model_name,
+            func.count(LLMDiagnosticEvent.id),
+        )
         .where(LLMDiagnosticEvent.timestamp >= since_naive)
         .group_by(LLMDiagnosticEvent.provider, LLMDiagnosticEvent.model_name)
     )
@@ -186,28 +238,42 @@ async def get_admin_analytics(
     ]
 
     # Real failure category breakdown from LLM events
-    llm_fail_cat_rows = await db.execute(
-        select(LLMDiagnosticEvent.failure_category, func.count(LLMDiagnosticEvent.id))
-        .where(
-            LLMDiagnosticEvent.timestamp >= since_naive,
-            LLMDiagnosticEvent.status != "success",
-            LLMDiagnosticEvent.failure_category.isnot(None)
+    llm_fail_cat_rows = (
+        await db.execute(
+            select(
+                LLMDiagnosticEvent.failure_category, func.count(LLMDiagnosticEvent.id)
+            )
+            .where(
+                LLMDiagnosticEvent.timestamp >= since_naive,
+                LLMDiagnosticEvent.status != "success",
+                LLMDiagnosticEvent.failure_category.isnot(None),
+            )
+            .group_by(LLMDiagnosticEvent.failure_category)
         )
-        .group_by(LLMDiagnosticEvent.failure_category)
-    ) if ai_failed > 0 else None
+        if ai_failed > 0
+        else None
+    )
 
     llm_failure_categories: Dict[str, int] = {}
     if llm_fail_cat_rows:
         llm_failure_categories = {row[0]: row[1] for row in llm_fail_cat_rows.all()}
 
     # ---- 4. CHAT METRICS ----
-    chat_sessions_count = (await db.execute(
-        select(func.count(ChatSession.id)).where(ChatSession.created_at >= since_naive)
-    )).scalar_one_or_none() or 0
+    chat_sessions_count = (
+        await db.execute(
+            select(func.count(ChatSession.id)).where(
+                ChatSession.created_at >= since_naive
+            )
+        )
+    ).scalar_one_or_none() or 0
 
-    chat_messages_count = (await db.execute(
-        select(func.count(ChatMessage.id)).where(ChatMessage.created_at >= since_naive)
-    )).scalar_one_or_none() or 0
+    chat_messages_count = (
+        await db.execute(
+            select(func.count(ChatMessage.id)).where(
+                ChatMessage.created_at >= since_naive
+            )
+        )
+    ).scalar_one_or_none() or 0
 
     safety_events_rows = await db.execute(
         select(ChatSafetyEvent.action_taken, func.count(ChatSafetyEvent.id))
@@ -217,26 +283,34 @@ async def get_admin_analytics(
     safety_classifications = {row[0]: row[1] for row in safety_events_rows.all()}
 
     # ---- 5. NOTIFICATION METRICS ----
-    notif_sent = (await db.execute(
-        select(func.count(NotificationLog.id)).where(
-            NotificationLog.sent_at >= since_naive,
-            NotificationLog.status.in_(["sent", "success"])
+    notif_sent = (
+        await db.execute(
+            select(func.count(NotificationLog.id)).where(
+                NotificationLog.sent_at >= since_naive,
+                NotificationLog.status.in_(["sent", "success"]),
+            )
         )
-    )).scalar_one_or_none() or 0
+    ).scalar_one_or_none() or 0
 
-    notif_failed = (await db.execute(
-        select(func.count(NotificationLog.id)).where(
-            NotificationLog.sent_at >= since_naive,
-            NotificationLog.status == "failed"
+    notif_failed = (
+        await db.execute(
+            select(func.count(NotificationLog.id)).where(
+                NotificationLog.sent_at >= since_naive,
+                NotificationLog.status == "failed",
+            )
         )
-    )).scalar_one_or_none() or 0
+    ).scalar_one_or_none() or 0
 
     notif_total = notif_sent + notif_failed
 
     # ---- 6. SUPPORT METRICS ----
-    support_total = (await db.execute(
-        select(func.count(SupportTicket.id)).where(SupportTicket.created_at >= since_naive)
-    )).scalar_one_or_none() or 0
+    support_total = (
+        await db.execute(
+            select(func.count(SupportTicket.id)).where(
+                SupportTicket.created_at >= since_naive
+            )
+        )
+    ).scalar_one_or_none() or 0
 
     # Audit this analytics view
     await log_admin_action(
@@ -245,7 +319,7 @@ async def get_admin_analytics(
         actor_admin_id=admin_ctx.user.id,
         permission_used="analytics.view",
         request=request,
-        metadata={"timeframe": timeframe}
+        metadata={"timeframe": timeframe},
     )
     await db.commit()
 
@@ -268,8 +342,8 @@ async def get_admin_analytics(
             "feature_usage": {
                 "reports_uploaded": rep_total,
                 "chat_messages": chat_messages_count,
-                "support_tickets": support_total
-            }
+                "support_tickets": support_total,
+            },
         },
         "reports": {
             "total_uploads": rep_total,
@@ -308,16 +382,20 @@ async def get_admin_analytics(
         },
         "support": {
             "tickets": support_total,
-        }
+        },
     }
 
 
 @router.get("/timeseries")
 async def get_analytics_timeseries(
-    metric: str = Query("analysis_volume", description="Metric: analysis_volume, success_failure"),
+    metric: str = Query(
+        "analysis_volume", description="Metric: analysis_volume, success_failure"
+    ),
     period: str = Query("7d"),
-    admin_ctx: AdminContext = Depends(require_any_permission(["analytics.view", "dashboard.view"])),
-    db: AsyncSession = Depends(get_db)
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["analytics.view", "dashboard.view"])
+    ),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Returns time-series data for dashboard charting.
@@ -335,7 +413,7 @@ async def get_analytics_timeseries(
         rows = await db.execute(
             select(
                 func.date(Report.uploaded_at).label("day"),
-                func.count(Report.id).label("count")
+                func.count(Report.id).label("count"),
             )
             .where(Report.uploaded_at >= since_naive)
             .group_by(func.date(Report.uploaded_at))
@@ -349,11 +427,13 @@ async def get_analytics_timeseries(
             select(
                 func.date(Report.uploaded_at).label("day"),
                 Report.processing_status,
-                func.count(Report.id).label("count")
+                func.count(Report.id).label("count"),
             )
             .where(
                 Report.uploaded_at >= since_naive,
-                Report.processing_status.in_([ProcessingStatus.completed, ProcessingStatus.failed])
+                Report.processing_status.in_(
+                    [ProcessingStatus.completed, ProcessingStatus.failed]
+                ),
             )
             .group_by(func.date(Report.uploaded_at), Report.processing_status)
             .order_by(func.date(Report.uploaded_at))
@@ -373,7 +453,9 @@ async def get_analytics_timeseries(
         data_points = sorted(day_map.values(), key=lambda x: x["date"])
 
     else:
-        return {"error": f"Unknown metric '{metric}'. Valid: analysis_volume, success_failure"}
+        return {
+            "error": f"Unknown metric '{metric}'. Valid: analysis_volume, success_failure"
+        }
 
     return {
         "metric": metric,
@@ -381,5 +463,5 @@ async def get_analytics_timeseries(
         "period_start": since_dt.isoformat(),
         "period_end": now.isoformat(),
         "data_points": data_points,
-        "source": "reports table — real database aggregation"
+        "source": "reports table — real database aggregation",
     }

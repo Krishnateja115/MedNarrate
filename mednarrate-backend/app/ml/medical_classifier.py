@@ -1,43 +1,61 @@
-import os
 import json
 import logging
+import os
+from typing import Any, Dict
+
 import joblib
-import pandas as pd
 import numpy as np
-from typing import Dict, Any, Tuple
+import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    precision_recall_fscore_support,
+)
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix, classification_report
+
 from app.ml.dataset_loader import clean_report_text_features
 
 logger = logging.getLogger(__name__)
 
-ARTIFACTS_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "artifacts")
-)
+ARTIFACTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "artifacts"))
+
 
 class MedicalReportClassifier:
     def __init__(self, artifacts_dir: str = None):
         self.artifacts_dir = artifacts_dir or ARTIFACTS_DIR
         os.makedirs(self.artifacts_dir, exist_ok=True)
-        self.vectorizer = TfidfVectorizer(max_features=10000, ngram_range=(1, 2), min_df=2)
+        self.vectorizer = TfidfVectorizer(
+            max_features=10000, ngram_range=(1, 2), min_df=2
+        )
         self.label_encoder = LabelEncoder()
         self.model = LogisticRegression(max_iter=1000, C=1.0, random_state=42)
         self.is_trained = False
 
-    def train_and_evaluate(self, train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.DataFrame, dataset_summary: Dict[str, Any]) -> Dict[str, Any]:
-        logger.info("Fitting LabelEncoder and TF-IDF Vectorizer on clean MRAD report text...")
-        y_train = self.label_encoder.fit_transform(train_df['target_label'])
-        y_val = self.label_encoder.transform(val_df['target_label'])
-        y_test = self.label_encoder.transform(test_df['target_label'])
+    def train_and_evaluate(
+        self,
+        train_df: pd.DataFrame,
+        val_df: pd.DataFrame,
+        test_df: pd.DataFrame,
+        dataset_summary: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        logger.info(
+            "Fitting LabelEncoder and TF-IDF Vectorizer on clean MRAD report text..."
+        )
+        y_train = self.label_encoder.fit_transform(train_df["target_label"])
+        y_val = self.label_encoder.transform(val_df["target_label"])
+        y_test = self.label_encoder.transform(test_df["target_label"])
 
-        text_col = 'clean_text' if 'clean_text' in train_df.columns else 'Report_Text'
+        text_col = "clean_text" if "clean_text" in train_df.columns else "Report_Text"
         X_train = self.vectorizer.fit_transform(train_df[text_col])
         X_val = self.vectorizer.transform(val_df[text_col])
         X_test = self.vectorizer.transform(test_df[text_col])
 
-        logger.info(f"Training LogisticRegression model on {X_train.shape[0]} clean training samples...")
+        logger.info(
+            f"Training LogisticRegression model on {X_train.shape[0]} clean training samples..."
+        )
         self.model.fit(X_train, y_train)
         self.is_trained = True
 
@@ -46,12 +64,18 @@ class MedicalReportClassifier:
 
         test_preds = self.model.predict(X_test)
         test_acc = accuracy_score(y_test, test_preds)
-        prec, rec, f1, _ = precision_recall_fscore_support(y_test, test_preds, average='macro')
-        w_prec, w_rec, w_f1, _ = precision_recall_fscore_support(y_test, test_preds, average='weighted')
+        prec, rec, f1, _ = precision_recall_fscore_support(
+            y_test, test_preds, average="macro"
+        )
+        w_prec, w_rec, w_f1, _ = precision_recall_fscore_support(
+            y_test, test_preds, average="weighted"
+        )
         cm = confusion_matrix(y_test, test_preds).tolist()
         class_names = [str(c) for c in self.label_encoder.classes_]
 
-        per_class = classification_report(y_test, test_preds, target_names=class_names, output_dict=True)
+        per_class = classification_report(
+            y_test, test_preds, target_names=class_names, output_dict=True
+        )
 
         metrics = {
             "dataset_info": {
@@ -64,7 +88,7 @@ class MedicalReportClassifier:
                 "val_samples": len(val_df),
                 "test_samples": len(test_df),
                 "class_names": class_names,
-                "feature_cleaning": "Metadata header stripping applied (re.sub Report Type header)"
+                "feature_cleaning": "Metadata header stripping applied (re.sub Report Type header)",
             },
             "validation_accuracy": float(val_acc),
             "test_accuracy": float(test_acc),
@@ -75,11 +99,13 @@ class MedicalReportClassifier:
             "test_recall_weighted": float(w_rec),
             "test_f1_weighted": float(w_f1),
             "confusion_matrix": cm,
-            "per_class_report": per_class
+            "per_class_report": per_class,
         }
 
         self.save_artifacts(metrics)
-        logger.info(f"Leakage-Safe Model Training Complete! Test Accuracy: {test_acc:.4f}, Macro F1: {f1:.4f}")
+        logger.info(
+            f"Leakage-Safe Model Training Complete! Test Accuracy: {test_acc:.4f}, Macro F1: {f1:.4f}"
+        )
         return metrics
 
     def save_artifacts(self, metrics: Dict[str, Any]):
@@ -112,7 +138,7 @@ class MedicalReportClassifier:
             "split_method": "patient-level GroupKFold",
             "random_seed": 42,
             "test_accuracy": metrics["test_accuracy"],
-            "test_f1_macro": metrics["test_f1_macro"]
+            "test_f1_macro": metrics["test_f1_macro"],
         }
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=2)
@@ -124,8 +150,14 @@ class MedicalReportClassifier:
         vectorizer_path = os.path.join(self.artifacts_dir, "vectorizer.joblib")
         encoder_path = os.path.join(self.artifacts_dir, "label_encoder.joblib")
 
-        if not (os.path.exists(model_path) and os.path.exists(vectorizer_path) and os.path.exists(encoder_path)):
-            raise FileNotFoundError(f"Model artifacts missing from {self.artifacts_dir}")
+        if not (
+            os.path.exists(model_path)
+            and os.path.exists(vectorizer_path)
+            and os.path.exists(encoder_path)
+        ):
+            raise FileNotFoundError(
+                f"Model artifacts missing from {self.artifacts_dir}"
+            )
 
         self.model = joblib.load(model_path)
         self.vectorizer = joblib.load(vectorizer_path)
@@ -150,5 +182,5 @@ class MedicalReportClassifier:
             "class_probabilities": {
                 str(cls): float(prob)
                 for cls, prob in zip(self.label_encoder.classes_, probs)
-            }
+            },
         }

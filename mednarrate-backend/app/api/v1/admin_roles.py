@@ -1,27 +1,36 @@
+import uuid
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import delete
-from typing import Optional, List
-import uuid
 
+from app.core.admin_auth import AdminContext, require_any_permission
 from app.core.database import get_db
-from app.core.admin_auth import AdminContext, get_admin_context, require_permission, require_any_permission
+from app.models.admin import (
+    AdminPermission,
+    AdminRole,
+    AdminRoleAssignment,
+    AdminRolePermission,
+)
 from app.services.audit import log_admin_action
-from app.models.admin import AdminRole, AdminPermission, AdminRolePermission, AdminRoleAssignment
 
 router = APIRouter()
+
 
 class RoleCreateReq(BaseModel):
     name: str
     description: Optional[str] = None
     permission_names: List[str] = []
 
+
 class RoleUpdateReq(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     permission_names: List[str] = []
+
 
 DEFAULT_PERMISSIONS = [
     ("dashboard.view", "View admin dashboard and general metrics"),
@@ -48,11 +57,14 @@ DEFAULT_PERMISSIONS = [
     ("support.manage", "Manage support tickets and help articles"),
 ]
 
+
 @router.get("/permissions")
 async def list_permissions(
     request: Request,
-    admin_ctx: AdminContext = Depends(require_any_permission(["roles.view", "super_admin"])),
-    db: AsyncSession = Depends(get_db)
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["roles.view", "super_admin"])
+    ),
+    db: AsyncSession = Depends(get_db),
 ):
     stmt = select(AdminPermission)
     res = await db.execute(stmt)
@@ -67,13 +79,18 @@ async def list_permissions(
         res = await db.execute(select(AdminPermission))
         perms = res.scalars().all()
 
-    return [{"id": str(p.id), "name": p.name, "description": p.description} for p in perms]
+    return [
+        {"id": str(p.id), "name": p.name, "description": p.description} for p in perms
+    ]
+
 
 @router.get("")
 async def list_roles(
     request: Request,
-    admin_ctx: AdminContext = Depends(require_any_permission(["roles.view", "super_admin"])),
-    db: AsyncSession = Depends(get_db)
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["roles.view", "super_admin"])
+    ),
+    db: AsyncSession = Depends(get_db),
 ):
     stmt = select(AdminRole)
     res = await db.execute(stmt)
@@ -84,40 +101,50 @@ async def list_roles(
         # Fetch perms
         stmt_perms = (
             select(AdminPermission)
-            .join(AdminRolePermission, AdminPermission.id == AdminRolePermission.permission_id)
+            .join(
+                AdminRolePermission,
+                AdminPermission.id == AdminRolePermission.permission_id,
+            )
             .where(AdminRolePermission.role_id == r.id)
         )
         perms = (await db.execute(stmt_perms)).scalars().all()
 
         # Count assigned admins
-        stmt_count = select(AdminRoleAssignment).where(AdminRoleAssignment.role_id == r.id)
+        stmt_count = select(AdminRoleAssignment).where(
+            AdminRoleAssignment.role_id == r.id
+        )
         assigned_count = len((await db.execute(stmt_count)).scalars().all())
 
-        out.append({
-            "id": str(r.id),
-            "name": r.name,
-            "description": r.description,
-            "permissions": [p.name for p in perms],
-            "assigned_admins_count": assigned_count
-        })
+        out.append(
+            {
+                "id": str(r.id),
+                "name": r.name,
+                "description": r.description,
+                "permissions": [p.name for p in perms],
+                "assigned_admins_count": assigned_count,
+            }
+        )
 
     await log_admin_action(
         db=db,
         action="LIST_ROLES",
         actor_admin_id=admin_ctx.user.id,
         permission_used="roles.view",
-        request=request
+        request=request,
     )
     await db.commit()
 
     return out
 
+
 @router.post("", status_code=201)
 async def create_role(
     req: RoleCreateReq,
     request: Request,
-    admin_ctx: AdminContext = Depends(require_any_permission(["roles.manage", "super_admin"])),
-    db: AsyncSession = Depends(get_db)
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["roles.manage", "super_admin"])
+    ),
+    db: AsyncSession = Depends(get_db),
 ):
     # Self-escalation check
     if not admin_ctx.is_super_admin:
@@ -129,12 +156,12 @@ async def create_role(
                 actor_admin_id=admin_ctx.user.id,
                 result="denied",
                 reason=f"Cannot create role with unheld permissions: {missing}",
-                request=request
+                request=request,
             )
             await db.commit()
             raise HTTPException(
                 status_code=403,
-                detail=f"Self-escalation blocked: You cannot grant permissions you do not possess ({missing})."
+                detail=f"Self-escalation blocked: You cannot grant permissions you do not possess ({missing}).",
             )
 
     new_role = AdminRole(name=req.name, description=req.description)
@@ -159,19 +186,22 @@ async def create_role(
         resource_id=str(new_role.id),
         permission_used="roles.manage",
         request=request,
-        metadata={"role_name": req.name, "permissions": req.permission_names}
+        metadata={"role_name": req.name, "permissions": req.permission_names},
     )
     await db.commit()
 
     return {"status": "ok", "id": str(new_role.id), "name": new_role.name}
+
 
 @router.put("/{id}")
 async def update_role(
     id: str,
     req: RoleUpdateReq,
     request: Request,
-    admin_ctx: AdminContext = Depends(require_any_permission(["roles.manage", "super_admin"])),
-    db: AsyncSession = Depends(get_db)
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["roles.manage", "super_admin"])
+    ),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         role_uuid = uuid.UUID(id)
@@ -195,12 +225,12 @@ async def update_role(
                 resource_id=id,
                 result="denied",
                 reason=f"Cannot grant permissions unheld by requesting admin: {missing}",
-                request=request
+                request=request,
             )
             await db.commit()
             raise HTTPException(
                 status_code=403,
-                detail=f"Self-escalation blocked: You cannot grant permissions you do not possess ({missing})."
+                detail=f"Self-escalation blocked: You cannot grant permissions you do not possess ({missing}).",
             )
 
     if req.name:
@@ -209,7 +239,9 @@ async def update_role(
         role.description = req.description
 
     # Update role permissions
-    await db.execute(delete(AdminRolePermission).where(AdminRolePermission.role_id == role_uuid))
+    await db.execute(
+        delete(AdminRolePermission).where(AdminRolePermission.role_id == role_uuid)
+    )
     for p_name in req.permission_names:
         stmt_p = select(AdminPermission).where(AdminPermission.name == p_name)
         perm = (await db.execute(stmt_p)).scalars().first()
@@ -228,7 +260,7 @@ async def update_role(
         resource_id=id,
         permission_used="roles.manage",
         request=request,
-        metadata={"role_name": role.name, "permissions": req.permission_names}
+        metadata={"role_name": role.name, "permissions": req.permission_names},
     )
     await db.commit()
 

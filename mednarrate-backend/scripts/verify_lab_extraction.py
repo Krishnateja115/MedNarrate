@@ -2,12 +2,17 @@
 FIX 4 Verification Script — verify lab extraction filters work correctly.
 Run from mednarrate-backend/: python3 scripts/verify_lab_extraction.py
 """
+
 import glob
+
 import fitz  # pymupdf
+
 from app.services.lab_value_extractor import extract_lab_values
 
 # Find any readable PDF in uploads/
-pdf_paths = glob.glob("uploads/**/*.pdf", recursive=True) + glob.glob("tests/data/*.pdf")
+pdf_paths = glob.glob("uploads/**/*.pdf", recursive=True) + glob.glob(
+    "tests/data/*.pdf"
+)
 readable_pdf = None
 for p in pdf_paths:
     try:
@@ -52,15 +57,19 @@ for r in results:
         junk_found.append(r["test_name"])
 
 assert not junk_found, f"FAIL: junk entries still present: {junk_found}"
-assert len(results) >= 5, f"FAIL: only {len(results)} lab values — regression! Expected >= 5 for a CBC."
+assert (
+    len(results) >= 5
+), f"FAIL: only {len(results)} lab values — regression! Expected >= 5 for a CBC."
 print(f"\nPASS: {len(results)} real lab values extracted, zero known junk entries.")
 
 # Also verify against the real PDF
 print("\n=== Testing against real PDF ===")
 real_results = extract_lab_values(full_text, "blood")
-real_junk = [r["test_name"] for r in real_results if r["test_name"].strip().lower() in KNOWN_JUNK]
+real_junk = [
+    r["test_name"] for r in real_results if r["test_name"].strip().lower() in KNOWN_JUNK
+]
 print(f"Real PDF: {len(real_results)} lab values, junk count: {len(real_junk)}")
 if real_junk:
     print(f"FAIL: junk entries in real PDF: {real_junk}")
 else:
-    print(f"PASS: zero junk entries in real PDF.")
+    print("PASS: zero junk entries in real PDF.")

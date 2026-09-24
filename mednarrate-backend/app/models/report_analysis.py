@@ -1,15 +1,26 @@
-from datetime import datetime
 import uuid
-from sqlalchemy import ForeignKey, DateTime, Text
-from sqlalchemy import Uuid as UUID, JSON as JSONB
+from datetime import datetime
+
+from sqlalchemy import JSON as JSONB
+from sqlalchemy import DateTime, ForeignKey, Text
+from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.core.database import Base
+
 
 class ReportAnalysis(Base):
     __tablename__ = "report_analyses"
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    report_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("reports.id", ondelete="CASCADE"), unique=True, nullable=False)
-    
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    report_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("reports.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
+
     structured_lab_values: Mapped[list] = mapped_column(JSONB, default=list)
     entities: Mapped[list] = mapped_column(JSONB, default=list)
     abnormal_findings: Mapped[list] = mapped_column(JSONB, default=list)
@@ -18,11 +29,15 @@ class ReportAnalysis(Base):
     patient_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     failure_category: Mapped[str | None] = mapped_column(Text, nullable=True)
-    verification_status: Mapped[str | None] = mapped_column(Text, nullable=True, default="unverified")
+    verification_status: Mapped[str | None] = mapped_column(
+        Text, nullable=True, default="unverified"
+    )
     model_versions: Mapped[dict] = mapped_column(JSONB, default=dict)
     llm_provider: Mapped[str | None] = mapped_column(Text, nullable=True)
     llm_model: Mapped[str | None] = mapped_column(Text, nullable=True)
     processed_at: Mapped[object | None] = mapped_column(DateTime, nullable=True)
-    
+
     created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[object] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )

@@ -1,25 +1,34 @@
-import pytest
 from datetime import date
+
+import pytest
 from sqlalchemy.future import select
-from app.models.report import Report, ReportType, ProcessingStatus
+
+from app.models.report import ProcessingStatus, Report, ReportType
 from app.models.report_analysis import ReportAnalysis
 from app.models.user import User
+
 
 @pytest.mark.asyncio
 async def test_end_to_end_analysis_persistence(db_session, monkeypatch):
     db = db_session
     from app.services.analysis_pipeline import run_analysis
-    from app.core.config import settings
-    
+
     # Mock LLM response for test double
     async def mock_generate(prompt, timeout=30, request_id=None, **kwargs):
-        return {"content": "Patient summary: Hemoglobin is 14.2 g/dL which is normal.", "provider": "gemini", "model": "gemini-1.5-flash"}
-    
-    monkeypatch.setattr("app.services.analysis_pipeline.generate_with_timeout_metadata", mock_generate)
+        return {
+            "content": "Patient summary: Hemoglobin is 14.2 g/dL which is normal.",
+            "provider": "gemini",
+            "model": "gemini-1.5-flash",
+        }
 
+    monkeypatch.setattr(
+        "app.services.analysis_pipeline.generate_with_timeout_metadata", mock_generate
+    )
 
     # 1. Create User & Report
-    user = User(email="e2e_user@example.com", hashed_password="pw", full_name="E2E User")
+    user = User(
+        email="e2e_user@example.com", hashed_password="pw", full_name="E2E User"
+    )
     db.add(user)
     await db.commit()
     await db.refresh(user)
@@ -42,7 +51,7 @@ async def test_end_to_end_analysis_persistence(db_session, monkeypatch):
         file_type="pdf",
         report_type=ReportType.blood,
         extracted_text=sample_text,
-        processing_status=ProcessingStatus.uploaded
+        processing_status=ProcessingStatus.uploaded,
     )
     db.add(report)
     await db.commit()
@@ -60,6 +69,11 @@ async def test_end_to_end_analysis_persistence(db_session, monkeypatch):
     analysis = (await db.execute(stmt_an)).scalars().first()
     assert analysis is not None
     assert analysis.patient_summary is not None
-    assert "Hemoglobin" in analysis.patient_summary or "disclaimer" in analysis.patient_summary.lower()
+    assert (
+        "Hemoglobin" in analysis.patient_summary
+        or "disclaimer" in analysis.patient_summary.lower()
+    )
     assert len(analysis.structured_lab_values) >= 1
-    assert any(v["test_name"].lower() == "hemoglobin" for v in analysis.structured_lab_values)
+    assert any(
+        v["test_name"].lower() == "hemoglobin" for v in analysis.structured_lab_values
+    )

@@ -6,18 +6,20 @@ Sensitive content requires chat.sensitive_view + active break-glass grant.
 
 Paginated endpoints with server-side filtering.
 """
+
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy import or_, desc, func
 from typing import Optional
 
-from app.core.database import get_db
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import desc, func, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
 from app.core.admin_auth import AdminContext, require_permission, validate_access_grant
-from app.models.chat import ChatSession, ChatMessage
+from app.core.database import get_db
+from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
+from app.models.chat import ChatMessage, ChatSession
 from app.models.chat_safety import ChatSafetyEvent
-from app.core.pagination import build_pagination_response, page_to_offset, clamp_limit
 
 router = APIRouter()
 
@@ -28,28 +30,34 @@ async def list_chat_sessions(
     page: int = Query(1, ge=1),
     limit: int = Query(25, ge=1, le=100),
     admin_ctx: AdminContext = Depends(require_permission("chat.view")),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     List chat sessions with pagination. Returns session metadata only — no message content.
     """
     limit = clamp_limit(limit)
     stmt = select(ChatSession)
-    
+
     if search:
-        stmt = stmt.where(or_(
-            ChatSession.title.ilike(f"%{search}%"),
-        ))
-    
+        stmt = stmt.where(
+            or_(
+                ChatSession.title.ilike(f"%{search}%"),
+            )
+        )
+
     # Count
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = (await db.execute(count_stmt)).scalar() or 0
 
     # Paginate
-    stmt = stmt.order_by(desc(ChatSession.created_at)).offset(page_to_offset(page, limit)).limit(limit)
+    stmt = (
+        stmt.order_by(desc(ChatSession.created_at))
+        .offset(page_to_offset(page, limit))
+        .limit(limit)
+    )
     result = await db.execute(stmt)
     sessions = result.scalars().all()
-    
+
     items = [
         {
             "id": str(s.id),
@@ -61,7 +69,7 @@ async def list_chat_sessions(
         }
         for s in sessions
     ]
-    
+
     return build_pagination_response(items, total, page, limit)
 
 
@@ -69,7 +77,7 @@ async def list_chat_sessions(
 async def get_chat_session_detail(
     session_id: str,
     admin_ctx: AdminContext = Depends(require_permission("chat.view")),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Returns session metadata + safety events for a specific chat session.
@@ -116,11 +124,11 @@ async def get_chat_session_detail(
                 "classification": e.classification,
                 "action_taken": e.action_taken,
                 "safe_summary": e.safe_summary,  # This is the pre-redacted safe summary
-                "created_at": e.created_at
+                "created_at": e.created_at,
                 # raw_content intentionally excluded
             }
             for e in safety_events
-        ]
+        ],
     }
 
 
@@ -129,14 +137,13 @@ async def get_chat_session_messages(
     session_id: str,
     request: object = None,
     admin_ctx: AdminContext = Depends(require_permission("chat.sensitive_view")),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Returns actual chat messages for a session.
     Requires: chat.sensitive_view permission + active break-glass grant.
     Every access is audited.
     """
-    from fastapi import Request
     try:
         s_uuid = uuid.UUID(session_id)
     except ValueError:
@@ -144,10 +151,7 @@ async def get_chat_session_messages(
 
     # Enforce break-glass grant
     grant = await validate_access_grant(
-        admin_ctx=admin_ctx,
-        resource_type="chat_session",
-        resource_id=session_id,
-        db=db
+        admin_ctx=admin_ctx, resource_type="chat_session", resource_id=session_id, db=db
     )
 
     session_res = await db.execute(select(ChatSession).where(ChatSession.id == s_uuid))
@@ -156,11 +160,14 @@ async def get_chat_session_messages(
         raise HTTPException(status_code=404, detail="Chat session not found")
 
     messages_res = await db.execute(
-        select(ChatMessage).where(ChatMessage.chat_session_id == s_uuid).order_by(ChatMessage.created_at)
+        select(ChatMessage)
+        .where(ChatMessage.chat_session_id == s_uuid)
+        .order_by(ChatMessage.created_at)
     )
     messages = messages_res.scalars().all()
 
     from app.services.audit import log_admin_action
+
     await log_admin_action(
         db=db,
         actor_admin_id=admin_ctx.user_id,
@@ -171,7 +178,7 @@ async def get_chat_session_messages(
         result="success",
         reason=f"Break-glass grant {grant.id}",
         metadata={"grant_id": str(grant.id), "message_count": len(messages)},
-        sensitive_access_flag=True
+        sensitive_access_flag=True,
     )
     await db.commit()
 
@@ -187,7 +194,7 @@ async def get_chat_session_messages(
                 "created_at": m.created_at,
             }
             for m in messages
-        ]
+        ],
     }
 
 
@@ -196,19 +203,23 @@ async def list_safety_events(
     page: int = Query(1, ge=1),
     limit: int = Query(25, ge=1, le=100),
     admin_ctx: AdminContext = Depends(require_permission("chat.view")),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """List chat safety events with pagination. safe_summary only — no raw content."""
     limit = clamp_limit(limit)
     stmt = select(ChatSafetyEvent)
-    
+
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = (await db.execute(count_stmt)).scalar() or 0
 
-    stmt = stmt.order_by(desc(ChatSafetyEvent.created_at)).offset(page_to_offset(page, limit)).limit(limit)
+    stmt = (
+        stmt.order_by(desc(ChatSafetyEvent.created_at))
+        .offset(page_to_offset(page, limit))
+        .limit(limit)
+    )
     result = await db.execute(stmt)
     events = result.scalars().all()
-    
+
     items = [
         {
             "id": str(e.id),
@@ -217,10 +228,10 @@ async def list_safety_events(
             "classification": e.classification,
             "action_taken": e.action_taken,
             "safe_summary": e.safe_summary,
-            "created_at": e.created_at
+            "created_at": e.created_at,
             # raw_content intentionally excluded
         }
         for e in events
     ]
-    
+
     return build_pagination_response(items, total, page, limit)

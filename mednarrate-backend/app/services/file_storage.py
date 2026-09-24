@@ -1,16 +1,21 @@
 import os
-import uuid
 import re
-from fastapi import UploadFile, HTTPException
+import uuid
+
+from fastapi import HTTPException, UploadFile
+
 from app.core.config import settings
+
 from .storage import get_storage_backend
+
 
 def sanitize_filename(filename: str) -> str:
     # Strip path separators & path traversal components
     filename = os.path.basename(filename).replace("\\", "/").split("/")[-1]
     # Keep only alnum/._- characters
-    filename = re.sub(r'[^a-zA-Z0-9.\-_]', '', filename)
+    filename = re.sub(r"[^a-zA-Z0-9.\-_]", "", filename)
     return filename or "upload"
+
 
 async def save_upload_file(user_id: uuid.UUID, upload_file: UploadFile) -> str:
     if not upload_file.filename:
@@ -22,36 +27,47 @@ async def save_upload_file(user_id: uuid.UUID, upload_file: UploadFile) -> str:
         raise HTTPException(status_code=422, detail="Unsupported file extension")
 
     max_bytes = settings.MAX_UPLOAD_MB * 1024 * 1024
-    
+
     # Read up to max_bytes + 1 to check if it exceeds the limit without loading the whole file into RAM
     file_bytes = await upload_file.read(max_bytes + 1024)
     if len(file_bytes) == 0:
         raise HTTPException(status_code=422, detail="Empty file payload")
 
     if len(file_bytes) > max_bytes:
-        raise HTTPException(status_code=422, detail=f"File too large. Max size is {settings.MAX_UPLOAD_MB}MB")
+        raise HTTPException(
+            status_code=422,
+            detail=f"File too large. Max size is {settings.MAX_UPLOAD_MB}MB",
+        )
     # PDF magic byte check if ext is pdf
     if ext == "pdf":
         if not file_bytes.startswith(b"%PDF-"):
             raise HTTPException(status_code=422, detail="Invalid PDF file format")
     elif ext in ["jpg", "jpeg"]:
-        if not (file_bytes.startswith(b"\xff\xd8\xff") or file_bytes.startswith(b"\xFF\xD8\xFF")):
+        if not (
+            file_bytes.startswith(b"\xff\xd8\xff")
+            or file_bytes.startswith(b"\xff\xd8\xff")
+        ):
             raise HTTPException(status_code=422, detail="Invalid JPEG file format")
     elif ext == "png":
         if not file_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
             raise HTTPException(status_code=422, detail="Invalid PNG file format")
-    
+
     # Use strict UUID filenames to prevent injection
     unique_filename = f"{user_id}/{uuid.uuid4()}.{ext}"
-    
+
     storage = get_storage_backend()
-    file_url = await storage.upload_file(file_bytes, unique_filename, upload_file.content_type or "application/octet-stream")
-        
+    file_url = await storage.upload_file(
+        file_bytes,
+        unique_filename,
+        upload_file.content_type or "application/octet-stream",
+    )
+
     return file_url
+
 
 async def delete_file(file_path: str):
     storage = get_storage_backend()
-    # file_path in DB might be the URL or relative path. 
+    # file_path in DB might be the URL or relative path.
     # For storage backend, we need the relative object key which might just be the file_path itself if local.
     # In a full implementation, you'd extract the key. For now, pass file_path directly.
     # Since GCS/S3 needs just the key, and local needs the filename.

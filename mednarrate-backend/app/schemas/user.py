@@ -1,9 +1,11 @@
 import re
-from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
+from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+
 from app.models.user import UserRole
-from datetime import date, datetime
 
 
 def validate_dob_string(v: Optional[str]) -> Optional[str]:
@@ -13,7 +15,9 @@ def validate_dob_string(v: Optional[str]) -> Optional[str]:
     try:
         parsed_date = datetime.strptime(trimmed, "%Y-%m-%d").date()
     except ValueError:
-        raise ValueError("Invalid Date of Birth format or calendar date. Must be YYYY-MM-DD (e.g., 2006-05-20).")
+        raise ValueError(
+            "Invalid Date of Birth format or calendar date. Must be YYYY-MM-DD (e.g., 2006-05-20)."
+        )
 
     if parsed_date > date.today():
         raise ValueError("Date of Birth cannot be in the future.")
@@ -30,7 +34,9 @@ def validate_blood_group_str(v: Optional[str]) -> Optional[str]:
         return None
     normalized = v.strip().upper()
     if normalized not in VALID_BLOOD_GROUPS:
-        raise ValueError(f"Invalid blood group: '{v}'. Must be one of: A+, A-, B+, B-, AB+, AB-, O+, O-")
+        raise ValueError(
+            f"Invalid blood group: '{v}'. Must be one of: A+, A-, B+, B-, AB+, AB-, O+, O-"
+        )
     return normalized
 
 
@@ -38,12 +44,12 @@ def validate_text_field_str(v: Optional[str]) -> Optional[str]:
     if v is None or v.strip() == "":
         return None
     trimmed = v.strip()
-    if not re.search(r'[a-zA-Z0-9]', trimmed):
+    if not re.search(r"[a-zA-Z0-9]", trimmed):
         raise ValueError("Field content cannot consist solely of special characters.")
     return trimmed
 
 
-VALID_INDIAN_PHONE_REGEX = re.compile(r'^[6-9]\d{9}$')
+VALID_INDIAN_PHONE_REGEX = re.compile(r"^[6-9]\d{9}$")
 
 
 def validate_indian_phone_str(v: Optional[str]) -> Optional[str]:
@@ -59,7 +65,11 @@ def validate_emergency_name_str(v: Optional[str]) -> Optional[str]:
     if v is None:
         return None
     trimmed = v.strip()
-    if trimmed == "" or not re.search(r'[a-zA-Z]', trimmed) or not re.match(r"^[a-zA-Z\s\.\'-]+$", trimmed):
+    if (
+        trimmed == ""
+        or not re.search(r"[a-zA-Z]", trimmed)
+        or not re.match(r"^[a-zA-Z\s\.\'-]+$", trimmed)
+    ):
         raise ValueError("Please enter a valid full name containing letters.")
     return trimmed
 
@@ -71,22 +81,22 @@ class MedicalProfileBase(BaseModel):
     emergency_contact_name: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
 
-    @field_validator('blood_group')
+    @field_validator("blood_group")
     @classmethod
     def validate_blood_group(cls, v: Optional[str]) -> Optional[str]:
         return validate_blood_group_str(v)
 
-    @field_validator('known_allergies', 'chronic_conditions')
+    @field_validator("known_allergies", "chronic_conditions")
     @classmethod
     def validate_text_fields(cls, v: Optional[str]) -> Optional[str]:
         return validate_text_field_str(v)
 
-    @field_validator('emergency_contact_phone')
+    @field_validator("emergency_contact_phone")
     @classmethod
     def validate_emergency_phone(cls, v: Optional[str]) -> Optional[str]:
         return validate_indian_phone_str(v)
 
-    @field_validator('emergency_contact_name')
+    @field_validator("emergency_contact_name")
     @classmethod
     def validate_emergency_name(cls, v: Optional[str]) -> Optional[str]:
         return validate_emergency_name_str(v)
@@ -123,18 +133,20 @@ class UserBase(BaseModel):
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None
 
-    @field_validator('date_of_birth')
+    @field_validator("date_of_birth")
     @classmethod
     def validate_dob(cls, v: Optional[str]) -> Optional[str]:
         return validate_dob_string(v)
 
-    @field_validator('full_name')
+    @field_validator("full_name")
     @classmethod
     def validate_full_name(cls, v: str) -> str:
         # Ensure full_name is non-empty and contains at least one alphanumeric char
         result = validate_text_field_str(v)
         if result is None:
-            raise ValueError("Full name must not be empty or consist solely of special characters.")
+            raise ValueError(
+                "Full name must not be empty or consist solely of special characters."
+            )
         return result
 
 
@@ -161,7 +173,7 @@ class UserWithProfileOut(UserOut):
 
 
 class UserUpdate(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
     full_name: Optional[str] = None
     preferred_language: Optional[str] = None
     date_of_birth: Optional[str] = None
@@ -170,12 +182,12 @@ class UserUpdate(BaseModel):
     doctor_profile: Optional[DoctorProfileBase] = None
     caregiver_profile: Optional[CaregiverProfileBase] = None
 
-    @field_validator('date_of_birth')
+    @field_validator("date_of_birth")
     @classmethod
     def validate_dob(cls, v: Optional[str]) -> Optional[str]:
         return validate_dob_string(v)
 
-    @field_validator('full_name')
+    @field_validator("full_name")
     @classmethod
     def validate_full_name(cls, v: Optional[str]) -> Optional[str]:
         # Allow None (no update), but validate if provided

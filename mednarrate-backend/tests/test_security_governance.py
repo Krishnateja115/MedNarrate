@@ -1,26 +1,34 @@
+import uuid
+
 import pytest
 from httpx import AsyncClient
-import uuid
-from app.models.user import User, UserRole
+
 from app.core.security import hash_password
+from app.models.user import User, UserRole
+
 
 @pytest.mark.asyncio
 async def test_admin_security_overview_unauthorized(client: AsyncClient):
     response = await client.get("/api/v1/admin/security/overview")
     assert response.status_code == 401
 
+
 @pytest.mark.asyncio
 async def test_admin_audit_logs_unauthorized(client: AsyncClient):
     response = await client.get("/api/v1/admin/audit-logs")
     assert response.status_code == 401
 
+
 @pytest.mark.asyncio
 async def test_public_announcements_endpoint(client: AsyncClient):
-    response = await client.get("/api/v1/admin/announcements/active/public?audience=all&language=en")
+    response = await client.get(
+        "/api/v1/admin/announcements/active/public?audience=all&language=en"
+    )
     assert response.status_code == 200
     data = response.json()
     assert "active_announcements" in data
     assert isinstance(data["active_announcements"], list)
+
 
 @pytest.mark.asyncio
 async def test_maintenance_mode_status_public(client: AsyncClient):
@@ -29,6 +37,7 @@ async def test_maintenance_mode_status_public(client: AsyncClient):
     data = response.json()
     assert "is_enabled" in data
     assert "scope" in data
+
 
 @pytest.mark.asyncio
 async def test_superadmin_governance_flow(client: AsyncClient, db_session):
@@ -44,15 +53,25 @@ async def test_superadmin_governance_flow(client: AsyncClient, db_session):
     db_session.add(superadmin)
 
     # Seed SuperAdmin role if not already seeded
-    from app.models.admin import AdminRole, AdminRoleAssignment
     from sqlalchemy import select
-    sa_role = (await db_session.execute(select(AdminRole).where(AdminRole.name == "Super Admin"))).scalar_one_or_none()
+
+    from app.models.admin import AdminRole, AdminRoleAssignment
+
+    sa_role = (
+        await db_session.execute(
+            select(AdminRole).where(AdminRole.name == "Super Admin")
+        )
+    ).scalar_one_or_none()
     if not sa_role:
-        sa_role = AdminRole(id=uuid.uuid4(), name="Super Admin", description="Super Admin Role")
+        sa_role = AdminRole(
+            id=uuid.uuid4(), name="Super Admin", description="Super Admin Role"
+        )
         db_session.add(sa_role)
         await db_session.flush()
 
-    sa_assignment = AdminRoleAssignment(id=uuid.uuid4(), user_id=superadmin.id, role_id=sa_role.id)
+    sa_assignment = AdminRoleAssignment(
+        id=uuid.uuid4(), user_id=superadmin.id, role_id=sa_role.id
+    )
     db_session.add(sa_assignment)
 
     await db_session.commit()
@@ -60,7 +79,7 @@ async def test_superadmin_governance_flow(client: AsyncClient, db_session):
     # Login as superadmin to get token
     login_resp = await client.post(
         "/api/v1/auth/login",
-        data={"username": "superadmin@mednarrate.test", "password": "SuperSecret123!"}
+        data={"username": "superadmin@mednarrate.test", "password": "SuperSecret123!"},
     )
     assert login_resp.status_code == 200
     token = login_resp.json()["access_token"]
@@ -86,9 +105,9 @@ async def test_superadmin_governance_flow(client: AsyncClient, db_session):
             "description": "Test flag",
             "enabled": True,
             "rollout_percentage": 50,
-            "target_environment": "all"
+            "target_environment": "all",
         },
-        headers=headers
+        headers=headers,
     )
     assert ff_resp.status_code == 200
     assert ff_resp.json()["flag"]["enabled"] is True
@@ -114,24 +133,31 @@ async def test_superadmin_governance_flow(client: AsyncClient, db_session):
             "resource_type": "patient_record",
             "resource_id": "rep_9999",
             "reason": "Clinical emergency diagnostic review by attending physician",
-            "duration_minutes": 15
+            "duration_minutes": 15,
         },
-        headers=headers
+        headers=headers,
     )
     assert bg_resp.status_code == 200
     grant_id = bg_resp.json()["grant"]["id"]
 
     # Mark as active manually since self-approval is blocked
     from app.models.admin import SensitiveAccessGrant
-    grant = (await db_session.execute(select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == uuid.UUID(grant_id)))).scalar_one()
+
+    grant = (
+        await db_session.execute(
+            select(SensitiveAccessGrant).where(
+                SensitiveAccessGrant.id == uuid.UUID(grant_id)
+            )
+        )
+    ).scalar_one()
     grant.status = "active"
     await db_session.commit()
 
     # Revoke grant
     revoke_resp = await client.post(
-        f"/api/v1/admin/break-glass/grants/{grant_id}/revoke", 
+        f"/api/v1/admin/break-glass/grants/{grant_id}/revoke",
         json={"reason": "No longer needed"},
-        headers=headers
+        headers=headers,
     )
     assert revoke_resp.status_code == 200
 

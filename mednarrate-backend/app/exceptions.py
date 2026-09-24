@@ -1,8 +1,9 @@
-from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from sqlalchemy.exc import IntegrityError
 import logging
+
+from fastapi import HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     safe_errors = []
     if errors:
         for error in errors:
-            loc = " → ".join(str(l) for l in error.get("loc", []) if l != "body")
+            loc = " → ".join(str(val) for val in error.get("loc", []) if val != "body")
             msg = error.get("msg", "Validation error")
             safe_errors.append({
                 "field": loc,

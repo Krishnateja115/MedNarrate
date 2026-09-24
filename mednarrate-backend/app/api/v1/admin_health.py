@@ -11,20 +11,21 @@ Status values: healthy | degraded | down | unknown
 
 LLM health requires a successful test request — not just configuration presence.
 """
-import os
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
-from datetime import datetime, timezone
-from typing import Any, Dict
 
-from app.core.database import get_db
-from app.core.config import settings
+import os
+from datetime import datetime, timezone
+from typing import Any
+
+from fastapi import APIRouter, Depends
+from sqlalchemy import desc, select, text
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.admin_auth import AdminContext, require_permission
+from app.core.config import settings
+from app.core.database import get_db
+from app.models.llm_telemetry import LLMDiagnosticEvent
 from app.services.llm_client import llm_client_instance
 from app.services.scheduler import scheduler
-from app.models.llm_telemetry import LLMDiagnosticEvent
-from sqlalchemy import desc
 
 router = APIRouter()
 
@@ -34,7 +35,7 @@ def _service_entry(
     timestamp: str,
     latency_ms: Any = None,
     error_summary: str = None,
-    details: dict = None
+    details: dict = None,
 ) -> dict:
     """Build a consistent service health entry."""
     entry = {
@@ -51,14 +52,10 @@ def _service_entry(
 @router.get("/health")
 async def get_system_health(
     admin_ctx: AdminContext = Depends(require_permission("system.health.view")),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     timestamp = datetime.now(timezone.utc).isoformat()
-    health_status = {
-        "status": "healthy",
-        "timestamp": timestamp,
-        "services": {}
-    }
+    health_status = {"status": "healthy", "timestamp": timestamp, "services": {}}
 
     # 1. API — if we're serving this response, the API is running
     health_status["services"]["api"] = _service_entry("healthy", timestamp)
@@ -68,11 +65,14 @@ async def get_system_health(
         start = datetime.now()
         await db.execute(text("SELECT 1"))
         latency = int((datetime.now() - start).total_seconds() * 1000)
-        health_status["services"]["database"] = _service_entry("healthy", timestamp, latency_ms=latency)
-    except Exception as e:
         health_status["services"]["database"] = _service_entry(
-            "down", timestamp,
-            error_summary="Database connectivity check failed"
+            "healthy", timestamp, latency_ms=latency
+        )
+    except Exception:
+        health_status["services"]["database"] = _service_entry(
+            "down",
+            timestamp,
+            error_summary="Database connectivity check failed",
             # Do NOT expose: str(e) which may contain connection string details
         )
         health_status["status"] = "degraded"
@@ -81,31 +81,33 @@ async def get_system_health(
     try:
         provider_name = (settings.PRIMARY_LLM_PROVIDER or "auto").lower().strip()
         provider = llm_client_instance.get_provider(provider_name)
-        
+
         start = datetime.now()
         provider_health = await provider.health_check()
         latency = int((datetime.now() - start).total_seconds() * 1000)
-        
+
         # CORRECTED: require an actual successful test request
         # configured OR reachable alone is NOT sufficient
-        request_ok = provider_health.get("request_successful", False)
+        provider_health.get("request_successful", False)
         reachable = provider_health.get("reachable", False)
         configured = provider_health.get("configured", False)
-        
+
         # Check last 10 calls for stability
-        llm_events_stmt = select(LLMDiagnosticEvent.status).order_by(
-            desc(LLMDiagnosticEvent.timestamp)
-        ).limit(10)
+        llm_events_stmt = (
+            select(LLMDiagnosticEvent.status)
+            .order_by(desc(LLMDiagnosticEvent.timestamp))
+            .limit(10)
+        )
         llm_events = (await db.execute(llm_events_stmt)).scalars().all()
-        
+
         recent_success_rate = 100.0
         if llm_events:
             success_count = sum(1 for s in llm_events if s == "success")
             recent_success_rate = (success_count / len(llm_events)) * 100
-            
+
         threshold = 80.0
         is_stable = (len(llm_events) == 0) or (recent_success_rate >= threshold)
-        
+
         if reachable and is_stable:
             llm_status = "healthy"
             error_summary = None
@@ -118,9 +120,10 @@ async def get_system_health(
         else:
             llm_status = "unknown"
             error_summary = "Provider not configured"
-        
+
         health_status["services"]["llm_provider"] = _service_entry(
-            llm_status, timestamp,
+            llm_status,
+            timestamp,
             latency_ms=latency,
             error_summary=error_summary,
             details={
@@ -130,15 +133,16 @@ async def get_system_health(
                 "healthy": reachable and is_stable,
                 "recent_success_rate": round(recent_success_rate, 2),
                 "threshold_required": threshold,
-                "last_n_checked": len(llm_events)
-            }
+                "last_n_checked": len(llm_events),
+            },
         )
         if llm_status in ("degraded", "down", "unknown"):
             health_status["status"] = "degraded"
     except Exception:
         health_status["services"]["llm_provider"] = _service_entry(
-            "unknown", timestamp,
-            error_summary="Could not reach LLM provider health check"
+            "unknown",
+            timestamp,
+            error_summary="Could not reach LLM provider health check",
         )
         health_status["status"] = "degraded"
 
@@ -151,8 +155,7 @@ async def get_system_health(
         health_status["services"]["storage"] = _service_entry("healthy", timestamp)
     except Exception:
         health_status["services"]["storage"] = _service_entry(
-            "down", timestamp,
-            error_summary="Storage directory not writable"
+            "down", timestamp, error_summary="Storage directory not writable"
         )
         health_status["status"] = "degraded"
 
@@ -164,7 +167,7 @@ async def get_system_health(
             "healthy" if is_running else "stopped",
             timestamp,
             error_summary=None if is_running else "APScheduler is not running",
-            details={"active_jobs": job_count} if is_running else None
+            details={"active_jobs": job_count} if is_running else None,
         )
         if not is_running:
             # Scheduler stopped is degraded, not down — API still serves requests
@@ -172,16 +175,18 @@ async def get_system_health(
                 health_status["status"] = "degraded"
     except Exception:
         health_status["services"]["scheduler"] = _service_entry(
-            "unknown", timestamp,
-            error_summary="Could not determine scheduler state"
+            "unknown", timestamp, error_summary="Could not determine scheduler state"
         )
 
     # 6. RAG / Vector Store — real lightweight check
     try:
         from app.services.rag import rag_service
+
         rag_health = await rag_service.health_check()
-        
-        rag_status_val = rag_health.get("status", "unknown")  # healthy, empty, down, unknown
+
+        rag_status_val = rag_health.get(
+            "status", "unknown"
+        )  # healthy, empty, down, unknown
         health_status["services"]["rag"] = _service_entry(
             rag_status_val,
             timestamp,
@@ -189,15 +194,14 @@ async def get_system_health(
             details={
                 "chunk_count": rag_health.get("chunk_count", "not_captured"),
                 "collection_reachable": rag_health.get("reachable", False),
-            }
+            },
         )
         if rag_status_val in ("down", "unknown"):
             if health_status["status"] == "healthy":
                 health_status["status"] = "degraded"
     except Exception:
         health_status["services"]["rag"] = _service_entry(
-            "unknown", timestamp,
-            error_summary="RAG service health check unavailable"
+            "unknown", timestamp, error_summary="RAG service health check unavailable"
         )
 
     # Overall status: healthy only if ALL core services are healthy

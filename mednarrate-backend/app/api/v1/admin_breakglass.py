@@ -14,18 +14,20 @@ Permissions:
   break_glass.revoke   — revoke an active grant
   break_glass.read     — list/view grants (security admins)
 """
+
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
-from pydantic import BaseModel, Field
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
 
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import BaseModel, Field
+from sqlalchemy import desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.admin_auth import AdminContext, require_permission
 from app.core.database import get_db
 from app.models.admin import SensitiveAccessGrant
 from app.models.user import User
-from app.core.admin_auth import AdminContext, require_permission
 from app.services.audit import log_admin_action
 
 router = APIRouter()
@@ -33,9 +35,16 @@ router = APIRouter()
 
 class BreakGlassRequest(BaseModel):
     resource_type: str = Field(..., example="medical_report")
-    resource_id: str = Field(..., example="rep_12345",
-                             description="Exact resource ID, or '*' for all resources of this type")
-    reason: str = Field(..., min_length=10, example="Emergency clinical review requested by attending physician")
+    resource_id: str = Field(
+        ...,
+        example="rep_12345",
+        description="Exact resource ID, or '*' for all resources of this type",
+    )
+    reason: str = Field(
+        ...,
+        min_length=10,
+        example="Emergency clinical review requested by attending physician",
+    )
 
 
 class BreakGlassApprovalPayload(BaseModel):
@@ -58,11 +67,15 @@ def _serialize_grant(g: SensitiveAccessGrant, admins_map: dict) -> dict:
         "created_at": g.created_at.isoformat() if g.created_at else None,
         "expires_at": g.expires_at.isoformat() if g.expires_at else None,
         "approved_by_id": str(g.approved_by_id) if g.approved_by_id else None,
-        "approved_by_email": admins_map.get(str(g.approved_by_id), None) if g.approved_by_id else None,
+        "approved_by_email": admins_map.get(str(g.approved_by_id), None)
+        if g.approved_by_id
+        else None,
         "approved_at": g.approved_at.isoformat() if g.approved_at else None,
         "revoked_at": g.revoked_at.isoformat() if g.revoked_at else None,
         "revoker_id": str(g.revoker_id) if g.revoker_id else None,
-        "revoker_email": admins_map.get(str(g.revoker_id), None) if g.revoker_id else None,
+        "revoker_email": admins_map.get(str(g.revoker_id), None)
+        if g.revoker_id
+        else None,
         "revoke_reason": g.revoke_reason,
     }
 
@@ -77,7 +90,7 @@ async def _build_admins_map(grants: list, db: AsyncSession) -> dict:
             admin_ids.add(g.approved_by_id)
         if g.revoker_id:
             admin_ids.add(g.revoker_id)
-    
+
     admins_map = {}
     if admin_ids:
         u_stmt = select(User).where(User.id.in_(admin_ids))
@@ -88,12 +101,13 @@ async def _build_admins_map(grants: list, db: AsyncSession) -> dict:
 
 DEFAULT_GRANT_EXPIRY_HOURS = 4
 
+
 @router.post("/break-glass/request")
 async def request_break_glass_access(
     req: BreakGlassRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    admin_ctx: AdminContext = Depends(require_permission("break_glass.request"))
+    admin_ctx: AdminContext = Depends(require_permission("break_glass.request")),
 ):
     """
     Submit a break-glass access request.
@@ -109,7 +123,7 @@ async def request_break_glass_access(
         reason=req.reason,
         created_at=now,
         expires_at=None,
-        status="requested",   # Always starts as REQUESTED — never auto-active
+        status="requested",  # Always starts as REQUESTED — never auto-active
         approved_by_id=None,
         approved_at=None,
     )
@@ -127,7 +141,7 @@ async def request_break_glass_access(
         reason=req.reason,
         request=request,
         metadata={},
-        sensitive_access_flag=True
+        sensitive_access_flag=True,
     )
 
     # Single commit: grant + audit together
@@ -143,7 +157,7 @@ async def request_break_glass_access(
             "resource_id": grant.resource_id,
             "reason": grant.reason,
             "created_at": grant.created_at.isoformat(),
-        }
+        },
     }
 
 
@@ -153,7 +167,7 @@ async def approve_break_glass_grant(
     payload: BreakGlassApprovalPayload,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    admin_ctx: AdminContext = Depends(require_permission("approve_sensitive_access"))
+    admin_ctx: AdminContext = Depends(require_permission("approve_sensitive_access")),
 ):
     """
     Approve a break-glass request from another admin.
@@ -165,7 +179,9 @@ async def approve_break_glass_grant(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid grant ID format")
 
-    res = await db.execute(select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == g_uuid))
+    res = await db.execute(
+        select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == g_uuid)
+    )
     grant = res.scalar_one_or_none()
     if not grant:
         raise HTTPException(status_code=404, detail="Sensitive access grant not found")
@@ -173,14 +189,14 @@ async def approve_break_glass_grant(
     if grant.status != "requested":
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot approve a grant in status '{grant.status}'. Only 'requested' grants can be approved."
+            detail=f"Cannot approve a grant in status '{grant.status}'. Only 'requested' grants can be approved.",
         )
 
     # CRITICAL: Block self-approval
     if grant.admin_id == admin_ctx.user_id:
         raise HTTPException(
             status_code=403,
-            detail="Self-approval is not permitted. A different administrator must approve this request."
+            detail="Self-approval is not permitted. A different administrator must approve this request.",
         )
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -203,9 +219,9 @@ async def approve_break_glass_grant(
         metadata={
             "grant_id": str(grant.id),
             "requester_id": str(grant.admin_id),
-            "expires_at": grant.expires_at.isoformat()
+            "expires_at": grant.expires_at.isoformat(),
         },
-        sensitive_access_flag=True
+        sensitive_access_flag=True,
     )
 
     # Single commit: approval + audit together
@@ -225,13 +241,17 @@ async def list_break_glass_grants(
     status_filter: Optional[str] = Query(None, alias="status"),
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    admin_ctx: AdminContext = Depends(require_permission("break_glass.read"))
+    admin_ctx: AdminContext = Depends(require_permission("break_glass.read")),
 ):
     """List break-glass grants. Auto-expires active-but-past-expiry grants."""
-    stmt = select(SensitiveAccessGrant).order_by(desc(SensitiveAccessGrant.created_at)).limit(limit)
+    stmt = (
+        select(SensitiveAccessGrant)
+        .order_by(desc(SensitiveAccessGrant.created_at))
+        .limit(limit)
+    )
     if status_filter:
         stmt = stmt.where(SensitiveAccessGrant.status == status_filter)
-    
+
     res = await db.execute(stmt)
     grants = res.scalars().all()
 
@@ -256,7 +276,7 @@ async def list_break_glass_grants(
 async def get_break_glass_grant(
     grant_id: str,
     db: AsyncSession = Depends(get_db),
-    admin_ctx: AdminContext = Depends(require_permission("break_glass.read"))
+    admin_ctx: AdminContext = Depends(require_permission("break_glass.read")),
 ):
     """Get a specific break-glass grant by ID."""
     try:
@@ -264,7 +284,9 @@ async def get_break_glass_grant(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid grant ID format")
 
-    res = await db.execute(select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == g_uuid))
+    res = await db.execute(
+        select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == g_uuid)
+    )
     grant = res.scalar_one_or_none()
     if not grant:
         raise HTTPException(status_code=404, detail="Sensitive access grant not found")
@@ -285,7 +307,7 @@ async def revoke_break_glass_grant(
     payload: BreakGlassRevokePayload,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    admin_ctx: AdminContext = Depends(require_permission("break_glass.revoke"))
+    admin_ctx: AdminContext = Depends(require_permission("break_glass.revoke")),
 ):
     """Revoke an active break-glass grant. Audit and revocation are atomic."""
     try:
@@ -293,13 +315,17 @@ async def revoke_break_glass_grant(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid grant ID format")
 
-    res = await db.execute(select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == g_uuid))
+    res = await db.execute(
+        select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == g_uuid)
+    )
     grant = res.scalar_one_or_none()
     if not grant:
         raise HTTPException(status_code=404, detail="Sensitive access grant not found")
 
     if grant.status != "active":
-        raise HTTPException(status_code=400, detail=f"Cannot revoke grant in status '{grant.status}'")
+        raise HTTPException(
+            status_code=400, detail=f"Cannot revoke grant in status '{grant.status}'"
+        )
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     grant.status = "revoked"
@@ -318,10 +344,16 @@ async def revoke_break_glass_grant(
         result="success",
         reason=payload.reason,
         request=request,
-        metadata={"grant_id": str(grant.id), "original_requester_id": str(grant.admin_id)},
-        sensitive_access_flag=True
+        metadata={
+            "grant_id": str(grant.id),
+            "original_requester_id": str(grant.admin_id),
+        },
+        sensitive_access_flag=True,
     )
 
     await db.commit()
 
-    return {"message": "Sensitive access grant revoked successfully", "grant_id": str(grant.id)}
+    return {
+        "message": "Sensitive access grant revoked successfully",
+        "grant_id": str(grant.id),
+    }

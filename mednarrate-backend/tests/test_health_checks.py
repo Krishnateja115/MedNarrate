@@ -1,13 +1,20 @@
+import uuid
+
 import pytest
 from httpx import AsyncClient
-import uuid
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User, UserRole
-from app.models.admin import AdminRole, AdminPermission, AdminRolePermission, AdminRoleAssignment
 from app.core.security import create_access_token
+from app.models.admin import (
+    AdminPermission,
+    AdminRole,
+    AdminRoleAssignment,
+    AdminRolePermission,
+)
+from app.models.user import User, UserRole
 from app.services.llm_client import llm_client_instance
+
 
 @pytest.fixture
 async def health_admin(db_session: AsyncSession):
@@ -15,27 +22,30 @@ async def health_admin(db_session: AsyncSession):
         email=f"health_{uuid.uuid4()}@test.com",
         hashed_password="hashed",
         full_name="Health Admin",
-        role=UserRole.admin
+        role=UserRole.admin,
     )
     db_session.add(user)
-    
+
     role = AdminRole(name=f"Health Admin_{uuid.uuid4()}")
     db_session.add(role)
-    
+
     stmt = select(AdminPermission).where(AdminPermission.name == "system.health.view")
     perm = (await db_session.execute(stmt)).scalars().first()
     if not perm:
         perm = AdminPermission(name="system.health.view")
         db_session.add(perm)
-    
+
     await db_session.flush()
     db_session.add(AdminRolePermission(role_id=role.id, permission_id=perm.id))
     db_session.add(AdminRoleAssignment(user_id=user.id, role_id=role.id))
     await db_session.commit()
     return user
 
+
 @pytest.mark.asyncio
-async def test_health_check_returns_all_services(client: AsyncClient, health_admin: User):
+async def test_health_check_returns_all_services(
+    client: AsyncClient, health_admin: User
+):
     """Ensure the health endpoint checks all required core services and does not leak info"""
     token = create_access_token(subject=str(health_admin.id))
 
@@ -48,17 +58,19 @@ async def test_health_check_returns_all_services(client: AsyncClient, health_adm
 
     def mock_get_provider(*args, **kwargs):
         return MockProvider()
-        
+
     llm_client_instance.get_provider = mock_get_provider
 
     try:
-        resp = await client.get("/api/v1/admin/system/health", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            "/api/v1/admin/system/health", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
-        
+
         data = resp.json()
         assert "status" in data
         assert "services" in data
-        
+
         services = data["services"]
         assert "api" in services
         assert "database" in services

@@ -1,26 +1,26 @@
+import asyncio
+import logging
+import os
+import re
+import sys
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+from app.api.v1 import router as api_v1_router
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.middleware import CorrelationIdMiddleware
 from app.exceptions import setup_exception_handlers
-from app.api.v1 import router as api_v1_router
-import os
-import sys
-import re
+from app.services.model_registry import get_ner_pipeline
+from app.services.scheduler import start_scheduler, stop_scheduler
 
 limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
-
-import asyncio
-import logging
-
 logger = logging.getLogger(__name__)
-
-from app.services.scheduler import start_scheduler, stop_scheduler
-from app.services.model_registry import get_ner_pipeline
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,7 +41,6 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 setup_exception_handlers(app)
 
-from app.core.middleware import CorrelationIdMiddleware
 app.add_middleware(CorrelationIdMiddleware)
 
 is_wildcard = "*" in settings.CORS_ORIGINS

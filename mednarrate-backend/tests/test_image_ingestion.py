@@ -1,21 +1,20 @@
 import io
+
 import pytest
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
+
+from app.services.file_storage import sanitize_filename
+from app.services.lab_value_extractor import extract_lab_values
 from app.services.text_extraction import (
-    extract_text_with_diagnostics,
-    extract_text_from_file,
+    ImageDecodeError,
+    OCRNoMeaningfulTextError,
+    UnsupportedFileTypeError,
     clean_extracted_text,
+    extract_text_with_diagnostics,
     preprocess_image_variants,
     validate_extracted_text,
-    run_ocr_on_image,
-    ExtractionError,
-    OCRUnavailableError,
-    OCRNoMeaningfulTextError,
-    ImageDecodeError,
-    UnsupportedFileTypeError
 )
-from app.services.lab_value_extractor import extract_lab_values
-from app.services.file_storage import sanitize_filename
+
 
 def create_synthetic_image(text: str, fmt: str = "PNG") -> bytes:
     """Helper creating synthetic image bytes with text for OCR testing."""
@@ -94,8 +93,8 @@ def test_medical_fact_preservation_fixture():
     labs = extract_lab_values(cleaned)
     
     # Check that lab values were extracted with exact numeric fidelity
-    hba1c_lab = next((l for l in labs if "hba1c" in l["test_name"].lower() or "hba1c" in l["original_name"].lower()), None)
-    glucose_lab = next((l for l in labs if "glucose" in l["test_name"].lower() or "glucose" in l["original_name"].lower()), None)
+    hba1c_lab = next((val for val in labs if "hba1c" in val["test_name"].lower() or "hba1c" in val["original_name"].lower()), None)
+    glucose_lab = next((val for val in labs if "glucose" in val["test_name"].lower() or "glucose" in val["original_name"].lower()), None)
     
     assert hba1c_lab is not None
     assert hba1c_lab["value"] == 6.5

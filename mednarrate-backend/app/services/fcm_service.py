@@ -1,8 +1,10 @@
+import json
+import logging
+
 import firebase_admin
 from firebase_admin import credentials, messaging
+
 from app.core.config import settings
-import logging
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +19,16 @@ if settings.FIREBASE_SERVICE_ACCOUNT_JSON:
     except Exception as e:
         logger.error(f"Failed to initialize Firebase Admin SDK: {e}")
 
+
 async def send_push_notification(token: str, title: str, body: str, data: dict = None):
     if not token:
         logger.warning("Attempted to send notification without a token.")
         return False
-        
+
     if not settings.FIREBASE_SERVICE_ACCOUNT_JSON:
-        logger.info(f"Firebase not configured. Mock sending notification to {token}: {title} - {body}")
+        logger.info(
+            f"Firebase not configured. Mock sending notification to {token}: {title} - {body}"
+        )
         return True
 
     try:

@@ -1,18 +1,18 @@
 import uuid
 from typing import Optional
-from datetime import datetime
-from fastapi import APIRouter, Depends, Query, HTTPException, Request
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc, or_
 
-from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
-
+from app.core.admin_auth import AdminContext, require_permission
 from app.core.database import get_db
+from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
 from app.models.admin import AdminAuditLog
 from app.models.user import User
-from app.core.admin_auth import AdminContext, require_permission
 
 router = APIRouter()
+
 
 @router.get("/audit-logs")
 async def list_audit_logs(
@@ -25,11 +25,11 @@ async def list_audit_logs(
     result_status: Optional[str] = None,
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    admin_ctx: AdminContext = Depends(require_permission("audit_logs:read"))
+    admin_ctx: AdminContext = Depends(require_permission("audit_logs:read")),
 ):
     limit = clamp_limit(limit)
     query = select(AdminAuditLog)
-    
+
     if action:
         query = query.where(AdminAuditLog.action.ilike(f"%{action}%"))
     if actor_id:
@@ -47,7 +47,7 @@ async def list_audit_logs(
             or_(
                 AdminAuditLog.action.ilike(f"%{search}%"),
                 AdminAuditLog.resource_id.ilike(f"%{search}%"),
-                AdminAuditLog.reason.ilike(f"%{search}%")
+                AdminAuditLog.reason.ilike(f"%{search}%"),
             )
         )
 
@@ -57,7 +57,11 @@ async def list_audit_logs(
     total = total_res.scalar() or 0
 
     # Paginate and order
-    query = query.order_by(desc(AdminAuditLog.timestamp)).offset(page_to_offset(page, limit)).limit(limit)
+    query = (
+        query.order_by(desc(AdminAuditLog.timestamp))
+        .offset(page_to_offset(page, limit))
+        .limit(limit)
+    )
     res = await db.execute(query)
     logs = res.scalars().all()
 
@@ -72,36 +76,46 @@ async def list_audit_logs(
 
     items = []
     for log in logs:
-        actor_info = actors_map.get(str(log.actor_admin_id), {"email": "System / Unknown", "full_name": None}) if log.actor_admin_id else {"email": "System / Automated", "full_name": "System"}
-        items.append({
-            "id": str(log.id),
-            "timestamp": log.timestamp.isoformat() if log.timestamp else None,
-            "actor": {
-                "id": str(log.actor_admin_id) if log.actor_admin_id else None,
-                "email": actor_info["email"],
-                "full_name": actor_info["full_name"],
-            },
-            "action": log.action,
-            "resource_type": log.resource_type,
-            "resource_id": log.resource_id,
-            "permission_used": log.permission_used,
-            "result": log.result,
-            "reason": log.reason,
-            "request_id": log.request_id,
-            "ip_address": log.ip_address,
-            "user_agent": log.user_agent,
-            "metadata": log.metadata_payload or {},
-            "sensitive_access_flag": log.sensitive_access_flag,
-        })
+        actor_info = (
+            actors_map.get(
+                str(log.actor_admin_id),
+                {"email": "System / Unknown", "full_name": None},
+            )
+            if log.actor_admin_id
+            else {"email": "System / Automated", "full_name": "System"}
+        )
+        items.append(
+            {
+                "id": str(log.id),
+                "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+                "actor": {
+                    "id": str(log.actor_admin_id) if log.actor_admin_id else None,
+                    "email": actor_info["email"],
+                    "full_name": actor_info["full_name"],
+                },
+                "action": log.action,
+                "resource_type": log.resource_type,
+                "resource_id": log.resource_id,
+                "permission_used": log.permission_used,
+                "result": log.result,
+                "reason": log.reason,
+                "request_id": log.request_id,
+                "ip_address": log.ip_address,
+                "user_agent": log.user_agent,
+                "metadata": log.metadata_payload or {},
+                "sensitive_access_flag": log.sensitive_access_flag,
+            }
+        )
 
     return build_pagination_response(items, total, page, limit)
+
 
 @router.get("/audit-logs/{log_id}")
 async def get_audit_log_detail(
     log_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    admin_ctx: AdminContext = Depends(require_permission("audit_logs:read"))
+    admin_ctx: AdminContext = Depends(require_permission("audit_logs:read")),
 ):
     try:
         l_uuid = uuid.UUID(log_id)

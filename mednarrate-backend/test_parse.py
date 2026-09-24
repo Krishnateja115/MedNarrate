@@ -11,7 +11,12 @@ Clinical Knowledge Reference (RAG Context):
 None
 """
 
-json_part = prompt.split("Structured lab values:")[1].split("Clinical Knowledge")[0].split("Extracted report text")[0].strip()
+json_part = (
+    prompt.split("Structured lab values:")[1]
+    .split("Clinical Knowledge")[0]
+    .split("Extracted report text")[0]
+    .strip()
+)
 print("JSON part:", repr(json_part))
 try:
     labs = json.loads(json_part)

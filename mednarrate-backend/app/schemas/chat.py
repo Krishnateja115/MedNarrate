@@ -1,11 +1,14 @@
-from pydantic import BaseModel, ConfigDict
-from typing import Optional, List, Dict, Any
-from uuid import UUID
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
+
 
 class ChatSessionCreate(BaseModel):
     report_id: Optional[UUID] = None
     title: Optional[str] = None
+
 
 class ChatSessionOut(BaseModel):
     id: UUID
@@ -13,11 +16,13 @@ class ChatSessionOut(BaseModel):
     report_id: Optional[UUID] = None
     title: Optional[str] = None
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class ChatMessageCreate(BaseModel):
     content: str
+
 
 class ChatMessageOut(BaseModel):
     id: UUID
@@ -25,8 +30,9 @@ class ChatMessageOut(BaseModel):
     role: str
     content: str
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class ChatMessageResponse(BaseModel):
     message: ChatMessageOut

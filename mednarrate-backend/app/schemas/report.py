@@ -1,8 +1,11 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List, Dict, Any
-from uuid import UUID
 from datetime import date, datetime
-from app.models.report import FileType, ReportType, ProcessingStatus
+from typing import Any, Dict, List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.models.report import FileType, ProcessingStatus, ReportType
+
 
 class ReportStatusOut(BaseModel):
     processing_status: str
@@ -11,6 +14,7 @@ class ReportStatusOut(BaseModel):
     failureCategory: Optional[str] = Field(None, alias="failure_category")
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
 
 class ReportOut(BaseModel):
     """
@@ -29,6 +33,7 @@ class ReportOut(BaseModel):
     - is_favourite -> isFavourite
     - uploaded_at -> uploadedAt
     """
+
     id: UUID
     title: str
     hospital: Optional[str] = None
@@ -44,10 +49,12 @@ class ReportOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
+
 class ReportUpdate(BaseModel):
     title: Optional[str] = None
     hospital: Optional[str] = None
     is_favourite: Optional[bool] = None
+
 
 class LabValue(BaseModel):
     test_name: str = Field(..., min_length=1)
@@ -57,8 +64,11 @@ class LabValue(BaseModel):
     original_unit: str
     ref_low: Optional[float] = None
     ref_high: Optional[float] = None
-    flag: str = Field(default="not_classified", pattern="^(normal|low|high|critical|not_classified)$")
+    flag: str = Field(
+        default="not_classified", pattern="^(normal|low|high|critical|not_classified)$"
+    )
     category: Optional[str] = "LabResult"
+
 
 class Entity(BaseModel):
     entity_group: Optional[str] = None
@@ -68,6 +78,7 @@ class Entity(BaseModel):
     start: Optional[int] = None
     end: Optional[int] = None
 
+
 class AbnormalFinding(BaseModel):
     test_name: str
     original_name: str
@@ -75,6 +86,7 @@ class AbnormalFinding(BaseModel):
     unit: str
     flag: str
     explanation: Optional[str] = None
+
 
 class ReportAnalysisOut(BaseModel):
     id: UUID
@@ -99,14 +111,17 @@ class ReportAnalysisOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class TranslationRequest(BaseModel):
     language: str
+
 
 class TranslationOut(BaseModel):
     language: str
     patient_summary: str
     findings_json: List[dict] = []
     cached: bool = False
+
 
 class ComparePoint(BaseModel):
     report_id: UUID
@@ -115,12 +130,14 @@ class ComparePoint(BaseModel):
     unit: str
     flag: str
 
+
 class ComparePreviousResult(BaseModel):
     comparable: bool
     reason: Optional[str] = None
     previous_report_id: Optional[UUID] = None
     compared_findings: List[Dict[str, Any]] = []
     narrative_summary: Optional[str] = None
+
 
 class LabValuePoint(BaseModel):
     report_id: str
@@ -129,6 +146,7 @@ class LabValuePoint(BaseModel):
     status: str
     change_from_previous: Optional[float] = None
 
+
 class ParameterComparison(BaseModel):
     parameter: str
     unit: str
@@ -136,6 +154,7 @@ class ParameterComparison(BaseModel):
     values: List[LabValuePoint]
     trend: str
     ai_summary: Optional[str] = None
+
 
 class ReportComparisonResult(BaseModel):
     report_ids: List[str]

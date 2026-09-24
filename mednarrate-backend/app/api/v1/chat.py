@@ -1,76 +1,103 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import desc
+
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.user import User
-from app.models.chat import ChatSession, ChatMessage, ChatRole
-from app.models.report_analysis import ReportAnalysis
 from app.middleware.ownership import verify_chat_session_ownership
-from app.schemas.chat import ChatSessionCreate, ChatSessionOut, ChatMessageCreate, ChatMessageOut, ChatMessageResponse
-from app.services.rag import retrieve_chunks
+from app.models.chat import ChatMessage, ChatRole, ChatSession
+from app.models.user import User
+from app.schemas.chat import (
+    ChatMessageCreate,
+    ChatMessageOut,
+    ChatMessageResponse,
+    ChatSessionCreate,
+    ChatSessionOut,
+)
 from app.services.llm_client import generate
 from app.services.prompts import (
     CHAT_EMERGENCY_RESPONSE,
     CHAT_REFUSAL_RESPONSE,
-    RAG_SYSTEM_PROMPT
+    RAG_SYSTEM_PROMPT,
 )
+from app.services.rag import retrieve_chunks
 from app.services.rag_safety import verify_response_against_source
-import json
-import re
+
 
 def local_classify_intent(query: str) -> str:
     """
     Deterministic intent classification to avoid LLM quota usage.
     """
     query_lower = query.lower()
-    
+
     # Emergency keywords
-    emergency_patterns = ["emergency", "911", "heart attack", "bleeding", "stroke", "suicide", "dying", "chest pain", "difficulty breathing"]
+    emergency_patterns = [
+        "emergency",
+        "911",
+        "heart attack",
+        "bleeding",
+        "stroke",
+        "suicide",
+        "dying",
+        "chest pain",
+        "difficulty breathing",
+    ]
     if any(p in query_lower for p in emergency_patterns):
         return "emergency"
-        
+
     # Diagnosis/Treatment keywords
     medical_advice_patterns = [
-        "do i have", "am i diagnosed", "what should i take", "how do i treat", 
-        "cure my", "prescribe", "dosage", "treatment for"
+        "do i have",
+        "am i diagnosed",
+        "what should i take",
+        "how do i treat",
+        "cure my",
+        "prescribe",
+        "dosage",
+        "treatment for",
     ]
     if any(p in query_lower for p in medical_advice_patterns):
         return "diagnosis"
-        
+
     return "general"
 
+
 router = APIRouter()
+
 
 @router.post("/sessions", response_model=ChatSessionOut, status_code=201)
 async def create_chat_session(
     req: ChatSessionCreate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     if req.report_id:
         from app.middleware.ownership import verify_report_ownership
+
         await verify_report_ownership(str(req.report_id), str(current_user.id), db)
-        
+
     session = ChatSession(
-        user_id=current_user.id,
-        report_id=req.report_id,
-        title=req.title or "New Chat"
+        user_id=current_user.id, report_id=req.report_id, title=req.title or "New Chat"
     )
     db.add(session)
     await db.commit()
     await db.refresh(session)
     return session
 
+
 @router.get("/sessions", response_model=list[ChatSessionOut])
 async def list_chat_sessions(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(ChatSession).where(ChatSession.user_id == current_user.id).order_by(desc(ChatSession.created_at))
+    stmt = (
+        select(ChatSession)
+        .where(ChatSession.user_id == current_user.id)
+        .order_by(desc(ChatSession.created_at))
+    )
     result = await db.execute(stmt)
     return result.scalars().all()
+
 
 @router.get("/sessions/{id}/messages", response_model=list[ChatMessageOut])
 async def get_chat_messages(
@@ -78,28 +105,33 @@ async def get_chat_messages(
     limit: int = Query(20, le=100),
     offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     session = await verify_chat_session_ownership(id, str(current_user.id), db)
-        
-    stmt = select(ChatMessage).where(ChatMessage.chat_session_id == session.id).order_by(ChatMessage.created_at.asc()).offset(offset).limit(limit)
+
+    stmt = (
+        select(ChatMessage)
+        .where(ChatMessage.chat_session_id == session.id)
+        .order_by(ChatMessage.created_at.asc())
+        .offset(offset)
+        .limit(limit)
+    )
     result = await db.execute(stmt)
     return result.scalars().all()
+
 
 @router.post("/sessions/{id}/messages", response_model=ChatMessageResponse)
 async def send_chat_message(
     id: str,
     req: ChatMessageCreate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     session = await verify_chat_session_ownership(id, str(current_user.id), db)
-        
+
     # 1. Persist user message
     user_msg = ChatMessage(
-        chat_session_id=session.id,
-        role=ChatRole.user,
-        content=req.content
+        chat_session_id=session.id, role=ChatRole.user, content=req.content
     )
     db.add(user_msg)
     await db.commit()
@@ -108,9 +140,9 @@ async def send_chat_message(
     allowed_categories = {"emergency", "diagnosis", "treatment", "report", "general"}
     if classification not in allowed_categories:
         classification = "general"
-    
+
     sources = []
-    
+
     if "emergency" in classification:
         ai_response = CHAT_EMERGENCY_RESPONSE
     elif "diagnosis" in classification or "treatment" in classification:
@@ -121,30 +153,26 @@ async def send_chat_message(
         if session.report_id:
             context = await retrieve_chunks(req.content, session.report_id, db, top_k=5)
             # We don't have sources array generated by retrieve_chunks since it returns string directly as per prompt
-            
+
         # 4. Generate response
-        prompt = RAG_SYSTEM_PROMPT.format(
-            context=context,
-            question=req.content
-        )
+        prompt = RAG_SYSTEM_PROMPT.format(context=context, question=req.content)
         chat_sys = "You are a helpful medical AI assistant. Answer conversationally, concisely, and clearly based on the context. Do not offer diagnoses or prescribe medication."
-        ai_response = await generate(prompt, system_instruction=chat_sys, thinking_level="LOW")
-        
+        ai_response = await generate(
+            prompt, system_instruction=chat_sys, thinking_level="LOW"
+        )
+
         # 5. Hallucination guard
         if context:
             ai_response, _ = verify_response_against_source(ai_response, context)
-            
+
     # 6. Persist assistant message
     assistant_msg = ChatMessage(
-        chat_session_id=session.id,
-        role=ChatRole.assistant,
-        content=ai_response
+        chat_session_id=session.id, role=ChatRole.assistant, content=ai_response
     )
     db.add(assistant_msg)
     await db.commit()
     await db.refresh(assistant_msg)
-    
+
     return ChatMessageResponse(
-        message=ChatMessageOut.model_validate(assistant_msg),
-        sources=sources
+        message=ChatMessageOut.model_validate(assistant_msg), sources=sources
     )

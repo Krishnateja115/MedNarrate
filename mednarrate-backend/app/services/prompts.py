@@ -1,8 +1,11 @@
-import os
 import glob
+import os
+
 
 def get_examples_text() -> str:
-    examples_dir = os.path.join(os.path.dirname(__file__), "..", "..", "data", "examples")
+    examples_dir = os.path.join(
+        os.path.dirname(__file__), "..", "..", "data", "examples"
+    )
     examples = []
     for fpath in glob.glob(os.path.join(examples_dir, "*.txt")):
         try:
@@ -13,6 +16,7 @@ def get_examples_text() -> str:
     if examples:
         return "\n\nFormatting Examples:\n" + "\n---\n".join(examples)
     return ""
+
 
 CLINICIAN_PROMPT = """You are a clinical documentation specialist summarizing a {report_type} medical report for a clinician.
 CRITICAL MANDATE:
@@ -117,7 +121,6 @@ You MUST output strictly valid JSON with no markdown wrapping or additional text
 2. "abnormal_findings": A JSON array where each object has two keys: "test_name" (the original test name in English, DO NOT translate this) and "translated_explanation" (your translation of why this finding matters).
 
 Output the JSON now:"""
-
 
 
 CHAT_EMERGENCY_RESPONSE = "This sounds like a medical emergency. Please call your local emergency services (like 911) or go to the nearest emergency room immediately. I am an AI and cannot provide emergency medical support."
