@@ -4,7 +4,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, Activity, AlertTriangle, Bot, CheckCircle, XCircle } from 'lucide-react';
+import { BarChart3, Users, FileText, Activity, AlertTriangle, Bot, CheckCircle, XCircle } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
@@ -23,7 +24,15 @@ interface DashboardSummary {
   analysis: {
     analysis_success_rate: number;
     analysis_failure_count: number;
+    failure_categories: Record<string, number>;
   };
+  chart_data: Array<{
+    date: string;
+    completed: number;
+    failed: number;
+    volume: number;
+    success_rate: number;
+  }>;
   support: {
     open_support_tickets: number | null;
   };
@@ -159,13 +168,21 @@ export default function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.analysis.analysis_success_rate.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="mt-2 space-y-1">
               {data.analysis.analysis_failure_count > 0 ? (
-                <span className="text-destructive font-medium">{data.analysis.analysis_failure_count} total failures</span>
+                <>
+                  <p className="text-xs text-destructive font-medium">{data.analysis.analysis_failure_count} total failures</p>
+                  {Object.entries(data.analysis.failure_categories || {}).map(([cat, count]) => (
+                    <div key={cat} className="flex justify-between items-center text-[10px]">
+                      <span className="text-muted-foreground truncate max-w-[120px]" title={cat}>{cat}</span>
+                      <span className="font-bold text-destructive">{count}</span>
+                    </div>
+                  ))}
+                </>
               ) : (
-                <span className="text-emerald-600 font-medium">0 failures today</span>
+                <p className="text-xs text-emerald-600 font-medium">0 failures today</p>
               )}
-            </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -193,8 +210,28 @@ export default function OverviewPage() {
               System Activity (Placeholder)
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 flex items-center justify-center text-muted-foreground bg-slate-50/50 dark:bg-slate-900/50 rounded-b-lg border-t border-dashed">
-            [Chart Area: Daily Analysis Volume / Success Rate]
+          <CardContent className="flex-1 p-0 rounded-b-lg overflow-hidden">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.chart_data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorFailed" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                <RechartsTooltip />
+                <Legend />
+                <Area type="monotone" dataKey="completed" stroke="#10b981" fillOpacity={1} fill="url(#colorCompleted)" name="Completed" />
+                <Area type="monotone" dataKey="failed" stroke="#ef4444" fillOpacity={1} fill="url(#colorFailed)" name="Failed" />
+              </AreaChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
         

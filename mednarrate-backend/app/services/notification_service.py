@@ -21,7 +21,7 @@ try:
 except Exception as e:
     logger.error(f"Failed to initialize Firebase Admin: {e}")
 
-async def send_push_notification(db: AsyncSession, user_id: str, token: str, title: str, body: str):
+async def send_push_notification(db: AsyncSession, user_id: str, token: str, title: str, body: str, existing_log: NotificationLog = None):
     """Sends a push notification via FCM and logs it."""
     status = "sent"
     error_message = None
@@ -42,13 +42,19 @@ async def send_push_notification(db: AsyncSession, user_id: str, token: str, tit
         logger.error(f"Error sending push notification to {token}: {e}")
         
     # Log it
-    log = NotificationLog(
-        user_id=user_id,
-        title=title,
-        body=body,
-        status=status,
-        error_message=error_message
-    )
-    db.add(log)
+    if existing_log:
+        existing_log.status = status
+        existing_log.error_message = error_message
+        from datetime import datetime
+        existing_log.sent_at = datetime.utcnow()
+    else:
+        log = NotificationLog(
+            user_id=user_id,
+            title=title,
+            body=body,
+            status=status,
+            error_message=error_message
+        )
+        db.add(log)
     await db.commit()
     return status == "sent"

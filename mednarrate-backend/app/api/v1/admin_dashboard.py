@@ -9,15 +9,19 @@ from app.models.user import User
 from app.models.report import Report, ProcessingStatus
 from app.models.incidents import Incident, IncidentStatus
 from app.models.job_execution import JobExecution, JobStatus
-from sqlalchemy import desc
+from app.models.report_analysis import ReportAnalysis
+from sqlalchemy import desc, cast, Date
 
 router = APIRouter()
 
 @router.get("/summary")
 async def get_dashboard_summary(
+    days: int = 30,
     admin_ctx: AdminContext = Depends(require_permission("dashboard.view")),
     db: AsyncSession = Depends(get_db)
 ):
+    time_window_start = datetime.now(timezone.utc) - timedelta(days=days)
+
     # Total Users
     total_users_stmt = select(func.count(User.id))
     total_users = (await db.execute(total_users_stmt)).scalar() or 0
@@ -31,18 +35,72 @@ async def get_dashboard_summary(
     reports_today_stmt = select(func.count(Report.id)).where(Report.uploaded_at >= today_start)
     reports_today = (await db.execute(reports_today_stmt)).scalar() or 0
 
-    # Reports Processing & Failed
-    reports_processing_stmt = select(func.count(Report.id)).where(Report.processing_status == ProcessingStatus.processing)
+    # Reports Processing & Failed (Time Window)
+    reports_processing_stmt = select(func.count(Report.id)).where(
+        Report.processing_status == ProcessingStatus.processing,
+        Report.uploaded_at >= time_window_start
+    )
     reports_processing = (await db.execute(reports_processing_stmt)).scalar() or 0
     
-    reports_failed_stmt = select(func.count(Report.id)).where(Report.processing_status == ProcessingStatus.failed)
+    reports_failed_stmt = select(func.count(Report.id)).where(
+        Report.processing_status == ProcessingStatus.failed,
+        Report.uploaded_at >= time_window_start
+    )
     reports_failed = (await db.execute(reports_failed_stmt)).scalar() or 0
 
-    reports_completed_stmt = select(func.count(Report.id)).where(Report.processing_status == ProcessingStatus.completed)
+    reports_completed_stmt = select(func.count(Report.id)).where(
+        Report.processing_status == ProcessingStatus.completed,
+        Report.uploaded_at >= time_window_start
+    )
     reports_completed = (await db.execute(reports_completed_stmt)).scalar() or 0
     
     total_processed = reports_failed + reports_completed
     analysis_success_rate = (reports_completed / total_processed * 100) if total_processed > 0 else 0.0
+
+    # Failure Category Breakdown
+    failure_category_stmt = select(ReportAnalysis.failure_category, func.count(Report.id)).join(
+        ReportAnalysis, Report.id == ReportAnalysis.report_id
+    ).where(
+        Report.processing_status == ProcessingStatus.failed,
+        Report.uploaded_at >= time_window_start,
+        ReportAnalysis.failure_category.isnot(None)
+    ).group_by(ReportAnalysis.failure_category)
+    
+    failure_cat_rows = await db.execute(failure_category_stmt)
+    failure_categories = {row[0]: row[1] for row in failure_cat_rows.all()}
+
+    # Chart Data (Daily Success vs Failure)
+    chart_stmt = select(
+        cast(Report.uploaded_at, Date).label("day"),
+        Report.processing_status,
+        func.count(Report.id)
+    ).where(
+        Report.uploaded_at >= time_window_start,
+        Report.processing_status.in_([ProcessingStatus.completed, ProcessingStatus.failed])
+    ).group_by(
+        cast(Report.uploaded_at, Date),
+        Report.processing_status
+    ).order_by(cast(Report.uploaded_at, Date))
+    
+    chart_rows = await db.execute(chart_stmt)
+    day_map = {}
+    for row in chart_rows.all():
+        day_str = str(row[0])
+        status = row[1].value if hasattr(row[1], 'value') else row[1]
+        count = row[2]
+        if day_str not in day_map:
+            day_map[day_str] = {"date": day_str, "completed": 0, "failed": 0, "volume": 0}
+        if "complete" in status:
+            day_map[day_str]["completed"] += count
+        elif "fail" in status:
+            day_map[day_str]["failed"] += count
+        day_map[day_str]["volume"] += count
+    
+    for day in day_map.values():
+        total = day["completed"] + day["failed"]
+        day["success_rate"] = (day["completed"] / total * 100) if total > 0 else 0.0
+
+    chart_data = sorted(day_map.values(), key=lambda x: x["date"])
 
     # Critical Incidents
     critical_incidents_stmt = select(func.count(Incident.id)).where(
@@ -70,8 +128,10 @@ async def get_dashboard_summary(
         },
         "analysis": {
             "analysis_success_rate": round(analysis_success_rate, 2),
-            "analysis_failure_count": reports_failed
+            "analysis_failure_count": reports_failed,
+            "failure_categories": failure_categories
         },
+        "chart_data": chart_data,
         "support": {
             "open_support_tickets": None  # Not currently instrumented
         },

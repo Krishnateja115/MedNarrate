@@ -10,7 +10,9 @@ from app.core.admin_auth import AdminContext, require_permission
 from app.models.notification_log import NotificationLog
 from app.models.medication_schedule import MedicationSchedule
 from app.models.job_execution import JobExecution
+from app.models.push_token import PushToken
 from app.services.audit import log_admin_action
+from app.services.notification_service import send_push_notification
 
 router = APIRouter()
 
@@ -58,19 +60,41 @@ async def retry_notification(
     if not log:
         raise HTTPException(status_code=404, detail="Notification not found")
         
-    # In a real implementation, this would enqueue a background task to actually send it again
-    # For now, we update the status back to pending/retrying
-    log.status = "retrying"
+    # Get user tokens
+    tokens_stmt = select(PushToken).where(PushToken.user_id == log.user_id)
+    tokens_res = await db.execute(tokens_stmt)
+    tokens = tokens_res.scalars().all()
+    
+    if not tokens:
+        log.status = "failed"
+        log.error_message = "No device tokens found for user during retry"
+        await db.commit()
+        return {"status": "failed", "message": "No device tokens found"}
+        
+    # Re-send via the existing notification service
+    # Since a single log represents the notification attempt, we update it based on the outcome of the first token
+    # In a fully robust system, each token might have its own log or delivery receipt
+    success = False
+    for tk in tokens:
+        result = await send_push_notification(db, str(log.user_id), tk.device_token, log.title, log.body, existing_log=log)
+        if result:
+            success = True
     
     await log_admin_action(
         db=db,
         action="NOTIFICATION_RETRY",
         actor_admin_id=admin_ctx.user.id,
         resource_type="NotificationLog",
-        resource_id=log.id
+        resource_id=log.id,
+        metadata={"success": success}
     )
     await db.commit()
-    return {"status": "ok", "message": "Notification queued for retry"}
+    
+    return {
+        "status": "ok" if success else "failed",
+        "message": "Notification retry completed",
+        "log_status": log.status
+    }
 
 @router.get("/medications")
 async def list_medications(

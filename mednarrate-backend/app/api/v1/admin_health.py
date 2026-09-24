@@ -23,6 +23,8 @@ from app.core.config import settings
 from app.core.admin_auth import AdminContext, require_permission
 from app.services.llm_client import llm_client_instance
 from app.services.scheduler import scheduler
+from app.models.llm_telemetry import LLMDiagnosticEvent
+from sqlalchemy import desc
 
 router = APIRouter()
 
@@ -90,18 +92,32 @@ async def get_system_health(
         reachable = provider_health.get("reachable", False)
         configured = provider_health.get("configured", False)
         
-        if request_ok:
+        # Check last 10 calls for stability
+        llm_events_stmt = select(LLMDiagnosticEvent.status).order_by(
+            desc(LLMDiagnosticEvent.timestamp)
+        ).limit(10)
+        llm_events = (await db.execute(llm_events_stmt)).scalars().all()
+        
+        recent_success_rate = 100.0
+        if llm_events:
+            success_count = sum(1 for s in llm_events if s == "success")
+            recent_success_rate = (success_count / len(llm_events)) * 100
+            
+        threshold = 80.0
+        is_stable = (len(llm_events) == 0) or (recent_success_rate >= threshold)
+        
+        if reachable and is_stable:
             llm_status = "healthy"
             error_summary = None
-        elif reachable and configured:
-            llm_status = "degraded"
-            error_summary = "Provider reachable but test request failed"
-        elif configured and not reachable:
-            llm_status = "down"
+        elif reachable:
+            llm_status = "reachable"
+            error_summary = f"Provider reachable but recent success rate is degraded ({recent_success_rate:.1f}%)"
+        elif configured:
+            llm_status = "configured"
             error_summary = "Provider configured but not reachable"
         else:
             llm_status = "unknown"
-            error_summary = "Provider not configured or status unknown"
+            error_summary = "Provider not configured"
         
         health_status["services"]["llm_provider"] = _service_entry(
             llm_status, timestamp,
@@ -111,8 +127,10 @@ async def get_system_health(
                 "provider": provider_name,
                 "configured": configured,
                 "reachable": reachable,
-                "request_successful": request_ok,
-                # Never include: api_key, model credentials
+                "healthy": reachable and is_stable,
+                "recent_success_rate": round(recent_success_rate, 2),
+                "threshold_required": threshold,
+                "last_n_checked": len(llm_events)
             }
         )
         if llm_status in ("degraded", "down", "unknown"):

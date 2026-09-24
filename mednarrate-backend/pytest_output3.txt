@@ -1,0 +1,350 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.9, pytest-8.4.2, pluggy-1.5.0
+rootdir: /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend
+configfile: pytest.ini
+plugins: asyncio-1.4.0, anyio-4.10.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=session, asyncio_default_test_loop_scope=session
+collected 1 item
+
+tests/test_breakglass_security.py F                                      [100%]
+
+=================================== FAILURES ===================================
+___________________________ test_audit_log_atomicity ___________________________
+
+client = <httpx.AsyncClient object at 0x176732e40>
+admin_requester = <app.models.user.User object at 0x1767334d0>
+db_session = <sqlalchemy.orm.session.AsyncSession object at 0x176731d30>
+
+    @pytest.mark.asyncio
+    async def test_audit_log_atomicity(client: AsyncClient, admin_requester: User, db_session: AsyncSession):
+        """Scenario F: Audit log is atomic with state change. Force failure."""
+        from unittest.mock import patch
+        from sqlalchemy.exc import IntegrityError
+    
+        req_token = create_access_token(subject=str(admin_requester.id))
+    
+        # Count initial audit logs
+        res = await db_session.execute(select(func.count()).select_from(AdminAuditLog))
+        initial_count = res.scalar()
+    
+        # Mock db.commit to raise an exception
+        with patch("sqlalchemy.ext.asyncio.AsyncSession.commit", side_effect=Exception("Simulated DB Failure")):
+            try:
+                await client.post(
+                    "/api/v1/admin/break-glass/request",
+                    json={
+                        "resource_type": "medical_report",
+                        "resource_id": "rep_123",
+                        "reason": "Emergency review"
+                    },
+                    headers={"Authorization": f"Bearer {req_token}"}
+                )
+            except Exception as e:
+                assert "Simulated DB Failure" in str(e)
+    
+        # Ensure no orphaned audit row was written (transaction rolled back)
+        res = await db_session.execute(select(func.count()).select_from(AdminAuditLog))
+        final_count = res.scalar()
+>       assert final_count == initial_count
+E       assert 1 == 0
+
+tests/test_breakglass_security.py:250: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    app.exceptions:exceptions.py:50 Unhandled exception on POST /api/v1/admin/break-glass/request (request_id=f2227425-c717-4eed-896a-9cfd1fa77f95): Exception: Simulated DB Failure
+  + Exception Group Traceback (most recent call last):
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_utils.py", line 85, in create_collapsing_task_group
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 772, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 101, in prompt_injection_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 69, in add_security_headers
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/core/middleware.py", line 17, in dispatch
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/routing.py", line 670, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2734, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    |     await route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    |     await route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    |     await original_route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1279, in handle
+    |     await app(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 158, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 144, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 706, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     ...<3 lines>...
+    |     )
+    |     ^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py", line 134, in request_break_glass_access
+    |     await db.commit()
+    |   File "/opt/anaconda3/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    |     raise effect
+    | Exception: Simulated DB Failure
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 101, in prompt_injection_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 69, in add_security_headers
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/core/middleware.py", line 17, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py", line 134, in request_break_glass_access
+    await db.commit()
+  File "/opt/anaconda3/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    raise effect
+Exception: Simulated DB Failure
+=============================== warnings summary ===============================
+app/core/config.py:3
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/core/config.py:3: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Settings(BaseSettings):
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+app/services/rag.py:9
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/services/rag.py:9: FutureWarning: 
+  
+  All support for the `google.generativeai` package has ended. It will no longer be receiving 
+  updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  See README for more details:
+  
+  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  
+    import google.generativeai as genai
+
+app/schemas/notification.py:19
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/schemas/notification.py:19: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class MedicationScheduleOut(BaseModel):
+
+app/api/v1/admin_breakglass.py:35
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:35: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    resource_type: str = Field(..., example="medical_report")
+
+app/api/v1/admin_breakglass.py:36
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:36: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    resource_id: str = Field(..., example="rep_12345",
+
+app/api/v1/admin_breakglass.py:38
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:38: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    reason: str = Field(..., min_length=10, example="Emergency clinical review requested by attending physician")
+
+app/api/v1/admin_feature_flags.py:17
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_feature_flags.py:17: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    name: str = Field(..., min_length=2, example="enable_ocr_v2")
+
+app/api/v1/admin_feature_flags.py:21
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_feature_flags.py:21: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    target_environment: str = Field(default="all", example="production")
+
+app/api/v1/admin_ai_config.py:22
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:22: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    primary_provider: Optional[str] = Field(None, example="gemini")
+
+app/api/v1/admin_ai_config.py:23
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:23: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    model_name: Optional[str] = Field(None, example="gemini-1.5-pro")
+
+app/api/v1/admin_ai_config.py:26
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:26: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    fallback_provider: Optional[str] = Field(None, example="ollama")
+
+app/api/v1/admin_settings.py:25
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:25: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    scope: str = Field(default="all", example="report_analysis") # all, report_analysis, chat, translation, notifications
+
+app/api/v1/admin_settings.py:26
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:26: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    reason: Optional[str] = Field(None, example="Scheduled database maintenance")
+
+app/api/v1/admin_settings.py:27
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:27: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    message: Optional[str] = Field(None, example="MedNarrate report processing is undergoing scheduled maintenance. Please try again shortly.")
+
+app/api/v1/admin_announcements.py:19
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:19: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    audience: str = Field(default="all", example="patients") # all, patients, doctors, caregivers
+
+app/api/v1/admin_announcements.py:20
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:20: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    language: str = Field(default="en", example="en")
+
+app/api/v1/admin_announcements.py:23
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:23: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    status: str = Field(default="published", example="published") # draft, scheduled, published, expired
+
+tests/test_breakglass_security.py::test_audit_log_atomicity
+tests/test_breakglass_security.py::test_audit_log_atomicity
+tests/test_breakglass_security.py::test_audit_log_atomicity
+tests/test_breakglass_security.py::test_audit_log_atomicity
+tests/test_breakglass_security.py::test_audit_log_atomicity
+tests/test_breakglass_security.py::test_audit_log_atomicity
+tests/test_breakglass_security.py::test_audit_log_atomicity
+tests/test_breakglass_security.py::test_audit_log_atomicity
+tests/test_breakglass_security.py::test_audit_log_atomicity
+  /opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3624: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_breakglass_security.py::test_audit_log_atomicity - assert 1...
+======================== 1 failed, 31 warnings in 0.17s ========================

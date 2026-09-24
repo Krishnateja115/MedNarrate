@@ -9,10 +9,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
 interface ServiceHealth {
-  status: 'healthy' | 'degraded' | 'down' | 'unknown';
+  status: 'healthy' | 'degraded' | 'down' | 'unknown' | 'reachable' | 'configured';
   last_checked: string;
   latency_ms: number | null;
   error_summary: string | null;
+  details?: Record<string, any>;
 }
 
 interface SystemHealth {
@@ -50,6 +51,10 @@ export default function HealthPage() {
     switch (status) {
       case 'healthy':
         return <CheckCircle2 className="h-5 w-5 text-emerald-500" />;
+      case 'reachable':
+        return <CheckCircle2 className="h-5 w-5 text-blue-500" />;
+      case 'configured':
+        return <CheckCircle2 className="h-5 w-5 text-slate-500" />;
       case 'degraded':
         return <AlertCircle className="h-5 w-5 text-amber-500" />;
       case 'down':
@@ -63,6 +68,10 @@ export default function HealthPage() {
     switch (status) {
       case 'healthy':
         return <Badge className="bg-emerald-500 hover:bg-emerald-600">Healthy</Badge>;
+      case 'reachable':
+        return <Badge variant="outline" className="text-blue-500 border-blue-500">Reachable</Badge>;
+      case 'configured':
+        return <Badge variant="outline" className="text-slate-500 border-slate-500">Configured</Badge>;
       case 'degraded':
         return <Badge variant="outline" className="text-amber-500 border-amber-500">Degraded</Badge>;
       case 'down':
@@ -163,6 +172,23 @@ export default function HealthPage() {
                 {service.error_summary && (
                   <div className="mt-4 p-3 bg-destructive/10 text-destructive text-xs rounded-md border border-destructive/20 font-mono break-words">
                     {service.error_summary}
+                  </div>
+                )}
+                
+                {key === 'llm_provider' && service.details && (
+                  <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Configured</span>
+                      <span className="font-medium">{service.details.configured ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Reachable</span>
+                      <span className="font-medium">{service.details.reachable ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Success Rate (Last {service.details.last_n_checked || 10})</span>
+                      <span className="font-medium">{service.details.recent_success_rate !== undefined ? `${service.details.recent_success_rate}%` : 'N/A'}</span>
+                    </div>
                   </div>
                 )}
               </div>

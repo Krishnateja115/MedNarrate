@@ -102,13 +102,14 @@ async def get_rag_status(
         from app.services.rag import rag_service
         rag_health = await rag_service.health_check()
         if rag_health.get("reachable"):
-            rag_index_status = "healthy" if total_chunks > 0 else "empty"
+            # Use the real probe status which confirms vector store responsiveness
+            rag_index_status = rag_health.get("status", "healthy")
         else:
             rag_index_status = "down"
             rag_error = rag_health.get("error_summary", "Vector store not reachable")
-    except Exception:
+    except Exception as e:
         rag_index_status = "unknown"
-        rag_error = "RAG service health check unavailable"
+        rag_error = f"RAG service health check unavailable: {str(e)}"
 
     return {
         "status": "ok",

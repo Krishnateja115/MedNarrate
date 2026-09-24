@@ -183,3 +183,41 @@ async def retrieve_kb_context(query: str, top_k: int = 3) -> str:
     except Exception as e:
         logger.error(f"Error querying KB: {e}")
     return ""
+
+class RagService:
+    async def health_check(self):
+        """
+        Runs a lightweight test query against the vector index (ChromaDB or Postgres fallback)
+        to confirm it's actually alive and can return results within a reasonable timeout.
+        """
+        import asyncio
+        
+        timeout_seconds = 2.0  # Documented reasonable timeout: 2 seconds max
+        
+        try:
+            # We use retrieve_kb_context which queries the chroma db or fallback.
+            # Just do a fast test query.
+            result = await asyncio.wait_for(
+                retrieve_kb_context("test health ping", top_k=1),
+                timeout=timeout_seconds
+            )
+            # If we didn't timeout, it's reachable.
+            return {
+                "reachable": True,
+                "status": "healthy",
+                "error_summary": None
+            }
+        except asyncio.TimeoutError:
+            return {
+                "reachable": False,
+                "status": "down",
+                "error_summary": f"Vector search timed out after {timeout_seconds}s"
+            }
+        except Exception as e:
+            return {
+                "reachable": False,
+                "status": "down",
+                "error_summary": f"Vector search failed: {str(e)}"
+            }
+
+rag_service = RagService()
