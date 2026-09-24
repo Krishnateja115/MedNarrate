@@ -218,19 +218,29 @@ def run_ocr_on_image(img: Image.Image) -> tuple[str, str]:
         import numpy as np
         model_dir = os.path.join(os.path.expanduser("~"), ".EasyOCR", "model_v2")
         reader = easyocr.Reader(['en'], gpu=False, verbose=False, model_storage_directory=model_dir)
-        img_np = np.array(img.convert('RGB'))
-        results = reader.readtext(img_np, detail=0)
-        print("EASYOCR RAW RESULTS:", results)
-        easy_text = "\n".join(results)
-        cleaned_easy = clean_extracted_text(easy_text)
-        print("EASYOCR CLEANED:", repr(cleaned_easy))
+        
+        # Make sure variants are generated if Tesseract wasn't tried
+        if 'variants' not in locals():
+            variants = preprocess_image_variants(img)
+            
+        best_easy_text = ""
+        for v in variants:
+            try:
+                img_np = np.array(v.convert('RGB'))
+                results = reader.readtext(img_np, detail=0)
+                res_text = "\n".join(results)
+                if len(res_text.strip()) > len(best_easy_text.strip()):
+                    best_easy_text = res_text
+            except Exception as e:
+                logger.warning(f"EasyOCR variant execution failed: {e}")
+                
+        cleaned_easy = clean_extracted_text(best_easy_text)
         if len(cleaned_easy) >= 15:
-            return easy_text, "easyocr"
+            return best_easy_text, "easyocr"
     except Exception as easy_e:
-        print("EASYOCR EXCEPTION:", easy_e)
         logger.debug(f"EasyOCR fallback not available or failed: {easy_e}")
 
-    if not tesseract_cmd and 'easyocr' not in sys.modules and not best_text and not locals().get('easy_text'):
+    if not tesseract_cmd and 'easyocr' not in sys.modules and not locals().get('best_text') and not locals().get('best_easy_text'):
         raise OCRUnavailableError(
             "The report was uploaded successfully, but text recognition is not available on this server.",
             failure_category="OCR_ENGINE_UNAVAILABLE"
@@ -362,8 +372,10 @@ def extract_text_with_diagnostics(file_path: str, file_type: str) -> tuple[str, 
         img = None
         try:
             img = Image.open(resolved_path)
+            img = ImageOps.exif_transpose(img)
             img.verify()  # Verify image integrity
             img = Image.open(resolved_path)  # Re-open for reading after verify
+            img = ImageOps.exif_transpose(img)
         except Exception as img_err:
             logger.error(f"Failed to decode image file {file_path}: {img_err}")
             raise ImageDecodeError("Unable to read this image file. The file may be corrupt or formatted improperly.", failure_category="IMAGE_DECODE_ERROR") from img_err
