@@ -220,11 +220,14 @@ def run_ocr_on_image(img: Image.Image) -> tuple[str, str]:
         reader = easyocr.Reader(['en'], gpu=False, verbose=False, model_storage_directory=model_dir)
         img_np = np.array(img.convert('RGB'))
         results = reader.readtext(img_np, detail=0)
+        print("EASYOCR RAW RESULTS:", results)
         easy_text = "\n".join(results)
         cleaned_easy = clean_extracted_text(easy_text)
+        print("EASYOCR CLEANED:", repr(cleaned_easy))
         if len(cleaned_easy) >= 15:
             return easy_text, "easyocr"
     except Exception as easy_e:
+        print("EASYOCR EXCEPTION:", easy_e)
         logger.debug(f"EasyOCR fallback not available or failed: {easy_e}")
 
     if not tesseract_cmd and 'easyocr' not in sys.modules and not best_text and not locals().get('easy_text'):
