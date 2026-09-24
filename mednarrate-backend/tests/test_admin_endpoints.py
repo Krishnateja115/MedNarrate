@@ -82,8 +82,9 @@ async def test_llm_diagnostics(client: AsyncClient, dashboard_admin_user: dict):
     response = await client.get("/api/v1/admin/diagnostics/llm", headers=headers)
     assert response.status_code == 200
     data = response.json()
-    assert "events" in data
-    assert "pagination" in data
+    assert "items" in data
+    assert "page" in data
+    assert "total" in data
 
 @pytest.mark.asyncio
 async def test_report_diagnostics(client: AsyncClient, dashboard_admin_user: dict):
@@ -91,7 +92,8 @@ async def test_report_diagnostics(client: AsyncClient, dashboard_admin_user: dic
     response = await client.get("/api/v1/admin/diagnostics/reports", headers=headers)
     assert response.status_code == 200
     data = response.json()
-    assert "reports" in data
+    assert "items" in data
+    assert "page" in data
 
 @pytest.mark.asyncio
 async def test_incident_management(client: AsyncClient, dashboard_admin_user: dict):
@@ -112,7 +114,7 @@ async def test_incident_management(client: AsyncClient, dashboard_admin_user: di
     # 2. Get incidents
     response = await client.get("/api/v1/admin/incidents", headers=headers)
     assert response.status_code == 200
-    assert any(i["id"] == incident_id for i in response.json()["incidents"])
+    assert any(i["id"] == incident_id for i in response.json()["items"])
     
     # 3. Update incident
     update_payload = {
