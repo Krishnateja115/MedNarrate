@@ -216,7 +216,8 @@ def run_ocr_on_image(img: Image.Image) -> tuple[str, str]:
     try:
         import easyocr
         import numpy as np
-        reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+        model_dir = os.path.join(os.path.expanduser("~"), ".EasyOCR", "model_v2")
+        reader = easyocr.Reader(['en'], gpu=False, verbose=False, model_storage_directory=model_dir)
         img_np = np.array(img.convert('RGB'))
         results = reader.readtext(img_np, detail=0)
         easy_text = "\n".join(results)
