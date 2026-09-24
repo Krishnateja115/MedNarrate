@@ -123,7 +123,6 @@ async def test_superadmin_governance_flow(client: AsyncClient, db_session):
 
     # Mark as active manually since self-approval is blocked
     from app.models.admin import SensitiveAccessGrant
-    import uuid
     grant = (await db_session.execute(select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == uuid.UUID(grant_id)))).scalar_one()
     grant.status = "active"
     await db_session.commit()

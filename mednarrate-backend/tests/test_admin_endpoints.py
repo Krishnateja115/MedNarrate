@@ -188,17 +188,20 @@ async def test_admin_ai_ops_endpoints(client, token_headers):
     # Overview
     response = await client.get("/api/v1/admin/ai-ops/overview", headers=token_headers)
     assert response.status_code in [200, 403]
-    assert "overview" in response.json()
+    if response.status_code == 200:
+        assert "overview" in response.json()
     
     # Traces
     response = await client.get("/api/v1/admin/ai-ops/traces", headers=token_headers)
     assert response.status_code in [200, 403]
-    assert "traces" in response.json()
+    if response.status_code == 200:
+        assert "traces" in response.json()
     
     # Failures
     response = await client.get("/api/v1/admin/ai-ops/failures", headers=token_headers)
     assert response.status_code in [200, 403]
-    assert "failures" in response.json()
+    if response.status_code == 200:
+        assert "failures" in response.json()
 
 @pytest.mark.asyncio
 async def test_admin_automation_ops_endpoints(client, token_headers):

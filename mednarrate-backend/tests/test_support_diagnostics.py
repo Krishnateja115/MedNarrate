@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 
 from app.services.support_diagnostics import build_diagnostic_snapshot
 from app.models.support import SupportTicket, TicketCategory, TicketPriority, TicketStatus
-from app.models.report import Report, ReportType, ProcessingStatus
+from app.models.report import Report, ReportType, ProcessingStatus, FileType
 from app.models.report_analysis import ReportAnalysis
 
 @pytest.fixture
@@ -15,7 +15,10 @@ async def sample_ticket_with_report(db_session: AsyncSession):
         user_id=user_id,
         title="Diagnostic Report",
         report_type=ReportType.blood,
-        report_date=datetime.now(timezone.utc),
+        report_date=datetime.now(timezone.utc).date(),
+        file_name="test.pdf",
+        file_path="/tmp/test.pdf",
+        file_type=FileType.pdf,
         processing_status=ProcessingStatus.failed,
         extracted_text="Secret Clinical Data"
     )
@@ -31,13 +34,13 @@ async def sample_ticket_with_report(db_session: AsyncSession):
     db_session.add(analysis)
 
     ticket = SupportTicket(
-        user_id=user_id,
+        user_id=str(user_id),
         title="Processing failed",
         description="Help, my report is stuck",
-        category=TicketCategory.technical_issue,
-        priority=TicketPriority.high,
-        status=TicketStatus.open,
-        related_report_id=report.id
+        category=TicketCategory.report,
+        priority=TicketPriority.p2,
+        status=TicketStatus.new,
+        related_report_id=str(report.id)
     )
     db_session.add(ticket)
     await db_session.commit()

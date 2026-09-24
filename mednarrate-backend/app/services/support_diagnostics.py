@@ -151,8 +151,9 @@ async def build_diagnostic_snapshot(
 
     # --- Related Report ---
     if ticket.related_report_id:
+        import uuid
         report_res = await db.execute(
-            select(Report).where(Report.id == ticket.related_report_id)
+            select(Report).where(Report.id == uuid.UUID(ticket.related_report_id))
         )
         report = report_res.scalars().first()
         
@@ -193,7 +194,7 @@ async def build_diagnostic_snapshot(
             # --- Recent LLM Diagnostic Event ---
             llm_event_res = await db.execute(
                 select(LLMDiagnosticEvent)
-                .where(LLMDiagnosticEvent.report_id == report.id)
+                .where(LLMDiagnosticEvent.request_id == str(report.id))
                 .order_by(desc(LLMDiagnosticEvent.timestamp))
                 .limit(1)
             )
@@ -210,7 +211,7 @@ async def build_diagnostic_snapshot(
             # --- Recent Job ---
             job_res = await db.execute(
                 select(JobExecution)
-                .where(JobExecution.resource_id == str(report.id))
+                .where(JobExecution.request_id == str(report.id))
                 .order_by(desc(JobExecution.started_at))
                 .limit(1)
             )
@@ -223,13 +224,14 @@ async def build_diagnostic_snapshot(
                     "started_at": recent_job.started_at.isoformat() if recent_job.started_at else None,
                     "finished_at": recent_job.finished_at.isoformat() if recent_job.finished_at else None,
                     "duration_seconds": recent_job.duration_seconds,
-                    "error_message": recent_job.error_message,
+                    "error_message": recent_job.error_details,
                 }
 
     # --- Related Incident ---
     if ticket.related_incident_id:
+        import uuid
         incident_res = await db.execute(
-            select(Incident).where(Incident.id == ticket.related_incident_id)
+            select(Incident).where(Incident.id == uuid.UUID(ticket.related_incident_id))
         )
         incident = incident_res.scalars().first()
         if incident:
@@ -243,9 +245,10 @@ async def build_diagnostic_snapshot(
 
     # --- Recent Notification for Ticket User ---
     if ticket.user_id:
+        import uuid
         notif_res = await db.execute(
             select(NotificationLog)
-            .where(NotificationLog.user_id == ticket.user_id)
+            .where(NotificationLog.user_id == uuid.UUID(ticket.user_id))
             .order_by(desc(NotificationLog.sent_at))
             .limit(1)
         )

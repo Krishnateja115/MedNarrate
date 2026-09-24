@@ -64,11 +64,15 @@ async def admin_approver(db_session: AsyncSession):
 
 @pytest.fixture
 async def test_report(db_session: AsyncSession):
-    from app.models.report import Report, ReportType, ProcessingStatus
+    from app.models.report import Report, ReportType, ProcessingStatus, FileType
     report = Report(
         user_id=uuid.uuid4(),
         title="Test Report for Breakglass",
-        report_type=ReportType.radiology,
+        report_type=ReportType.other,
+        report_date=datetime.now(timezone.utc).date(),
+        file_name="test.pdf",
+        file_path="/tmp/test.pdf",
+        file_type=FileType.pdf,
         processing_status=ProcessingStatus.completed,
         extracted_text="VERY SENSITIVE CLINICAL DATA"
     )
@@ -153,7 +157,7 @@ async def test_sensitive_access_denied_without_grant(client: AsyncClient, admin_
     )
     # 403 Forbidden because no active grant exists
     assert resp.status_code == 403
-    assert "Active break-glass grant required" in resp.json()["detail"]
+    assert "No active sensitive access grant" in resp.json()["detail"]
 
 @pytest.mark.asyncio
 async def test_sensitive_access_allowed_with_grant(client: AsyncClient, admin_requester: User, admin_approver: User, test_report, db_session: AsyncSession):
@@ -164,7 +168,7 @@ async def test_sensitive_access_allowed_with_grant(client: AsyncClient, admin_re
     # Create & approve grant directly targeting the report ID
     req_resp = await client.post(
         "/api/v1/admin/break-glass/request",
-        json={"resource_type": "medical_report", "resource_id": str(test_report.id), "reason": "Review", "duration_minutes": 30},
+        json={"resource_type": "medical_report", "resource_id": str(test_report.id), "reason": "Emergency review", "duration_minutes": 30},
         headers={"Authorization": f"Bearer {req_token}"}
     )
     grant_id = req_resp.json()["grant"]["id"]

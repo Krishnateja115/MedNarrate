@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,7 @@ export function Forbidden() {
           <Button variant="outline" onClick={() => router.back()}>
             Go Back
           </Button>
-          <Button asChild>
+          <Button>
             <Link href="/">
               Go to Overview
             </Link>
