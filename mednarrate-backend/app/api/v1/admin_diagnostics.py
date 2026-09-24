@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 import uuid
+
+from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
 
 from app.core.database import get_db
 from app.core.admin_auth import AdminContext, require_permission, require_any_permission
@@ -18,57 +20,78 @@ router = APIRouter()
 
 @router.get("/llm")
 async def get_llm_diagnostics(
+    sort_by: str = Query("timestamp"),
+    sort_desc: bool = Query(True),
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
     admin_ctx: AdminContext = Depends(require_permission("ai.telemetry.view")),
-    db: AsyncSession = Depends(get_db),
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0)
+    db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(LLMDiagnosticEvent).order_by(desc(LLMDiagnosticEvent.timestamp)).offset(offset).limit(limit)
+    limit = clamp_limit(limit)
+    stmt = select(LLMDiagnosticEvent)
+    
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    sort_col = getattr(LLMDiagnosticEvent, sort_by, LLMDiagnosticEvent.timestamp)
+    if sort_desc:
+        stmt = stmt.order_by(desc(sort_col))
+    else:
+        stmt = stmt.order_by(sort_col)
+        
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     events = (await db.execute(stmt)).scalars().all()
     
     # We do not expose raw prompts or responses here
-    return {
-        "status": "ok",
-        "events": [
-            {
-                "id": evt.id,
-                "request_id": evt.request_id,
-                "provider": evt.provider,
-                "model_name": evt.model_name,
-                "feature": evt.feature,
-                "status": evt.status,
-                "latency_ms": evt.latency_ms,
-                "error_category": evt.error_category,
-                "fallback_used": evt.fallback_used,
-                "timestamp": evt.timestamp.isoformat()
-            } for evt in events
-        ],
-        "pagination": {
-            "limit": limit,
-            "offset": offset
-        }
-    }
+    items = [
+        {
+            "id": evt.id,
+            "request_id": evt.request_id,
+            "provider": evt.provider,
+            "model_name": evt.model_name,
+            "feature": evt.feature,
+            "status": evt.status,
+            "latency_ms": evt.latency_ms,
+            "error_category": evt.error_category,
+            "fallback_used": evt.fallback_used,
+            "timestamp": evt.timestamp.isoformat()
+        } for evt in events
+    ]
+    
+    return build_pagination_response(items, total, page, limit)
 
 @router.get("/reports")
 async def get_report_diagnostics(
+    sort_by: str = Query("uploaded_at"),
+    sort_desc: bool = Query(True),
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
     admin_ctx: AdminContext = Depends(require_permission("reports.diagnostics.view")),
-    db: AsyncSession = Depends(get_db),
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0)
+    db: AsyncSession = Depends(get_db)
 ):
+    limit = clamp_limit(limit)
     stmt = (
         select(Report, ReportAnalysis)
         .outerjoin(ReportAnalysis, Report.id == ReportAnalysis.report_id)
-        .order_by(desc(Report.uploaded_at))
-        .offset(offset)
-        .limit(limit)
     )
+    
+    # Count (count reports)
+    count_stmt = select(func.count(Report.id))
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    sort_col = getattr(Report, sort_by, Report.uploaded_at)
+    if sort_desc:
+        stmt = stmt.order_by(desc(sort_col))
+    else:
+        stmt = stmt.order_by(sort_col)
+        
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     result = await db.execute(stmt)
     rows = result.all()
     
-    diagnostics = []
+    items = []
     for report, analysis in rows:
-        diagnostics.append({
+        items.append({
             "report_id": report.id,
             "processing_status": report.processing_status,
             "file_type": report.file_type,
@@ -83,14 +106,7 @@ async def get_report_diagnostics(
             "processing_time": (analysis.processed_at - report.uploaded_at).total_seconds() if analysis and analysis.processed_at else None
         })
 
-    return {
-        "status": "ok",
-        "reports": diagnostics,
-        "pagination": {
-            "limit": limit,
-            "offset": offset
-        }
-    }
+    return build_pagination_response(items, total, page, limit)
 
 @router.get("/reports/{report_id}")
 async def get_report_diagnostic_snapshot(

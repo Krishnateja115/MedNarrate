@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, Query, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc, or_
 
+from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
+
 from app.core.database import get_db
 from app.models.admin import AdminAuditLog
 from app.models.user import User
@@ -25,6 +27,7 @@ async def list_audit_logs(
     db: AsyncSession = Depends(get_db),
     admin_ctx: AdminContext = Depends(require_permission("audit_logs:read"))
 ):
+    limit = clamp_limit(limit)
     query = select(AdminAuditLog)
     
     if action:
@@ -54,7 +57,7 @@ async def list_audit_logs(
     total = total_res.scalar() or 0
 
     # Paginate and order
-    query = query.order_by(desc(AdminAuditLog.timestamp)).offset((page - 1) * limit).limit(limit)
+    query = query.order_by(desc(AdminAuditLog.timestamp)).offset(page_to_offset(page, limit)).limit(limit)
     res = await db.execute(query)
     logs = res.scalars().all()
 
@@ -91,13 +94,7 @@ async def list_audit_logs(
             "sensitive_access_flag": log.sensitive_access_flag,
         })
 
-    return {
-        "items": items,
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "pages": (total + limit - 1) // limit if limit > 0 else 1
-    }
+    return build_pagination_response(items, total, page, limit)
 
 @router.get("/audit-logs/{log_id}")
 async def get_audit_log_detail(

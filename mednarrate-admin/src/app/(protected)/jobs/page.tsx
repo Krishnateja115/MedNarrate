@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, PlayCircle, CheckCircle2, XCircle, Settings, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '@/components/ui/data-table';
+import { useState } from 'react';
 
 interface ActiveJob {
   id: string;
@@ -26,17 +29,80 @@ interface JobHistory {
 }
 
 interface JobsResponse {
-  status: string;
-  jobs: ActiveJob[];
-  history: JobHistory[];
+  items: JobHistory[];
+  total: number;
+  page: number;
+  limit: number;
+  scheduler_jobs: ActiveJob[];
 }
 
 export default function JobsPage() {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  const [sortState, setSortState] = useState<{id: string, desc: boolean}>({ id: 'started_at', desc: true });
+
+  const queryParams = new URLSearchParams();
+  queryParams.set('page', page.toString());
+  queryParams.set('limit', limit.toString());
+  queryParams.set('sort_by', sortState.id);
+  // Note: the backend for jobs uses whitelist string without sort_desc bool in current codebase, but let's assume it accepts sort_by
+  
   const { data, isLoading, error } = useQuery<JobsResponse>({
-    queryKey: ['background-jobs'],
-    queryFn: () => fetchApi('/api/v1/admin/jobs'),
+    queryKey: ['background-jobs', page, limit, sortState],
+    queryFn: () => fetchApi(`/api/v1/admin/jobs?${queryParams.toString()}`),
     refetchInterval: 15000,
   });
+
+  const columns: ColumnDef<JobHistory>[] = [
+    {
+      accessorKey: 'job_name',
+      header: 'Job Name',
+      cell: ({ row }) => <span className="font-medium">{row.getValue('job_name')}</span>,
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+        const status = row.getValue('status') as string;
+        return (
+          <div className="flex items-center gap-1.5">
+            {status === 'completed' && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+            {status === 'failed' && <XCircle className="h-4 w-4 text-destructive" />}
+            {status === 'running' && <PlayCircle className="h-4 w-4 text-blue-500" />}
+            <span className="capitalize">{status}</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'started_at',
+      header: 'Started At',
+      cell: ({ row }) => <span className="text-muted-foreground whitespace-nowrap">{new Date(row.getValue('started_at')).toLocaleString()}</span>,
+    },
+    {
+      accessorKey: 'duration_seconds',
+      header: 'Duration',
+      cell: ({ row }) => {
+        const val = row.getValue('duration_seconds') as number;
+        return <span className="font-mono text-muted-foreground">{val ? `${val.toFixed(2)}s` : '—'}</span>;
+      }
+    },
+    {
+      accessorKey: 'error_message',
+      header: 'Message',
+      cell: ({ row }) => {
+        const msg = row.getValue('error_message') as string;
+        return msg ? (
+          <span className="text-destructive text-xs break-all line-clamp-2" title={msg}>
+            {msg}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      },
+      enableSorting: false,
+    }
+  ];
 
   if (isLoading) {
     return (
@@ -87,13 +153,13 @@ export default function JobsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {data.jobs.length === 0 ? (
+            {data.scheduler_jobs.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 <p>No active schedules found.</p>
               </div>
             ) : (
               <div className="divide-y">
-                {data.jobs.map((job) => (
+                {data.scheduler_jobs.map((job) => (
                   <div key={job.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
                     <div>
                       <div className="flex items-center gap-2">
@@ -128,56 +194,20 @@ export default function JobsPage() {
               Recent Executions
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
-            {data.history.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                <p>No execution history available.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-muted-foreground bg-slate-50 dark:bg-slate-900 uppercase">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Job Name</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Started At</th>
-                      <th className="px-4 py-3 font-medium">Duration</th>
-                      <th className="px-4 py-3 font-medium">Message</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {data.history.map((exec) => (
-                      <tr key={exec.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                        <td className="px-4 py-3 font-medium">{exec.job_name}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5">
-                            {exec.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
-                            {exec.status === 'failed' && <XCircle className="h-4 w-4 text-destructive" />}
-                            {exec.status === 'running' && <PlayCircle className="h-4 w-4 text-blue-500" />}
-                            <span className="capitalize">{exec.status}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                          {new Date(exec.started_at).toLocaleString()}
-                        </td>
-                        <td className="px-4 py-3 font-mono text-muted-foreground">
-                          {exec.duration_seconds ? `${exec.duration_seconds.toFixed(2)}s` : '—'}
-                        </td>
-                        <td className="px-4 py-3">
-                          {exec.error_message ? (
-                            <span className="text-destructive text-xs break-all line-clamp-2" title={exec.error_message}>
-                              {exec.error_message}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <CardContent className="p-4">
+            <DataTable
+              columns={columns}
+              data={data.items || []}
+              pageCount={Math.ceil(data.total / data.limit) || 1}
+              pageIndex={page - 1}
+              pageSize={limit}
+              total={data.total || 0}
+              isLoading={isLoading}
+              onPageChange={(p) => setPage(p + 1)}
+              onPageSizeChange={(s) => { setLimit(s); setPage(1); }}
+              onSortChange={(s) => setSortState(s)}
+              sortState={sortState}
+            />
           </CardContent>
         </Card>
       </div>

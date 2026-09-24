@@ -13,6 +13,7 @@ from app.models.admin import AdminAuditLog
 from app.models.refresh_token import RefreshToken
 from app.models.password_reset_token import PasswordResetToken
 from app.core.security import hash_password
+from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
 
 router = APIRouter()
 
@@ -48,12 +49,15 @@ async def get_users(
     request: Request,
     admin_ctx: AdminContext = Depends(require_permission("users.view")),
     db: AsyncSession = Depends(get_db),
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    sort_by: str = Query("created_at"),
+    sort_desc: bool = Query(True),
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
     search: Optional[str] = None,
     role: Optional[UserRole] = None,
     is_active: Optional[bool] = None
 ):
+    limit = clamp_limit(limit)
     stmt = select(User)
     
     if search:
@@ -76,30 +80,30 @@ async def get_users(
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total_count = (await db.execute(count_stmt)).scalar() or 0
     
+    sort_col = getattr(User, sort_by, User.created_at)
+    if sort_desc:
+        stmt = stmt.order_by(desc(sort_col))
+    else:
+        stmt = stmt.order_by(sort_col)
+        
     # Paginate and fetch
-    stmt = stmt.order_by(desc(User.created_at)).offset(offset).limit(limit)
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     users = (await db.execute(stmt)).scalars().all()
     
-    return {
-        "status": "ok",
-        "users": [
-            {
-                "id": str(u.id),
-                "email": u.email,
-                "full_name": u.full_name,
-                "role": u.role.value,
-                "preferred_language": u.preferred_language,
-                "is_active": u.is_active,
-                "created_at": u.created_at.isoformat() if u.created_at else None,
-                "updated_at": u.updated_at.isoformat() if u.updated_at else None
-            } for u in users
-        ],
-        "pagination": {
-            "total": total_count,
-            "limit": limit,
-            "offset": offset
-        }
-    }
+    items = [
+        {
+            "id": str(u.id),
+            "email": u.email,
+            "full_name": u.full_name,
+            "role": u.role.value,
+            "preferred_language": u.preferred_language,
+            "is_active": u.is_active,
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+            "updated_at": u.updated_at.isoformat() if u.updated_at else None
+        } for u in users
+    ]
+    
+    return build_pagination_response(items, total_count, page, limit)
 
 @router.get("/{user_id}")
 async def get_user_detail(

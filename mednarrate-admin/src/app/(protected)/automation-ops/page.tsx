@@ -6,11 +6,13 @@ import { fetchApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Bell, Pill, CalendarClock, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '@/components/ui/data-table';
 
 interface NotificationLog {
   id: string;
@@ -43,19 +45,31 @@ interface JobExecution {
 export default function AutomationOpsPage() {
   const queryClient = useQueryClient();
 
-  const { data: notifsData, isLoading: notifsLoading } = useQuery<{status: string, notifications: NotificationLog[]}>({
-    queryKey: ['automation_notifications'],
-    queryFn: () => fetchApi('/api/v1/admin/automation-ops/notifications'),
+  const [notifsPage, setNotifsPage] = useState(1);
+  const [notifsLimit, setNotifsLimit] = useState(25);
+  const [notifsSort, setNotifsSort] = useState({id: 'sent_at', desc: true});
+
+  const [medsPage, setMedsPage] = useState(1);
+  const [medsLimit, setMedsLimit] = useState(25);
+  const [medsSort, setMedsSort] = useState({id: 'created_at', desc: true});
+
+  const [jobsPage, setJobsPage] = useState(1);
+  const [jobsLimit, setJobsLimit] = useState(25);
+  const [jobsSort, setJobsSort] = useState({id: 'started_at', desc: true});
+
+  const { data: notifsData, isLoading: notifsLoading } = useQuery<{items: NotificationLog[], total: number, page: number, limit: number}>({
+    queryKey: ['automation_notifications', notifsPage, notifsLimit, notifsSort],
+    queryFn: () => fetchApi(`/api/v1/admin/automation-ops/notifications?page=${notifsPage}&limit=${notifsLimit}&sort_by=${notifsSort.id}&sort_desc=${notifsSort.desc}`),
   });
 
-  const { data: medsData, isLoading: medsLoading } = useQuery<{status: string, schedules: MedicationSchedule[]}>({
-    queryKey: ['automation_medications'],
-    queryFn: () => fetchApi('/api/v1/admin/automation-ops/medications'),
+  const { data: medsData, isLoading: medsLoading } = useQuery<{items: MedicationSchedule[], total: number, page: number, limit: number}>({
+    queryKey: ['automation_medications', medsPage, medsLimit, medsSort],
+    queryFn: () => fetchApi(`/api/v1/admin/automation-ops/medications?page=${medsPage}&limit=${medsLimit}&sort_by=${medsSort.id}&sort_desc=${medsSort.desc}`),
   });
 
-  const { data: jobsData, isLoading: jobsLoading } = useQuery<{status: string, jobs: JobExecution[]}>({
-    queryKey: ['automation_jobs'],
-    queryFn: () => fetchApi('/api/v1/admin/automation-ops/jobs'),
+  const { data: jobsData, isLoading: jobsLoading } = useQuery<{items: JobExecution[], total: number, page: number, limit: number}>({
+    queryKey: ['automation_jobs', jobsPage, jobsLimit, jobsSort],
+    queryFn: () => fetchApi(`/api/v1/admin/automation-ops/jobs?page=${jobsPage}&limit=${jobsLimit}&sort_by=${jobsSort.id}&sort_desc=${jobsSort.desc}`),
   });
 
   const retryNotificationMutation = useMutation({
@@ -70,6 +84,129 @@ export default function AutomationOpsPage() {
       queryClient.invalidateQueries({ queryKey: ['automation_notifications'] });
     }
   });
+
+  const notifsColumns: ColumnDef<NotificationLog>[] = [
+    {
+      accessorKey: 'sent_at',
+      header: 'Sent At',
+      cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.sent_at ? new Date(row.original.sent_at).toLocaleString() : '-'}</span>,
+    },
+    {
+      accessorKey: 'user_id',
+      header: 'User ID',
+      cell: ({ row }) => (
+        <Link href={`/users/${row.original.user_id}`} className="font-mono text-xs text-primary hover:underline">
+          {row.original.user_id.slice(0, 8)}
+        </Link>
+      ),
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'title',
+      header: 'Title',
+      cell: ({ row }) => <span className="font-medium">{row.original.title}</span>,
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+        const status = row.original.status;
+        return status === 'sent' ? <Badge className="bg-emerald-500">Sent</Badge> : 
+               status === 'failed' ? <Badge variant="destructive">Failed</Badge> :
+               status === 'retrying' ? <Badge className="bg-amber-500">Retrying</Badge> :
+               <Badge variant="secondary">{status}</Badge>;
+      }
+    },
+    {
+      accessorKey: 'error_message',
+      header: 'Error',
+      cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.error_message || '-'}</span>,
+    },
+    {
+      id: 'actions',
+      header: () => <div className="text-right">Action</div>,
+      cell: ({ row }) => (
+        <div className="text-right">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            disabled={row.original.status === 'sent' || row.original.status === 'retrying'}
+            onClick={() => retryNotificationMutation.mutate(row.original.id)}
+          >
+            <RotateCcw className="h-4 w-4 mr-1" /> Retry
+          </Button>
+        </div>
+      ),
+      enableSorting: false,
+    }
+  ];
+
+  const medsColumns: ColumnDef<MedicationSchedule>[] = [
+    {
+      accessorKey: 'created_at',
+      header: 'Created At',
+      cell: ({ row }) => <span className="text-xs text-muted-foreground">{new Date(row.original.created_at).toLocaleString()}</span>,
+    },
+    {
+      accessorKey: 'user_id',
+      header: 'User ID',
+      cell: ({ row }) => (
+        <Link href={`/users/${row.original.user_id}`} className="font-mono text-xs text-primary hover:underline">
+          {row.original.user_id.slice(0, 8)}
+        </Link>
+      ),
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'medication_name',
+      header: 'Medication',
+      cell: ({ row }) => <span className="font-medium">{row.original.medication_name}</span>,
+    },
+    {
+      accessorKey: 'times_of_day',
+      header: 'Times',
+      cell: ({ row }) => <span className="text-xs">{row.original.times_of_day?.join(', ') || '-'}</span>,
+      enableSorting: false,
+    },
+    {
+      accessorKey: 'is_active',
+      header: 'Status',
+      cell: ({ row }) => row.original.is_active ? <Badge className="bg-emerald-500">Active</Badge> : <Badge variant="secondary">Paused</Badge>
+    }
+  ];
+
+  const jobsColumns: ColumnDef<JobExecution>[] = [
+    {
+      accessorKey: 'started_at',
+      header: 'Started At',
+      cell: ({ row }) => <span className="text-xs text-muted-foreground">{new Date(row.original.started_at).toLocaleString()}</span>,
+    },
+    {
+      accessorKey: 'job_name',
+      header: 'Job Name',
+      cell: ({ row }) => <span className="font-mono text-xs font-semibold">{row.original.job_name}</span>,
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => {
+        const s = row.original.status;
+        return s === 'completed' ? <Badge className="bg-emerald-500">Completed</Badge> : 
+               s === 'failed' ? <Badge variant="destructive">Failed</Badge> :
+               <Badge className="bg-blue-500 animate-pulse">Running</Badge>;
+      }
+    },
+    {
+      accessorKey: 'duration_seconds',
+      header: 'Duration',
+      cell: ({ row }) => <span className="text-xs">{row.original.duration_seconds ? `${row.original.duration_seconds.toFixed(2)}s` : '-'}</span>,
+    },
+    {
+      accessorKey: 'failure_category',
+      header: 'Failure Reason',
+      cell: ({ row }) => <span className="text-xs text-destructive">{row.original.failure_category || '-'}</span>,
+    }
+  ];
 
   return (
     <div className="space-y-6 fade-in">
@@ -91,56 +228,20 @@ export default function AutomationOpsPage() {
               <CardTitle>Delivery History</CardTitle>
               <CardDescription>View and retry failed push notifications.</CardDescription>
             </CardHeader>
-            <CardContent>
-              {notifsLoading ? (
-                <Skeleton className="h-[400px] w-full" />
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Sent At</TableHead>
-                      <TableHead>User ID</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Error</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {notifsData?.notifications.map(n => (
-                      <TableRow key={n.id}>
-                        <TableCell className="text-xs text-muted-foreground">{new Date(n.sent_at).toLocaleString()}</TableCell>
-                        <TableCell className="font-mono text-xs text-primary hover:underline">
-                          <Link href={`/users/${n.user_id}`}>{n.user_id.slice(0, 8)}</Link>
-                        </TableCell>
-                        <TableCell className="font-medium">{n.title}</TableCell>
-                        <TableCell>
-                          {n.status === 'sent' ? <Badge className="bg-emerald-500">Sent</Badge> : 
-                           n.status === 'failed' ? <Badge variant="destructive">Failed</Badge> :
-                           n.status === 'retrying' ? <Badge className="bg-amber-500">Retrying</Badge> :
-                           <Badge variant="secondary">{n.status}</Badge>}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{n.error_message || '-'}</TableCell>
-                        <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            disabled={n.status === 'sent' || n.status === 'retrying'}
-                            onClick={() => retryNotificationMutation.mutate(n.id)}
-                          >
-                            <RotateCcw className="h-4 w-4 mr-1" /> Retry
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(!notifsData?.notifications || notifsData.notifications.length === 0) && (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground p-8">No notifications found.</TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
+            <CardContent className="p-4">
+              <DataTable
+                columns={notifsColumns}
+                data={notifsData?.items || []}
+                pageCount={Math.ceil((notifsData?.total || 0) / notifsLimit) || 1}
+                pageIndex={notifsPage - 1}
+                pageSize={notifsLimit}
+                total={notifsData?.total || 0}
+                isLoading={notifsLoading}
+                onPageChange={(p) => setNotifsPage(p + 1)}
+                onPageSizeChange={(s) => { setNotifsLimit(s); setNotifsPage(1); }}
+                onSortChange={(s) => setNotifsSort(s)}
+                sortState={notifsSort}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -151,42 +252,20 @@ export default function AutomationOpsPage() {
               <CardTitle>Medication Schedules</CardTitle>
               <CardDescription>View operational state of user reminders.</CardDescription>
             </CardHeader>
-            <CardContent>
-              {medsLoading ? (
-                <Skeleton className="h-[400px] w-full" />
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Created At</TableHead>
-                      <TableHead>User ID</TableHead>
-                      <TableHead>Medication</TableHead>
-                      <TableHead>Times</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {medsData?.schedules.map(m => (
-                      <TableRow key={m.id}>
-                        <TableCell className="text-xs text-muted-foreground">{new Date(m.created_at).toLocaleString()}</TableCell>
-                        <TableCell className="font-mono text-xs text-primary hover:underline">
-                          <Link href={`/users/${m.user_id}`}>{m.user_id.slice(0, 8)}</Link>
-                        </TableCell>
-                        <TableCell className="font-medium">{m.medication_name}</TableCell>
-                        <TableCell className="text-xs">{m.times_of_day?.join(', ') || '-'}</TableCell>
-                        <TableCell>
-                          {m.is_active ? <Badge className="bg-emerald-500">Active</Badge> : <Badge variant="secondary">Paused</Badge>}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {(!medsData?.schedules || medsData.schedules.length === 0) && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground p-8">No schedules found.</TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
+            <CardContent className="p-4">
+              <DataTable
+                columns={medsColumns}
+                data={medsData?.items || []}
+                pageCount={Math.ceil((medsData?.total || 0) / medsLimit) || 1}
+                pageIndex={medsPage - 1}
+                pageSize={medsLimit}
+                total={medsData?.total || 0}
+                isLoading={medsLoading}
+                onPageChange={(p) => setMedsPage(p + 1)}
+                onPageSizeChange={(s) => { setMedsLimit(s); setMedsPage(1); }}
+                onSortChange={(s) => setMedsSort(s)}
+                sortState={medsSort}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -197,42 +276,20 @@ export default function AutomationOpsPage() {
               <CardTitle>Background Jobs</CardTitle>
               <CardDescription>Execution history for async scheduler.</CardDescription>
             </CardHeader>
-            <CardContent>
-              {jobsLoading ? (
-                <Skeleton className="h-[400px] w-full" />
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Started</TableHead>
-                      <TableHead>Job Name</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Failure Reason</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {jobsData?.jobs.map(j => (
-                      <TableRow key={j.id}>
-                        <TableCell className="text-xs text-muted-foreground">{new Date(j.started_at).toLocaleString()}</TableCell>
-                        <TableCell className="font-mono text-xs font-semibold">{j.job_name}</TableCell>
-                        <TableCell>
-                          {j.status === 'completed' ? <Badge className="bg-emerald-500">Completed</Badge> : 
-                           j.status === 'failed' ? <Badge variant="destructive">Failed</Badge> :
-                           <Badge className="bg-blue-500 animate-pulse">Running</Badge>}
-                        </TableCell>
-                        <TableCell className="text-xs">{j.duration_seconds ? `${j.duration_seconds.toFixed(2)}s` : '-'}</TableCell>
-                        <TableCell className="text-xs text-destructive">{j.failure_category || '-'}</TableCell>
-                      </TableRow>
-                    ))}
-                    {(!jobsData?.jobs || jobsData.jobs.length === 0) && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground p-8">No jobs executed yet.</TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
+            <CardContent className="p-4">
+              <DataTable
+                columns={jobsColumns}
+                data={jobsData?.items || []}
+                pageCount={Math.ceil((jobsData?.total || 0) / jobsLimit) || 1}
+                pageIndex={jobsPage - 1}
+                pageSize={jobsLimit}
+                total={jobsData?.total || 0}
+                isLoading={jobsLoading}
+                onPageChange={(p) => setJobsPage(p + 1)}
+                onPageSizeChange={(s) => { setJobsLimit(s); setJobsPage(1); }}
+                onSortChange={(s) => setJobsSort(s)}
+                sortState={jobsSort}
+              />
             </CardContent>
           </Card>
         </TabsContent>

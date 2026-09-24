@@ -10,6 +10,9 @@ import { Activity, Plus, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { useState } from 'react';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '@/components/ui/data-table';
 
 interface Incident {
   id: string;
@@ -23,18 +26,26 @@ interface Incident {
 }
 
 interface IncidentsResponse {
-  status: string;
-  incidents: Incident[];
-  pagination: {
-    limit: number;
-    offset: number;
-  };
+  items: Incident[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export default function IncidentsPage() {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  const [sortState, setSortState] = useState<{id: string, desc: boolean}>({ id: 'started_at', desc: true });
+
+  const queryParams = new URLSearchParams();
+  queryParams.set('page', page.toString());
+  queryParams.set('limit', limit.toString());
+  queryParams.set('sort_by', sortState.id);
+  queryParams.set('sort_desc', sortState.desc.toString());
+
   const { data, isLoading, error } = useQuery<IncidentsResponse>({
-    queryKey: ['incidents'],
-    queryFn: () => fetchApi('/api/v1/admin/incidents'),
+    queryKey: ['incidents', page, limit, sortState],
+    queryFn: () => fetchApi(`/api/v1/admin/incidents?${queryParams.toString()}`),
   });
 
   const getSeverityBadge = (severity: string) => {
@@ -66,6 +77,68 @@ export default function IncidentsPage() {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  const columns: ColumnDef<Incident>[] = [
+    {
+      accessorKey: 'title',
+      header: 'Incident',
+      cell: ({ row }) => (
+        <div className="space-y-1">
+          <Link href={`/incidents/${row.original.id}`} className="font-semibold text-lg hover:underline text-primary">
+            {row.getValue('title')}
+          </Link>
+          <div className="text-sm text-muted-foreground line-clamp-1">
+            {row.original.summary || 'No summary provided.'}
+          </div>
+          {row.original.affected_service && (
+            <div className="mt-1 text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 inline-block px-2 py-0.5 rounded">
+              Service: {row.original.affected_service}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'severity',
+      header: 'Severity',
+      cell: ({ row }) => getSeverityBadge(row.getValue('severity')),
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => getStatusBadge(row.getValue('status')),
+    },
+    {
+      accessorKey: 'started_at',
+      header: 'Started At',
+      cell: ({ row }) => (
+        <div className="text-sm">
+          <div>{new Date(row.getValue('started_at')).toLocaleDateString()} {new Date(row.getValue('started_at')).toLocaleTimeString()}</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {row.original.resolved_at ? (
+              <span>Resolved: {new Date(row.original.resolved_at).toLocaleDateString()}</span>
+            ) : (
+              <span className="text-orange-500 font-medium">
+                Active for {formatDistanceToNow(new Date(row.getValue('started_at')))}
+              </span>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'actions',
+      header: () => <div className="text-right">Details</div>,
+      cell: ({ row }) => (
+        <div className="text-right">
+          <Link href={`/incidents/${row.original.id}`}>
+            <Button variant="ghost" size="sm">View</Button>
+          </Link>
+        </div>
+      ),
+      enableSorting: false,
+    },
+  ];
 
   if (isLoading) {
     return (
@@ -124,55 +197,20 @@ export default function IncidentsPage() {
             Incident Log
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          {data.incidents.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <p>No incidents recorded.</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {data.incidents.map((incident) => (
-                <Link 
-                  key={incident.id} 
-                  href={`/incidents/${incident.id}`}
-                  className="block p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"
-                >
-                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-3">
-                        <h4 className="font-semibold text-lg hover:underline">{incident.title}</h4>
-                        {getSeverityBadge(incident.severity)}
-                        {getStatusBadge(incident.status)}
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {incident.summary || 'No summary provided.'}
-                      </p>
-                      {incident.affected_service && (
-                        <div className="mt-2 text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 inline-block px-2 py-0.5 rounded">
-                          Service: {incident.affected_service}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-col items-start md:items-end text-sm text-muted-foreground shrink-0 gap-1">
-                      <div>
-                        Started: {new Date(incident.started_at).toLocaleDateString()} {new Date(incident.started_at).toLocaleTimeString()}
-                      </div>
-                      <div className="text-xs">
-                        {incident.resolved_at ? (
-                          <span>Resolved: {new Date(incident.resolved_at).toLocaleDateString()}</span>
-                        ) : (
-                          <span className="text-orange-500 font-medium">
-                            Active for {formatDistanceToNow(new Date(incident.started_at))}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+        <CardContent className="p-4">
+          <DataTable
+            columns={columns}
+            data={data.items || []}
+            pageCount={Math.ceil(data.total / data.limit) || 1}
+            pageIndex={page - 1}
+            pageSize={limit}
+            total={data.total || 0}
+            isLoading={isLoading}
+            onPageChange={(p) => setPage(p + 1)}
+            onPageSizeChange={(s) => { setLimit(s); setPage(1); }}
+            onSortChange={(s) => setSortState(s)}
+            sortState={sortState}
+          />
         </CardContent>
       </Card>
     </div>

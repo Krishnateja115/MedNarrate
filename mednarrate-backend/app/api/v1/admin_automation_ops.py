@@ -4,6 +4,8 @@ from sqlalchemy.future import select
 from sqlalchemy import func, desc, or_
 from typing import Optional
 from pydantic import BaseModel
+from fastapi import Query
+from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
 
 from app.core.database import get_db
 from app.core.admin_auth import AdminContext, require_permission
@@ -20,35 +22,51 @@ router = APIRouter()
 async def list_notifications(
     status: Optional[str] = None,
     search: Optional[str] = None,
+    sort_by: str = Query("sent_at"),
+    sort_desc: bool = Query(True),
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
     admin_ctx: AdminContext = Depends(require_permission("automation.view")),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(NotificationLog).order_by(desc(NotificationLog.sent_at)).limit(50)
+    limit = clamp_limit(limit)
+    stmt = select(NotificationLog)
     
     if status:
         stmt = stmt.where(NotificationLog.status == status)
     if search:
         stmt = stmt.where(or_(
-            NotificationLog.user_id.ilike(f"%{search}%"),
+            NotificationLog.user_id.cast(str).ilike(f"%{search}%"),
             NotificationLog.title.ilike(f"%{search}%")
         ))
         
+    # Count
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    # Sort
+    sort_col = getattr(NotificationLog, sort_by, NotificationLog.sent_at)
+    if sort_desc:
+        stmt = stmt.order_by(desc(sort_col))
+    else:
+        stmt = stmt.order_by(sort_col)
+        
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     result = await db.execute(stmt)
     logs = result.scalars().all()
     
-    return {
-        "status": "ok",
-        "notifications": [
-            {
-                "id": n.id,
-                "user_id": n.user_id,
-                "title": n.title,
-                "status": n.status,
-                "error_message": n.error_message,
-                "sent_at": n.sent_at
-            } for n in logs
-        ]
-    }
+    items = [
+        {
+            "id": str(n.id),
+            "user_id": str(n.user_id),
+            "title": n.title,
+            "status": n.status,
+            "error_message": n.error_message,
+            "sent_at": n.sent_at.isoformat() if n.sent_at else None
+        } for n in logs
+    ]
+    
+    return build_pagination_response(items, total, page, limit)
 
 @router.post("/notifications/{log_id}/retry")
 async def retry_notification(
@@ -99,54 +117,86 @@ async def retry_notification(
 @router.get("/medications")
 async def list_medications(
     active_only: bool = False,
+    sort_by: str = Query("created_at"),
+    sort_desc: bool = Query(True),
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
     admin_ctx: AdminContext = Depends(require_permission("automation.view")),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(MedicationSchedule).order_by(desc(MedicationSchedule.created_at)).limit(50)
+    limit = clamp_limit(limit)
+    stmt = select(MedicationSchedule)
     if active_only:
         stmt = stmt.where(MedicationSchedule.is_active == True)
         
+    # Count
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    # Sort
+    sort_col = getattr(MedicationSchedule, sort_by, MedicationSchedule.created_at)
+    if sort_desc:
+        stmt = stmt.order_by(desc(sort_col))
+    else:
+        stmt = stmt.order_by(sort_col)
+
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     result = await db.execute(stmt)
     meds = result.scalars().all()
     
-    return {
-        "status": "ok",
-        "schedules": [
-            {
-                "id": m.id,
-                "user_id": m.user_id,
-                "medication_name": m.medication_name,
-                "is_active": m.is_active,
-                "times_of_day": m.times_of_day,
-                "created_at": m.created_at
-            } for m in meds
-        ]
-    }
+    items = [
+        {
+            "id": str(m.id),
+            "user_id": str(m.user_id),
+            "medication_name": m.medication_name,
+            "is_active": m.is_active,
+            "times_of_day": m.times_of_day,
+            "created_at": m.created_at.isoformat() if m.created_at else None
+        } for m in meds
+    ]
+    
+    return build_pagination_response(items, total, page, limit)
 
 @router.get("/jobs")
 async def list_jobs(
     status: Optional[str] = None,
+    sort_by: str = Query("started_at"),
+    sort_desc: bool = Query(True),
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
     admin_ctx: AdminContext = Depends(require_permission("automation.view")),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(JobExecution).order_by(desc(JobExecution.started_at)).limit(50)
+    limit = clamp_limit(limit)
+    stmt = select(JobExecution)
     if status:
         stmt = stmt.where(JobExecution.status == status)
         
+    # Count
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    # Sort
+    sort_col = getattr(JobExecution, sort_by, JobExecution.started_at)
+    if sort_desc:
+        stmt = stmt.order_by(desc(sort_col))
+    else:
+        stmt = stmt.order_by(sort_col)
+
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     result = await db.execute(stmt)
     jobs = result.scalars().all()
     
-    return {
-        "status": "ok",
-        "jobs": [
-            {
-                "id": j.id,
-                "job_name": j.job_name,
-                "status": j.status,
-                "duration_seconds": j.duration_seconds,
-                "failure_category": j.failure_category,
-                "started_at": j.started_at,
-                "finished_at": j.finished_at
-            } for j in jobs
-        ]
-    }
+    items = [
+        {
+            "id": str(j.id),
+            "job_name": j.job_name,
+            "status": j.status.value if hasattr(j.status, 'value') else j.status,
+            "duration_seconds": j.duration_seconds,
+            "failure_category": j.failure_category,
+            "started_at": j.started_at.isoformat() if j.started_at else None,
+            "finished_at": j.finished_at.isoformat() if j.finished_at else None
+        } for j in jobs
+    ]
+    
+    return build_pagination_response(items, total, page, limit)

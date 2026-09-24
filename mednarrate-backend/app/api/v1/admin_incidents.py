@@ -5,6 +5,8 @@ import uuid
 from pydantic import BaseModel
 from typing import Optional
 
+from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
+
 from app.core.database import get_db
 from app.core.admin_auth import AdminContext, require_permission
 from app.models.incidents import Incident, IncidentStatus, IncidentSeverity, IncidentEvent
@@ -25,36 +27,51 @@ class IncidentUpdate(BaseModel):
 
 @router.get("")
 async def get_incidents(
+    sort_by: str = Query("started_at"),
+    sort_desc: bool = Query(True),
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
+    status: Optional[IncidentStatus] = None,
+    severity: Optional[IncidentSeverity] = None,
     admin_ctx: AdminContext = Depends(require_permission("incidents.view")),
-    db: AsyncSession = Depends(get_db),
-    limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0)
+    db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(Incident).order_by(desc(Incident.started_at)).offset(offset).limit(limit)
+    limit = clamp_limit(limit)
+    stmt = select(Incident)
+    if status:
+        stmt = stmt.where(Incident.status == status)
+    if severity:
+        stmt = stmt.where(Incident.severity == severity)
+        
+    from sqlalchemy import func
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.execute(count_stmt)).scalar() or 0
+    
+    sort_col = getattr(Incident, sort_by, Incident.started_at)
+    if sort_desc:
+        stmt = stmt.order_by(desc(sort_col))
+    else:
+        stmt = stmt.order_by(sort_col)
+        
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     incidents = (await db.execute(stmt)).scalars().all()
     
-    return {
-        "status": "ok",
-        "incidents": [
-            {
-                "id": i.id,
-                "title": i.title,
-                "severity": i.severity,
-                "status": i.status,
-                "affected_service": i.affected_service,
-                "started_at": i.started_at.isoformat(),
-                "resolved_at": i.resolved_at.isoformat() if i.resolved_at else None,
-                "created_by_id": i.created_by_id,
-                "assigned_to_id": i.assigned_to_id,
-                "summary": i.summary,
-                "resolution": i.resolution
-            } for i in incidents
-        ],
-        "pagination": {
-            "limit": limit,
-            "offset": offset
-        }
-    }
+    items = [
+        {
+            "id": i.id,
+            "title": i.title,
+            "severity": i.severity,
+            "status": i.status,
+            "affected_service": i.affected_service,
+            "started_at": i.started_at.isoformat() if i.started_at else None,
+            "resolved_at": i.resolved_at.isoformat() if i.resolved_at else None,
+            "created_by_id": i.created_by_id,
+            "assigned_to_id": i.assigned_to_id,
+            "summary": i.summary,
+            "resolution": i.resolution
+        } for i in incidents
+    ]
+    return build_pagination_response(items, total, page, limit)
 
 @router.get("/{incident_id}")
 async def get_incident(

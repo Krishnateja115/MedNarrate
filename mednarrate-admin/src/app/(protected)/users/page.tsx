@@ -9,10 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, MoreHorizontal, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '@/components/ui/data-table';
 
 interface User {
   id: string;
@@ -30,7 +31,7 @@ interface UsersResponse {
   pagination: {
     total: number;
     limit: number;
-    offset: number;
+    page: number;
   };
 }
 
@@ -43,15 +44,21 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
-  // Debounce search term would be ideal here in a real app, 
-  // but we'll fetch on every keystroke for simplicity if using react-query with short staleTime
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  const [sortState, setSortState] = useState<{id: string, desc: boolean}>({ id: 'created_at', desc: true });
+  
   const queryParams = new URLSearchParams();
   if (searchTerm) queryParams.set('search', searchTerm);
   if (roleFilter !== 'all') queryParams.set('role', roleFilter);
   if (statusFilter !== 'all') queryParams.set('is_active', statusFilter === 'active' ? 'true' : 'false');
+  queryParams.set('page', page.toString());
+  queryParams.set('limit', limit.toString());
+  queryParams.set('sort_by', sortState.id);
+  queryParams.set('sort_desc', sortState.desc.toString());
   
   const { data, isLoading, error } = useQuery<UsersResponse>({
-    queryKey: ['users', searchTerm, roleFilter, statusFilter],
+    queryKey: ['users', searchTerm, roleFilter, statusFilter, page, limit, sortState],
     queryFn: () => fetchApi(`/api/v1/admin/users?${queryParams.toString()}`),
     enabled: can('users.view'),
   });
@@ -70,6 +77,55 @@ export default function UsersPage() {
         return <Badge variant="secondary">{role}</Badge>;
     }
   };
+
+  const columns: ColumnDef<User>[] = [
+    {
+      accessorKey: 'full_name',
+      header: 'Name',
+      cell: ({ row }) => (
+        <Link href={`/users/${row.original.id}`} className="hover:underline text-primary font-medium">
+          {row.getValue('full_name')}
+        </Link>
+      ),
+    },
+    {
+      accessorKey: 'email',
+      header: 'Email',
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.getValue('email')}</span>,
+    },
+    {
+      accessorKey: 'role',
+      header: 'Role',
+      cell: ({ row }) => getRoleBadge(row.getValue('role')),
+    },
+    {
+      accessorKey: 'is_active',
+      header: 'Status',
+      cell: ({ row }) => row.getValue('is_active') ? (
+        <Badge variant="outline" className="text-emerald-600 border-emerald-600/30 bg-emerald-50 dark:bg-emerald-950/20">Active</Badge>
+      ) : (
+        <Badge variant="destructive">Suspended</Badge>
+      ),
+    },
+    {
+      accessorKey: 'created_at',
+      header: 'Joined',
+      cell: ({ row }) => <span className="text-muted-foreground text-sm font-mono">{new Date(row.getValue('created_at')).toLocaleDateString()}</span>,
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <div className="text-right">
+          <Link href={`/users/${row.original.id}`}>
+            <Button variant="ghost" size="sm">
+              View Details
+            </Button>
+          </Link>
+        </div>
+      ),
+      enableSorting: false,
+    },
+  ];
 
   if (!can('users.view')) {
     return <Forbidden />;
@@ -124,76 +180,25 @@ export default function UsersPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-8 space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : error ? (
+        <CardContent className="p-0 sm:p-4">
+          {error ? (
             <div className="p-8 text-center text-destructive">
               Failed to load users.
             </div>
-          ) : data?.users.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <UserIcon className="mx-auto h-8 w-8 mb-3 opacity-50" />
-              <p>No users found matching the current filters.</p>
-            </div>
           ) : (
-            <div className="relative w-full overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="hidden md:table-cell">Joined</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data?.users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">
-                        <Link href={`/users/${user.id}`} className="hover:underline text-primary">
-                          {user.full_name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">{user.email}</TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
-                      <TableCell>
-                        {user.is_active ? (
-                          <Badge variant="outline" className="text-emerald-600 border-emerald-600/30 bg-emerald-50 dark:bg-emerald-950/20">Active</Badge>
-                        ) : (
-                          <Badge variant="destructive">Suspended</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground text-sm font-mono">
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Link href={`/users/${user.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <span className="sr-only">View</span>
-                            View Details
-                          </Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-          
-          {data && data.pagination.total > 0 && (
-            <div className="p-4 border-t flex items-center justify-between text-sm text-muted-foreground">
-              <div>
-                Showing {data.users.length} of {data.pagination.total} users
-              </div>
-            </div>
+            <DataTable
+              columns={columns}
+              data={data?.users || []}
+              pageCount={data ? Math.ceil(data.pagination.total / data.pagination.limit) : 0}
+              pageIndex={page - 1}
+              pageSize={limit}
+              total={data?.pagination.total || 0}
+              isLoading={isLoading}
+              onPageChange={(p) => setPage(p + 1)}
+              onPageSizeChange={(s) => { setLimit(s); setPage(1); }}
+              onSortChange={(s) => setSortState(s)}
+              sortState={sortState}
+            />
           )}
         </CardContent>
       </Card>
