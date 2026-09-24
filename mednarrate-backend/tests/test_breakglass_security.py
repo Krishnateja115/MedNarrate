@@ -2,11 +2,11 @@ import pytest
 import uuid
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from datetime import datetime, timezone, timedelta
 
 from app.models.user import User, UserRole
-from app.models.admin import AdminRole, AdminPermission, AdminRolePermission, AdminRoleAssignment, SensitiveAccessGrant
+from app.models.admin import AdminRole, AdminPermission, AdminRolePermission, AdminRoleAssignment, SensitiveAccessGrant, AdminAuditLog
 from app.core.security import create_access_token
 
 @pytest.fixture
@@ -186,3 +186,66 @@ async def test_sensitive_access_allowed_with_grant(client: AsyncClient, admin_re
     assert resp.status_code == 200
     assert resp.json()["report"]["extracted_text"] == "VERY SENSITIVE CLINICAL DATA"
     assert resp.json()["grant_id"] == grant_id
+
+@pytest.mark.asyncio
+async def test_sensitive_access_denied_with_expired_grant(client: AsyncClient, admin_requester: User, admin_approver: User, test_report, db_session: AsyncSession):
+    """Scenario E: Access denied if grant is expired"""
+    req_token = create_access_token(subject=str(admin_requester.id))
+    
+    # 1. Manually insert an EXPIRED grant
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    expired_grant = SensitiveAccessGrant(
+        id=uuid.uuid4(),
+        admin_id=admin_requester.id,
+        resource_type="medical_report",
+        resource_id=str(test_report.id),
+        reason="Testing expiration",
+        created_at=now - timedelta(hours=5),
+        status="active",
+        approved_by_id=admin_approver.id,
+        approved_at=now - timedelta(hours=5),
+        expires_at=now - timedelta(hours=1)
+    )
+    db_session.add(expired_grant)
+    await db_session.commit()
+
+    # 2. Attempt to access
+    resp = await client.get(
+        f"/api/v1/admin/reports/{test_report.id}/sensitive",
+        headers={"Authorization": f"Bearer {req_token}"}
+    )
+    assert resp.status_code == 403
+    assert "grant has expired" in resp.text
+
+@pytest.mark.asyncio
+async def test_audit_log_atomicity(client: AsyncClient, admin_requester: User, db_session: AsyncSession):
+    """Scenario F: Audit log is atomic with state change. Force failure."""
+    from unittest.mock import patch
+    from sqlalchemy.exc import IntegrityError
+    
+    req_token = create_access_token(subject=str(admin_requester.id))
+    
+    # Count initial audit logs
+    res = await db_session.execute(select(func.count()).select_from(AdminAuditLog))
+    initial_count = res.scalar()
+
+    # Mock db.commit to raise an exception
+    with patch("sqlalchemy.ext.asyncio.AsyncSession.commit", side_effect=Exception("Simulated DB Failure")):
+        try:
+            await client.post(
+                "/api/v1/admin/break-glass/request",
+                json={
+                    "resource_type": "medical_report",
+                    "resource_id": "rep_123",
+                    "reason": "Emergency review"
+                },
+                headers={"Authorization": f"Bearer {req_token}"}
+            )
+        except Exception as e:
+            assert "Simulated DB Failure" in str(e)
+
+    # Ensure no orphaned audit row was written (transaction rolled back)
+    await db_session.rollback()
+    res = await db_session.execute(select(func.count()).select_from(AdminAuditLog))
+    final_count = res.scalar()
+    assert final_count == initial_count
