@@ -1,5 +1,5 @@
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -47,6 +47,7 @@ async def signup(request: Request, signup_data: SignupRequest, db: AsyncSession 
 @limiter.limit("5/minute")
 async def login(
     request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
 ):
@@ -70,18 +71,46 @@ async def login(
     db.add(db_refresh_token)
     await db.commit()
     
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=(settings.ENVIRONMENT == "production"),
+        samesite="strict",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token_str,
+        httponly=True,
+        secure=(settings.ENVIRONMENT == "production"),
+        samesite="strict",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    )
+    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token_str,
         "token_type": "bearer"
     }
 
+from typing import Optional
+from fastapi import Response
+
 @router.post("/refresh", response_model=Token)
 async def refresh_token(
-    refresh_req: RefreshRequest,
+    request: Request,
+    response: Response,
+    refresh_req: Optional[RefreshRequest] = None,
     db: AsyncSession = Depends(get_db)
 ):
-    token_hash_str = hash_token(refresh_req.refresh_token)
+    token = refresh_req.refresh_token if (refresh_req and refresh_req.refresh_token) else request.cookies.get("refresh_token")
+        
+    if not token:
+        raise HTTPException(status_code=401, detail="Refresh token missing")
+        
+    token_hash_str = hash_token(token)
     # Use row-level locking to prevent race conditions on concurrent refresh requests
     stmt = select(RefreshToken).where(RefreshToken.token_hash == token_hash_str).with_for_update()
     result = await db.execute(stmt)
@@ -126,6 +155,24 @@ async def refresh_token(
     db.add(new_db_refresh_token)
     await db.commit()
     
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=(settings.ENVIRONMENT == "production"),
+        samesite="strict",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token_str,
+        httponly=True,
+        secure=(settings.ENVIRONMENT == "production"),
+        samesite="strict",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    )
+    
     return {
         "access_token": access_token,
         "refresh_token": new_refresh_token_str,
@@ -134,10 +181,20 @@ async def refresh_token(
 
 @router.post("/logout", status_code=204)
 async def logout(
-    refresh_req: RefreshRequest,
+    request: Request,
+    response: Response,
+    refresh_req: Optional[RefreshRequest] = None,
     db: AsyncSession = Depends(get_db)
 ):
-    token_hash_str = hash_token(refresh_req.refresh_token)
+    token = refresh_req.refresh_token if (refresh_req and refresh_req.refresh_token) else request.cookies.get("refresh_token")
+        
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+    
+    if not token:
+        return
+        
+    token_hash_str = hash_token(token)
     stmt = select(RefreshToken).where(RefreshToken.token_hash == token_hash_str)
     result = await db.execute(stmt)
     db_refresh_token = result.scalars().first()
@@ -146,7 +203,7 @@ async def logout(
         db_refresh_token.revoked = True
         
         # If device_token is provided, unregister it
-        if refresh_req.device_token:
+        if refresh_req and refresh_req.device_token:
             from app.models.push_token import PushToken
             pt_stmt = select(PushToken).where(
                 PushToken.user_id == db_refresh_token.user_id,

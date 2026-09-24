@@ -15,10 +15,9 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string, refreshToken: string, user: User) => void;
+  login: (user: User) => void;
   logout: () => void;
   can: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
@@ -29,33 +28,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
   const logout = useCallback(async () => {
-    const refreshToken = sessionStorage.getItem('admin_refresh_token');
-    
-    // Attempt backend logout if we have a refresh token
-    if (refreshToken) {
-      try {
-        await fetchApi('/api/v1/auth/logout', {
-          method: 'POST',
-          data: { refresh_token: refreshToken },
-        });
-      } catch (err) {
-        console.error('Logout request failed', err);
-      }
+    try {
+      await fetchApi('/api/v1/auth/logout', {
+        method: 'POST',
+      });
+    } catch (err) {
+      console.error('Logout request failed', err);
     }
-
-    sessionStorage.removeItem('admin_token');
-    sessionStorage.removeItem('admin_refresh_token');
-    sessionStorage.removeItem('admin_user');
-    setToken(null);
     setUser(null);
-    router.push('/login');
-  }, [router]);
+    if (pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [router, pathname]);
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -68,28 +57,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [logout]);
 
   useEffect(() => {
-    const storedToken = sessionStorage.getItem('admin_token');
-    const storedUser = sessionStorage.getItem('admin_user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
+    let mounted = true;
+    const fetchUser = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        logout();
+        const currentUser = await fetchApi('/api/v1/auth/me');
+        if (mounted) {
+          setUser(currentUser);
+        }
+      } catch (err) {
+        if (mounted) {
+          setUser(null);
+          if (pathname !== '/login') {
+            router.push('/login');
+          }
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-    } else if (pathname !== '/login') {
-      router.push('/login');
-    }
-    
-    setIsLoading(false);
-  }, [pathname, router, logout]);
+    };
 
-  const login = (newToken: string, newRefreshToken: string, newUser: User) => {
-    sessionStorage.setItem('admin_token', newToken);
-    sessionStorage.setItem('admin_refresh_token', newRefreshToken);
-    sessionStorage.setItem('admin_user', JSON.stringify(newUser));
-    setToken(newToken);
+    fetchUser();
+    return () => { mounted = false; };
+  }, [pathname, router]);
+
+  const login = (newUser: User) => {
     setUser(newUser);
     router.push('/');
   };
@@ -113,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, isLoading, login, logout, can, hasAnyPermission, hasAllPermissions }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout, can, hasAnyPermission, hasAllPermissions }}>
       {children}
     </AuthContext.Provider>
   );

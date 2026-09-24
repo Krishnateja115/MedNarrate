@@ -50,10 +50,10 @@ async def admin_approver(db_session: AsyncSession):
     role = AdminRole(name=f"Breakglass Approver_{uuid.uuid4()}")
     db_session.add(role)
     
-    stmt = select(AdminPermission).where(AdminPermission.name == "break_glass.approve")
+    stmt = select(AdminPermission).where(AdminPermission.name == "approve_sensitive_access")
     perm = (await db_session.execute(stmt)).scalars().first()
     if not perm:
-        perm = AdminPermission(name="break_glass.approve")
+        perm = AdminPermission(name="approve_sensitive_access")
         db_session.add(perm)
     
     await db_session.flush()
@@ -92,12 +92,11 @@ async def test_breakglass_request_lifecycle(client: AsyncClient, admin_requester
         json={
             "resource_type": "medical_report",
             "resource_id": "rep_123",
-            "reason": "Emergency review",
-            "duration_minutes": 30
+            "reason": "Emergency review"
         },
         headers={"Authorization": f"Bearer {req_token}"}
     )
-    assert req_resp.status_code == 200
+    assert req_resp.status_code == 200, req_resp.text
     grant_id = req_resp.json()["grant"]["id"]
     assert req_resp.json()["grant"]["status"] == "requested"
 
@@ -121,9 +120,9 @@ async def test_breakglass_self_approval_blocked(client: AsyncClient, admin_reque
 
     # We need to give requester approve permission just for this test to prove self-approval block works
     role_assignment = (await db_session.execute(select(AdminRoleAssignment).where(AdminRoleAssignment.user_id == admin_requester.id))).scalar_one()
-    perm = (await db_session.execute(select(AdminPermission).where(AdminPermission.name == "break_glass.approve"))).scalars().first()
+    perm = (await db_session.execute(select(AdminPermission).where(AdminPermission.name == "approve_sensitive_access"))).scalars().first()
     if not perm:
-        perm = AdminPermission(name="break_glass.approve")
+        perm = AdminPermission(name="approve_sensitive_access")
         db_session.add(perm)
         await db_session.flush()
     db_session.add(AdminRolePermission(role_id=role_assignment.role_id, permission_id=perm.id))
@@ -132,7 +131,7 @@ async def test_breakglass_self_approval_blocked(client: AsyncClient, admin_reque
     # Request
     req_resp = await client.post(
         "/api/v1/admin/break-glass/request",
-        json={"resource_type": "medical_report", "resource_id": "rep_123", "reason": "Emergency review", "duration_minutes": 30},
+        json={"resource_type": "medical_report", "resource_id": "rep_123", "reason": "Emergency review"},
         headers={"Authorization": f"Bearer {req_token}"}
     )
     grant_id = req_resp.json()["grant"]["id"]

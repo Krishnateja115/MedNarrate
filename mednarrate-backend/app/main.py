@@ -45,10 +45,21 @@ from app.core.middleware import CorrelationIdMiddleware
 app.add_middleware(CorrelationIdMiddleware)
 
 is_wildcard = "*" in settings.CORS_ORIGINS
+cors_origins = set(settings.CORS_ORIGINS)
+if is_wildcard:
+    cors_origins.remove("*")
+    if settings.ADMIN_APP_ORIGIN:
+        cors_origins.add(settings.ADMIN_APP_ORIGIN)
+
+# Fallback: if cors_origins is completely empty because of removing "*", add a placeholder or localhost 
+# to satisfy allow_origins requirements when allow_credentials=True
+if not cors_origins:
+    cors_origins.add("http://localhost:3000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=not is_wildcard,
+    allow_origins=list(cors_origins),
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

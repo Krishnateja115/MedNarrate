@@ -4,11 +4,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Key, AlertTriangle, ShieldAlert, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Key, AlertTriangle, ShieldAlert, CheckCircle, Clock, XCircle, Check } from 'lucide-react';
 
 interface BreakGlassGrant {
   id: string;
@@ -25,6 +26,7 @@ interface BreakGlassGrant {
 
 export default function BreakGlassPage() {
   const queryClient = useQueryClient();
+  const { user, can } = useAuth();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -32,7 +34,6 @@ export default function BreakGlassPage() {
   const [resourceType, setResourceType] = useState('patient_medical_record');
   const [resourceId, setResourceId] = useState('');
   const [reason, setReason] = useState('');
-  const [durationMinutes, setDurationMinutes] = useState(30);
 
   const { data, isLoading } = useQuery<{ grants: BreakGlassGrant[] }>({
     queryKey: ['break-glass-grants'],
@@ -68,6 +69,19 @@ export default function BreakGlassPage() {
     }
   });
 
+  const approveGrantMutation = useMutation({
+    mutationFn: (grantId: string) => fetchApi(`/api/v1/admin/break-glass/grants/${grantId}/approve`, { method: 'POST', data: { notes: 'Approved via dashboard' } }),
+    onSuccess: () => {
+      setSuccessMsg('Sensitive access grant approved successfully');
+      setErrorMsg(null);
+      queryClient.invalidateQueries({ queryKey: ['break-glass-grants'] });
+    },
+    onError: (err: any) => {
+      setErrorMsg(err.message || 'Failed to approve access grant');
+      setSuccessMsg(null);
+    }
+  });
+
   const handleRequestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!resourceId || reason.length < 10) {
@@ -78,8 +92,7 @@ export default function BreakGlassPage() {
     requestGrantMutation.mutate({
       resource_type: resourceType,
       resource_id: resourceId,
-      reason: reason,
-      duration_minutes: durationMinutes
+      reason: reason
     });
   };
 
@@ -147,20 +160,6 @@ export default function BreakGlassPage() {
                   placeholder="e.g. rep_8f92a40b"
                   className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm font-mono"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Duration (Minutes)</label>
-                <select
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm"
-                >
-                  <option value={15}>15 Minutes</option>
-                  <option value={30}>30 Minutes (Recommended)</option>
-                  <option value={60}>60 Minutes</option>
-                  <option value={120}>120 Minutes (Max Limit)</option>
-                </select>
               </div>
 
               <div>
@@ -253,6 +252,17 @@ export default function BreakGlassPage() {
                             disabled={revokeGrantMutation.isPending}
                           >
                             Revoke Now
+                          </Button>
+                        )}
+                        {grant.status === 'requested' && can('approve_sensitive_access') && user?.id !== grant.admin_id && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            onClick={() => approveGrantMutation.mutate(grant.id)}
+                            disabled={approveGrantMutation.isPending}
+                          >
+                            <Check className="w-4 h-4 mr-1" /> Approve
                           </Button>
                         )}
                       </td>

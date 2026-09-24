@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     #   CORS_ORIGINS=["https://app.mednarrate.com"]
     # or via environment: CORS_ORIGINS='["https://app.mednarrate.com"]'
     CORS_ORIGINS: list[str] = ["*"]
+    ADMIN_APP_ORIGIN: str = "http://localhost:3001"
 
     # LLM Provider Architecture Configuration
     PRIMARY_LLM_PROVIDER: str = "gemini" 

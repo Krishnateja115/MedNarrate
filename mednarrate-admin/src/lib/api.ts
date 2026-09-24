@@ -35,16 +35,14 @@ export async function fetchApi<T = any>(endpoint: string, options: FetchOptions 
     url += `?${searchParams.toString()}`;
   }
 
-  const token = typeof window !== 'undefined' ? sessionStorage.getItem('admin_token') : null;
-
   const config: RequestInit = {
     method: data ? 'POST' : 'GET',
+    credentials: 'include',
     ...customConfig,
     headers: {
       'Content-Type': data ? 'application/json' : '',
       'Accept': 'application/json',
       'X-Request-ID': generateRequestId(),
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...headers,
     },
   };

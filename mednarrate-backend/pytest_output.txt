@@ -1,0 +1,193 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.9, pytest-8.4.2, pluggy-1.5.0
+rootdir: /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend
+configfile: pytest.ini
+plugins: asyncio-1.4.0, anyio-4.10.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=session, asyncio_default_test_loop_scope=session
+collected 4 items
+
+tests/test_breakglass_security.py FF.F                                   [100%]
+
+=================================== FAILURES ===================================
+______________________ test_breakglass_request_lifecycle _______________________
+
+client = <httpx.AsyncClient object at 0x175132e40>
+admin_requester = <app.models.user.User object at 0x1751334d0>
+admin_approver = <app.models.user.User object at 0x1753951d0>
+db_session = <sqlalchemy.orm.session.AsyncSession object at 0x1751317f0>
+
+    @pytest.mark.asyncio
+    async def test_breakglass_request_lifecycle(client: AsyncClient, admin_requester: User, admin_approver: User, db_session: AsyncSession):
+        """Scenario A: Request -> Approve -> Active"""
+        req_token = create_access_token(subject=str(admin_requester.id))
+        app_token = create_access_token(subject=str(admin_approver.id))
+    
+        # 1. Requester requests access
+        req_resp = await client.post(
+            "/api/v1/admin/break-glass/request",
+            json={
+                "resource_type": "medical_report",
+                "resource_id": "rep_123",
+                "reason": "Emergency review"
+            },
+            headers={"Authorization": f"Bearer {req_token}"}
+        )
+>       assert req_resp.status_code == 200
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_breakglass_security.py:99: AssertionError
+____________________ test_breakglass_self_approval_blocked _____________________
+
+client = <httpx.AsyncClient object at 0x175397890>
+admin_requester = <app.models.user.User object at 0x175593390>
+db_session = <sqlalchemy.orm.session.AsyncSession object at 0x175397d90>
+
+    @pytest.mark.asyncio
+    async def test_breakglass_self_approval_blocked(client: AsyncClient, admin_requester: User, db_session: AsyncSession):
+        """Scenario B: Admin cannot approve their own request"""
+        req_token = create_access_token(subject=str(admin_requester.id))
+    
+        # We need to give requester approve permission just for this test to prove self-approval block works
+        role_assignment = (await db_session.execute(select(AdminRoleAssignment).where(AdminRoleAssignment.user_id == admin_requester.id))).scalar_one()
+        perm = (await db_session.execute(select(AdminPermission).where(AdminPermission.name == "approve_sensitive_access"))).scalars().first()
+        if not perm:
+            perm = AdminPermission(name="approve_sensitive_access")
+            db_session.add(perm)
+            await db_session.flush()
+        db_session.add(AdminRolePermission(role_id=role_assignment.role_id, permission_id=perm.id))
+        await db_session.commit()
+    
+        # Request
+        req_resp = await client.post(
+            "/api/v1/admin/break-glass/request",
+            json={"resource_type": "medical_report", "resource_id": "rep_123", "reason": "Emergency review"},
+            headers={"Authorization": f"Bearer {req_token}"}
+        )
+>       grant_id = req_resp.json()["grant"]["id"]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'grant'
+
+tests/test_breakglass_security.py:137: KeyError
+___________________ test_sensitive_access_allowed_with_grant ___________________
+
+client = <httpx.AsyncClient object at 0x1755dac40>
+admin_requester = <app.models.user.User object at 0x1755d9220>
+admin_approver = <app.models.user.User object at 0x1755ce570>
+test_report = <app.models.report.Report object at 0x1756e5090>
+db_session = <sqlalchemy.orm.session.AsyncSession object at 0x1755d9e00>
+
+    @pytest.mark.asyncio
+    async def test_sensitive_access_allowed_with_grant(client: AsyncClient, admin_requester: User, admin_approver: User, test_report, db_session: AsyncSession):
+        """Scenario D: Access to sensitive endpoint succeeds with active breakglass grant"""
+        req_token = create_access_token(subject=str(admin_requester.id))
+        app_token = create_access_token(subject=str(admin_approver.id))
+    
+        # Create & approve grant directly targeting the report ID
+        req_resp = await client.post(
+            "/api/v1/admin/break-glass/request",
+            json={"resource_type": "medical_report", "resource_id": str(test_report.id), "reason": "Emergency review", "duration_minutes": 30},
+            headers={"Authorization": f"Bearer {req_token}"}
+        )
+>       grant_id = req_resp.json()["grant"]["id"]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'grant'
+
+tests/test_breakglass_security.py:173: KeyError
+=============================== warnings summary ===============================
+app/core/config.py:3
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/core/config.py:3: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Settings(BaseSettings):
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+app/services/rag.py:9
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/services/rag.py:9: FutureWarning: 
+  
+  All support for the `google.generativeai` package has ended. It will no longer be receiving 
+  updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  See README for more details:
+  
+  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  
+    import google.generativeai as genai
+
+app/schemas/notification.py:19
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/schemas/notification.py:19: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class MedicationScheduleOut(BaseModel):
+
+app/api/v1/admin_breakglass.py:35
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:35: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    resource_type: str = Field(..., example="medical_report")
+
+app/api/v1/admin_breakglass.py:36
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:36: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    resource_id: str = Field(..., example="rep_12345",
+
+app/api/v1/admin_breakglass.py:38
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:38: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    reason: str = Field(..., min_length=10, example="Emergency clinical review requested by attending physician")
+
+app/api/v1/admin_feature_flags.py:17
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_feature_flags.py:17: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    name: str = Field(..., min_length=2, example="enable_ocr_v2")
+
+app/api/v1/admin_feature_flags.py:21
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_feature_flags.py:21: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    target_environment: str = Field(default="all", example="production")
+
+app/api/v1/admin_ai_config.py:22
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:22: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    primary_provider: Optional[str] = Field(None, example="gemini")
+
+app/api/v1/admin_ai_config.py:23
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:23: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    model_name: Optional[str] = Field(None, example="gemini-1.5-pro")
+
+app/api/v1/admin_ai_config.py:26
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:26: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    fallback_provider: Optional[str] = Field(None, example="ollama")
+
+app/api/v1/admin_settings.py:25
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:25: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    scope: str = Field(default="all", example="report_analysis") # all, report_analysis, chat, translation, notifications
+
+app/api/v1/admin_settings.py:26
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:26: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    reason: Optional[str] = Field(None, example="Scheduled database maintenance")
+
+app/api/v1/admin_settings.py:27
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:27: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    message: Optional[str] = Field(None, example="MedNarrate report processing is undergoing scheduled maintenance. Please try again shortly.")
+
+app/api/v1/admin_announcements.py:19
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:19: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    audience: str = Field(default="all", example="patients") # all, patients, doctors, caregivers
+
+app/api/v1/admin_announcements.py:20
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:20: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    language: str = Field(default="en", example="en")
+
+app/api/v1/admin_announcements.py:23
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:23: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    status: str = Field(default="published", example="published") # draft, scheduled, published, expired
+
+tests/test_breakglass_security.py: 48 warnings
+  /opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3624: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_breakglass_security.py::test_breakglass_request_lifecycle
+FAILED tests/test_breakglass_security.py::test_breakglass_self_approval_blocked
+FAILED tests/test_breakglass_security.py::test_sensitive_access_allowed_with_grant
+=================== 3 failed, 1 passed, 70 warnings in 0.15s ===================

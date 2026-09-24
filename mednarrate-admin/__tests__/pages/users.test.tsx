@@ -7,6 +7,13 @@ jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
 }));
 
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    can: jest.fn().mockReturnValue(true),
+    user: { id: 'test', email: 'test@admin.com', full_name: 'Test Admin', role: 'admin', permissions: ['super_admin'] },
+  }),
+}));
+
 describe('UsersPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();

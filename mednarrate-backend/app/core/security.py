@@ -16,7 +16,29 @@ import hashlib as _hashlib
 
 import bcrypt
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+from fastapi import Request
+from fastapi.security.utils import get_authorization_scheme_param
+
+class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
+    async def __call__(self, request: Request) -> Optional[str]:
+        authorization = request.headers.get("Authorization")
+        scheme, param = get_authorization_scheme_param(authorization)
+        if authorization and scheme.lower() == "bearer":
+            return param
+            
+        cookie_token = request.cookies.get("access_token")
+        if cookie_token:
+            return cookie_token
+            
+        if self.auto_error:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return None
+
+oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/api/v1/auth/login")
 
 def _pre_hash(password: str) -> bytes:
     """Pre-hash password with SHA256 to avoid bcrypt 72-byte truncation and quirks."""

@@ -29,9 +29,7 @@ export default function LoginPage() {
       });
 
       if (response.access_token) {
-        const userResp = await fetchApi('/api/v1/admin/me', {
-          headers: { Authorization: `Bearer ${response.access_token}` },
-        });
+        const userResp = await fetchApi('/api/v1/admin/me');
 
         // Ensure user is an admin
         if (userResp.role !== 'admin') {
@@ -39,7 +37,7 @@ export default function LoginPage() {
           return;
         }
 
-        login(response.access_token, response.refresh_token, userResp);
+        login(userResp);
       }
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');

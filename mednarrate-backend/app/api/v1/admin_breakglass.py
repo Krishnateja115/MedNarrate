@@ -10,7 +10,7 @@ Lifecycle:
 
 Permissions:
   break_glass.request  — submit a request
-  break_glass.approve  — approve another admin's request (cannot approve own)
+  approve_sensitive_access  — approve another admin's request (cannot approve own)
   break_glass.revoke   — revoke an active grant
   break_glass.read     — list/view grants (security admins)
 """
@@ -36,7 +36,6 @@ class BreakGlassRequest(BaseModel):
     resource_id: str = Field(..., example="rep_12345",
                              description="Exact resource ID, or '*' for all resources of this type")
     reason: str = Field(..., min_length=10, example="Emergency clinical review requested by attending physician")
-    duration_minutes: int = Field(default=30, ge=5, le=120)
 
 
 class BreakGlassApprovalPayload(BaseModel):
@@ -87,6 +86,8 @@ async def _build_admins_map(grants: list, db: AsyncSession) -> dict:
     return admins_map
 
 
+DEFAULT_GRANT_EXPIRY_HOURS = 4
+
 @router.post("/break-glass/request")
 async def request_break_glass_access(
     req: BreakGlassRequest,
@@ -100,8 +101,6 @@ async def request_break_glass_access(
     Super Admins can self-approve through the approve endpoint explicitly.
     """
     now = datetime.now(timezone.utc).replace(tzinfo=None)
-    expires_at = now + timedelta(minutes=req.duration_minutes)
-
     grant = SensitiveAccessGrant(
         id=uuid.uuid4(),
         admin_id=admin_ctx.user_id,
@@ -109,7 +108,7 @@ async def request_break_glass_access(
         resource_id=req.resource_id,
         reason=req.reason,
         created_at=now,
-        expires_at=expires_at,
+        expires_at=None,
         status="requested",   # Always starts as REQUESTED — never auto-active
         approved_by_id=None,
         approved_at=None,
@@ -127,7 +126,7 @@ async def request_break_glass_access(
         result="success",
         reason=req.reason,
         request=request,
-        metadata={"duration_minutes": req.duration_minutes, "expires_at": expires_at.isoformat()},
+        metadata={},
         sensitive_access_flag=True
     )
 
@@ -144,7 +143,6 @@ async def request_break_glass_access(
             "resource_id": grant.resource_id,
             "reason": grant.reason,
             "created_at": grant.created_at.isoformat(),
-            "expires_at": grant.expires_at.isoformat(),
         }
     }
 
@@ -155,7 +153,7 @@ async def approve_break_glass_grant(
     payload: BreakGlassApprovalPayload,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    admin_ctx: AdminContext = Depends(require_permission("break_glass.approve"))
+    admin_ctx: AdminContext = Depends(require_permission("approve_sensitive_access"))
 ):
     """
     Approve a break-glass request from another admin.
@@ -189,6 +187,7 @@ async def approve_break_glass_grant(
     grant.status = "active"
     grant.approved_by_id = admin_ctx.user_id
     grant.approved_at = now
+    grant.expires_at = now + timedelta(hours=DEFAULT_GRANT_EXPIRY_HOURS)
 
     # Audit within same transaction
     await log_admin_action(
@@ -197,7 +196,7 @@ async def approve_break_glass_grant(
         action="break_glass_approved",
         resource_type=grant.resource_type,
         resource_id=grant.resource_id,
-        permission_used="break_glass.approve",
+        permission_used="approve_sensitive_access",
         result="success",
         reason=payload.notes or "Approved by administrator",
         request=request,
