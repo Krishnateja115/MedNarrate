@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AlertCircle, Loader2, Stethoscope } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -47,13 +48,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-950">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold tracking-tight">MedNarrate Admin</CardTitle>
-          <CardDescription>Enter your email and password to access the command center.</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-blue-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
+      <div className="w-full max-w-md motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-8 duration-500 ease-out">
+        <div className="flex flex-col items-center mb-8 space-y-2 text-center">
+          <div className="bg-primary/10 p-3 rounded-full mb-2">
+            <Stethoscope className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">MedNarrate</h1>
+          <p className="text-muted-foreground font-medium">Administration Portal</p>
+        </div>
+        
+        <Card className="border-slate-200/60 dark:border-slate-800/60 shadow-lg shadow-slate-200/50 dark:shadow-none">
+          <CardHeader className="space-y-1 pb-6">
+            <CardTitle className="text-xl font-semibold">Welcome back</CardTitle>
+            <CardDescription>Enter your credentials to access the command center</CardDescription>
+          </CardHeader>
+          <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -74,19 +84,31 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
               />
             </div>
+            
             {error && (
-              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                {error}
+              <div className="flex items-start gap-3 rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 duration-200">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <div className="font-medium leading-tight">{error}</div>
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
+            
+            <Button type="submit" className="w-full mt-2 transition-all duration-200 active:scale-[0.98]" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Authenticating...
+                </>
+              ) : (
+                'Sign in'
+              )}
             </Button>
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

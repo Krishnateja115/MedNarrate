@@ -153,7 +153,7 @@ export function Topbar() {
 
         {/* Search Results Dropdown */}
         {showSearchModal && (searchQuery.trim().length > 0) && (
-          <div className="absolute top-12 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl overflow-hidden max-h-96 overflow-y-auto z-50">
+          <div className="absolute top-12 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl overflow-hidden max-h-96 overflow-y-auto z-50 animate-in fade-in slide-in-from-top-2 duration-200">
             {isSearching ? (
               <div className="p-4 text-center text-sm text-slate-500 flex items-center justify-center space-x-2">
                 <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
@@ -219,7 +219,7 @@ export function Topbar() {
 
           {/* Alerts Popover */}
           {showAlertsPopover && (
-            <div className="absolute right-0 top-12 w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 overflow-hidden">
+            <div className="absolute right-0 top-12 w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
                 <span className="font-semibold text-sm text-slate-900 dark:text-white">System Alerts & Notifications</span>
                 <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 rounded font-semibold">

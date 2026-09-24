@@ -109,7 +109,7 @@ export default function JobsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Background Jobs</h1>
-          <p className="text-muted-foreground mt-2">Loading active jobs and execution history...</p>
+          <Skeleton className="h-4 w-64 mt-2" />
         </div>
         <div className="space-y-4">
           <Skeleton className="h-[200px] w-full" />

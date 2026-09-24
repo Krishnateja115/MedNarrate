@@ -146,7 +146,7 @@ export default function IncidentsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Incidents</h1>
-            <p className="text-muted-foreground mt-2">Loading incident history...</p>
+            <Skeleton className="h-4 w-48 mt-2" />
           </div>
         </div>
         <Card>
