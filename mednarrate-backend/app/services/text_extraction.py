@@ -4,6 +4,7 @@ from PIL import Image, ImageEnhance, ImageOps
 import io
 import os
 import re
+import sys
 import shutil
 import logging
 from app.core.config import settings
@@ -60,6 +61,12 @@ def find_tesseract_cmd() -> str | None:
     tesseract_cmd = getattr(pytesseract.pytesseract, 'tesseract_cmd', 'tesseract')
     if tesseract_cmd and tesseract_cmd != 'tesseract' and os.path.exists(tesseract_cmd):
         return tesseract_cmd
+
+    # Check environment variable
+    env_cmd = os.getenv("TESSERACT_CMD")
+    if env_cmd and os.path.exists(env_cmd):
+        pytesseract.pytesseract.tesseract_cmd = env_cmd
+        return env_cmd
 
     # Check system PATH
     which_path = shutil.which('tesseract')
@@ -209,7 +216,7 @@ def run_ocr_on_image(img: Image.Image) -> tuple[str, str]:
     try:
         import easyocr
         import numpy as np
-        reader = easyocr.Reader(['en'], gpu=False)
+        reader = easyocr.Reader(['en'], gpu=False, verbose=False)
         img_np = np.array(img.convert('RGB'))
         results = reader.readtext(img_np, detail=0)
         easy_text = "\n".join(results)
@@ -219,7 +226,7 @@ def run_ocr_on_image(img: Image.Image) -> tuple[str, str]:
     except Exception as easy_e:
         logger.debug(f"EasyOCR fallback not available or failed: {easy_e}")
 
-    if not tesseract_cmd:
+    if not tesseract_cmd and 'easyocr' not in sys.modules and not best_text and not locals().get('easy_text'):
         raise OCRUnavailableError(
             "The report was uploaded successfully, but text recognition is not available on this server.",
             failure_category="OCR_ENGINE_UNAVAILABLE"
