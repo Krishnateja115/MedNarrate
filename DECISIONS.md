@@ -12,3 +12,10 @@
 - **Default Expiry**: The default break-glass access expiry duration is enforced as a hardcoded 4 hours from the time of approval, non-renewable. This ensures temporal isolation.
 - **Atomic Auditing**: The `log_admin_action` method strictly relies on the caller (`admin_breakglass.py`) to commit the database session to ensure both the action state change and the audit log entry succeed or fail atomically.
 - **Expiry Model**: The `expires_at` column in `SensitiveAccessGrant` is now nullable to accurately represent that a requested grant does not have an expiry until it is actually approved.
+
+## Admin Dashboard & Diagnostics Refactoring
+- **Dashboard Data Strategy**: Modified `/api/v1/admin/dashboard/summary` to support a `days` query param (defaulting to 30) for accurate time-window analysis. Real telemetry was piped directly into the `chart_data` response structure, removing mock arrays.
+- **System Health Design**: Updated the LLM Provider health check to explicitly examine the last 10 LLM requests (expecting >= 80% success rate) to define its `healthy` state, decoupling it from mere reachability. We also expose `configured`, `reachable`, and `healthy` attributes explicitly.
+- **Notification Retry Logic**: Updated `/api/v1/admin/notifications/{log_id}/retry` to directly pull user `PushToken` records and invoke `send_push_notification`, appending to the same `NotificationLog` entry to maintain atomicity and exact audit tracking of the delivery event.
+- **RAG Probing**: Implemented `rag_service.health_check()` which executes a 2-second timeout bounded test query (`retrieve_kb_context`) against the ChromaDB/Vector store rather than relying on a static `total_chunks > 0` condition.
+- **Diagnostic Snapshot Realism**: In `get_report_diagnostic_snapshot`, inferred pipeline stages are now verified by querying `JobExecution` deterministically. Furthermore, a new `/system/snapshot` endpoint aggregates comprehensive cluster metrics (jobs, active push tokens, LLM state, storage statistics).
