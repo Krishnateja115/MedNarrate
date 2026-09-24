@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import UsersPage from '@/app/(protected)/users/page';
 import { useQuery } from '@tanstack/react-query';
 

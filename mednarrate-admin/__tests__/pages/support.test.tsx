@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import SupportQueuePage from '@/app/(protected)/support/page';
 import { useQuery } from '@tanstack/react-query';
 

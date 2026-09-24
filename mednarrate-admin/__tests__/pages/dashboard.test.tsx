@@ -19,8 +19,8 @@ describe('OverviewPage (Command Center)', () => {
       error: null,
     });
 
-    render(<OverviewPage />);
-    expect(screen.getByText('Loading operational data...')).toBeInTheDocument();
+    const { container } = render(<OverviewPage />);
+    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('renders error state', () => {

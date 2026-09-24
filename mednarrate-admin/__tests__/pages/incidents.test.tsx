@@ -19,15 +19,15 @@ describe('IncidentsPage', () => {
       error: null,
     });
 
-    render(<IncidentsPage />);
-    expect(screen.getByText('Loading incident history...')).toBeInTheDocument();
+    const { container } = render(<IncidentsPage />);
+    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('renders incidents data correctly', () => {
     (useQuery as jest.Mock).mockReturnValue({
       data: {
         status: 'ok',
-        incidents: [
+        items: [
           {
             id: '123',
             title: 'Database connection failed',
@@ -40,7 +40,7 @@ describe('IncidentsPage', () => {
             resolution: null
           }
         ],
-        pagination: { limit: 50, offset: 0 }
+        total: 1
       },
       isLoading: false,
       error: null,

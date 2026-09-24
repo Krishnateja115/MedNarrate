@@ -13,6 +13,12 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      "react-compiler/react-compiler": "off",
+      "react-hooks/incompatible-library": "off"
+    }
+  }
 ]);
 
 export default eslintConfig;

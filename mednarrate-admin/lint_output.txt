@@ -1,0 +1,99 @@
+
+> mednarrate-admin@0.1.0 lint
+> eslint
+
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/__tests__/pages/support.test.tsx
+  1:26  warning  'fireEvent' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/__tests__/pages/users.test.tsx
+  1:26  warning  'fireEvent' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/app/(protected)/chat-ops/page.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/app/(protected)/incidents/page.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/app/(protected)/jobs/page.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/app/layout.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/app/providers.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/badge.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/breadcrumb.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/button.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/card.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/command.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/data-table.tsx
+  10:3   warning  'getSortedRowModel' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+  25:66  warning  'ArrowUpDown' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  57:17  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/data-table.tsx:57:17
+  55 |   const sorting: SortingState = sortState ? [{ id: sortState.id, desc: sortState.desc }] : []
+  56 |
+> 57 |   const table = useReactTable({
+     |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  58 |     data,
+  59 |     columns,
+  60 |     getCoreRowModel: getCoreRowModel(),  react-hooks/incompatible-library
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/dialog.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/forbidden.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/input-group.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/input.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/label.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/select.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/skeleton.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/switch.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/table.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/tabs.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/textarea.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/components/ui/toast.tsx
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-admin/src/lib/utils.ts
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+✖ 28 problems (0 errors, 28 warnings)
+  0 errors and 23 warnings potentially fixable with the `--fix` option.
+
