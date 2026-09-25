@@ -373,6 +373,7 @@ class ApiService {
           isFavourite: isFavourite, search: search)
           .then((_) => throw const UnauthorizedException()));
       final list = jsonDecode(resp.body) as List<dynamic>;
+      debugPrint('GET /reports returned ${list.length} reports. First report title: ${list.isNotEmpty ? list.first["title"] : "None"}');
       final reports = <ReportModel>[];
       for (var e in list) {
         try {
