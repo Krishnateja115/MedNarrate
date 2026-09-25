@@ -43,7 +43,7 @@ const serviceNames: Record<string, string> = {
 export default function HealthPage() {
   const { data, isLoading, error, refetch, isFetching } = useQuery<SystemHealth>({
     queryKey: ['system-health'],
-    queryFn: () => fetchApi('/api/v1/admin/health'),
+    queryFn: () => fetchApi('/api/v1/admin/system/health'),
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 

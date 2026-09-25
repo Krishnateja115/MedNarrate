@@ -326,13 +326,13 @@ export default function OverviewPage() {
               <p className="text-sm font-medium mb-2">Failure Breakdown</p>
               {Object.keys(summary.analysis?.failure_categories || {}).length > 0 ? (
                 <div className="space-y-2">
-                  {Object.entries(summary.analysis!.failure_categories).map(([cat, count]) => (
+                  {Object.entries(summary.analysis?.failure_categories || {}).map(([cat, count]) => (
                     <div key={cat}>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="truncate w-3/4">{cat}</span>
                         <span className="font-bold">{formatNumber(count as number)}</span>
                       </div>
-                      <Progress value={Math.min(((count as number) / Math.max(1, summary.analysis!.analysis_failure_count || 1)) * 100, 100)} className="h-1.5" />
+                      <Progress value={Math.min(((count as number) / Math.max(1, summary.analysis?.analysis_failure_count || 1)) * 100, 100)} className="h-1.5" />
                     </div>
                   ))}
                 </div>

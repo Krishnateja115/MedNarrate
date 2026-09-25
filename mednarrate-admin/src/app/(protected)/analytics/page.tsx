@@ -315,10 +315,10 @@ export default function AnalyticsPage() {
 
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">Failure Category Breakdown</h4>
                   <div className="space-y-2">
-                    {Object.entries(data.reports.failure_categories).length === 0 ? (
+                    {Object.entries(data.reports.failure_categories || {}).length === 0 ? (
                       <p className="text-xs text-slate-500">No report failures recorded in this timeframe.</p>
                     ) : (
-                      Object.entries(data.reports.failure_categories).map(([cat, count]) => (
+                      Object.entries(data.reports.failure_categories || {}).map(([cat, count]) => (
                         <div key={cat} className="flex justify-between items-center p-2 border border-slate-100 dark:border-slate-800 rounded">
                           <span className="text-xs font-medium">{cat}</span>
                           <span className="text-xs px-2 py-0.5 bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300 font-bold rounded">
