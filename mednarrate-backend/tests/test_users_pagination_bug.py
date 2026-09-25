@@ -1,5 +1,5 @@
 import asyncio
-from app.api.v1.admin import get_users
+from app.api.v1.admin_users import get_users
 from app.core.database import AsyncSessionLocal
 from app.models.user import User
 from sqlalchemy import select

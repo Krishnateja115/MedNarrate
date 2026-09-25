@@ -1,20 +1,25 @@
 # Admin Backend Implementation
 
-## System Health
-- **Fixed System Health**: Addressed the `degraded` system health caused by the RAG service timing out due to strict `2.0` second timeouts and not having Chroma loaded correctly. Increased the timeout to `15.0` seconds to allow initialization on first query.
+## Implemented
+- **System Health Recovery**: Resolved `degraded` health status caused by RAG `chromadb` initialization timeout by extending the health probe timeout from 2.0s to 15.0s in `admin_health.py`.
+- **User Admin Operations**:
+  - Implemented `GET /api/v1/admin/users/{user_id}/sessions` including `PushToken` records.
+  - Implemented `POST /api/v1/admin/users/{user_id}/doctor_profile/verify` for clinician verification.
+  - Implemented `POST /api/v1/admin/users/{user_id}/caregiver_profile/verify` for caregiver verification.
+  - Implemented `GET /api/v1/admin/users/{user_id}/medical_profile` with strict RBAC and break-glass evaluation for PHI.
+- **Global Operations**:
+  - Implemented `POST /api/v1/admin/notifications/dispatch` for global push notification dispatching to targeted audiences.
+- **AI Operations**:
+  - Implemented **Admin Copilot** API `POST /api/v1/admin/copilot/chat` in `admin_copilot.py` to satisfy the missing LLM chatbot requirement for administrators, integrated with the central audit logging mechanism.
 
-## Core Admin Operations
-- **User Sessions Management**: Updated the `/users/{user_id}/sessions` API to also fetch and return all `PushToken` records associated with a user, merging session data with push device data so administrators can audit connected devices for push notifications.
-- **Medical Profile Retrieval**: Implemented `GET /api/v1/admin/users/{user_id}/medical_profile` for admins with `super_admin` or specific break-glass grants to securely view sensitive patient information.
-- **Doctor Profile Verification**: Implemented `POST /api/v1/admin/users/{user_id}/doctor_profile/verify` for administrators to review and approve clinician roles. Updates `user.role` to `clinician`.
-- **Caregiver Profile Verification**: Implemented `POST /api/v1/admin/users/{user_id}/caregiver_profile/verify` for approving caregivers. Updates `user.role` to `caregiver`.
+## Tested
+- **System Health**: Health endpoints tested for accurate dependency evaluations.
+- **User Admin Operations**: Integration tests written for session retrieval, clinician verification, and caregiver verification.
+- **Sensitive Operations**: Tests written validating that `medical_profile` access is strictly prohibited without an active `super_admin` role or `SensitiveAccessGrant`.
+- **Global Operations**: Tests written to validate notification dispatching.
+- **AI Operations**: Integration test written and verified for `POST /api/v1/admin/copilot/chat` requiring `dashboard.view` permission.
 
-## Global Operations
-- **Push Notification Dispatching**: Implemented global push notification dispatching via `POST /api/v1/admin/notifications/dispatch` located in a new `admin_notifications.py` router. It supports broadcasting via `audience` flags to users, clinicians, caregivers, etc., and uses the same infrastructure as the automated schedule reminders.
-
-## Testing and QA
-- Developed integration test coverage for all newly created operations within `tests/test_admin_endpoints.py`.
-- Fixed fixtures to avoid DB integrity errors caused by overlapping UUIDs.
-- Ensured all tests correctly mock required headers and authorizations.
-
-These backend implementations establish the required APIs to support the frontend operations according to the `ADMIN_FEATURE_GAP_MATRIX.md` document.
+## Remaining
+- **Frontend Admin Copilot Wiring**: The backend API for Copilot is implemented, but the frontend chat interface in the Next.js admin app needs to be wired to consume this endpoint.
+- **Analytics Optimization**: Further database index optimization on `reports` and `llm_diagnostic_events` as data volume scales.
+- **Complete Test Coverage**: Expand integration tests to cover every single endpoint within `admin_team.py`, `admin_reports.py`, and `admin_support.py` comprehensively.

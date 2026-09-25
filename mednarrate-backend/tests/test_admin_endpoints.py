@@ -329,3 +329,19 @@ async def test_push_notification_dispatch(client: AsyncClient, dashboard_admin_u
     }
     resp = await client.post("/api/v1/admin/notifications/dispatch", json=payload, headers=headers)
     assert resp.status_code in [200, 403]
+
+@pytest.mark.asyncio
+async def test_admin_copilot_chat(client: AsyncClient, dashboard_admin_user: dict, db_session: AsyncSession):
+    token = dashboard_admin_user["token"]
+    
+    payload = {
+        "messages": [
+            {"role": "user", "content": "How many active users are there?"}
+        ]
+    }
+    
+    res = await client.post("/api/v1/admin/copilot/chat", json=payload, headers={"Cookie": f"access_token={token}"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert "reply" in data

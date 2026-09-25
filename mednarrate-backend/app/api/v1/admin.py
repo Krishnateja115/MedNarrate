@@ -32,6 +32,7 @@ from app.api.v1.admin_settings import router as settings_router
 from app.api.v1.admin_support import router as support_router
 from app.api.v1.admin_users import router as users_router
 from app.api.v1.admin_notifications import router as notifications_router
+from app.api.v1.admin_copilot import router as copilot_router
 from app.core.admin_auth import (
     AdminContext,
     get_admin_context,
@@ -149,6 +150,7 @@ router.include_router(chat_ops_router, prefix="/chat-ops", tags=["Admin Chat Ops
 router.include_router(rag_ops_router, prefix="/rag-ops", tags=["Admin RAG Ops"])
 router.include_router(automation_ops_router, prefix="/automation-ops", tags=["Admin Automation Ops"])
 router.include_router(notifications_router, prefix="/notifications", tags=["Admin Notifications"])
+router.include_router(copilot_router, prefix="/copilot", tags=["Admin Copilot"])
 
 # Register Privileged Governance Routers
 router.include_router(security_router, prefix="/security", tags=["Admin Security Center"])
