@@ -359,3 +359,62 @@ async def force_logout_admin(
     await db.commit()
 
     return {"status": "ok", "message": "Active sessions revoked for admin."}
+
+@router.get("/{id}/audit_logs")
+async def get_admin_audit_logs(
+    id: str,
+    request: Request,
+    admin_ctx: AdminContext = Depends(require_any_permission(["admins.view", "super_admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        admin_uuid = uuid.UUID(id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid admin ID.")
+        
+    from app.models.admin import AdminAuditLog
+    stmt = select(AdminAuditLog).where(AdminAuditLog.actor_admin_id == admin_uuid).order_by(desc(AdminAuditLog.timestamp))
+    logs = (await db.execute(stmt)).scalars().all()
+    
+    return {
+        "status": "ok",
+        "logs": [
+            {
+                "id": str(l.id),
+                "action": l.action,
+                "resource_type": l.resource_type,
+                "resource_id": l.resource_id,
+                "metadata_payload": l.metadata_payload,
+                "timestamp": l.timestamp.isoformat() if l.timestamp else None
+            } for l in logs
+        ]
+    }
+
+@router.get("/{id}/support_tickets")
+async def get_admin_support_tickets(
+    id: str,
+    request: Request,
+    admin_ctx: AdminContext = Depends(require_any_permission(["admins.view", "super_admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        admin_uuid = uuid.UUID(id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid admin ID.")
+        
+    from app.models.support import SupportTicket
+    stmt = select(SupportTicket).where(SupportTicket.assigned_to_id == admin_uuid).order_by(desc(SupportTicket.created_at))
+    tickets = (await db.execute(stmt)).scalars().all()
+    
+    return {
+        "status": "ok",
+        "tickets": [
+            {
+                "id": str(t.id),
+                "subject": t.subject,
+                "status": t.status.value if t.status else "unknown",
+                "priority": t.priority.value if t.priority else "unknown",
+                "created_at": t.created_at.isoformat() if t.created_at else None
+            } for t in tickets
+        ]
+    }

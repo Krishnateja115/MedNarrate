@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Users, UserPlus, LogOut, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
+import Link from 'next/link';
 
 interface AdminUser {
   id: string;
@@ -222,7 +223,12 @@ export default function AdminManagementPage() {
                       <td className="px-4 py-3 text-slate-500 text-xs">
                         {adm.last_login_at ? new Date(adm.last_login_at).toLocaleString() : 'Never'}
                       </td>
-                      <td className="px-4 py-3 text-right space-x-2">
+                      <td className="px-4 py-3 text-right space-x-2 flex justify-end items-center">
+                        <Link href={`/admins/${adm.id}`}>
+                          <Button variant="secondary" size="sm">
+                            View Profile
+                          </Button>
+                        </Link>
                         <Button
                           variant="outline"
                           size="sm"
