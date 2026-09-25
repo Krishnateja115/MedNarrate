@@ -211,7 +211,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                     setState(() => _exporting = true);
                     final messenger = ScaffoldMessenger.of(context);
                     try {
-                      await ExportService.instance.shareSummaryPdf(
+                      await ExportService.instance.exportReportPdf(
                         analysis: analysis,
                         reportTitle: report.title,
                         reportDate: report.reportDate.toLocal().toString().split(' ').first,
@@ -225,13 +225,14 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                     final analysis = _controller.analysis;
                     final report = _controller.report;
                     if (analysis == null || report == null) return;
-                    await ExportService.instance.printSummary(
+                    await ExportService.instance.previewReportPdf(
                       analysis: analysis,
                       reportTitle: report.title,
                       reportDate: report.reportDate.toLocal().toString().split(' ').first,
                     );
                   }
                 },
+
                 itemBuilder: (_) => [
                   if (_controller.analysis != null) ...[
                     PopupMenuItem(

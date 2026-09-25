@@ -7,6 +7,8 @@ import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/api_models.dart';
 
+import 'pdf_downloader/pdf_downloader.dart';
+
 /// ExportService — generates a clean PDF from a ReportAnalysisModel
 /// and either downloads it (Export) or opens the print dialog (Print/Preview).
 class ExportService {
@@ -293,25 +295,26 @@ class ExportService {
   }
 
   /// DIRECT DOWNLOAD for the "Export PDF" action. Does NOT open print dialog.
-  Future<void> shareSummaryPdf({
+  Future<void> exportReportPdf({
     required ReportAnalysisModel analysis,
     required String reportTitle,
     required String reportDate,
   }) async {
+    print('[MEDNARRATE EXPORT] EXPORT PDF BUTTON CLICKED');
+    print('[MEDNARRATE EXPORT] GENERATING PDF');
     final doc = await _buildDocument(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
     );
     final bytes = await doc.save();
+    print('[MEDNARRATE EXPORT] PDF GENERATED');
 
     final safeTitle = reportTitle.replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '_');
     final filename = 'MedNarrate_${safeTitle}_$reportDate.pdf';
 
     if (kIsWeb) {
-      // In Flutter Web, Printing.sharePdf automatically triggers a direct browser download.
-      // It does NOT open the print dialog.
-      await Printing.sharePdf(bytes: bytes, filename: filename);
+      await downloadPdfWeb(bytes, filename);
       return;
     }
 
@@ -326,17 +329,22 @@ class ExportService {
   }
 
   /// OPENS PRINT/PREVIEW DIALOG for the "Print / Preview" action.
-  Future<void> printSummary({
+  Future<void> previewReportPdf({
     required ReportAnalysisModel analysis,
     required String reportTitle,
     required String reportDate,
   }) async {
+    print('[MEDNARRATE PRINT] PRINT/PREVIEW BUTTON CLICKED');
+    print('[MEDNARRATE PRINT] GENERATING PDF');
     final doc = await _buildDocument(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
     );
+    final bytes = await doc.save();
+    print('[MEDNARRATE PRINT] STARTING PRINT PREVIEW');
     // layoutPdf uses the browser/system print dialog
-    await Printing.layoutPdf(onLayout: (_) async => await doc.save());
+    await Printing.layoutPdf(onLayout: (_) async => bytes);
   }
 }
+
