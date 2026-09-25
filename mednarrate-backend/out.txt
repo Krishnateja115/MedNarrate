@@ -1,0 +1,814 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.9, pytest-8.4.2, pluggy-1.5.0
+rootdir: /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend
+configfile: pytest.ini
+plugins: asyncio-1.4.0, anyio-4.10.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=session, asyncio_default_test_loop_scope=session
+collected 1 item
+
+tests/test_admin_endpoints.py F                                          [100%]
+
+=================================== FAILURES ===================================
+____________________________ test_dashboard_summary ____________________________
+  + Exception Group Traceback (most recent call last):
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_utils.py", line 85, in create_collapsing_task_group
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 772, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/_pytest/runner.py", line 344, in from_call
+    |     result: TResult | None = func()
+    |                              ~~~~^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/_pytest/runner.py", line 246, in <lambda>
+    |     lambda: runtest_hook(item=item, **kwds), when=when, reraise=reraise
+    |             ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_hooks.py", line 513, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     raise exception.with_traceback(exception.__traceback__)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_callers.py", line 122, in _multicall
+    |     teardown.throw(exception)  # type: ignore[union-attr]
+    |     ~~~~~~~~~~~~~~^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/_pytest/logging.py", line 850, in pytest_runtest_call
+    |     yield
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_callers.py", line 122, in _multicall
+    |     teardown.throw(exception)  # type: ignore[union-attr]
+    |     ~~~~~~~~~~~~~~^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/_pytest/capture.py", line 900, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_callers.py", line 122, in _multicall
+    |     teardown.throw(exception)  # type: ignore[union-attr]
+    |     ~~~~~~~~~~~~~~^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/_pytest/skipping.py", line 263, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_callers.py", line 103, in _multicall
+    |     res = hook_impl.function(*args)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/_pytest/runner.py", line 178, in pytest_runtest_call
+    |     item.runtest()
+    |     ~~~~~~~~~~~~^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pytest_asyncio/plugin.py", line 569, in runtest
+    |     super().runtest()
+    |     ~~~~~~~~~~~~~~~^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/_pytest/python.py", line 1671, in runtest
+    |     self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_hooks.py", line 513, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_callers.py", line 182, in _multicall
+    |     return outcome.get_result()
+    |            ~~~~~~~~~~~~~~~~~~^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_result.py", line 100, in get_result
+    |     raise exc.with_traceback(exc.__traceback__)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pluggy/_callers.py", line 103, in _multicall
+    |     res = hook_impl.function(*args)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/_pytest/python.py", line 157, in pytest_pyfunc_call
+    |     result = testfunction(**testargs)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/pytest_asyncio/plugin.py", line 905, in inner
+    |     runner.run(coro, context=context)
+    |     ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/asyncio/runners.py", line 118, in run
+    |     return self._loop.run_until_complete(task)
+    |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/asyncio/base_events.py", line 725, in run_until_complete
+    |     return future.result()
+    |            ~~~~~~~~~~~~~^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/tests/test_admin_endpoints.py", line 67, in test_dashboard_summary
+    |     response = await client.get("/api/v1/admin/dashboard/summary", headers=headers)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1768, in get
+    |     return await self.request(
+    |            ^^^^^^^^^^^^^^^^^^^
+    |     ...<9 lines>...
+    |     )
+    |     ^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    |     return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    |     response = await self._send_handling_auth(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     ...<4 lines>...
+    |     )
+    |     ^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    |     response = await self._send_handling_redirects(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     ...<3 lines>...
+    |     )
+    |     ^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    |     response = await self._send_single_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    |     response = await transport.handle_async_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_transports/asgi.py", line 170, in handle_async_request
+    |     await self.app(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/applications.py", line 1163, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/applications.py", line 96, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    |     raise exc
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 104, in prompt_injection_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 72, in add_security_headers
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/core/middleware.py", line 18, in dispatch
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/routing.py", line 670, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2734, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    |     await route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    |     await route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    |     await original_route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1279, in handle
+    |     await app(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 158, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 144, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 706, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     ...<3 lines>...
+    |     )
+    |     ^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_dashboard.py", line 71, in get_dashboard_summary
+    |     avg_time_stmt = select(func.avg(Report.processing_time_ms)).where(Report.processing_time_ms.isnot(None), Report.uploaded_at >= time_window_start)
+    |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    | AttributeError: type object 'Report' has no attribute 'processing_time_ms'. Did you mean: 'processing_status'?
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/tests/test_admin_endpoints.py", line 67, in test_dashboard_summary
+    response = await client.get("/api/v1/admin/dashboard/summary", headers=headers)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/httpx/_transports/asgi.py", line 170, in handle_async_request
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 104, in prompt_injection_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 72, in add_security_headers
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/core/middleware.py", line 18, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_dashboard.py", line 71, in get_dashboard_summary
+    avg_time_stmt = select(func.avg(Report.processing_time_ms)).where(Report.processing_time_ms.isnot(None), Report.uploaded_at >= time_window_start)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'Report' has no attribute 'processing_time_ms'. Did you mean: 'processing_status'?
+
+The above exception was the direct cause of the following exception:
+
+client = <httpx.AsyncClient object at 0x70123b2f90>
+dashboard_admin_user = {'token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3OTAzNTQ3MjEsInN1YiI6ImJlODM0MTVkLTE3MjYtNDEyYS1iNzRhLWU0NjAyYTA2ODQwYSJ9.5GNwV5nbhf2cRkWy-hLotEz2oF3JUNxhU_oDfbwngAQ', 'user': <app.models.user.User object at 0x70123b3620>}
+
+    @pytest.mark.asyncio
+    async def test_dashboard_summary(client: AsyncClient, dashboard_admin_user: dict):
+        headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
+>       response = await client.get("/api/v1/admin/dashboard/summary", headers=headers)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_admin_endpoints.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py:1768: in get
+    return await self.request(
+/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py:1540: in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py:1629: in send
+    response = await self._send_handling_auth(
+/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py:1657: in _send_handling_auth
+    response = await self._send_handling_redirects(
+/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py:1694: in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/anaconda3/lib/python3.13/site-packages/httpx/_client.py:1730: in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/anaconda3/lib/python3.13/site-packages/httpx/_transports/asgi.py:170: in handle_async_request
+    await self.app(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/applications.py:1163: in __call__
+    await super().__call__(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/main.py:104: in prompt_injection_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/main.py:72: in add_security_headers
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/core/middleware.py:18: in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/starlette/routing.py:670: in __call__
+    await self.middleware_stack(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:2734: in app
+    await route.handle(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:1780: in handle
+    await self.original_router.handle(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:2789: in handle
+    await included_router._handle_selected(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:1791: in _handle_selected
+    await route.handle(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:1780: in handle
+    await self.original_router.handle(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:2789: in handle
+    await included_router._handle_selected(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:1791: in _handle_selected
+    await route.handle(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:1780: in handle
+    await self.original_router.handle(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:2789: in handle
+    await included_router._handle_selected(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:1800: in _handle_selected
+    await original_route.handle(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:1279: in handle
+    await app(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:158: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:144: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:706: in app
+    raw_response = await run_endpoint_function(
+/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py:352: in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+days = 30, admin_ctx = <app.core.admin_auth.AdminContext object at 0x7012553e00>
+db = <sqlalchemy.orm.session.AsyncSession object at 0x70123b1fd0>
+
+    @router.get("/summary")
+    async def get_dashboard_summary(
+        days: int = 30,
+        admin_ctx: AdminContext = Depends(require_permission("dashboard.view")),
+        db: AsyncSession = Depends(get_db),
+    ):
+        time_window_start = datetime.now(timezone.utc) - timedelta(days=days)
+    
+        today_start = datetime.combine(datetime.now(timezone.utc).date(), time.min).replace(
+            tzinfo=timezone.utc
+        )
+        this_week_start = today_start - timedelta(days=today_start.weekday())
+        this_month_start = today_start.replace(day=1)
+    
+        # Total Users
+        total_users_stmt = select(func.count(User.id))
+        total_users = (await db.execute(total_users_stmt)).scalar() or 0
+    
+        # Active Users
+        active_users_stmt = select(func.count(User.id)).where(User.is_active is True)
+        active_users = (await db.execute(active_users_stmt)).scalar() or 0
+    
+        new_users_today = (await db.execute(select(func.count(User.id)).where(User.created_at >= today_start))).scalar() or 0
+        new_users_this_week = (await db.execute(select(func.count(User.id)).where(User.created_at >= this_week_start))).scalar() or 0
+        new_users_this_month = (await db.execute(select(func.count(User.id)).where(User.created_at >= this_month_start))).scalar() or 0
+        suspended_users = (await db.execute(select(func.count(User.id)).where(User.is_active is False))).scalar() or 0
+    
+        reports_today_stmt = select(func.count(Report.id)).where(
+            Report.uploaded_at >= today_start
+        )
+        reports_today = (await db.execute(reports_today_stmt)).scalar() or 0
+        reports_this_week = (await db.execute(select(func.count(Report.id)).where(Report.uploaded_at >= this_week_start))).scalar() or 0
+    
+        # Reports Processing & Failed (Time Window)
+        reports_processing_stmt = select(func.count(Report.id)).where(
+            Report.processing_status == ProcessingStatus.processing,
+            Report.uploaded_at >= time_window_start,
+        )
+        reports_processing = (await db.execute(reports_processing_stmt)).scalar() or 0
+    
+        reports_failed_stmt = select(func.count(Report.id)).where(
+            Report.processing_status == ProcessingStatus.failed,
+            Report.uploaded_at >= time_window_start,
+        )
+        reports_failed = (await db.execute(reports_failed_stmt)).scalar() or 0
+    
+        reports_completed_stmt = select(func.count(Report.id)).where(
+            Report.processing_status == ProcessingStatus.completed,
+            Report.uploaded_at >= time_window_start,
+        )
+        reports_completed = (await db.execute(reports_completed_stmt)).scalar() or 0
+    
+>       avg_time_stmt = select(func.avg(Report.processing_time_ms)).where(Report.processing_time_ms.isnot(None), Report.uploaded_at >= time_window_start)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'Report' has no attribute 'processing_time_ms'. Did you mean: 'processing_status'?
+
+app/api/v1/admin_dashboard.py:71: AttributeError
+------------------------------ Captured log call -------------------------------
+ERROR    app.exceptions:exceptions.py:51 Unhandled exception on GET /api/v1/admin/dashboard/summary (request_id=9fd1f4b1-c2e9-4a2e-9fdf-37af0df39291): AttributeError: type object 'Report' has no attribute 'processing_time_ms'
+  + Exception Group Traceback (most recent call last):
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_utils.py", line 85, in create_collapsing_task_group
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 772, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 104, in prompt_injection_middleware
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 72, in add_security_headers
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/core/middleware.py", line 18, in dispatch
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/routing.py", line 670, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2734, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    |     await route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    |     await route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    |     await self.original_router.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    |     await included_router._handle_selected(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    |     await original_route.handle(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1279, in handle
+    |     await app(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 158, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 144, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 706, in app
+    |     raw_response = await run_endpoint_function(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |     ...<3 lines>...
+    |     )
+    |     ^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    |     return await dependant.call(**values)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_dashboard.py", line 71, in get_dashboard_summary
+    |     avg_time_stmt = select(func.avg(Report.processing_time_ms)).where(Report.processing_time_ms.isnot(None), Report.uploaded_at >= time_window_start)
+    |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    | AttributeError: type object 'Report' has no attribute 'processing_time_ms'. Did you mean: 'processing_status'?
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 104, in prompt_injection_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/main.py", line 72, in add_security_headers
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/core/middleware.py", line 18, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1791, in _handle_selected
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_dashboard.py", line 71, in get_dashboard_summary
+    avg_time_stmt = select(func.avg(Report.processing_time_ms)).where(Report.processing_time_ms.isnot(None), Report.uploaded_at >= time_window_start)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'Report' has no attribute 'processing_time_ms'. Did you mean: 'processing_status'?
+=============================== warnings summary ===============================
+app/core/config.py:4
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/core/config.py:4: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Settings(BaseSettings):
+
+app/api/v1/admin_ai_config.py:25
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:25: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    primary_provider: Optional[str] = Field(None, example="gemini")
+
+app/api/v1/admin_ai_config.py:26
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:26: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    model_name: Optional[str] = Field(None, example="gemini-1.5-pro")
+
+app/api/v1/admin_ai_config.py:29
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:29: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    fallback_provider: Optional[str] = Field(None, example="ollama")
+
+app/api/v1/admin_announcements.py:21
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:21: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    audience: str = Field(
+
+app/api/v1/admin_announcements.py:24
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:24: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    language: str = Field(default="en", example="en")
+
+app/api/v1/admin_announcements.py:27
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:27: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    status: str = Field(
+
+app/api/v1/admin_breakglass.py:37
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:37: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    resource_type: str = Field(..., example="medical_report")
+
+app/api/v1/admin_breakglass.py:38
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:38: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    resource_id: str = Field(
+
+app/api/v1/admin_breakglass.py:43
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:43: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    reason: str = Field(
+
+app/api/v1/admin_feature_flags.py:19
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_feature_flags.py:19: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    name: str = Field(..., min_length=2, example="enable_ocr_v2")
+
+app/api/v1/admin_feature_flags.py:23
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_feature_flags.py:23: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    target_environment: str = Field(default="all", example="production")
+
+app/api/v1/admin_settings.py:28
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:28: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    scope: str = Field(
+
+app/api/v1/admin_settings.py:31
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:31: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    reason: Optional[str] = Field(None, example="Scheduled database maintenance")
+
+app/api/v1/admin_settings.py:32
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:32: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    message: Optional[str] = Field(
+
+app/services/rag.py:9
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/services/rag.py:9: FutureWarning: 
+  
+  All support for the `google.generativeai` package has ended. It will no longer be receiving 
+  updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  See README for more details:
+  
+  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  
+    import google.generativeai as genai
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+app/schemas/notification.py:19
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/schemas/notification.py:19: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class MedicationScheduleOut(BaseModel):
+
+tests/test_admin_endpoints.py: 19 warnings
+  /opt/anaconda3/lib/python3.13/site-packages/sqlalchemy/sql/schema.py:3624: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_admin_endpoints.py::test_dashboard_summary - AttributeError...
+======================== 1 failed, 41 warnings in 0.30s ========================

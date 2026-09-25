@@ -23,6 +23,7 @@ function generateRequestId() {
 interface FetchOptions extends RequestInit {
   data?: any;
   params?: Record<string, string>;
+  suppressAuthError?: boolean;
 }
 
 export async function fetchApi<T = any>(endpoint: string, options: FetchOptions = {}): Promise<T> {
@@ -74,10 +75,14 @@ export async function fetchApi<T = any>(endpoint: string, options: FetchOptions 
 
     const message = errorData.detail || errorData.message || 'An error occurred';
     
-    // Log safely without bodies
-    console.error(`[API Error] ${response.status} ${config.method} ${url}`);
+    const isAuthBootstrap = response.status === 401 && customConfig.suppressAuthError;
 
-    if (response.status === 401 && typeof window !== 'undefined') {
+    // Log safely without bodies, but skip if it's an expected bootstrap 401
+    if (!isAuthBootstrap) {
+      console.error(`[API Error] ${response.status} ${config.method} ${url}`);
+    }
+
+    if (response.status === 401 && typeof window !== 'undefined' && !customConfig.suppressAuthError) {
       // Handle unauthorized (we can dispatch a custom event to force logout, or let AuthContext handle it)
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }

@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     const fetchUser = async () => {
       try {
-        const currentUser = await fetchApi('/api/v1/auth/me');
+        const currentUser = await fetchApi('/api/v1/admin/me', { suppressAuthError: true });
         if (mounted) {
           setUser(currentUser);
         }

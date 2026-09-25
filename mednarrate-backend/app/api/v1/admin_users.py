@@ -327,3 +327,209 @@ async def reset_password(
         "reset_link": reset_link,
         "message": "Password reset link generated securely.",
     }
+
+# User Detail Tabs - Sub-endpoints
+
+@router.get("/{user_id}/sessions")
+async def get_user_sessions(
+    user_id: uuid.UUID,
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(RefreshToken).where(RefreshToken.user_id == user_id).order_by(desc(RefreshToken.created_at))
+    tokens = (await db.execute(stmt)).scalars().all()
+    
+    return {
+        "status": "ok",
+        "sessions": [
+            {
+                "id": str(t.id),
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+                "expires_at": t.expires_at.isoformat() if t.expires_at else None,
+                "revoked": t.revoked
+            }
+            for t in tokens
+        ]
+    }
+
+from app.models.chat import ChatSession
+from app.models.medication_schedule import MedicationSchedule
+from app.models.notification_log import NotificationLog
+from app.models.report import Report
+from app.models.report_analysis import ReportAnalysis
+from app.models.support import SupportTicket
+
+
+@router.get("/{user_id}/reports")
+async def get_user_reports(
+    user_id: uuid.UUID,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50),
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(Report).where(Report.user_id == user_id).order_by(desc(Report.uploaded_at))
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_count = (await db.execute(count_stmt)).scalar() or 0
+    
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
+    reports = (await db.execute(stmt)).scalars().all()
+    
+    items = [
+        {
+            "id": str(r.id),
+            "title": r.title,
+            "report_type": r.report_type.value if r.report_type else "unknown",
+            "processing_status": r.processing_status.value if r.processing_status else "unknown",
+            "uploaded_at": r.uploaded_at.isoformat() if r.uploaded_at else None
+        } for r in reports
+    ]
+    return build_pagination_response(items, total_count, page, limit)
+
+@router.get("/{user_id}/analyses")
+async def get_user_analyses(
+    user_id: uuid.UUID,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50),
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(ReportAnalysis).join(Report, ReportAnalysis.report_id == Report.id).where(Report.user_id == user_id).order_by(desc(ReportAnalysis.created_at))
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_count = (await db.execute(count_stmt)).scalar() or 0
+    
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
+    analyses = (await db.execute(stmt)).scalars().all()
+    
+    items = [
+        {
+            "id": str(a.id),
+            "report_id": str(a.report_id),
+            "status": a.status,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+            "error_message": a.error_message
+        } for a in analyses
+    ]
+    return build_pagination_response(items, total_count, page, limit)
+
+@router.get("/{user_id}/chats")
+async def get_user_chats(
+    user_id: uuid.UUID,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50),
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(ChatSession).where(ChatSession.user_id == user_id).order_by(desc(ChatSession.created_at))
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_count = (await db.execute(count_stmt)).scalar() or 0
+    
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
+    chats = (await db.execute(stmt)).scalars().all()
+    
+    items = [
+        {
+            "id": str(c.id),
+            "title": c.title,
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+            "updated_at": c.updated_at.isoformat() if c.updated_at else None
+        } for c in chats
+    ]
+    return build_pagination_response(items, total_count, page, limit)
+
+@router.get("/{user_id}/reminders")
+async def get_user_reminders(
+    user_id: uuid.UUID,
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(MedicationSchedule).where(MedicationSchedule.user_id == user_id).order_by(desc(MedicationSchedule.created_at))
+    reminders = (await db.execute(stmt)).scalars().all()
+    
+    return {
+        "status": "ok",
+        "reminders": [
+            {
+                "id": str(r.id),
+                "medication_name": r.medication_name,
+                "dosage": r.dosage,
+                "frequency": r.frequency,
+                "is_active": r.is_active,
+                "created_at": r.created_at.isoformat() if r.created_at else None
+            } for r in reminders
+        ]
+    }
+
+@router.get("/{user_id}/notifications")
+async def get_user_notifications(
+    user_id: uuid.UUID,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50),
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(NotificationLog).where(NotificationLog.user_id == user_id).order_by(desc(NotificationLog.sent_at))
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_count = (await db.execute(count_stmt)).scalar() or 0
+    
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
+    logs = (await db.execute(stmt)).scalars().all()
+    
+    items = [
+        {
+            "id": str(l.id),
+            "notification_type": l.notification_type,
+            "status": l.status,
+            "error_message": l.error_message,
+            "sent_at": l.sent_at.isoformat() if l.sent_at else None
+        } for l in logs
+    ]
+    return build_pagination_response(items, total_count, page, limit)
+
+@router.get("/{user_id}/support")
+async def get_user_support(
+    user_id: uuid.UUID,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50),
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(SupportTicket).where(SupportTicket.user_id == user_id).order_by(desc(SupportTicket.created_at))
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_count = (await db.execute(count_stmt)).scalar() or 0
+    
+    stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
+    tickets = (await db.execute(stmt)).scalars().all()
+    
+    items = [
+        {
+            "id": str(t.id),
+            "subject": t.subject,
+            "status": t.status.value if t.status else "unknown",
+            "priority": t.priority.value if t.priority else "unknown",
+            "created_at": t.created_at.isoformat() if t.created_at else None
+        } for t in tickets
+    ]
+    return build_pagination_response(items, total_count, page, limit)
+
+@router.get("/{user_id}/security")
+async def get_user_security(
+    user_id: uuid.UUID,
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(AdminAuditLog).where(AdminAuditLog.resource_id == str(user_id)).order_by(desc(AdminAuditLog.timestamp))
+    logs = (await db.execute(stmt)).scalars().all()
+    
+    return {
+        "status": "ok",
+        "logs": [
+            {
+                "id": str(l.id),
+                "action": l.action,
+                "actor_admin_id": str(l.actor_admin_id) if l.actor_admin_id else None,
+                "timestamp": l.timestamp.isoformat() if l.timestamp else None,
+                "metadata_payload": l.metadata_payload
+            } for l in logs
+        ]
+    }
