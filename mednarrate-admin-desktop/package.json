@@ -1,0 +1,14 @@
+{
+  "name": "mednarrate-admin-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "build:desktop:mac": "tauri build",
+    "build:desktop:win": "tauri build --target x86_64-pc-windows-msvc"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^3.0.0-alpha.2"
+  }
+}

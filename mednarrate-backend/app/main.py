@@ -50,6 +50,10 @@ if is_wildcard:
     if settings.ADMIN_APP_ORIGIN:
         cors_origins.add(settings.ADMIN_APP_ORIGIN)
 
+# Always allow Tauri desktop app origins
+cors_origins.add("tauri://localhost")
+cors_origins.add("http://tauri.localhost")
+
 # Fallback: if cors_origins is completely empty because of removing "*", add a placeholder or localhost 
 # to satisfy allow_origins requirements when allow_credentials=True
 if not cors_origins:
