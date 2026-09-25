@@ -30,7 +30,7 @@ interface AlertItem {
 }
 
 export function Topbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, isLoading, can } = useAuth();
   const router = useRouter();
 
   // Search state
@@ -63,9 +63,9 @@ export function Topbar() {
   const [isBreakGlassActive, setIsBreakGlassActive] = useState(false);
   const fetchBreakGlass = async () => {
     try {
-      const data = await apiFetch('/api/v1/admin/break-glass/grants');
+      const data = await apiFetch('/api/v1/admin/break-glass/grants?status=active&limit=1');
       if (data && data.grants) {
-        setIsBreakGlassActive(data.grants.some((g: any) => g.status === 'active'));
+        setIsBreakGlassActive(data.grants.length > 0);
       }
     } catch (e) {
       console.error('Failed to fetch break glass status', e);
@@ -73,14 +73,25 @@ export function Topbar() {
   };
 
   useEffect(() => {
-    fetchAlerts();
-    fetchBreakGlass();
-    const interval = setInterval(() => {
+    if (isLoading) return;
+    if (!isAuthenticated) {
+      setAlerts([]);
+      setUnreadCount(0);
+      setIsBreakGlassActive(false);
+      return;
+    }
+
+    const loadData = () => {
       fetchAlerts();
-      fetchBreakGlass();
-    }, 30000);
+      if (can('break_glass.read') || can('super_admin')) {
+        fetchBreakGlass();
+      }
+    };
+
+    loadData();
+    const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isLoading, isAuthenticated, can]);
 
   // Handle Search Debounce
   useEffect(() => {

@@ -79,7 +79,21 @@ export async function fetchApi<T = any>(endpoint: string, options: FetchOptions 
 
     // Log safely without bodies, but skip if it's an expected bootstrap 401
     if (!isAuthBootstrap) {
-      console.error(`[API Error] ${response.status} ${config.method} ${url}`);
+      if (response.status === 401) {
+        console.warn(`[API Warning] 401 Unauthorized ${config.method} ${url} - Authentication or session problem.`);
+      } else if (response.status === 403) {
+        console.warn(`[API Warning] 403 Forbidden ${config.method} ${url} - Permission problem.`);
+      } else if (response.status === 404) {
+        console.warn(`[API Warning] 404 Not Found ${config.method} ${url} - Endpoint or resource missing.`);
+      } else if (response.status === 422) {
+        console.warn(`[API Warning] 422 Unprocessable Entity ${config.method} ${url} - Validation problem.`);
+      } else if (response.status === 429) {
+        console.warn(`[API Warning] 429 Too Many Requests ${config.method} ${url} - Rate limit exceeded.`);
+      } else if (response.status >= 500) {
+        console.error(`[API Error] ${response.status} ${config.method} ${url} - Backend or dependency failure.`);
+      } else {
+        console.error(`[API Error] ${response.status} ${config.method} ${url}`);
+      }
     }
 
     if (response.status === 401 && typeof window !== 'undefined' && !customConfig.suppressAuthError) {

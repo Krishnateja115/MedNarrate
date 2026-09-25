@@ -33,14 +33,14 @@ export default function RolesAndPermissionsPage() {
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDesc, setNewRoleDesc] = useState('');
 
-  const { data: rolesData, isLoading: isLoadingRoles } = useQuery<{ roles: Role[] }>({
+  const { data: rolesData, isLoading: isLoadingRoles } = useQuery<Role[]>({
     queryKey: ['admin-roles'],
     queryFn: () => fetchApi('/api/v1/admin/roles'),
   });
 
-  const { data: permsData, isLoading: isLoadingPerms } = useQuery<{ permissions: Permission[] }>({
+  const { data: permsData, isLoading: isLoadingPerms } = useQuery<Permission[]>({
     queryKey: ['admin-permissions'],
-    queryFn: () => fetchApi('/api/v1/admin/permissions'),
+    queryFn: () => fetchApi('/api/v1/admin/roles/permissions'),
   });
 
   const createRoleMutation = useMutation({
@@ -174,7 +174,7 @@ export default function RolesAndPermissionsPage() {
                 <thead className="text-xs uppercase bg-slate-50 dark:bg-slate-900 text-slate-500 border-b">
                   <tr>
                     <th className="px-4 py-3 border-r min-w-[200px]">Granular Permission</th>
-                    {rolesData?.roles.map((r) => (
+                    {rolesData?.map((r) => (
                       <th key={r.id} className="px-4 py-3 text-center min-w-[140px]">
                         <div>{r.name}</div>
                       </th>
@@ -182,13 +182,13 @@ export default function RolesAndPermissionsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {permsData?.permissions.map((p) => (
+                  {permsData?.map((p) => (
                     <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
                       <td className="px-4 py-3 border-r font-mono text-xs text-slate-800 dark:text-slate-200">
                         <div className="font-semibold text-blue-600 dark:text-blue-400">{p.name}</div>
                         <div className="text-[11px] text-slate-500 font-sans">{p.description}</div>
                       </td>
-                      {rolesData?.roles.map((role) => {
+                      {rolesData?.map((role) => {
                         const isAssigned = role.permissions.includes(p.name);
                         return (
                           <td key={role.id} className="px-4 py-3 text-center">
