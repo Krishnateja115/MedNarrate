@@ -373,12 +373,12 @@ class ApiService {
           isFavourite: isFavourite, search: search)
           .then((_) => throw const UnauthorizedException()));
       final list = jsonDecode(resp.body) as List<dynamic>;
-      debugPrint('GET /reports returned ${list.length} reports. First report title: ${list.isNotEmpty ? list.first["title"] : "None"}');
       final reports = <ReportModel>[];
       for (var e in list) {
         try {
-          reports.add(ReportModel.fromMap(_remapReport(e as Map<String, dynamic>)));
-        } catch (err, stack) {
+          final mapped = _remapReport(e as Map<String, dynamic>);
+          reports.add(ReportModel.fromMap(mapped));
+        } catch (err) {
           debugPrint('Failed to parse a report: $err');
         }
       }

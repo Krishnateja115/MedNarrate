@@ -63,6 +63,7 @@ class CacheService {
         reportDate: r.reportDate,
       );
     }
+    await _reportsBox.clear(); // Clear existing to remove deleted reports
     await _reportsBox.putAll(entries);
     await _metadataBox.put('reports_cached_at', DateTime.now().toIso8601String());
   }
