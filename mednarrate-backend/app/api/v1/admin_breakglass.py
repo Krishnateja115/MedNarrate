@@ -45,6 +45,12 @@ class BreakGlassRequest(BaseModel):
         min_length=10,
         example="Emergency clinical review requested by attending physician",
     )
+    expires_in_hours: int = Field(
+        default=4,
+        description="Requested duration of the grant in hours",
+        ge=1,
+        le=72,
+    )
 
 
 class BreakGlassApprovalPayload(BaseModel):
@@ -120,7 +126,7 @@ async def request_break_glass_access(
         admin_id=admin_ctx.user_id,
         resource_type=req.resource_type,
         resource_id=req.resource_id,
-        reason=req.reason,
+        reason=f"{req.reason} (Requested duration: {req.expires_in_hours} hours)",
         created_at=now,
         expires_at=None,
         status="requested",  # Always starts as REQUESTED — never auto-active

@@ -34,6 +34,7 @@ export default function BreakGlassPage() {
   const [resourceType, setResourceType] = useState('patient_medical_record');
   const [resourceId, setResourceId] = useState('');
   const [reason, setReason] = useState('');
+  const [expiresInHours, setExpiresInHours] = useState(4);
 
   const { data, isLoading } = useQuery<{ grants: BreakGlassGrant[] }>({
     queryKey: ['break-glass-grants'],
@@ -48,6 +49,7 @@ export default function BreakGlassPage() {
       setShowRequestForm(false);
       setResourceId('');
       setReason('');
+      setExpiresInHours(4);
       queryClient.invalidateQueries({ queryKey: ['break-glass-grants'] });
     },
     onError: (err: any) => {
@@ -92,7 +94,8 @@ export default function BreakGlassPage() {
     requestGrantMutation.mutate({
       resource_type: resourceType,
       resource_id: resourceId,
-      reason: reason
+      reason: reason,
+      expires_in_hours: expiresInHours
     });
   };
 
@@ -172,6 +175,21 @@ export default function BreakGlassPage() {
                   placeholder="Enter detailed reason for emergency access..."
                   className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm"
                 />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Expiry Time (Hours)</label>
+                <select
+                  value={expiresInHours}
+                  onChange={(e) => setExpiresInHours(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm"
+                >
+                  <option value={1}>1 Hour</option>
+                  <option value={4}>4 Hours</option>
+                  <option value={12}>12 Hours</option>
+                  <option value={24}>24 Hours</option>
+                  <option value={48}>48 Hours</option>
+                </select>
               </div>
 
               <Button type="submit" disabled={requestGrantMutation.isPending} className="bg-amber-600 hover:bg-amber-700 text-white">

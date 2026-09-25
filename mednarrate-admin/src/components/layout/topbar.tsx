@@ -60,9 +60,25 @@ export function Topbar() {
     }
   };
 
+  const [isBreakGlassActive, setIsBreakGlassActive] = useState(false);
+  const fetchBreakGlass = async () => {
+    try {
+      const data = await apiFetch('/api/v1/admin/break-glass/grants');
+      if (data && data.grants) {
+        setIsBreakGlassActive(data.grants.some((g: any) => g.status === 'active'));
+      }
+    } catch (e) {
+      console.error('Failed to fetch break glass status', e);
+    }
+  };
+
   useEffect(() => {
     fetchAlerts();
-    const interval = setInterval(fetchAlerts, 30000);
+    fetchBreakGlass();
+    const interval = setInterval(() => {
+      fetchAlerts();
+      fetchBreakGlass();
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -125,12 +141,12 @@ export function Topbar() {
   };
 
   return (
-    <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between px-6 shrink-0 relative z-30">
+    <header className={`h-16 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 shrink-0 relative z-30 transition-colors ${isBreakGlassActive ? 'bg-red-600 dark:bg-red-700 border-red-700' : 'bg-white dark:bg-slate-950'}`}>
       
       {/* Global Search Input */}
       <div className="flex-1 flex items-center max-w-2xl relative" ref={searchRef}>
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isBreakGlassActive ? 'text-red-200' : 'text-slate-400'}`} />
           <Input 
             placeholder="Global search users, reports, tickets, incidents, request IDs..." 
             value={searchQuery}
@@ -139,12 +155,12 @@ export function Topbar() {
               setShowSearchModal(true);
             }}
             onFocus={() => setShowSearchModal(true)}
-            className="w-full pl-10 pr-8 bg-slate-50 dark:bg-slate-900 border-none focus-visible:ring-1 focus-visible:ring-blue-500"
+            className={`w-full pl-10 pr-8 border-none focus-visible:ring-1 ${isBreakGlassActive ? 'bg-red-700/50 text-white placeholder:text-red-200 focus-visible:ring-red-400' : 'bg-slate-50 dark:bg-slate-900 focus-visible:ring-blue-500'}`}
           />
           {searchQuery && (
             <button 
               onClick={() => { setSearchQuery(''); setSearchResults([]); }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className={`absolute right-3 top-1/2 -translate-y-1/2 ${isBreakGlassActive ? 'text-red-200 hover:text-white' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <X className="w-4 h-4" />
             </button>
@@ -197,19 +213,27 @@ export function Topbar() {
 
       {/* Right Controls */}
       <div className="flex items-center space-x-4 ml-4">
-        <div className="hidden md:flex items-center px-3 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs font-semibold border border-blue-200 dark:border-blue-800">
-          Governance Operational
-        </div>
+        {isBreakGlassActive && (
+          <div className="hidden md:flex items-center px-3 py-1 bg-red-800 text-white rounded-full text-xs font-bold border border-red-900 animate-pulse uppercase tracking-wider">
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            Break-Glass Protocol Active
+          </div>
+        )}
+        {!isBreakGlassActive && (
+          <div className="hidden md:flex items-center px-3 py-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs font-semibold border border-blue-200 dark:border-blue-800">
+            Governance Operational
+          </div>
+        )}
 
         {/* Notifications / Alerts Bell */}
         <div className="relative" ref={alertsRef}>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="relative"
+            className={`relative ${isBreakGlassActive ? 'hover:bg-red-700 text-white' : ''}`}
             onClick={() => setShowAlertsPopover(!showAlertsPopover)}
           >
-            <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <Bell className={`w-5 h-5 ${isBreakGlassActive ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`} />
             {unreadCount > 0 && (
               <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                 {unreadCount}
@@ -279,13 +303,13 @@ export function Topbar() {
         </div>
 
         {/* User Profile / Logout */}
-        <div className="flex items-center space-x-3 border-l border-slate-200 dark:border-slate-800 pl-4">
+        <div className={`flex items-center space-x-3 border-l pl-4 ${isBreakGlassActive ? 'border-red-500' : 'border-slate-200 dark:border-slate-800'}`}>
           <div className="flex flex-col items-end hidden sm:flex">
-            <span className="text-sm font-medium text-slate-900 dark:text-white">{user?.full_name || 'Admin User'}</span>
-            <span className="text-xs text-slate-500 capitalize">{user?.role || 'Admin'}</span>
+            <span className={`text-sm font-medium ${isBreakGlassActive ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{user?.full_name || 'Admin User'}</span>
+            <span className={`text-xs capitalize ${isBreakGlassActive ? 'text-red-200' : 'text-slate-500'}`}>{user?.role || 'Admin'}</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={logout} title="Log out">
-            <LogOut className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          <Button variant="ghost" size="icon" onClick={logout} title="Log out" className={isBreakGlassActive ? 'hover:bg-red-700 text-white' : ''}>
+            <LogOut className={`w-5 h-5 ${isBreakGlassActive ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`} />
           </Button>
         </div>
       </div>
