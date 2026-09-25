@@ -42,6 +42,7 @@ const NAV_GROUPS = [
   {
     title: 'AI & Data Ops',
     items: [
+      { name: 'Admin Copilot', href: '/admin-copilot', icon: Bot, permissions: ['dashboard.view'] },
       { name: 'AI Operations', href: '/ai-ops', icon: Bot, permissions: ['ai.view', 'ai.manage'] },
       { name: 'Chat Operations', href: '/chat-ops', icon: MessageSquare, permissions: ['chat.view'] },
       { name: 'RAG Knowledge Ops', href: '/rag-ops', icon: Database, permissions: ['knowledge_base.view'] },

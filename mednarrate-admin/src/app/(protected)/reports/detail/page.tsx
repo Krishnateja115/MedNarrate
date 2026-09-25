@@ -51,6 +51,18 @@ function ReportDiagnosticPageContent() {
     queryFn: () => fetchApi(`/api/v1/admin/reports/${reportId}`),
   });
 
+  const { data: sensitiveData, isLoading: sensitiveLoading, error: sensitiveError, refetch: refetchSensitive } = useQuery<{status: string, report: any, analysis: any}>({
+    queryKey: ['report_sensitive', reportId],
+    queryFn: () => fetchApi(`/api/v1/admin/reports/${reportId}/sensitive`),
+    enabled: false,
+    retry: false
+  });
+
+  const handleRequestSensitive = () => {
+    setRequestSensitive(true);
+    refetchSensitive();
+  };
+
   const actionMutation = useMutation({
     mutationFn: async ({ action }: { action: string }) => {
       const res = await fetch(`/api/v1/admin/reports/${reportId}/actions/${action}`, {
@@ -229,7 +241,7 @@ function ReportDiagnosticPageContent() {
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
                     Extracted entities, summaries, and raw text are protected. You must explicitly request break-glass access to view this clinical payload.
                   </p>
-                  <Button onClick={() => setRequestSensitive(true)}>Request Sensitive Access</Button>
+                  <Button onClick={handleRequestSensitive}>Request Sensitive Access</Button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -237,11 +249,51 @@ function ReportDiagnosticPageContent() {
                     <AlertTriangle className="h-5 w-5 shrink-0" />
                     <p><strong>Audited Access:</strong> Your access to this sensitive payload has been logged for security review.</p>
                   </div>
-                  {/* Mock content since API doesn't expose PHI by default */}
-                  <div className="opacity-70 grayscale">
-                    <h5 className="font-semibold text-sm mb-2">Raw Text (Sample)</h5>
-                    <div className="bg-muted p-3 rounded font-mono text-xs">... clinical payload masked ...</div>
-                  </div>
+                  
+                  {sensitiveLoading ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-5/6" />
+                    </div>
+                  ) : sensitiveError ? (
+                    <div className="text-sm text-red-600 p-4 border border-red-200 rounded bg-red-50">
+                      Failed to fetch sensitive data. Make sure you have an active break-glass grant.
+                    </div>
+                  ) : sensitiveData ? (
+                    <div className="space-y-6">
+                      {sensitiveData.report?.extracted_text && (
+                        <div>
+                          <h5 className="font-semibold text-sm mb-2 text-slate-800 dark:text-slate-200">Raw Text</h5>
+                          <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-md border text-sm font-mono whitespace-pre-wrap text-slate-700 dark:text-slate-300 max-h-96 overflow-y-auto">
+                            {sensitiveData.report.extracted_text}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {sensitiveData.analysis?.clinician_summary && (
+                        <div>
+                          <h5 className="font-semibold text-sm mb-2 text-slate-800 dark:text-slate-200">Clinician Summary</h5>
+                          <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md border border-blue-100 dark:border-blue-900 text-sm whitespace-pre-wrap text-slate-700 dark:text-slate-300">
+                            {sensitiveData.analysis.clinician_summary}
+                          </div>
+                        </div>
+                      )}
+
+                      {sensitiveData.analysis?.abnormal_findings && sensitiveData.analysis.abnormal_findings.length > 0 && (
+                        <div>
+                          <h5 className="font-semibold text-sm mb-2 text-slate-800 dark:text-slate-200">Abnormal Findings</h5>
+                          <ul className="list-disc pl-5 space-y-1">
+                            {sensitiveData.analysis.abnormal_findings.map((finding: any, i: number) => (
+                              <li key={i} className="text-sm text-amber-700 dark:text-amber-400">
+                                {typeof finding === 'string' ? finding : finding.finding || JSON.stringify(finding)}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               )}
             </CardContent>

@@ -82,6 +82,24 @@ function UserDetailPageContent() {
     queryFn: () => fetchApi(`/api/v1/admin/users/${userId}/security`),
   });
 
+  const { data: medicalProfile, isLoading: mpLoading } = useQuery({
+    queryKey: ['user-medical', userId],
+    queryFn: () => fetchApi(`/api/v1/admin/users/${userId}/medical_profile`),
+    retry: false
+  });
+
+  const { data: doctorProfile, isLoading: dpLoading } = useQuery({
+    queryKey: ['user-doctor', userId],
+    queryFn: () => fetchApi(`/api/v1/admin/users/${userId}/doctor_profile`),
+    retry: false
+  });
+
+  const { data: caregiverProfile, isLoading: cpLoading } = useQuery({
+    queryKey: ['user-caregiver', userId],
+    queryFn: () => fetchApi(`/api/v1/admin/users/${userId}/caregiver_profile`),
+    retry: false
+  });
+
   const actionMutation = useMutation({
     mutationFn: async ({ action, payload }: { action: string, payload?: any }) => {
       const res = await fetch(`/api/v1/admin/users/${userId}/actions/${action}`, {
@@ -96,6 +114,8 @@ function UserDetailPageContent() {
       queryClient.invalidateQueries({ queryKey: ['user', userId] });
       queryClient.invalidateQueries({ queryKey: ['user-sessions', userId] });
       queryClient.invalidateQueries({ queryKey: ['user-security', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-doctor', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-caregiver', userId] });
       setActionMessage({ type: 'success', text: data.message || 'Action completed successfully' });
       if (data.reset_link) {
         setActionMessage({ type: 'success', text: `Reset Link Generated: ${data.reset_link}` });
@@ -271,6 +291,115 @@ function UserDetailPageContent() {
               </CardContent>
             </Card>
           </div>
+
+          {(medicalProfile?.profile || doctorProfile?.profile || caregiverProfile?.profile) && (
+            <div className="mt-6 space-y-6">
+              {medicalProfile?.profile && (
+                <Card>
+                  <CardHeader className="pb-3 border-b">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-rose-500" /> Medical Profile
+                    </CardTitle>
+                    <CardDescription>Sensitive patient details. Access is audited.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase font-medium">Date of Birth</span>
+                        <div className="text-sm mt-1">{medicalProfile.profile.date_of_birth || 'Not provided'}</div>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase font-medium">Gender</span>
+                        <div className="text-sm mt-1 capitalize">{medicalProfile.profile.gender || 'Not provided'}</div>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase font-medium">Blood Type</span>
+                        <div className="text-sm mt-1">{medicalProfile.profile.blood_type || 'Not provided'}</div>
+                      </div>
+                      <div className="md:col-span-3">
+                        <span className="text-xs text-muted-foreground uppercase font-medium">Allergies</span>
+                        <div className="text-sm mt-1">{medicalProfile.profile.allergies?.join(', ') || 'None reported'}</div>
+                      </div>
+                      <div className="md:col-span-3">
+                        <span className="text-xs text-muted-foreground uppercase font-medium">Chronic Conditions</span>
+                        <div className="text-sm mt-1">{medicalProfile.profile.chronic_conditions?.join(', ') || 'None reported'}</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {doctorProfile?.profile && (
+                <Card>
+                  <CardHeader className="pb-3 border-b flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <UserIcon className="h-4 w-4 text-blue-500" /> Doctor / Clinician Profile
+                      </CardTitle>
+                      <CardDescription>Professional credentials and verification status.</CardDescription>
+                    </div>
+                    <Badge variant={doctorProfile.profile.is_verified ? 'outline' : 'secondary'} className={doctorProfile.profile.is_verified ? 'text-emerald-600 border-emerald-600/30' : ''}>
+                      {doctorProfile.profile.is_verified ? 'Verified Clinician' : 'Unverified'}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase font-medium">Specialty</span>
+                        <div className="text-sm mt-1 capitalize">{doctorProfile.profile.specialty}</div>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase font-medium">License Number</span>
+                        <div className="text-sm mt-1 font-mono">{doctorProfile.profile.license_number}</div>
+                      </div>
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase font-medium">Hospital Affiliation</span>
+                        <div className="text-sm mt-1">{doctorProfile.profile.hospital_affiliation || 'Independent'}</div>
+                      </div>
+                    </div>
+                    {!doctorProfile.profile.is_verified && (
+                      <div className="pt-4 border-t flex justify-end">
+                        <Button size="sm" onClick={() => handleAction('verify_doctor', 'Approve and verify this clinician profile?')} disabled={actionMutation.isPending}>
+                          Verify Credentials
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {caregiverProfile?.profile && (
+                <Card>
+                  <CardHeader className="pb-3 border-b flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <UserIcon className="h-4 w-4 text-orange-500" /> Caregiver Profile
+                      </CardTitle>
+                      <CardDescription>Caregiver relationship and verification status.</CardDescription>
+                    </div>
+                    <Badge variant={caregiverProfile.profile.is_verified ? 'outline' : 'secondary'} className={caregiverProfile.profile.is_verified ? 'text-emerald-600 border-emerald-600/30' : ''}>
+                      {caregiverProfile.profile.is_verified ? 'Verified Caregiver' : 'Unverified'}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <span className="text-xs text-muted-foreground uppercase font-medium">Relationship to Patient</span>
+                        <div className="text-sm mt-1 capitalize">{caregiverProfile.profile.relationship_to_patient}</div>
+                      </div>
+                    </div>
+                    {!caregiverProfile.profile.is_verified && (
+                      <div className="pt-4 border-t flex justify-end">
+                        <Button size="sm" onClick={() => handleAction('verify_caregiver', 'Approve and verify this caregiver profile?')} disabled={actionMutation.isPending}>
+                          Verify Caregiver
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="auth" className="mt-6">
