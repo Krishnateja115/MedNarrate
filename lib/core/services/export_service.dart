@@ -108,13 +108,27 @@ class ExportService {
           // Patient Summary
           if (analysis.patientSummary != null && analysis.patientSummary!.isNotEmpty) ...[
             sectionHeader('Plain Language Summary'),
-            pw.Text(analysis.patientSummary!, style: baseStyle),
+            ...analysis.patientSummary!.split('\n').map((line) {
+              final isHeading = line.trim().startsWith(RegExp(r'^\d+\.|^#|^\*|^[A-Z][a-z ]+ Findings:?'));
+              return pw.Paragraph(
+                text: line,
+                style: isHeading ? boldStyle : baseStyle,
+                margin: pw.EdgeInsets.only(bottom: line.trim().isEmpty ? 8 : 4),
+              );
+            }),
           ],
 
           // Clinician Summary
           if (analysis.clinicianSummary != null && analysis.clinicianSummary!.isNotEmpty) ...[
             sectionHeader('Clinical Summary'),
-            pw.Text(analysis.clinicianSummary!, style: baseStyle),
+            ...analysis.clinicianSummary!.split('\n').map((line) {
+              final isHeading = line.trim().startsWith(RegExp(r'^\d+\.|^#|^\*|^[A-Z][a-z ]+ Findings:?'));
+              return pw.Paragraph(
+                text: line,
+                style: isHeading ? boldStyle : baseStyle,
+                margin: pw.EdgeInsets.only(bottom: line.trim().isEmpty ? 8 : 4),
+              );
+            }),
           ],
 
           // Lab Results
@@ -166,20 +180,9 @@ class ExportService {
           // Entities
           if (analysis.entities.isNotEmpty) ...[
             sectionHeader('Medical Entities Detected'),
-            pw.Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: analysis.entities.map((e) => pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: pw.BoxDecoration(
-                      color: PdfColors.blue50,
-                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(100)),
-                    ),
-                    child: pw.Text(
-                      '${e['word'] ?? ''} (${e['entity_group'] ?? ''})',
-                      style: pw.TextStyle(font: font, fontSize: 9, color: _primary),
-                    ),
-                  )).toList(),
+            pw.Paragraph(
+              text: analysis.entities.map((e) => '${e['word'] ?? ''} (${e['entity_group'] ?? ''})').join('  •  '),
+              style: pw.TextStyle(font: font, fontSize: 10, color: _primary),
             ),
           ],
 
@@ -187,12 +190,12 @@ class ExportService {
           if (analysis.evidenceSources.isNotEmpty) ...[
             sectionHeader('Evidence Sources (RAG)'),
             ...analysis.evidenceSources.map((src) => pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 6),
+                  padding: const pw.EdgeInsets.only(bottom: 10),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('Finding: ${src.finding}', style: boldStyle),
-                      pw.Text('Sources: ${src.sources.join(', ')}', style: mutedStyle),
+                      pw.Paragraph(text: 'Finding: ${src.finding}', style: boldStyle, margin: const pw.EdgeInsets.only(bottom: 2)),
+                      pw.Paragraph(text: 'Sources: ${src.sources.join(', ')}', style: mutedStyle, margin: pw.EdgeInsets.zero),
                     ],
                   ),
                 )),
