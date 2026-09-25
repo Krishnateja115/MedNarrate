@@ -381,8 +381,8 @@ class ApiService {
       await CacheService.instance.saveReports(reports);
       return reports;
     } catch (e) {
-      // Fallback to cache on error
-      return CacheService.instance.getCachedReports();
+      if (e is ApiException) rethrow;
+      throw ApiException(500, 'Failed to parse reports: $e');
     }
   }
 
