@@ -109,8 +109,16 @@ export default function OverviewPage() {
 
   const isHealthy = health.status === 'healthy';
 
+  const formatNumber = (num: number | undefined) => {
+    return num !== undefined ? num.toLocaleString() : 'N/A';
+  };
+
+  const formatPercent = (num: number | undefined) => {
+    return num !== undefined ? `${num.toFixed(1)}%` : 'N/A';
+  };
+
   const ServiceStatus = ({ name, icon: Icon, serviceKey }: { name: string, icon: any, serviceKey: string }) => {
-    const service = health.services[serviceKey] || { status: 'unknown' };
+    const service = health.services?.[serviceKey] || { status: 'unknown' };
     const healthy = service.status === 'healthy';
     const down = service.status === 'down';
     
@@ -122,7 +130,7 @@ export default function OverviewPage() {
           </div>
           <div>
             <p className="text-sm font-medium">{name}</p>
-            {service.latency_ms && <p className="text-xs text-muted-foreground">{service.latency_ms}ms</p>}
+            {service.latency_ms !== undefined && <p className="text-xs text-muted-foreground">{service.latency_ms}ms</p>}
           </div>
         </div>
         <Badge variant={healthy ? 'outline' : down ? 'destructive' : 'secondary'} className={healthy ? 'text-emerald-600 border-emerald-200' : ''}>
@@ -181,31 +189,31 @@ export default function OverviewPage() {
             <div className="flex justify-between items-end border-b pb-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Accounts</p>
-                <p className="text-3xl font-bold">{summary.users.total_users.toLocaleString()}</p>
+                <p className="text-3xl font-bold">{formatNumber(summary.users?.total_users)}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Active Users</p>
-                <p className="text-xl font-bold">{summary.users.active_users.toLocaleString()}</p>
+                <p className="text-xl font-bold">{formatNumber(summary.users?.active_users)}</p>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center pt-2">
               <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded">
                 <p className="text-xs text-muted-foreground mb-1">Today</p>
-                <p className="text-lg font-semibold">+{summary.users.new_users_today}</p>
+                <p className="text-lg font-semibold">+{formatNumber(summary.users?.new_users_today)}</p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded">
                 <p className="text-xs text-muted-foreground mb-1">This Week</p>
-                <p className="text-lg font-semibold">+{summary.users.new_users_this_week}</p>
+                <p className="text-lg font-semibold">+{formatNumber(summary.users?.new_users_this_week)}</p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded">
                 <p className="text-xs text-muted-foreground mb-1">This Month</p>
-                <p className="text-lg font-semibold">+{summary.users.new_users_this_month}</p>
+                <p className="text-lg font-semibold">+{formatNumber(summary.users?.new_users_this_month)}</p>
               </div>
             </div>
-            {summary.users.suspended_users > 0 && (
+            {summary.users?.suspended_users !== undefined && summary.users.suspended_users > 0 && (
               <div className="mt-4 flex items-center justify-between text-sm text-destructive bg-destructive/10 p-2 rounded">
                 <span>Suspended Accounts</span>
-                <span className="font-bold">{summary.users.suspended_users}</span>
+                <span className="font-bold">{formatNumber(summary.users.suspended_users)}</span>
               </div>
             )}
           </CardContent>
@@ -223,30 +231,30 @@ export default function OverviewPage() {
             <div className="grid grid-cols-2 gap-4 border-b pb-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Reports Today</p>
-                <p className="text-3xl font-bold">{summary.reports.reports_today.toLocaleString()}</p>
+                <p className="text-3xl font-bold">{formatNumber(summary.reports?.reports_today)}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Reports This Week</p>
-                <p className="text-3xl font-bold">{summary.reports.reports_this_week.toLocaleString()}</p>
+                <p className="text-3xl font-bold">{formatNumber(summary.reports?.reports_this_week)}</p>
               </div>
             </div>
             <div className="space-y-3 pt-2">
               <div className="flex justify-between items-center text-sm">
                 <span className="flex items-center gap-2"><Clock className="w-4 h-4 text-blue-500"/> Processing</span>
-                <span className="font-medium">{summary.reports.reports_processing}</span>
+                <span className="font-medium">{formatNumber(summary.reports?.reports_processing)}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-500"/> Completed</span>
-                <span className="font-medium text-emerald-600">{(summary.reports.reports_today - summary.reports.reports_failed - summary.reports.reports_processing)}</span>
+                <span className="font-medium text-emerald-600">{summary.reports ? formatNumber(summary.reports.reports_today - summary.reports.reports_failed - summary.reports.reports_processing) : 'N/A'}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="flex items-center gap-2"><XCircle className="w-4 h-4 text-destructive"/> Failed</span>
-                <span className="font-medium text-destructive">{summary.reports.reports_failed}</span>
+                <span className="font-medium text-destructive">{formatNumber(summary.reports?.reports_failed)}</span>
               </div>
               <div className="pt-2 border-t mt-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Avg Processing Time</span>
-                  <span className="font-mono text-sm">{summary.reports.average_processing_time_ms ? `${(summary.reports.average_processing_time_ms / 1000).toFixed(1)}s` : 'N/A'}</span>
+                  <span className="font-mono text-sm">{summary.reports?.average_processing_time_ms ? `${(summary.reports.average_processing_time_ms / 1000).toFixed(1)}s` : 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -265,31 +273,31 @@ export default function OverviewPage() {
             <div className="flex items-center justify-between border-b pb-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Open Tickets</p>
-                <p className="text-3xl font-bold">{summary.support.open_support_tickets}</p>
+                <p className="text-3xl font-bold">{formatNumber(summary.support?.open_support_tickets)}</p>
               </div>
               <div className="flex gap-2">
                 <Badge variant="destructive" className="flex flex-col items-center p-2 h-auto w-16">
                   <span className="text-[10px] uppercase opacity-80">P1</span>
-                  <span className="text-lg font-bold">{summary.support.p1_tickets}</span>
+                  <span className="text-lg font-bold">{formatNumber(summary.support?.p1_tickets)}</span>
                 </Badge>
                 <Badge variant="secondary" className="flex flex-col items-center p-2 h-auto w-16 bg-orange-100 text-orange-700 dark:bg-orange-900/30">
                   <span className="text-[10px] uppercase opacity-80">P2</span>
-                  <span className="text-lg font-bold">{summary.support.p2_tickets}</span>
+                  <span className="text-lg font-bold">{formatNumber(summary.support?.p2_tickets)}</span>
                 </Badge>
               </div>
             </div>
             <div className="space-y-3 pt-2">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Unassigned</span>
-                <Badge variant="outline">{summary.support.unassigned_tickets}</Badge>
+                <Badge variant="outline">{formatNumber(summary.support?.unassigned_tickets)}</Badge>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Waiting for User</span>
-                <span className="font-medium">{summary.support.waiting_for_user}</span>
+                <span className="font-medium">{formatNumber(summary.support?.waiting_for_user)}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Escalated (Eng)</span>
-                <span className="font-medium text-orange-600">{summary.support.escalated}</span>
+                <span className="font-medium text-orange-600">{formatNumber(summary.support?.escalated)}</span>
               </div>
             </div>
           </CardContent>
@@ -307,24 +315,24 @@ export default function OverviewPage() {
              <div className="flex justify-between items-end pb-4 border-b">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
-                <p className="text-3xl font-bold text-emerald-600">{summary.analysis.analysis_success_rate.toFixed(1)}%</p>
+                <p className="text-3xl font-bold text-emerald-600">{formatPercent(summary.analysis?.analysis_success_rate)}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-medium text-destructive">Failures</p>
-                <p className="text-xl font-bold">{summary.analysis.analysis_failure_count}</p>
+                <p className="text-xl font-bold">{formatNumber(summary.analysis?.analysis_failure_count)}</p>
               </div>
             </div>
             <div>
               <p className="text-sm font-medium mb-2">Failure Breakdown</p>
-              {Object.keys(summary.analysis.failure_categories || {}).length > 0 ? (
+              {Object.keys(summary.analysis?.failure_categories || {}).length > 0 ? (
                 <div className="space-y-2">
-                  {Object.entries(summary.analysis.failure_categories).map(([cat, count]) => (
+                  {Object.entries(summary.analysis!.failure_categories).map(([cat, count]) => (
                     <div key={cat}>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="truncate w-3/4">{cat}</span>
-                        <span className="font-bold">{count}</span>
+                        <span className="font-bold">{formatNumber(count as number)}</span>
                       </div>
-                      <Progress value={Math.min((count as number / Math.max(1, summary.analysis.analysis_failure_count)) * 100, 100)} className="h-1.5" />
+                      <Progress value={Math.min(((count as number) / Math.max(1, summary.analysis!.analysis_failure_count || 1)) * 100, 100)} className="h-1.5" />
                     </div>
                   ))}
                 </div>
@@ -332,7 +340,7 @@ export default function OverviewPage() {
                 <p className="text-sm text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 p-2 rounded text-center">No recent failures</p>
               )}
             </div>
-            {health.services.llm_provider && (
+            {health.services?.llm_provider && (
               <div className="pt-2 border-t text-sm">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Provider: {health.services.llm_provider.details?.provider || 'auto'}</span>
@@ -352,7 +360,7 @@ export default function OverviewPage() {
               <ShieldAlert className="h-5 w-5 text-orange-500" />
               Needs Attention
             </CardTitle>
-            {summary.incidents.critical_incidents > 0 && (
+            {summary.incidents?.critical_incidents !== undefined && summary.incidents.critical_incidents > 0 && (
               <Badge variant="destructive" className="animate-pulse">
                 {summary.incidents.critical_incidents} Critical
               </Badge>

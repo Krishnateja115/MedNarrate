@@ -71,7 +71,18 @@ async def test_dashboard_summary(client: AsyncClient, dashboard_admin_user: dict
     assert "reports" in data
     assert "analysis" in data
     assert "incidents" in data
+    assert "support" in data
     assert data["users"]["total_users"] >= 1  # Because the admin user was created
+    
+    # Contract guarantees
+    assert "reports_today" in data["reports"]
+    assert "reports_this_week" in data["reports"]
+    assert "reports_processing" in data["reports"]
+    assert "reports_failed" in data["reports"]
+    
+    assert "total_users" in data["users"]
+    assert "new_users_today" in data["users"]
+    assert "new_users_this_week" in data["users"]
 
 
 @pytest.mark.asyncio
