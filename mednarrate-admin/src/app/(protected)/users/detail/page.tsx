@@ -1,5 +1,7 @@
 /* eslint-disable */
 'use client';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
@@ -11,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ArrowLeft, UserIcon, Shield, Activity, FileText, AlertTriangle, Key, LogOut, CheckCircle2, MessageSquare, Bell, Clock, Cpu, Calendar } from 'lucide-react';
 import Link from 'next/link';
-import { use, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 
 interface UserDetail {
@@ -27,10 +28,13 @@ interface UserDetail {
   last_login: string | null;
 }
 
-export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const userId = resolvedParams.id;
+function UserDetailPageContent() {
+  const searchParams = useSearchParams();
+  const extractedId = searchParams.get('id');
+  
+  const userId = extractedId;
   const queryClient = useQueryClient();
+  if (!extractedId) return <div className="p-8">No ID provided</div>;
   const [actionMessage, setActionMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   
   const { data, isLoading, error } = useQuery<{status: string, user: UserDetail}>({
@@ -476,5 +480,13 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
       </Tabs>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <UserDetailPageContent />
+    </Suspense>
   );
 }

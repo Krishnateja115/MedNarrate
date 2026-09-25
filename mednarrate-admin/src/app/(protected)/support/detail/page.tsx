@@ -1,5 +1,7 @@
 /* eslint-disable */
 'use client';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
@@ -13,7 +15,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertTriangle, ArrowLeft, Send, ShieldAlert, User, Shield, CheckCircle2, Bot, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { use, useState } from 'react';
 
 interface TicketMessage {
   id: string;
@@ -46,10 +47,13 @@ interface TicketDetail {
   updated_at: string;
 }
 
-export default function TicketInvestigationPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const ticketId = resolvedParams.id;
+function TicketInvestigationPageContent() {
+  const searchParams = useSearchParams();
+  const extractedId = searchParams.get('id');
+  
+  const ticketId = extractedId;
   const queryClient = useQueryClient();
+  if (!extractedId) return <div className="p-8">No ID provided</div>;
   
   const [replyContent, setReplyContent] = useState('');
   const [isInternal, setIsInternal] = useState(false);
@@ -345,7 +349,7 @@ export default function TicketInvestigationPage({ params }: { params: Promise<{ 
                 <div className="font-mono text-xs bg-white dark:bg-black p-2 rounded border break-all">
                   Report ID: {ticket.related_report_id}
                 </div>
-                <Link href={`/reports/${ticket.related_report_id}`} className="block">
+                <Link href={`/reports/detail?id=${ticket.related_report_id}`} className="block">
                   <Button variant="outline" className="w-full bg-white dark:bg-black">
                     View Full Diagnostic Trace
                   </Button>
@@ -374,5 +378,13 @@ export default function TicketInvestigationPage({ params }: { params: Promise<{ 
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <TicketInvestigationPageContent />
+    </Suspense>
   );
 }

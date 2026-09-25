@@ -53,7 +53,7 @@ async def global_admin_search(
                     "subtitle": u.email,
                     "status": u.role.value if hasattr(u.role, "value") else str(u.role),
                     "timestamp": u.created_at.isoformat() if u.created_at else None,
-                    "url": f"/users/{u.id}",
+                    "url": f"/users/detail?id={u.id}",
                 }
             )
 
@@ -90,7 +90,7 @@ async def global_admin_search(
                     "subtitle": f"Type: {r_type}",
                     "status": p_status,
                     "timestamp": r.uploaded_at.isoformat() if r.uploaded_at else None,
-                    "url": f"/reports/{r.id}",
+                    "url": f"/reports/detail?id={r.id}",
                 }
             )
 
@@ -118,7 +118,7 @@ async def global_admin_search(
                     "subtitle": f"Ticket #{str(t.id)[:8]}",
                     "status": t_status,
                     "timestamp": t.created_at.isoformat() if t.created_at else None,
-                    "url": f"/support/{t.id}",
+                    "url": f"/support/detail?id={t.id}",
                 }
             )
 

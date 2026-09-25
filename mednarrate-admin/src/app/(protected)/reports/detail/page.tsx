@@ -1,5 +1,7 @@
 /* eslint-disable */
 'use client';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
@@ -9,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, ArrowLeft, RefreshCw, RefreshCcw, Lock, FileText, CheckCircle2, Activity, HardDrive, Database, Server, ServerCrash } from 'lucide-react';
 import Link from 'next/link';
-import { use, useState } from 'react';
 
 interface ReportDetail {
   id: string;
@@ -35,10 +36,13 @@ interface AnalysisDetail {
   processed_at: string | null;
 }
 
-export default function ReportDiagnosticPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const reportId = resolvedParams.id;
+function ReportDiagnosticPageContent() {
+  const searchParams = useSearchParams();
+  const extractedId = searchParams.get('id');
+  
+  const reportId = extractedId;
   const queryClient = useQueryClient();
+  if (!extractedId) return <div className="p-8">No ID provided</div>;
   const [actionMessage, setActionMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [requestSensitive, setRequestSensitive] = useState(false);
   
@@ -320,5 +324,13 @@ export default function ReportDiagnosticPage({ params }: { params: Promise<{ id:
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <ReportDiagnosticPageContent />
+    </Suspense>
   );
 }

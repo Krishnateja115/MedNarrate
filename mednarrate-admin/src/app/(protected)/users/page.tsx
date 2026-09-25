@@ -82,7 +82,7 @@ export default function UsersPage() {
       accessorKey: 'full_name',
       header: 'Name',
       cell: ({ row }) => (
-        <Link href={`/users/${row.original.id}`} className="hover:underline text-primary font-medium">
+        <Link href={`/users/detail?id=${row.original.id}`} className="hover:underline text-primary font-medium">
           {row.getValue('full_name')}
         </Link>
       ),
@@ -115,7 +115,7 @@ export default function UsersPage() {
       id: 'actions',
       cell: ({ row }) => (
         <div className="text-right">
-          <Link href={`/users/${row.original.id}`}>
+          <Link href={`/users/detail?id=${row.original.id}`}>
             <Button variant="ghost" size="sm">
               View Details
             </Button>

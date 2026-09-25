@@ -84,7 +84,7 @@ export default function IncidentsPage() {
       header: 'Incident',
       cell: ({ row }) => (
         <div className="space-y-1">
-          <Link href={`/incidents/${row.original.id}`} className="font-semibold text-lg hover:underline text-primary">
+          <Link href={`/incidents/detail?id=${row.original.id}`} className="font-semibold text-lg hover:underline text-primary">
             {row.getValue('title')}
           </Link>
           <div className="text-sm text-muted-foreground line-clamp-1">
@@ -131,7 +131,7 @@ export default function IncidentsPage() {
       header: () => <div className="text-right">Details</div>,
       cell: ({ row }) => (
         <div className="text-right">
-          <Link href={`/incidents/${row.original.id}`}>
+          <Link href={`/incidents/detail?id=${row.original.id}`}>
             <Button variant="ghost" size="sm">View</Button>
           </Link>
         </div>

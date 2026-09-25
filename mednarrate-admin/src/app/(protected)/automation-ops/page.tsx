@@ -95,7 +95,7 @@ export default function AutomationOpsPage() {
       accessorKey: 'user_id',
       header: 'User ID',
       cell: ({ row }) => (
-        <Link href={`/users/${row.original.user_id}`} className="font-mono text-xs text-primary hover:underline">
+        <Link href={`/users/detail?id=${row.original.user_id}`} className="font-mono text-xs text-primary hover:underline">
           {row.original.user_id.slice(0, 8)}
         </Link>
       ),
@@ -151,7 +151,7 @@ export default function AutomationOpsPage() {
       accessorKey: 'user_id',
       header: 'User ID',
       cell: ({ row }) => (
-        <Link href={`/users/${row.original.user_id}`} className="font-mono text-xs text-primary hover:underline">
+        <Link href={`/users/detail?id=${row.original.user_id}`} className="font-mono text-xs text-primary hover:underline">
           {row.original.user_id.slice(0, 8)}
         </Link>
       ),

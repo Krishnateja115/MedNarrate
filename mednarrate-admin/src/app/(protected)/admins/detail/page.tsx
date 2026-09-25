@@ -1,5 +1,7 @@
 /* eslint-disable */
 'use client';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
@@ -9,11 +11,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, UserIcon, Activity, ShieldAlert, LifeBuoy } from 'lucide-react';
 import Link from 'next/link';
-import { use } from 'react';
 
-export default function AdminDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const adminId = resolvedParams.id;
+function AdminDetailPageContent() {
+  const searchParams = useSearchParams();
+  const extractedId = searchParams.get('id');
+  
+  const adminId = extractedId;
   
   const { data: admin, isLoading: isLoadingAdmin } = useQuery<any>({
     queryKey: ['admin', adminId],
@@ -200,5 +203,13 @@ export default function AdminDetailPage({ params }: { params: Promise<{ id: stri
 
       </Tabs>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <AdminDetailPageContent />
+    </Suspense>
   );
 }

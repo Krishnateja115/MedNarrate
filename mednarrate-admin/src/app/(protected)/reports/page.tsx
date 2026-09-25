@@ -152,7 +152,7 @@ export default function ReportsPage() {
                   {data?.items?.map((report) => (
                     <TableRow key={report.id}>
                       <TableCell className="font-mono text-sm">
-                        <Link href={`/reports/${report.id}`} className="hover:underline text-primary">
+                        <Link href={`/reports/detail?id=${report.id}`} className="hover:underline text-primary">
                           {report.id.slice(0, 8)}...
                         </Link>
                       </TableCell>
@@ -165,7 +165,7 @@ export default function ReportsPage() {
                         {new Date(report.uploaded_at).toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Link href={`/reports/${report.id}`}>
+                        <Link href={`/reports/detail?id=${report.id}`}>
                           <Button variant="ghost" size="sm">
                             <span className="sr-only">Diagnostic</span>
                             Diagnostic

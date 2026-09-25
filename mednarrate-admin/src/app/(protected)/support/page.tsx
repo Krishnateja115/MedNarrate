@@ -172,12 +172,12 @@ export default function SupportQueuePage() {
                     {displayedTickets.map((ticket) => (
                       <TableRow key={ticket.id}>
                         <TableCell className="font-mono text-xs">
-                          <Link href={`/support/${ticket.id}`} className="hover:underline text-primary">
+                          <Link href={`/support/detail?id=${ticket.id}`} className="hover:underline text-primary">
                             {ticket.id.slice(0, 8)}
                           </Link>
                         </TableCell>
                         <TableCell className="font-medium max-w-[200px] truncate" title={ticket.title}>
-                          <Link href={`/support/${ticket.id}`} className="hover:underline">
+                          <Link href={`/support/detail?id=${ticket.id}`} className="hover:underline">
                             {ticket.title}
                           </Link>
                         </TableCell>
@@ -191,7 +191,7 @@ export default function SupportQueuePage() {
                           {new Date(ticket.updated_at).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Link href={`/support/${ticket.id}`}>
+                          <Link href={`/support/detail?id=${ticket.id}`}>
                             <Button variant="ghost" size="sm">
                               <span className="sr-only">Investigate</span>
                               Investigate

@@ -82,11 +82,11 @@ export default function ChatOpsPage() {
                         <TableCell className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()}</TableCell>
                         <TableCell className="font-mono text-xs">{s.id.slice(0, 8)}</TableCell>
                         <TableCell className="font-mono text-xs text-primary">
-                          <Link href={`/users/${s.user_id}`} className="hover:underline">{s.user_id.slice(0, 8)}</Link>
+                          <Link href={`/users/detail?id=${s.user_id}`} className="hover:underline">{s.user_id.slice(0, 8)}</Link>
                         </TableCell>
                         <TableCell>
                           {s.report_id ? (
-                            <Link href={`/reports/${s.report_id}`}>
+                            <Link href={`/reports/detail?id=${s.report_id}`}>
                               <Badge variant="outline" className="text-blue-500 border-blue-500">Yes</Badge>
                             </Link>
                           ) : <span className="text-muted-foreground text-sm">No</span>}
@@ -143,7 +143,7 @@ export default function ChatOpsPage() {
                         </TableCell>
                         <TableCell className="font-medium text-sm">{e.action_taken}</TableCell>
                         <TableCell className="font-mono text-xs text-primary hover:underline">
-                          <Link href={`/users/${e.user_id}`}>{e.user_id.slice(0, 8)}</Link>
+                          <Link href={`/users/detail?id=${e.user_id}`}>{e.user_id.slice(0, 8)}</Link>
                         </TableCell>
                         <TableCell className="text-sm italic text-muted-foreground">{e.safe_summary || 'No summary available'}</TableCell>
                       </TableRow>

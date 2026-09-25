@@ -1,5 +1,7 @@
 /* eslint-disable */
 'use client';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
@@ -9,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Clock, Activity, MessageSquare, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { use } from 'react';
 
 interface IncidentEvent {
   id: string;
@@ -37,9 +38,11 @@ interface IncidentDetailResponse {
   events: IncidentEvent[];
 }
 
-export default function IncidentDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const incidentId = resolvedParams.id;
+function IncidentDetailPageContent() {
+  const searchParams = useSearchParams();
+  const extractedId = searchParams.get('id');
+  
+  const incidentId = extractedId;
   
   const { data, isLoading, error } = useQuery<IncidentDetailResponse>({
     queryKey: ['incident', incidentId],
@@ -244,5 +247,13 @@ export default function IncidentDetailPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <IncidentDetailPageContent />
+    </Suspense>
   );
 }
