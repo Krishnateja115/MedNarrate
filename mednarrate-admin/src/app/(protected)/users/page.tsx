@@ -26,13 +26,12 @@ interface User {
 }
 
 interface UsersResponse {
-  status: string;
-  users: User[];
-  pagination: {
-    total: number;
-    limit: number;
-    page: number;
-  };
+  items: User[];
+  total: number;
+  page: number;
+  limit: number;
+  has_next: boolean;
+  has_previous: boolean;
 }
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -150,11 +149,11 @@ export default function UsersPage() {
                 placeholder="Search by name, email, or ID..."
                 className="pl-8"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-              <Select value={roleFilter} onValueChange={(val) => setRoleFilter(val || 'all')}>
+              <Select value={roleFilter} onValueChange={(val) => { setRoleFilter(val || 'all'); setPage(1); }}>
                 <SelectTrigger className="w-full sm:w-[130px]">
                   <SelectValue placeholder="Role" />
                 </SelectTrigger>
@@ -167,7 +166,7 @@ export default function UsersPage() {
                 </SelectContent>
               </Select>
               
-              <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || 'all')}>
+              <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val || 'all'); setPage(1); }}>
                 <SelectTrigger className="w-full sm:w-[130px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -188,11 +187,11 @@ export default function UsersPage() {
           ) : (
             <DataTable
               columns={columns}
-              data={data?.users || []}
-              pageCount={data ? Math.ceil(data.pagination.total / data.pagination.limit) : 0}
+              data={data?.items || []}
+              pageCount={data ? Math.ceil(data.total / data.limit) : 0}
               pageIndex={page - 1}
               pageSize={limit}
-              total={data?.pagination.total || 0}
+              total={data?.total || 0}
               isLoading={isLoading}
               onPageChange={(p) => setPage(p + 1)}
               onPageSizeChange={(s) => { setLimit(s); setPage(1); }}

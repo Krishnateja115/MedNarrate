@@ -25,13 +25,12 @@ interface Report {
 }
 
 interface ReportsResponse {
-  status: string;
-  reports: Report[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-  };
+  items: Report[];
+  total: number;
+  page: number;
+  limit: number;
+  has_next: boolean;
+  has_previous: boolean;
 }
 
 export default function ReportsPage() {
@@ -39,13 +38,18 @@ export default function ReportsPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  
   const queryParams = new URLSearchParams();
   if (searchTerm) queryParams.set('search', searchTerm);
   if (typeFilter !== 'all') queryParams.set('report_type', typeFilter);
   if (statusFilter !== 'all') queryParams.set('processing_status', statusFilter);
+  queryParams.set('page', page.toString());
+  queryParams.set('limit', limit.toString());
   
   const { data, isLoading, error } = useQuery<ReportsResponse>({
-    queryKey: ['reports', searchTerm, typeFilter, statusFilter],
+    queryKey: ['reports', searchTerm, typeFilter, statusFilter, page, limit],
     queryFn: () => fetchApi(`/api/v1/admin/reports?${queryParams.toString()}`),
   });
 
@@ -126,7 +130,7 @@ export default function ReportsPage() {
             <div className="p-8 text-center text-destructive">
               Failed to load reports.
             </div>
-          ) : data?.reports.length === 0 ? (
+          ) : data?.items?.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <FileText className="mx-auto h-8 w-8 mb-3 opacity-50" />
               <p>No reports found matching the current filters.</p>
@@ -145,7 +149,7 @@ export default function ReportsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data?.reports.map((report) => (
+                  {data?.items?.map((report) => (
                     <TableRow key={report.id}>
                       <TableCell className="font-mono text-sm">
                         <Link href={`/reports/${report.id}`} className="hover:underline text-primary">
@@ -175,10 +179,28 @@ export default function ReportsPage() {
             </div>
           )}
           
-          {data && data.pagination.total > 0 && (
+          {data && data.total > 0 && (
             <div className="p-4 border-t flex items-center justify-between text-sm text-muted-foreground">
               <div>
-                Showing {data.reports.length} of {data.pagination.total} reports
+                Showing {(page - 1) * limit + 1} to {Math.min(page * limit, data.total)} of {data.total} reports
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={page === 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={!data?.has_next}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  Next
+                </Button>
               </div>
             </div>
           )}

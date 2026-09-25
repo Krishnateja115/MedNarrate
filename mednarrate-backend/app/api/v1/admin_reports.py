@@ -118,7 +118,7 @@ async def get_reports(
     admin_ctx: AdminContext = Depends(require_permission("reports.view")),
     db: AsyncSession = Depends(get_db),
     limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
     search: Optional[str] = None,
     report_type: Optional[ReportType] = None,
     processing_status: Optional[ProcessingStatus] = None,
@@ -153,6 +153,8 @@ async def get_reports(
     total_count = (await db.execute(count_stmt)).scalar() or 0
 
     # Paginate and fetch
+    from app.core.pagination import build_pagination_response, page_to_offset
+    offset = page_to_offset(page, limit)
     stmt = stmt.order_by(desc(Report.uploaded_at)).offset(offset).limit(limit)
     results = (await db.execute(stmt)).all()
 
@@ -176,17 +178,7 @@ async def get_reports(
             }
         )
 
-    return {
-        "status": "ok",
-        "reports": reports,
-        "pagination": {
-            "total": total_count,
-            "limit": limit,
-            "offset": offset,
-            "has_next": (offset + limit) < total_count,
-            "has_previous": offset > 0,
-        },
-    }
+    return build_pagination_response(reports, total_count, page, limit)
 
 
 @router.get("/{report_id}")
