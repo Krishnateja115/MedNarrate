@@ -65,6 +65,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               onTap: (index) {
                 if (index == 0) {
                   DashboardScreen.onRefreshRequested?.call();
+                } else if (index == 1) {
+                  ReportsScreen.onRefreshRequested?.call();
                 }
                 setState(() {
                   _selectedIndex = index;

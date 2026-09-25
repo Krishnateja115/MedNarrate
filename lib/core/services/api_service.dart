@@ -373,16 +373,22 @@ class ApiService {
           isFavourite: isFavourite, search: search)
           .then((_) => throw const UnauthorizedException()));
       final list = jsonDecode(resp.body) as List<dynamic>;
-      final reports = list
-          .map((e) => ReportModel.fromMap(_remapReport(e as Map<String, dynamic>)))
-          .toList();
+      final reports = <ReportModel>[];
+      for (var e in list) {
+        try {
+          final mapped = _remapReport(e as Map<String, dynamic>);
+          reports.add(ReportModel.fromMap(mapped));
+        } catch (err) {
+          debugPrint('Failed to parse a report: $err');
+        }
+      }
       
       // Save to cache
       await CacheService.instance.saveReports(reports);
       return reports;
     } catch (e) {
-      // Fallback to cache on error
-      return CacheService.instance.getCachedReports();
+      if (e is ApiException) rethrow;
+      throw ApiException(500, 'Failed to parse reports: $e');
     }
   }
 

@@ -13,6 +13,7 @@ import '../widgets/clinical_view_tab.dart';
 import '../widgets/lab_results_tab.dart';
 import '../widgets/ai_chat_tab.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
+import 'reports_screen.dart';
 
 class ReportDetailsScreen extends StatefulWidget {
   final String? reportId;
@@ -147,29 +148,36 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        ReportsScreen.onRefreshRequested?.call();
+        DashboardScreen.onRefreshRequested?.call();
+      },
+      child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        leadingWidth: 140,
-        leading: TextButton.icon(
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          elevation: 0,
+          leadingWidth: 140,
+          leading: TextButton.icon(
+            onPressed: () {
+              ReportsScreen.onRefreshRequested?.call();
               DashboardScreen.onRefreshRequested?.call();
-              context.go(Routes.dashboard);
-            }
-          },
-          icon: const Icon(Icons.arrow_back_rounded, size: 18),
-          label: const Text(
-            'Back',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(Routes.dashboard);
+              }
+            },
+            icon: const Icon(Icons.arrow_back_rounded, size: 18),
+            label: const Text(
+              'Back',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
           ),
-        ),
-        title: Text(AppLocalizations.of(context)!.reportDetails),
+          title: Text(AppLocalizations.of(context)!.reportDetails),
         actions: [
           if (_controller.report != null) ...[
             IconButton(
@@ -203,7 +211,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                     setState(() => _exporting = true);
                     final messenger = ScaffoldMessenger.of(context);
                     try {
-                      await ExportService.instance.shareSummaryPdf(
+                      await ExportService.instance.exportReportPdf(
                         analysis: analysis,
                         reportTitle: report.title,
                         reportDate: report.reportDate.toLocal().toString().split(' ').first,
@@ -217,13 +225,14 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                     final analysis = _controller.analysis;
                     final report = _controller.report;
                     if (analysis == null || report == null) return;
-                    await ExportService.instance.printSummary(
+                    await ExportService.instance.previewReportPdf(
                       analysis: analysis,
                       reportTitle: report.title,
                       reportDate: report.reportDate.toLocal().toString().split(' ').first,
                     );
                   }
                 },
+
                 itemBuilder: (_) => [
                   if (_controller.analysis != null) ...[
                     PopupMenuItem(
@@ -316,6 +325,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                     ),
                   ],
                 ),
+      ),
     );
   }
 

@@ -18,6 +18,8 @@ import 'package:mednarrate/l10n/app_localizations.dart';
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
 
+  static VoidCallback? onRefreshRequested;
+
   @override
   State<ReportsScreen> createState() => _ReportsScreenState();
 }
@@ -36,6 +38,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   void initState() {
     super.initState();
+    ReportsScreen.onRefreshRequested = _loadReports;
     _loadReports();
   }
 
@@ -168,6 +171,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   void dispose() {
+    if (ReportsScreen.onRefreshRequested == _loadReports) {
+      ReportsScreen.onRefreshRequested = null;
+    }
     _searchDebounce?.cancel();
     for (var sub in _pollingSubscriptions.values) {
       sub.cancel();

@@ -11,6 +11,8 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/report_polling.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
+import 'reports_screen.dart';
+import '../../dashboard/screens/dashboard_screen.dart';
 
 enum UploadStep {
   idle,          // Initial state: Form ready, no file selected
@@ -212,6 +214,10 @@ class _UploadScreenState extends State<UploadScreen> {
           final loc = AppLocalizations.of(context);
           final msg = loc != null ? loc.reportAnalyzedSuccessfully : 'Report analyzed successfully!';
           Helpers.showSuccess(context, msg);
+          
+          ReportsScreen.onRefreshRequested?.call();
+          DashboardScreen.onRefreshRequested?.call();
+          
           context.pushReplacement(Routes.reportDetails, extra: report.id);
           return;
         } else if (status.processingStatus == 'failed') {
@@ -260,6 +266,10 @@ class _UploadScreenState extends State<UploadScreen> {
           final loc = AppLocalizations.of(context);
           final msg = loc != null ? loc.reportAnalyzedSuccessfully : 'Report analyzed successfully!';
           Helpers.showSuccess(context, msg);
+          
+          ReportsScreen.onRefreshRequested?.call();
+          DashboardScreen.onRefreshRequested?.call();
+          
           context.pushReplacement(Routes.reportDetails, extra: _createdReportId);
           return;
         } else if (status.processingStatus == 'failed') {

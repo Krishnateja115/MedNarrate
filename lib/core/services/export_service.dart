@@ -7,13 +7,15 @@ import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/api_models.dart';
 
+import 'pdf_downloader/pdf_downloader.dart';
+
 /// ExportService — generates a clean PDF from a ReportAnalysisModel
-/// and either shares it or opens the system print dialog.
+/// and either downloads it (Export) or opens the print dialog (Print/Preview).
 class ExportService {
   ExportService._();
   static final ExportService instance = ExportService._();
 
-  // Primary color
+  // Primary colors
   static const _primary = PdfColor.fromInt(0xFF1A73E8);
   static const _danger = PdfColor.fromInt(0xFFE53935);
   static const _warning = PdfColor.fromInt(0xFFF5A623);
@@ -23,7 +25,7 @@ class ExportService {
   static const _divider = PdfColor.fromInt(0xFFE8ECF0);
 
   PdfColor _flagColor(String flag) {
-    switch (flag) {
+    switch (flag.toLowerCase()) {
       case 'high':
         return _danger;
       case 'low':
@@ -31,6 +33,77 @@ class ExportService {
       default:
         return _success;
     }
+  }
+
+  List<pw.Widget> _buildMarkdown(
+    String text,
+    pw.TextStyle baseStyle,
+    pw.TextStyle boldStyle,
+    PdfColor textColor,
+    pw.Font fontBold,
+  ) {
+    final lines = text.split('\n');
+    final widgets = <pw.Widget>[];
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (line.isEmpty) {
+        widgets.add(pw.SizedBox(height: 8));
+        continue;
+      }
+
+      // Filter out raw entity labels
+      line = line.replaceAll(RegExp(r'\([A-Z][a-z_]+\)'), '');
+      line = line.replaceAll(RegExp(r'\([a-z_]+\)'), '');
+      
+      // Remove known generation artifacts
+      line = line.replaceAll('<INPUT_TEXT>', '').replaceAll('</INPUT_TEXT>', '');
+      line = line.replaceAll('****End of Report****', '');
+      
+      line = line.trim();
+      if (line.isEmpty || line == 'Calculated') continue; // Skip empty after cleanup
+
+      bool isHeading = line.startsWith(RegExp(r'^#+ '));
+      if (isHeading) {
+        line = line.replaceAll(RegExp(r'^#+\s*'), ''); // Remove markdown heading markers
+        widgets.add(pw.Paragraph(
+          text: line.replaceAll('**', '').trim(),
+          style: pw.TextStyle(font: fontBold, fontSize: 12, color: _primary),
+          margin: const pw.EdgeInsets.only(top: 12, bottom: 6),
+        ));
+        continue;
+      }
+
+      bool isBullet = line.startsWith('- ') || line.startsWith('* ');
+      if (isBullet) {
+        line = line.substring(2).trim();
+        widgets.add(pw.Padding(
+          padding: const pw.EdgeInsets.only(left: 12, bottom: 6),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                margin: const pw.EdgeInsets.only(top: 4, right: 8),
+                width: 3,
+                height: 3,
+                decoration: pw.BoxDecoration(color: textColor, shape: pw.BoxShape.circle),
+              ),
+              pw.Expanded(child: pw.Text(line.replaceAll('**', ''), style: baseStyle)),
+            ]
+          )
+        ));
+        continue;
+      }
+      
+      bool looksLikeHeading = line.startsWith(RegExp(r'^\d+\. ')) || line.startsWith(RegExp(r'^[A-Z][a-z ]+ Findings:?'));
+      
+      widgets.add(pw.Paragraph(
+        text: line.replaceAll('**', ''),
+        style: looksLikeHeading ? boldStyle : baseStyle,
+        margin: const pw.EdgeInsets.only(bottom: 6),
+      ));
+    }
+    return widgets;
   }
 
   Future<pw.Document> _buildDocument({
@@ -43,29 +116,30 @@ class ExportService {
     final fontBold = pw.Font.helveticaBold();
     final fontMono = pw.Font.courier();
 
-    final baseStyle = pw.TextStyle(font: font, fontSize: 11, color: _textDark);
-    final mutedStyle = pw.TextStyle(font: font, fontSize: 10, color: _textMuted);
-    final boldStyle = pw.TextStyle(font: fontBold, fontSize: 11, color: _textDark);
+    final baseStyle = pw.TextStyle(font: font, fontSize: 10, color: _textDark, lineSpacing: 1.5);
+    final mutedStyle = pw.TextStyle(font: font, fontSize: 9, color: _textMuted);
+    final boldStyle = pw.TextStyle(font: fontBold, fontSize: 10, color: _textDark, lineSpacing: 1.5);
     final headStyle = pw.TextStyle(font: fontBold, fontSize: 14, color: _primary);
-    final monoStyle = pw.TextStyle(font: fontMono, fontSize: 10, color: _textDark);
+    final monoStyle = pw.TextStyle(font: fontMono, fontSize: 9, color: _textDark);
 
     pw.Widget sectionHeader(String title) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.SizedBox(height: 18),
+            pw.SizedBox(height: 24),
             pw.Text(title, style: headStyle),
+            pw.SizedBox(height: 4),
             pw.Divider(color: _divider, thickness: 1),
-            pw.SizedBox(height: 6),
+            pw.SizedBox(height: 12),
           ],
         );
 
     pw.Widget flagBadge(String flag) {
       final color = _flagColor(flag);
       return pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: pw.BoxDecoration(
           color: color,
-          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(100)),
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
         ),
         child: pw.Text(
           flag.toUpperCase(),
@@ -77,30 +151,43 @@ class ExportService {
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
-        header: (_) => pw.Column(
+        margin: const pw.EdgeInsets.symmetric(vertical: 40, horizontal: 50),
+        header: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('MedNarrate', style: pw.TextStyle(font: fontBold, fontSize: 20, color: _primary)),
-                pw.Text('Medical Report Summary', style: mutedStyle),
+                pw.Text('MedNarrate', style: pw.TextStyle(font: fontBold, fontSize: 18, color: _primary)),
+                pw.Text('Medical Report Summary', style: pw.TextStyle(font: font, fontSize: 10, color: _textMuted)),
               ],
             ),
-            pw.SizedBox(height: 4),
-            pw.Text(reportTitle, style: pw.TextStyle(font: fontBold, fontSize: 13, color: _textDark)),
+            pw.SizedBox(height: 8),
+            pw.Text(reportTitle, style: pw.TextStyle(font: fontBold, fontSize: 12, color: _textDark)),
             pw.Text('Date: $reportDate', style: mutedStyle),
+            pw.SizedBox(height: 6),
             pw.Divider(color: _primary, thickness: 1.5),
-            pw.SizedBox(height: 4),
+            pw.SizedBox(height: 16),
           ],
         ),
-        footer: (_) => pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.center,
+        footer: (context) => pw.Column(
+          mainAxisSize: pw.MainAxisSize.min,
           children: [
-            pw.Text(
-              'Generated by MedNarrate  |  Not a substitute for professional medical advice',
-              style: pw.TextStyle(font: font, fontSize: 8, color: _textMuted),
+            pw.SizedBox(height: 16),
+            pw.Divider(color: _divider, thickness: 1),
+            pw.SizedBox(height: 8),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'MedNarrate • Educational / Informational Summary',
+                  style: pw.TextStyle(font: font, fontSize: 8, color: _textMuted),
+                ),
+                pw.Text(
+                  'Page ${context.pageNumber} of ${context.pagesCount}',
+                  style: pw.TextStyle(font: font, fontSize: 8, color: _textMuted),
+                ),
+              ],
             ),
           ],
         ),
@@ -108,13 +195,13 @@ class ExportService {
           // Patient Summary
           if (analysis.patientSummary != null && analysis.patientSummary!.isNotEmpty) ...[
             sectionHeader('Plain Language Summary'),
-            pw.Text(analysis.patientSummary!, style: baseStyle),
+            ..._buildMarkdown(analysis.patientSummary!, baseStyle, boldStyle, _textDark, fontBold),
           ],
 
           // Clinician Summary
           if (analysis.clinicianSummary != null && analysis.clinicianSummary!.isNotEmpty) ...[
             sectionHeader('Clinical Summary'),
-            pw.Text(analysis.clinicianSummary!, style: baseStyle),
+            ..._buildMarkdown(analysis.clinicianSummary!, baseStyle, boldStyle, _textDark, fontBold),
           ],
 
           // Lab Results
@@ -130,11 +217,12 @@ class ExportService {
                 lv.refHigh?.toString() ?? '—',
                 lv.flag.toUpperCase(),
               ]).toList(),
-              headerStyle: boldStyle,
+              headerStyle: pw.TextStyle(font: fontBold, fontSize: 9, color: PdfColors.white),
               cellStyle: monoStyle,
               headerDecoration: const pw.BoxDecoration(color: _primary),
-              headerCellDecoration: const pw.BoxDecoration(color: _primary),
               oddRowDecoration: pw.BoxDecoration(color: PdfColors.grey100),
+              cellPadding: const pw.EdgeInsets.all(6),
+              cellAlignment: pw.Alignment.centerLeft,
             ),
           ],
 
@@ -143,10 +231,11 @@ class ExportService {
             sectionHeader('Abnormal Findings'),
             ...analysis.abnormalFindings.map((f) => pw.Container(
                   margin: const pw.EdgeInsets.only(bottom: 8),
-                  padding: const pw.EdgeInsets.all(10),
+                  padding: const pw.EdgeInsets.all(12),
                   decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: _danger, width: 0.5),
+                    border: pw.Border.all(color: _divider, width: 1),
                     borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                    color: PdfColors.grey50,
                   ),
                   child: pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -163,54 +252,39 @@ class ExportService {
                 )),
           ],
 
-          // Entities
+          // Entities - Cleaned up to a structured table
           if (analysis.entities.isNotEmpty) ...[
             sectionHeader('Medical Entities Detected'),
-            pw.Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: analysis.entities.map((e) => pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: pw.BoxDecoration(
-                      color: PdfColors.blue50,
-                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(100)),
-                    ),
-                    child: pw.Text(
-                      '${e['word'] ?? ''} (${e['entity_group'] ?? ''})',
-                      style: pw.TextStyle(font: font, fontSize: 9, color: _primary),
-                    ),
-                  )).toList(),
+            pw.TableHelper.fromTextArray(
+              headers: ['Entity', 'Category'],
+              data: analysis.entities.map((e) {
+                final word = e['word']?.toString() ?? '';
+                var group = e['entity_group']?.toString() ?? '';
+                group = group.replaceAll('_', ' '); // Clean up internal labels
+                return [word, group];
+              }).toList(),
+              headerStyle: pw.TextStyle(font: fontBold, fontSize: 9, color: PdfColors.white),
+              cellStyle: baseStyle,
+              headerDecoration: const pw.BoxDecoration(color: _primary),
+              oddRowDecoration: pw.BoxDecoration(color: PdfColors.grey100),
+              cellPadding: const pw.EdgeInsets.all(6),
+              cellAlignment: pw.Alignment.centerLeft,
             ),
           ],
 
-          // Evidence Sources
-          if (analysis.evidenceSources.isNotEmpty) ...[
-            sectionHeader('Evidence Sources (RAG)'),
-            ...analysis.evidenceSources.map((src) => pw.Padding(
-                  padding: const pw.EdgeInsets.only(bottom: 6),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('Finding: ${src.finding}', style: boldStyle),
-                      pw.Text('Sources: ${src.sources.join(', ')}', style: mutedStyle),
-                    ],
-                  ),
-                )),
-          ],
-
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 30),
           pw.Container(
-            padding: const pw.EdgeInsets.all(12),
+            padding: const pw.EdgeInsets.all(16),
             decoration: pw.BoxDecoration(
               color: PdfColors.orange50,
-              border: pw.Border.all(color: _warning),
+              border: pw.Border.all(color: _warning, width: 1),
               borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
             ),
             child: pw.Text(
-              '⚠ DISCLAIMER: This analysis is AI-generated and for informational purposes only. '
-              'It does not constitute medical advice. Please consult a qualified healthcare professional '
-              'before making any health decisions.',
-              style: pw.TextStyle(font: font, fontSize: 9, color: _textDark),
+              '⚠ DISCLAIMER: This analysis is AI-generated and intended for informational '
+              'and educational purposes only. It does not constitute medical advice, diagnosis, or treatment. '
+              'Please consult a qualified healthcare professional before making any health decisions.',
+              style: pw.TextStyle(font: font, fontSize: 9, color: _textDark, lineSpacing: 1.4),
             ),
           ),
         ],
@@ -220,26 +294,32 @@ class ExportService {
     return doc;
   }
 
-  /// Share the report as a PDF via the native share sheet.
-  Future<void> shareSummaryPdf({
+  /// DIRECT DOWNLOAD for the "Export PDF" action. Does NOT open print dialog.
+  Future<void> exportReportPdf({
     required ReportAnalysisModel analysis,
     required String reportTitle,
     required String reportDate,
   }) async {
+    print('[MEDNARRATE EXPORT] EXPORT PDF BUTTON CLICKED');
+    print('[MEDNARRATE EXPORT] GENERATING PDF');
     final doc = await _buildDocument(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
     );
     final bytes = await doc.save();
+    print('[MEDNARRATE EXPORT] PDF GENERATED');
+
+    final safeTitle = reportTitle.replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '_');
+    final filename = 'MedNarrate_${safeTitle}_$reportDate.pdf';
 
     if (kIsWeb) {
-      await Printing.layoutPdf(onLayout: (_) async => bytes);
+      await downloadPdfWeb(bytes, filename);
       return;
     }
 
     final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/MedNarrate_Summary.pdf');
+    final file = File('${dir.path}/$filename');
     await file.writeAsBytes(bytes);
 
     await Share.shareXFiles(
@@ -248,17 +328,23 @@ class ExportService {
     );
   }
 
-  /// Open the system print/preview dialog (works on web too via printing package).
-  Future<void> printSummary({
+  /// OPENS PRINT/PREVIEW DIALOG for the "Print / Preview" action.
+  Future<void> previewReportPdf({
     required ReportAnalysisModel analysis,
     required String reportTitle,
     required String reportDate,
   }) async {
+    print('[MEDNARRATE PRINT] PRINT/PREVIEW BUTTON CLICKED');
+    print('[MEDNARRATE PRINT] GENERATING PDF');
     final doc = await _buildDocument(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
     );
-    await Printing.layoutPdf(onLayout: (_) async => await doc.save());
+    final bytes = await doc.save();
+    print('[MEDNARRATE PRINT] STARTING PRINT PREVIEW');
+    // layoutPdf uses the browser/system print dialog
+    await Printing.layoutPdf(onLayout: (_) async => bytes);
   }
 }
+
