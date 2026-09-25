@@ -192,7 +192,7 @@ class RagService:
         """
         import asyncio
         
-        timeout_seconds = 2.0  # Documented reasonable timeout: 2 seconds max
+        timeout_seconds = 15.0  # Increased to 15s to allow for local model loading
         
         try:
             # We use retrieve_kb_context which queries the chroma db or fallback.

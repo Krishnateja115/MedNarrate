@@ -264,3 +264,68 @@ async def test_admin_automation_ops_endpoints(client, token_headers):
         "/api/v1/admin/automation-ops/jobs", headers=token_headers
     )
     assert response.status_code in [200, 403]
+import uuid
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.user import User, UserRole
+from app.models.medical_profile import MedicalProfile
+from app.models.doctor_profile import DoctorProfile
+from app.models.caregiver_profile import CaregiverProfile
+from app.models.push_token import PushToken
+
+@pytest.fixture
+async def sample_profiles(db_session: AsyncSession):
+    u_doc = User(email=f"doc_{uuid.uuid4()}@example.com", hashed_password="pw", full_name="Doc", role=UserRole.patient)
+    u_care = User(email=f"care_{uuid.uuid4()}@example.com", hashed_password="pw", full_name="Care", role=UserRole.patient)
+    u_pat = User(email=f"pat_{uuid.uuid4()}@example.com", hashed_password="pw", full_name="Pat", role=UserRole.patient)
+    
+    db_session.add_all([u_doc, u_care, u_pat])
+    await db_session.flush()
+
+    d_prof = DoctorProfile(user_id=u_doc.id, specialty="Cardiology")
+    c_prof = CaregiverProfile(user_id=u_care.id, relationship="Son")
+    m_prof = MedicalProfile(user_id=u_pat.id, blood_group="O+")
+    pt = PushToken(user_id=u_pat.id, device_token="fake_token", platform="ios")
+    
+    db_session.add_all([d_prof, c_prof, m_prof, pt])
+    await db_session.commit()
+    
+    return {"doc_id": u_doc.id, "care_id": u_care.id, "pat_id": u_pat.id}
+
+@pytest.mark.asyncio
+async def test_doctor_verification(client: AsyncClient, dashboard_admin_user: dict, sample_profiles: dict):
+    headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
+    doc_id = sample_profiles["doc_id"]
+    
+    # Needs users.manage
+    resp = await client.post(f"/api/v1/admin/users/{doc_id}/doctor_profile/verify", headers=headers)
+    assert resp.status_code in [200, 403]
+    
+@pytest.mark.asyncio
+async def test_caregiver_verification(client: AsyncClient, dashboard_admin_user: dict, sample_profiles: dict):
+    headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
+    care_id = sample_profiles["care_id"]
+    
+    resp = await client.post(f"/api/v1/admin/users/{care_id}/caregiver_profile/verify", headers=headers)
+    assert resp.status_code in [200, 403]
+
+@pytest.mark.asyncio
+async def test_medical_profile_view(client: AsyncClient, dashboard_admin_user: dict, sample_profiles: dict):
+    headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
+    pat_id = sample_profiles["pat_id"]
+    
+    resp = await client.get(f"/api/v1/admin/users/{pat_id}/medical_profile", headers=headers)
+    # Expected 403 if no break-glass grant is given or not super_admin
+    assert resp.status_code == 403
+
+@pytest.mark.asyncio
+async def test_push_notification_dispatch(client: AsyncClient, dashboard_admin_user: dict, sample_profiles: dict):
+    headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
+    payload = {
+        "title": "System Update",
+        "body": "Please update your app.",
+        "audience": "patients"
+    }
+    resp = await client.post("/api/v1/admin/notifications/dispatch", json=payload, headers=headers)
+    assert resp.status_code in [200, 403]

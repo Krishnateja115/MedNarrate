@@ -330,6 +330,111 @@ async def reset_password(
 
 # User Detail Tabs - Sub-endpoints
 
+from app.models.chat import ChatSession
+from app.models.medication_schedule import MedicationSchedule
+from app.models.notification_log import NotificationLog
+from app.models.report import Report
+from app.models.report_analysis import ReportAnalysis
+from app.models.support import SupportTicket
+from app.models.push_token import PushToken
+from app.models.medical_profile import MedicalProfile
+from app.models.doctor_profile import DoctorProfile
+from app.models.caregiver_profile import CaregiverProfile
+from app.models.admin import SensitiveAccessGrant
+
+@router.get("/{user_id}/medical_profile")
+async def get_medical_profile(
+    request: Request,
+    user_id: uuid.UUID,
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    # Verify break-glass access or explicit permission
+    if "super_admin" not in admin_ctx.permissions:
+        stmt_bg = select(SensitiveAccessGrant).where(
+            SensitiveAccessGrant.admin_id == admin_ctx.user.id,
+            SensitiveAccessGrant.resource_type == "medical_profile",
+            SensitiveAccessGrant.resource_id == str(user_id),
+            SensitiveAccessGrant.expires_at > datetime.utcnow()
+        )
+        bg = (await db.execute(stmt_bg)).scalars().first()
+        if not bg:
+            raise HTTPException(status_code=403, detail="Active break-glass grant required to view PHI")
+
+    stmt = select(MedicalProfile).where(MedicalProfile.user_id == user_id)
+    prof = (await db.execute(stmt)).scalars().first()
+    
+    await log_admin_action(
+        db, admin_ctx, "PHI_ACCESSED", "medical_profile", str(user_id), {}, request
+    )
+
+    if not prof:
+        return {"status": "ok", "profile": None}
+
+    return {
+        "status": "ok",
+        "profile": {
+            "id": str(prof.id),
+            "blood_group": prof.blood_group,
+            "known_allergies": prof.known_allergies,
+            "chronic_conditions": prof.chronic_conditions,
+            "emergency_contact_name": prof.emergency_contact_name,
+            "emergency_contact_phone": prof.emergency_contact_phone,
+            "updated_at": prof.updated_at.isoformat() if prof.updated_at else None
+        }
+    }
+
+@router.get("/{user_id}/doctor_profile")
+async def get_doctor_profile(
+    user_id: uuid.UUID,
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(DoctorProfile).where(DoctorProfile.user_id == user_id)
+    prof = (await db.execute(stmt)).scalars().first()
+    
+    if not prof:
+        return {"status": "ok", "profile": None}
+
+    return {
+        "status": "ok",
+        "profile": {
+            "id": str(prof.id),
+            "specialty": prof.specialty,
+            "qualifications": prof.qualifications,
+            "license_number": prof.license_number,
+            "years_of_experience": prof.years_of_experience,
+            "hospital": prof.hospital,
+            "professional_address": prof.professional_address,
+            "bio": prof.bio,
+            "updated_at": prof.updated_at.isoformat() if prof.updated_at else None
+        }
+    }
+
+@router.get("/{user_id}/caregiver_profile")
+async def get_caregiver_profile(
+    user_id: uuid.UUID,
+    admin_ctx: AdminContext = Depends(require_permission("users.view")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(CaregiverProfile).where(CaregiverProfile.user_id == user_id)
+    prof = (await db.execute(stmt)).scalars().first()
+    
+    if not prof:
+        return {"status": "ok", "profile": None}
+
+    return {
+        "status": "ok",
+        "profile": {
+            "id": str(prof.id),
+            "relationship": prof.relationship,
+            "caregiver_role": prof.caregiver_role,
+            "supported_patient_name": prof.supported_patient_name,
+            "organization": prof.organization,
+            "updated_at": prof.updated_at.isoformat() if prof.updated_at else None
+        }
+    }
+
 @router.get("/{user_id}/sessions")
 async def get_user_sessions(
     user_id: uuid.UUID,
@@ -338,6 +443,9 @@ async def get_user_sessions(
 ):
     stmt = select(RefreshToken).where(RefreshToken.user_id == user_id).order_by(desc(RefreshToken.created_at))
     tokens = (await db.execute(stmt)).scalars().all()
+    
+    pt_stmt = select(PushToken).where(PushToken.user_id == user_id).order_by(desc(PushToken.created_at))
+    push_tokens = (await db.execute(pt_stmt)).scalars().all()
     
     return {
         "status": "ok",
@@ -349,16 +457,63 @@ async def get_user_sessions(
                 "revoked": t.revoked
             }
             for t in tokens
+        ],
+        "device_sessions": [
+            {
+                "id": str(pt.id),
+                "device_token": pt.device_token,
+                "platform": pt.platform,
+                "created_at": pt.created_at.isoformat() if pt.created_at else None,
+                "updated_at": pt.updated_at.isoformat() if pt.updated_at else None,
+            }
+            for pt in push_tokens
         ]
     }
 
-from app.models.chat import ChatSession
-from app.models.medication_schedule import MedicationSchedule
-from app.models.notification_log import NotificationLog
-from app.models.report import Report
-from app.models.report_analysis import ReportAnalysis
-from app.models.support import SupportTicket
 
+@router.post("/{user_id}/doctor_profile/verify")
+async def verify_doctor_profile(
+    request: Request,
+    user_id: uuid.UUID,
+    admin_ctx: AdminContext = Depends(require_permission("users.manage")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(DoctorProfile).where(DoctorProfile.user_id == user_id)
+    prof = (await db.execute(stmt)).scalars().first()
+    if not prof:
+        raise HTTPException(status_code=404, detail="Doctor profile not found")
+        
+    user = (await db.execute(select(User).where(User.id == user_id))).scalars().first()
+    if user:
+        user.role = UserRole.clinician
+    
+    await log_admin_action(
+        db, admin_ctx, "DOCTOR_VERIFIED", "user", str(user_id), {"specialty": prof.specialty}, request
+    )
+    await db.commit()
+    return {"status": "ok", "message": "Doctor profile verified and user role updated"}
+
+@router.post("/{user_id}/caregiver_profile/verify")
+async def verify_caregiver_profile(
+    request: Request,
+    user_id: uuid.UUID,
+    admin_ctx: AdminContext = Depends(require_permission("users.manage")),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(CaregiverProfile).where(CaregiverProfile.user_id == user_id)
+    prof = (await db.execute(stmt)).scalars().first()
+    if not prof:
+        raise HTTPException(status_code=404, detail="Caregiver profile not found")
+        
+    user = (await db.execute(select(User).where(User.id == user_id))).scalars().first()
+    if user:
+        user.role = UserRole.caregiver
+        
+    await log_admin_action(
+        db, admin_ctx, "CAREGIVER_VERIFIED", "user", str(user_id), {"relationship": prof.relationship}, request
+    )
+    await db.commit()
+    return {"status": "ok", "message": "Caregiver profile verified and user role updated"}
 
 @router.get("/{user_id}/reports")
 async def get_user_reports(
