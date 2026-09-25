@@ -70,7 +70,7 @@ interface AnalyticsData {
 
 export default function AnalyticsPage() {
   const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d' | '90d' | 'all'>('7d');
-  const [activeTab, setActiveTab] = useState<'product' | 'reports' | 'ai' | 'chat' | 'notifications'>('product');
+  const [activeTab, setActiveTab] = useState<'product' | 'reports' | 'ai' | 'chat' | 'notifications' | 'export'>('product');
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -141,6 +141,7 @@ export default function AnalyticsPage() {
           { id: 'ai', label: 'AI Operations', icon: Bot },
           { id: 'chat', label: 'Chat Engine', icon: MessageSquare },
           { id: 'notifications', label: 'Notifications', icon: Bell },
+          { id: 'export', label: 'Export Hub', icon: FileText },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -449,6 +450,70 @@ export default function AnalyticsPage() {
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* 6. EXPORT HUB */}
+      {activeTab === 'export' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Operations Reporting Hub</CardTitle>
+              <CardDescription>Download CSV exports of system data for external analysis.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium mb-1">Start Date</label>
+                    <input type="date" id="export-start" className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium mb-1">End Date</label>
+                    <input type="date" id="export-end" className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm" />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 border rounded-md dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Support Tickets</h3>
+                    <p className="text-xs text-slate-500 mb-4">Export all support tickets within the selected timeframe.</p>
+                    <Button onClick={() => {
+                      const start = (document.getElementById('export-start') as HTMLInputElement).value;
+                      const end = (document.getElementById('export-end') as HTMLInputElement).value;
+                      window.open(`/api/v1/admin/reports/export?domain=support${start ? `&start_date=${start}` : ''}${end ? `&end_date=${end}` : ''}`, '_blank');
+                    }} className="w-full" variant="outline">
+                      <FileText className="w-4 h-4 mr-2" /> Download CSV
+                    </Button>
+                  </div>
+
+                  <div className="p-4 border rounded-md dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">User Signups</h3>
+                    <p className="text-xs text-slate-500 mb-4">Export user registrations and statuses.</p>
+                    <Button onClick={() => {
+                      const start = (document.getElementById('export-start') as HTMLInputElement).value;
+                      const end = (document.getElementById('export-end') as HTMLInputElement).value;
+                      window.open(`/api/v1/admin/reports/export?domain=users${start ? `&start_date=${start}` : ''}${end ? `&end_date=${end}` : ''}`, '_blank');
+                    }} className="w-full" variant="outline">
+                      <FileText className="w-4 h-4 mr-2" /> Download CSV
+                    </Button>
+                  </div>
+
+                  <div className="p-4 border rounded-md dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">AI Failure Logs</h3>
+                    <p className="text-xs text-slate-500 mb-4">Export AI processing failures and error reasons.</p>
+                    <Button onClick={() => {
+                      const start = (document.getElementById('export-start') as HTMLInputElement).value;
+                      const end = (document.getElementById('export-end') as HTMLInputElement).value;
+                      window.open(`/api/v1/admin/reports/export?domain=ai_failures${start ? `&start_date=${start}` : ''}${end ? `&end_date=${end}` : ''}`, '_blank');
+                    }} className="w-full" variant="outline">
+                      <FileText className="w-4 h-4 mr-2" /> Download CSV
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
