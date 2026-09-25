@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 
+import 'package:google_fonts/google_fonts.dart';
+
 class LightTheme {
   static ThemeData get theme {
-    return ThemeData(
+    final baseTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.light50,
@@ -15,7 +17,12 @@ class LightTheme {
         onSurface: AppColors.light950,
         error: AppColors.error,
       ),
-      fontFamily: "Inter",
+      // Removed global fontFamily: "Inter" as it breaks Material Icons in Web HTML renderer
+      textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).copyWith(
+        bodyLarge: const TextStyle(color: AppColors.light950),
+        bodyMedium: const TextStyle(color: AppColors.light700),
+        bodySmall: const TextStyle(color: AppColors.light500),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.light50,
         foregroundColor: AppColors.light950,
@@ -53,11 +60,7 @@ class LightTheme {
           side: const BorderSide(color: AppColors.light200, width: 1),
         ),
       ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: AppColors.light950),
-        bodyMedium: TextStyle(color: AppColors.light700),
-        bodySmall: TextStyle(color: AppColors.light500),
-      ),
+
       iconTheme: const IconThemeData(
         color: AppColors.primary, // Purple icons
       ),
@@ -81,5 +84,6 @@ class LightTheme {
         ),
       ),
     );
+    return baseTheme;
   }
 }
