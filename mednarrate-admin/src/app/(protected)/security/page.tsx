@@ -8,12 +8,13 @@ import { Shield, ShieldAlert, Lock, AlertTriangle, Key, Users, Activity } from '
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
+// Matches actual backend /security/overview response shape
 interface SecurityOverview {
-  active_admins_count: number;
-  active_roles_count: number;
-  active_sensitive_grants_count: number;
-  recent_security_events_count: number;
-  system_security_status: string;
+  total_admins: number;
+  active_breakglass_grants: number;
+  total_audit_logs: number;
+  pending_privacy_requests: number;
+  total_security_events: number;
 }
 
 interface SecurityEvent {
@@ -26,16 +27,19 @@ interface SecurityEvent {
   ip_address: string | null;
   reason: string | null;
   request_id: string | null;
-  sensitive_access_flag: boolean;
+  resource_type: string | null;
+  resource_id: string | null;
 }
 
 export default function SecurityOverviewPage() {
-  const { data: overview, isLoading: isLoadingOverview } = useQuery<SecurityOverview>({
+  // Backend returns { status, total_admins, active_breakglass_grants, total_audit_logs, ... }
+  const { data: overview, isLoading: isLoadingOverview, error: overviewError } = useQuery<SecurityOverview>({
     queryKey: ['security-overview'],
     queryFn: () => fetchApi('/api/v1/admin/security/overview'),
   });
 
-  const { data: eventsData, isLoading: isLoadingEvents } = useQuery<{ events: SecurityEvent[] }>({
+  // Backend returns a plain array of audit log events (not {events:[]})
+  const { data: eventsData, isLoading: isLoadingEvents, error: eventsError } = useQuery<SecurityEvent[]>({
     queryKey: ['security-events'],
     queryFn: () => fetchApi('/api/v1/admin/security/events?limit=20'),
   });
@@ -51,68 +55,66 @@ export default function SecurityOverviewPage() {
         </p>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Active Admins</CardTitle>
-            <Users className="w-4 h-4 text-slate-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingOverview ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{overview?.active_admins_count ?? 0}</div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Metrics Row — keys match actual backend response */}
+      {overviewError ? (
+        <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 text-sm text-destructive">
+          Failed to load security overview.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Admins</CardTitle>
+              <Users className="w-4 h-4 text-slate-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
+                <div className="text-2xl font-bold">{overview?.total_admins ?? 0}</div>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Active RBAC Roles</CardTitle>
-            <Lock className="w-4 h-4 text-slate-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingOverview ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{overview?.active_roles_count ?? 0}</div>
-            )}
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Active Break-Glass Grants</CardTitle>
+              <Key className="w-4 h-4 text-amber-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
+                <div className={`text-2xl font-bold ${(overview?.active_breakglass_grants ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                  {overview?.active_breakglass_grants ?? 0}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Active Break-Glass Grants</CardTitle>
-            <Key className="w-4 h-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingOverview ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                {overview?.active_sensitive_grants_count ?? 0}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Pending Privacy Requests</CardTitle>
+              <Lock className="w-4 h-4 text-slate-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
+                <div className={`text-2xl font-bold ${(overview?.pending_privacy_requests ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                  {overview?.pending_privacy_requests ?? 0}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Security Status</CardTitle>
-            <Activity className="w-4 h-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingOverview ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 font-semibold px-2.5 py-1">
-                {overview?.system_security_status ?? 'SECURE'}
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Security Events (Total)</CardTitle>
+              <Activity className="w-4 h-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingOverview ? <Skeleton className="h-8 w-24" /> : (
+                <div className="text-2xl font-bold">{overview?.total_security_events ?? 0}</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Security Events Timeline */}
       <Card>
@@ -131,7 +133,9 @@ export default function SecurityOverviewPage() {
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
-          ) : !eventsData?.events || eventsData.events.length === 0 ? (
+          ) : eventsError ? (
+            <div className="text-center py-8 text-destructive text-sm">Failed to load security events.</div>
+          ) : !eventsData || eventsData.length === 0 ? (
             <div className="text-center py-8 text-slate-500 text-sm">No security events recorded yet.</div>
           ) : (
             <div className="overflow-x-auto">
@@ -147,13 +151,13 @@ export default function SecurityOverviewPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {eventsData.events.map((evt) => (
+                  {eventsData.map((evt) => (
                     <tr key={evt.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
                       <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
                         {evt.timestamp ? new Date(evt.timestamp).toLocaleString() : 'N/A'}
                       </td>
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
-                        {evt.actor_email || evt.actor_admin_id || 'System'}
+                        {evt.actor_admin_id || 'System'}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400">
                         {evt.event}
@@ -163,7 +167,7 @@ export default function SecurityOverviewPage() {
                           variant={evt.result === 'success' ? 'default' : 'destructive'}
                           className={evt.result === 'success' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : ''}
                         >
-                          {evt.result}
+                          {evt.result || '—'}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-slate-500 font-mono text-xs">
