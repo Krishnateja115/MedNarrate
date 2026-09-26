@@ -21,6 +21,7 @@ interface AdminUser {
   created_at: string | null;
   last_login_at: string | null;
   roles: string[];
+  active_sessions: number;
 }
 
 export default function AdminManagementPage() {
@@ -58,7 +59,10 @@ export default function AdminManagementPage() {
 
   const toggleActiveMutation = useMutation({
     mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
-      fetchApi(`/api/v1/admin/admins/${id}/active`, { method: 'PATCH', data: { is_active } }),
+      fetchApi(
+        `/api/v1/admin/admins/${id}/${is_active ? 'deactivate' : 'reactivate'}`,
+        { method: 'POST' },
+      ),
     onSuccess: () => {
       setSuccessMsg('Admin status updated successfully');
       setErrorMsg(null);
@@ -88,7 +92,8 @@ export default function AdminManagementPage() {
     createAdminMutation.mutate({
       email: newEmail,
       password: newPassword,
-      full_name: newName || undefined
+      full_name: newName || newEmail,
+      role_ids: [],
     });
   };
 
@@ -191,6 +196,7 @@ export default function AdminManagementPage() {
                     <th className="px-4 py-3">Roles</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Last Login</th>
+                    <th className="px-4 py-3">Active Sessions</th>
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -222,6 +228,9 @@ export default function AdminManagementPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-500 text-xs">
                         {adm.last_login_at ? new Date(adm.last_login_at).toLocaleString() : 'Never'}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">
+                        {adm.active_sessions}
                       </td>
                       <td className="px-4 py-3 text-right space-x-2 flex justify-end items-center">
                         <Link href={`/admins/detail?id=${adm.id}`}>

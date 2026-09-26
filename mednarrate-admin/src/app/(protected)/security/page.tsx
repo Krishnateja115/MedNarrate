@@ -11,6 +11,9 @@ import { Badge } from '@/components/ui/badge';
 // Matches actual backend /security/overview response shape
 interface SecurityOverview {
   total_admins: number;
+  active_admins: number;
+  suspended_admins: number;
+  active_sessions: number;
   active_breakglass_grants: number;
   total_audit_logs: number;
   pending_privacy_requests: number;
@@ -51,7 +54,8 @@ export default function SecurityOverviewPage() {
           <Shield className="w-7 h-7 text-blue-600" /> Security Center Overview
         </h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm">
-          Real-time security governance, RBAC status, active temporary sensitive access grants, and audit events.
+          “Active administrators” are enabled admin accounts. “Active sessions” are
+          unrevoked, unexpired admin refresh sessions.
         </p>
       </div>
 
@@ -61,7 +65,7 @@ export default function SecurityOverviewPage() {
           Failed to load security overview.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Admins</CardTitle>
@@ -69,7 +73,43 @@ export default function SecurityOverviewPage() {
             </CardHeader>
             <CardContent>
               {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
-                <div className="text-2xl font-bold">{overview?.total_admins ?? 0}</div>
+                <div className="text-2xl font-bold">{overview!.total_admins}</div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Active Administrators</CardTitle>
+              <Users className="w-4 h-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
+                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{overview!.active_admins}</div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Suspended Administrators</CardTitle>
+              <Users className="w-4 h-4 text-rose-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
+                <div className="text-2xl font-bold">{overview!.suspended_admins}</div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Currently Active Sessions</CardTitle>
+              <Activity className="w-4 h-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
+                <div className="text-2xl font-bold">{overview!.active_sessions}</div>
               )}
             </CardContent>
           </Card>
@@ -81,8 +121,8 @@ export default function SecurityOverviewPage() {
             </CardHeader>
             <CardContent>
               {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
-                <div className={`text-2xl font-bold ${(overview?.active_breakglass_grants ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
-                  {overview?.active_breakglass_grants ?? 0}
+                <div className={`text-2xl font-bold ${overview!.active_breakglass_grants > 0 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                  {overview!.active_breakglass_grants}
                 </div>
               )}
             </CardContent>
@@ -95,8 +135,8 @@ export default function SecurityOverviewPage() {
             </CardHeader>
             <CardContent>
               {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
-                <div className={`text-2xl font-bold ${(overview?.pending_privacy_requests ?? 0) > 0 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
-                  {overview?.pending_privacy_requests ?? 0}
+                <div className={`text-2xl font-bold ${overview!.pending_privacy_requests > 0 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                  {overview!.pending_privacy_requests}
                 </div>
               )}
             </CardContent>
@@ -109,7 +149,7 @@ export default function SecurityOverviewPage() {
             </CardHeader>
             <CardContent>
               {isLoadingOverview ? <Skeleton className="h-8 w-24" /> : (
-                <div className="text-2xl font-bold">{overview?.total_security_events ?? 0}</div>
+                <div className="text-2xl font-bold">{overview!.total_security_events}</div>
               )}
             </CardContent>
           </Card>
@@ -157,7 +197,7 @@ export default function SecurityOverviewPage() {
                         {evt.timestamp ? new Date(evt.timestamp).toLocaleString() : 'N/A'}
                       </td>
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
-                        {evt.actor_admin_id || 'System'}
+                        {evt.actor_email || evt.actor_admin_id || 'System'}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400">
                         {evt.event}

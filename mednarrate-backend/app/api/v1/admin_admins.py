@@ -3,7 +3,9 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import delete, desc
+from datetime import datetime, timezone
+
+from sqlalchemy import delete, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -11,6 +13,7 @@ from app.core.admin_auth import AdminContext, require_any_permission
 from app.core.database import get_db
 from app.core.security import hash_password
 from app.models.admin import (
+    AdminAuditLog,
     AdminPermission,
     AdminRole,
     AdminRoleAssignment,
@@ -48,6 +51,26 @@ async def list_admins(
     res = await db.execute(stmt)
     admins = res.scalars().all()
 
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    session_counts = dict(
+        (
+            await db.execute(
+                select(RefreshToken.user_id, func.count(RefreshToken.id))
+                .where(RefreshToken.revoked.is_(False), RefreshToken.expires_at > now)
+                .group_by(RefreshToken.user_id)
+            )
+        ).all()
+    )
+    last_logins = dict(
+        (
+            await db.execute(
+                select(AdminAuditLog.actor_admin_id, func.max(AdminAuditLog.timestamp))
+                .where(AdminAuditLog.action == "ADMIN_LOGIN_SUCCESS")
+                .group_by(AdminAuditLog.actor_admin_id)
+            )
+        ).all()
+    )
+
     out = []
     for admin in admins:
         # Fetch assigned roles
@@ -58,17 +81,27 @@ async def list_admins(
         )
         roles = (await db.execute(stmt_roles)).scalars().all()
         role_list = [{"id": str(r.id), "name": r.name} for r in roles]
+        role_names = [role["name"] for role in role_list]
 
         out.append(
             {
                 "id": str(admin.id),
                 "email": admin.email,
                 "full_name": admin.full_name,
+                "role": admin.role.value,
                 "is_active": admin.is_active,
-                "created_at": admin.created_at.isoformat()
-                if admin.created_at
-                else None,
+                "created_at": (
+                    admin.created_at.isoformat() if admin.created_at else None
+                ),
                 "assigned_roles": role_list,
+                "roles": role_names,
+                "is_super_admin": "Super Admin" in role_names,
+                "last_login_at": (
+                    last_logins.get(admin.id).isoformat()
+                    if last_logins.get(admin.id)
+                    else None
+                ),
+                "active_sessions": session_counts.get(admin.id, 0),
             }
         )
 
@@ -80,7 +113,7 @@ async def list_admins(
         request=request,
     )
     await db.commit()
-    return out
+    return {"admins": out}
 
 
 @router.post("", status_code=201)
@@ -198,8 +231,10 @@ async def deactivate_admin(
 
     target_admin.is_active = False
 
-    # Revoke tokens
-    await db.execute(delete(RefreshToken).where(RefreshToken.user_id == admin_uuid))
+    # Remove all refresh sessions; the admin action records the revocation count.
+    revoked_sessions = (
+        await db.execute(delete(RefreshToken).where(RefreshToken.user_id == admin_uuid))
+    ).rowcount or 0
 
     await log_admin_action(
         db=db,
@@ -209,6 +244,7 @@ async def deactivate_admin(
         resource_id=id,
         permission_used="admins.manage",
         request=request,
+        metadata={"revoked_sessions": revoked_sessions},
     )
     await db.commit()
 
@@ -345,7 +381,9 @@ async def force_logout_admin(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid admin ID.")
 
-    await db.execute(delete(RefreshToken).where(RefreshToken.user_id == admin_uuid))
+    revoked_sessions = (
+        await db.execute(delete(RefreshToken).where(RefreshToken.user_id == admin_uuid))
+    ).rowcount or 0
 
     await log_admin_action(
         db=db,
@@ -355,27 +393,36 @@ async def force_logout_admin(
         resource_id=id,
         permission_used="admins.manage",
         request=request,
+        metadata={"revoked_sessions": revoked_sessions},
     )
     await db.commit()
 
     return {"status": "ok", "message": "Active sessions revoked for admin."}
 
+
 @router.get("/{id}/audit_logs")
 async def get_admin_audit_logs(
     id: str,
     request: Request,
-    admin_ctx: AdminContext = Depends(require_any_permission(["admins.view", "super_admin"])),
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["admins.view", "super_admin"])
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     try:
         admin_uuid = uuid.UUID(id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid admin ID.")
-        
+
     from app.models.admin import AdminAuditLog
-    stmt = select(AdminAuditLog).where(AdminAuditLog.actor_admin_id == admin_uuid).order_by(desc(AdminAuditLog.timestamp))
+
+    stmt = (
+        select(AdminAuditLog)
+        .where(AdminAuditLog.actor_admin_id == admin_uuid)
+        .order_by(desc(AdminAuditLog.timestamp))
+    )
     logs = (await db.execute(stmt)).scalars().all()
-    
+
     return {
         "status": "ok",
         "logs": [
@@ -385,27 +432,36 @@ async def get_admin_audit_logs(
                 "resource_type": l.resource_type,
                 "resource_id": l.resource_id,
                 "metadata_payload": l.metadata_payload,
-                "timestamp": l.timestamp.isoformat() if l.timestamp else None
-            } for l in logs
-        ]
+                "timestamp": l.timestamp.isoformat() if l.timestamp else None,
+            }
+            for l in logs
+        ],
     }
+
 
 @router.get("/{id}/support_tickets")
 async def get_admin_support_tickets(
     id: str,
     request: Request,
-    admin_ctx: AdminContext = Depends(require_any_permission(["admins.view", "super_admin"])),
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["admins.view", "super_admin"])
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     try:
         admin_uuid = uuid.UUID(id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid admin ID.")
-        
+
     from app.models.support import SupportTicket
-    stmt = select(SupportTicket).where(SupportTicket.assigned_to_id == admin_uuid).order_by(desc(SupportTicket.created_at))
+
+    stmt = (
+        select(SupportTicket)
+        .where(SupportTicket.assigned_to_id == admin_uuid)
+        .order_by(desc(SupportTicket.created_at))
+    )
     tickets = (await db.execute(stmt)).scalars().all()
-    
+
     return {
         "status": "ok",
         "tickets": [
@@ -414,7 +470,8 @@ async def get_admin_support_tickets(
                 "subject": t.subject,
                 "status": t.status.value if t.status else "unknown",
                 "priority": t.priority.value if t.priority else "unknown",
-                "created_at": t.created_at.isoformat() if t.created_at else None
-            } for t in tickets
-        ]
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+            }
+            for t in tickets
+        ],
     }

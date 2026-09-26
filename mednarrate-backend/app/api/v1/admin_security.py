@@ -1,16 +1,16 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import desc, func
+from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.admin_auth import AdminContext, require_any_permission
 from app.core.database import get_db
-from app.models.admin import AdminAuditLog, SensitiveAccessGrant
-from app.models.privacy import PrivacyDataRequest
-from app.models.user import User, UserRole
+from app.models.admin import AdminAuditLog
+from app.models.user import User
 from app.services.audit import log_admin_action
+from app.services.security_metrics import SECURITY_EVENT_ACTIONS, get_security_metrics
 
 router = APIRouter()
 
@@ -32,50 +32,7 @@ async def get_security_overview(
     )
     await db.commit()
 
-    # Total Admin Accounts
-    stmt_admins = select(func.count(User.id)).where(User.role == UserRole.admin)
-    total_admins = (await db.execute(stmt_admins)).scalar() or 0
-
-    # Active Break-glass Grants
-    stmt_grants = select(func.count(SensitiveAccessGrant.id)).where(
-        SensitiveAccessGrant.status == "active"
-    )
-    active_grants = (await db.execute(stmt_grants)).scalar() or 0
-
-    # Total Audit Logs
-    stmt_audits = select(func.count(AdminAuditLog.id))
-    total_audits = (await db.execute(stmt_audits)).scalar() or 0
-
-    # Pending Privacy Requests
-    stmt_privacy = select(func.count(PrivacyDataRequest.id)).where(
-        PrivacyDataRequest.status.in_(["requested", "under_review"])
-    )
-    pending_privacy_requests = (await db.execute(stmt_privacy)).scalar() or 0
-
-    # Security Events in Audit Logs
-    stmt_sec_events = select(func.count(AdminAuditLog.id)).where(
-        AdminAuditLog.action.in_(
-            [
-                "FAILED_ADMIN_LOGIN",
-                "ADMIN_LOGIN_SUCCESS",
-                "SESSION_REVOCATION",
-                "ROLE_CHANGE",
-                "PERMISSION_CHANGE",
-                "SUSPICIOUS_ACCESS",
-                "BREAK_GLASS_ACCESS",
-            ]
-        )
-    )
-    total_security_events = (await db.execute(stmt_sec_events)).scalar() or 0
-
-    return {
-        "status": "ok",
-        "total_admins": total_admins,
-        "active_breakglass_grants": active_grants,
-        "total_audit_logs": total_audits,
-        "pending_privacy_requests": pending_privacy_requests,
-        "total_security_events": total_security_events,
-    }
+    return {"status": "ok", **await get_security_metrics(db)}
 
 
 @router.get("/events")
@@ -96,23 +53,7 @@ async def get_security_events(
         stmt = stmt.where(AdminAuditLog.action == event_type)
     else:
         # Default to security-relevant event types
-        stmt = stmt.where(
-            AdminAuditLog.action.in_(
-                [
-                    "FAILED_ADMIN_LOGIN",
-                    "ADMIN_LOGIN_SUCCESS",
-                    "SESSION_REVOCATION",
-                    "ROLE_CHANGE",
-                    "PERMISSION_CHANGE",
-                    "SUSPICIOUS_ACCESS",
-                    "BREAK_GLASS_ACCESS",
-                    "DEACTIVATE_ADMIN",
-                    "REACTIVATE_ADMIN",
-                    "CREATE_ADMIN",
-                    "FORCE_LOGOUT_ADMIN",
-                ]
-            )
-        )
+        stmt = stmt.where(AdminAuditLog.action.in_(SECURITY_EVENT_ACTIONS))
 
     if result:
         stmt = stmt.where(AdminAuditLog.result == result)
@@ -121,6 +62,12 @@ async def get_security_events(
     res = await db.execute(stmt)
     logs = res.scalars().all()
 
+    actor_ids = {log.actor_admin_id for log in logs if log.actor_admin_id}
+    actor_emails: dict[str, str] = {}
+    if actor_ids:
+        users = (await db.execute(select(User).where(User.id.in_(actor_ids)))).scalars()
+        actor_emails = {str(user.id): user.email for user in users}
+
     events_out = []
     for log in logs:
         # Never expose secrets/passwords/tokens/secrets in events
@@ -128,9 +75,14 @@ async def get_security_events(
             {
                 "id": str(log.id),
                 "timestamp": log.timestamp.isoformat(),
-                "actor_admin_id": str(log.actor_admin_id)
-                if log.actor_admin_id
-                else "System",
+                "actor_admin_id": (
+                    str(log.actor_admin_id) if log.actor_admin_id else "System"
+                ),
+                "actor_email": (
+                    actor_emails.get(str(log.actor_admin_id))
+                    if log.actor_admin_id
+                    else "System"
+                ),
                 "event": log.action,
                 "resource_type": log.resource_type,
                 "resource_id": log.resource_id,
