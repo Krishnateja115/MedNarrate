@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -7,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from app.core.admin_auth import AdminContext, require_permission
+from app.core.admin_auth import AdminContext, require_any_permission, require_permission
 from app.core.database import get_db
 from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
 from app.models.incidents import (
@@ -16,9 +17,11 @@ from app.models.incidents import (
     IncidentSeverity,
     IncidentStatus,
 )
+from app.models.help_center import ArticleStatus, HelpArticle
 from app.models.support import (
     SupportTicket,
     SupportTicketEvent,
+    SupportTicketHelpArticle,
     SupportTicketMessage,
     TicketPriority,
     TicketStatus,
@@ -27,6 +30,89 @@ from app.services.audit import log_admin_action
 from app.services.support_diagnostics import build_diagnostic_snapshot
 
 router = APIRouter()
+
+TOKEN_PATTERN = re.compile(r"[a-z0-9]{3,}")
+STOP_WORDS = {
+    "and",
+    "are",
+    "for",
+    "from",
+    "has",
+    "have",
+    "how",
+    "into",
+    "not",
+    "still",
+    "that",
+    "the",
+    "this",
+    "was",
+    "what",
+    "when",
+    "why",
+    "with",
+    "your",
+}
+TICKET_HELP_CATEGORIES = {
+    "Login/Account": {"Account", "Troubleshooting"},
+    "Report Processing": {"Reports", "Report Analysis", "Troubleshooting"},
+    "AI/Analysis": {"AI/Chat", "Report Analysis"},
+    "Chat": {"AI/Chat", "RAG"},
+    "Translation": {"Report Analysis", "Troubleshooting"},
+    "Notifications": {"Notifications", "Troubleshooting"},
+    "Medication Reminder": {"Medication Reminders", "Notifications"},
+    "Performance": {"Troubleshooting"},
+    "Security": {"Security"},
+    "Privacy": {"Privacy"},
+    "Other": {"Troubleshooting"},
+}
+
+
+def _search_tokens(value: str) -> set[str]:
+    return {
+        token
+        for token in TOKEN_PATTERN.findall(value.lower())
+        if token not in STOP_WORDS
+    }
+
+
+def _article_suggestions(
+    ticket: SupportTicket, articles: list[HelpArticle]
+) -> list[dict]:
+    ticket_tokens = _search_tokens(f"{ticket.title} {ticket.description}")
+    ticket_category = (
+        ticket.category.value
+        if hasattr(ticket.category, "value")
+        else str(ticket.category)
+    )
+    expected_categories = TICKET_HELP_CATEGORIES.get(ticket_category, set())
+    suggestions = []
+    for article in articles:
+        article_tokens = _search_tokens(
+            f"{article.title} {article.summary} {article.content}"
+        )
+        shared_tokens = sorted(ticket_tokens & article_tokens)
+        category_match = article.category in expected_categories
+        score = len(shared_tokens) * 3 + (2 if category_match else 0)
+        if score == 0:
+            continue
+        reasons = []
+        if shared_tokens:
+            reasons.append(f"Matches: {', '.join(shared_tokens[:4])}")
+        if category_match:
+            reasons.append(f"Relevant to {ticket_category}")
+        suggestions.append(
+            {
+                "id": article.id,
+                "title": article.title,
+                "slug": article.slug,
+                "category": article.category,
+                "summary": article.summary,
+                "score": score,
+                "reason": "; ".join(reasons),
+            }
+        )
+    return sorted(suggestions, key=lambda item: (-item["score"], item["title"]))[:5]
 
 
 class AdminReplyPayload(BaseModel):
@@ -54,7 +140,9 @@ async def list_tickets(
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(25, ge=1, le=100),
-    admin_ctx: AdminContext = Depends(require_permission("support.view")),
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["support.view", "support.manage"])
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     limit = clamp_limit(limit)
@@ -110,7 +198,9 @@ async def list_tickets(
 @router.get("/{ticket_id}")
 async def get_ticket(
     ticket_id: str,
-    admin_ctx: AdminContext = Depends(require_permission("support.view")),
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["support.view", "support.manage"])
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = (
@@ -120,6 +210,9 @@ async def get_ticket(
             selectinload(SupportTicket.user),
             selectinload(SupportTicket.messages),
             selectinload(SupportTicket.events),
+            selectinload(SupportTicket.article_links).selectinload(
+                SupportTicketHelpArticle.article
+            ),
         )
     )
     ticket = (await db.execute(stmt)).scalars().first()
@@ -159,6 +252,7 @@ async def get_ticket(
                 "sender_id": m.sender_id,
                 "is_internal": m.is_internal,
                 "content": m.content,
+                "help_article_ref": m.help_article_ref,
                 "created_at": m.created_at,
             }
             for m in sorted(ticket.messages, key=lambda x: x.created_at)
@@ -172,7 +266,118 @@ async def get_ticket(
             }
             for e in sorted(ticket.events, key=lambda x: x.created_at)
         ],
+        "attached_articles": [
+            {
+                "id": link.article.id,
+                "title": link.article.title,
+                "slug": link.article.slug,
+                "category": link.article.category,
+                "summary": link.article.summary,
+                "attached_at": link.attached_at,
+            }
+            for link in sorted(ticket.article_links, key=lambda x: x.attached_at)
+            if link.article
+        ],
     }
+
+
+@router.get("/{ticket_id}/article-suggestions")
+async def suggest_help_articles(
+    ticket_id: str,
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["support.view", "support.manage"])
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+    ticket = await db.get(SupportTicket, ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    articles = (
+        (
+            await db.execute(
+                select(HelpArticle).where(HelpArticle.status == ArticleStatus.published)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return {
+        "status": "ok",
+        "suggestions": _article_suggestions(ticket, articles),
+    }
+
+
+@router.post("/{ticket_id}/articles/{article_id}", status_code=201)
+async def attach_help_article(
+    ticket_id: str,
+    article_id: str,
+    admin_ctx: AdminContext = Depends(require_permission("support.manage")),
+    db: AsyncSession = Depends(get_db),
+):
+    ticket = await db.get(SupportTicket, ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    article = await db.get(HelpArticle, article_id)
+    if not article or article.status != ArticleStatus.published:
+        raise HTTPException(status_code=404, detail="Published article not found")
+    link = await db.get(
+        SupportTicketHelpArticle,
+        {"ticket_id": ticket_id, "article_id": article_id},
+    )
+    if link:
+        return {"status": "ok", "attached": False}
+
+    db.add(
+        SupportTicketHelpArticle(
+            ticket_id=ticket_id,
+            article_id=article_id,
+            attached_by=str(admin_ctx.user.id),
+        )
+    )
+    db.add(
+        SupportTicketEvent(
+            ticket_id=ticket_id,
+            event_type="help_article_attached",
+            content=f"Attached help article: {article.title}",
+        )
+    )
+    await log_admin_action(
+        db=db,
+        action="SUPPORT_HELP_ARTICLE_ATTACH",
+        actor_admin_id=admin_ctx.user.id,
+        resource_type="SupportTicket",
+        resource_id=ticket_id,
+        permission_used="support.manage",
+        metadata={"article_id": article_id},
+    )
+    await db.commit()
+    return {"status": "ok", "attached": True}
+
+
+@router.delete("/{ticket_id}/articles/{article_id}", status_code=204)
+async def detach_help_article(
+    ticket_id: str,
+    article_id: str,
+    admin_ctx: AdminContext = Depends(require_permission("support.manage")),
+    db: AsyncSession = Depends(get_db),
+):
+    link = await db.get(
+        SupportTicketHelpArticle,
+        {"ticket_id": ticket_id, "article_id": article_id},
+    )
+    if not link:
+        raise HTTPException(status_code=404, detail="Article link not found")
+    await db.delete(link)
+    await log_admin_action(
+        db=db,
+        action="SUPPORT_HELP_ARTICLE_DETACH",
+        actor_admin_id=admin_ctx.user.id,
+        resource_type="SupportTicket",
+        resource_id=ticket_id,
+        permission_used="support.manage",
+        metadata={"article_id": article_id},
+    )
+    await db.commit()
 
 
 @router.post("/{ticket_id}/reply")

@@ -14,7 +14,7 @@ from app.models.chat import ChatMessage, ChatSession
 from app.models.chat_safety import ChatSafetyEvent
 from app.models.doctor_profile import DoctorProfile
 from app.models.feature_flag import FeatureFlag
-from app.models.help_center import HelpArticle
+from app.models.help_center import HelpArticle, HelpArticleVersion
 from app.models.incidents import Incident, IncidentEvent
 from app.models.job_execution import JobExecution
 from app.models.knowledge_document import KnowledgeDocument
@@ -30,7 +30,12 @@ from app.models.refresh_token import RefreshToken
 from app.models.report import Report
 from app.models.report_analysis import ReportAnalysis
 from app.models.report_translation import ReportTranslation
-from app.models.support import SupportTicket, SupportTicketEvent, SupportTicketMessage
+from app.models.support import (
+    SupportTicket,
+    SupportTicketEvent,
+    SupportTicketHelpArticle,
+    SupportTicketMessage,
+)
 from app.models.system_setting import MaintenanceMode, SystemSetting
 from app.models.user import User
 
@@ -66,6 +71,8 @@ __all__ = [
     "SupportTicketMessage",
     "SupportTicketEvent",
     "HelpArticle",
+    "HelpArticleVersion",
+    "SupportTicketHelpArticle",
     "KnowledgeDocument",
     "ChatSafetyEvent",
     "PrivacyDataRequest",

@@ -54,7 +54,11 @@ DEFAULT_PERMISSIONS = [
     ("reports.view", "View reports list and diagnostics"),
     ("users.view", "View registered user profiles"),
     ("users.manage", "Manage user status and roles"),
-    ("support.manage", "Manage support tickets and help articles"),
+    ("support.view", "View support tickets and grounded article suggestions"),
+    ("support.manage", "Manage support tickets and attach help articles"),
+    ("support.escalate", "Escalate support tickets to incidents"),
+    ("help_center.view", "View and preview Help Center articles"),
+    ("help_center.manage", "Create, publish, archive, and edit Help Center articles"),
 ]
 
 

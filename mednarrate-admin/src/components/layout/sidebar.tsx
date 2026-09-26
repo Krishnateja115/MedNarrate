@@ -35,7 +35,7 @@ const NAV_GROUPS = [
       { name: 'Analytics', href: '/analytics', icon: PieChart, permissions: ['analytics.view'] },
       { name: 'User Management', href: '/users', icon: Users, permissions: ['users.view'] },
       { name: 'Medical Reports', href: '/reports', icon: FileText, permissions: ['reports.view'] },
-      { name: 'Support Desk', href: '/support', icon: LifeBuoy, permissions: ['support.view'] },
+      { name: 'Support Desk', href: '/support', icon: LifeBuoy, permissions: ['support.view', 'support.manage'] },
       { name: 'System Incidents', href: '/incidents', icon: AlertTriangle, permissions: ['incidents.view'] },
     ]
   },
@@ -47,7 +47,7 @@ const NAV_GROUPS = [
       { name: 'Chat Operations', href: '/chat-ops', icon: MessageSquare, permissions: ['chat.view'] },
       { name: 'RAG Knowledge Ops', href: '/rag-ops', icon: Database, permissions: ['knowledge_base.view'] },
       { name: 'Automation Jobs', href: '/automation-ops', icon: Clock, permissions: ['automation.view'] },
-      { name: 'Help Center', href: '/help-center', icon: BookOpen, permissions: ['help_center.view'] },
+      { name: 'Help Center', href: '/help-center', icon: BookOpen, permissions: ['help_center.view', 'help_center.manage', 'support.manage'] },
     ]
   },
   {

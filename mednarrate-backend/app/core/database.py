@@ -36,11 +36,15 @@ Base = declarative_base()
 
 
 async def init_db():
-    """Create all tables if they don't exist (dev mode)."""
+    """Create development tables and ensure useful starter help content exists."""
     import app.models  # noqa: F401 – ensures all models are registered
+    from app.services.help_center_seed import seed_help_center_if_empty
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    async with AsyncSessionLocal() as session:
+        await seed_help_center_if_empty(session)
 
 
 async def get_db():

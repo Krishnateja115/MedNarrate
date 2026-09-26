@@ -86,6 +86,11 @@ class SupportTicket(Base):
         "SupportTicketEvent", back_populates="ticket", cascade="all, delete-orphan"
     )
     report = relationship("Report", foreign_keys=[related_report_id])
+    article_links = relationship(
+        "SupportTicketHelpArticle",
+        back_populates="ticket",
+        cascade="all, delete-orphan",
+    )
 
 
 class SupportTicketMessage(Base):
@@ -129,3 +134,25 @@ class SupportTicketEvent(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     ticket = relationship("SupportTicket", back_populates="events")
+
+
+class SupportTicketHelpArticle(Base):
+    """A durable link between a support ticket and a published help article."""
+
+    __tablename__ = "support_ticket_help_articles"
+
+    ticket_id = Column(
+        String(36),
+        ForeignKey("support_tickets.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    article_id = Column(
+        String(36),
+        ForeignKey("help_articles.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    attached_by = Column(String(36), nullable=False)
+    attached_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    ticket = relationship("SupportTicket", back_populates="article_links")
+    article = relationship("HelpArticle", back_populates="ticket_links")

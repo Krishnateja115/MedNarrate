@@ -5,6 +5,7 @@ import { Suspense, useState } from 'react';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, ArrowLeft, Send, ShieldAlert, User, Shield, CheckCircle2, Bot, AlertCircle } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Send, ShieldAlert, User, Shield, CheckCircle2, Bot, AlertCircle, BookOpen, Link2, X } from 'lucide-react';
 import Link from 'next/link';
 
 interface TicketMessage {
@@ -47,7 +48,18 @@ interface TicketDetail {
   updated_at: string;
 }
 
+interface TicketArticle {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  summary: string;
+  attached_at?: string;
+  reason?: string;
+}
+
 function TicketInvestigationPageContent() {
+  const { can } = useAuth();
   const searchParams = useSearchParams();
   const extractedId = searchParams.get('id');
   
@@ -59,9 +71,36 @@ function TicketInvestigationPageContent() {
   const [isInternal, setIsInternal] = useState(false);
   const [actionMessage, setActionMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   
-  const { data, isLoading, error } = useQuery<{status: string, ticket: TicketDetail, messages: TicketMessage[], events: TicketEvent[]}>({
+  const { data, isLoading, error } = useQuery<{status: string, ticket: TicketDetail, messages: TicketMessage[], events: TicketEvent[], attached_articles: TicketArticle[]}>({
     queryKey: ['support_ticket', ticketId],
     queryFn: () => fetchApi(`/api/v1/admin/support/${ticketId}`),
+  });
+
+  const { data: suggestionData } = useQuery<{ status: string; suggestions: TicketArticle[] }>({
+    queryKey: ['support_ticket_article_suggestions', ticketId],
+    queryFn: () => fetchApi(`/api/v1/admin/support/${ticketId}/article-suggestions`),
+  });
+
+  const attachArticleMutation = useMutation({
+    mutationFn: (articleId: string) => fetchApi(
+      `/api/v1/admin/support/${ticketId}/articles/${articleId}`,
+      { method: 'POST' },
+    ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['support_ticket', ticketId] });
+      setActionMessage({ type: 'success', text: 'Help article attached to ticket' });
+    },
+    onError: (mutationError: Error) => {
+      setActionMessage({ type: 'error', text: mutationError.message });
+    },
+  });
+
+  const detachArticleMutation = useMutation({
+    mutationFn: (articleId: string) => fetchApi(
+      `/api/v1/admin/support/${ticketId}/articles/${articleId}`,
+      { method: 'DELETE' },
+    ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['support_ticket', ticketId] }),
   });
 
   const replyMutation = useMutation({
@@ -148,7 +187,9 @@ function TicketInvestigationPageContent() {
     );
   }
 
-  const { ticket, messages, events } = data;
+  const { ticket, messages, events, attached_articles: attachedArticles = [] } = data;
+  const attachedIds = new Set(attachedArticles.map((article) => article.id));
+  const suggestions = (suggestionData?.suggestions || []).filter((article) => !attachedIds.has(article.id));
   
   // Combine and sort messages and events for a unified timeline
   const timeline = [
@@ -285,6 +326,63 @@ function TicketInvestigationPageContent() {
 
         {/* Right Column: Metadata & Actions */}
         <div className="space-y-6">
+          <Card>
+            <CardHeader className="border-b pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BookOpen className="h-4 w-4" /> Help Center articles
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-4">
+              {attachedArticles.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase text-muted-foreground">Attached</Label>
+                  {attachedArticles.map((article) => (
+                    <div key={article.id} className="rounded-md border bg-emerald-50/50 p-3 dark:bg-emerald-950/20">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="text-sm font-medium">{article.title}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{article.summary}</div>
+                        </div>
+                        {can('support.manage') && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Detach article"
+                            onClick={() => detachArticleMutation.mutate(article.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label className="text-xs uppercase text-muted-foreground">Grounded suggestions</Label>
+                {suggestions.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No published articles match this ticket yet.</p>
+                ) : suggestions.map((article) => (
+                  <div key={article.id} className="rounded-md border p-3">
+                    <div className="text-sm font-medium">{article.title}</div>
+                    <p className="mt-1 text-xs text-muted-foreground">{article.summary}</p>
+                    <p className="mt-2 text-[11px] text-blue-600">{article.reason}</p>
+                    {can('support.manage') && (
+                      <Button
+                        className="mt-3 w-full"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => attachArticleMutation.mutate(article.id)}
+                      >
+                        <Link2 className="mr-2 h-3.5 w-3.5" /> Attach to ticket
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="pb-3 border-b">
               <CardTitle className="text-base">Metadata</CardTitle>
