@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../reports/models/report_model.dart';
 import 'lab_result_row.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/helpers.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
 class LabResultsTab extends StatefulWidget {
@@ -63,12 +64,11 @@ class _LabResultsTabState extends State<LabResultsTab> {
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> filteredMetrics = widget.report.metrics.where((m) {
-      final param = m['parameter'].toString().toLowerCase();
-      // Filter out demographic fields or non-lab keywords if any slip into metrics
-      if (param.contains('date of birth') || param.contains('dob') || param.contains('september') || param.contains('once daily')) {
+      final paramName = m['parameter'].toString();
+      if (Helpers.isMetadataParameter(paramName)) {
         return false;
       }
-      return param.contains(_searchQuery.toLowerCase());
+      return paramName.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
     Map<String, List<Map<String, dynamic>>> grouped = {'Uncategorized': []};

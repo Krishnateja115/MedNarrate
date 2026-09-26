@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_models.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/helpers.dart';
 import '../../../core/utils/markdown_formatter.dart';
 import '../models/report_model.dart';
 
@@ -21,9 +22,18 @@ class ClinicalViewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final summary = analysis?.clinicianSummary ?? report.clinicalSummary ?? 'No clinical executive summary available for this report.';
-    final labs = analysis?.structuredLabValues ?? [];
+    final rawLabs = analysis?.structuredLabValues ?? [];
+    final labs = rawLabs.where((l) => !Helpers.isMetadataParameter(l.testName)).toList();
     final meds = analysis?.medications ?? [];
-    final abnormalList = analysis?.abnormalFindings ?? labs.where((l) => l.flag != 'normal' && l.flag != 'not_classified').toList();
+    final rawAbnormal = analysis?.abnormalFindings ?? labs.where((l) => l.flag != 'normal' && l.flag != 'not_classified').toList();
+    final abnormalList = rawAbnormal.where((item) {
+      if (item is LabValue) return !Helpers.isMetadataParameter(item.testName);
+      if (item is Map<String, dynamic>) {
+        final name = item['test_name']?.toString() ?? item['parameter']?.toString() ?? item['original_name']?.toString() ?? '';
+        return !Helpers.isMetadataParameter(name);
+      }
+      return true;
+    }).toList();
 
     final diagnoses = analysis?.entities.where((e) => 
       e['entity_group'] == 'Diagnosis' || e['category'] == 'Diagnosis'

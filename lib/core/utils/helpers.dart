@@ -71,4 +71,66 @@ class Helpers {
         return status;
     }
   }
+
+  /// Checks if a parameter name is patient/report metadata (e.g., PID, Sample Type) rather than a lab test.
+  static bool isMetadataParameter(String name) {
+    final lower = name.toLowerCase().trim();
+    final metadataKeywords = [
+      'pid',
+      'patient id',
+      'patient name',
+      'sample type',
+      'specimen type',
+      'collection date',
+      'report date',
+      'referred by',
+      'phone',
+      'phone no',
+      'mobile',
+      'age/gender',
+      'gender',
+      'sex',
+      'dob',
+      'date of birth',
+      'doctor',
+      'physician',
+      'hospital',
+      'lab name',
+      'laboratory',
+      'address',
+    ];
+    return metadataKeywords.any((kw) => lower == kw || lower.startsWith('$kw ') || lower.startsWith('$kw:'));
+  }
+
+  /// Sanitizes text for PDF rendering by replacing non-Latin-1 glyphs and markdown artifacts.
+  static String sanitizePdfText(String text) {
+    if (text.isEmpty) return '';
+    var s = text;
+    // Replace markdown headings
+    s = s.replaceAll(RegExp(r'^#+\s*', multiLine: true), '');
+    // Replace raw markdown symbols
+    s = s.replaceAll('**', '').replaceAll('*', '').replaceAll('__', '').replaceAll('_', '');
+    // Replace input text tag artifacts
+    s = s.replaceAll('<INPUT_TEXT>', '').replaceAll('</INPUT_TEXT>', '');
+    s = s.replaceAll('****End of Report****', '');
+    // Replace entity parentheses like (Diagnostic_procedure)
+    s = s.replaceAll(RegExp(r'\([A-Za-z_]+\)'), '');
+    // Replace common non-Latin1 bullet/symbol glyphs with clean ASCII
+    s = s.replaceAll('•', '- ')
+         .replaceAll('', '')
+         .replaceAll('□', '-')
+         .replaceAll('✓', '[OK]')
+         .replaceAll('❌', '[X]')
+         .replaceAll('·', '-')
+         .replaceAll('–', '-')
+         .replaceAll('—', '-')
+         .replaceAll('“', '"')
+         .replaceAll('”', '"')
+         .replaceAll('’', "'")
+         .replaceAll('‘', "'");
+    
+    // Strip any remaining non-WinAnsi / non-ASCII characters to avoid PdfException
+    s = s.replaceAll(RegExp(r'[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]'), '');
+    return s.trim();
+  }
 }

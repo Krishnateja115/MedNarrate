@@ -90,13 +90,30 @@ class _PatientViewTabState extends State<PatientViewTab> {
       analysis?.patientSummary ?? report.aiSummary ?? 'No patient-friendly summary available for this report.'
     );
 
-    final labs = analysis?.structuredLabValues ?? [];
+    final rawLabs = analysis?.structuredLabValues ?? [];
+    final labs = rawLabs.where((lab) => !Helpers.isMetadataParameter(lab.testName)).toList();
     final meds = analysis?.medications ?? [];
-    final abnormalList = analysis?.abnormalFindings ?? [];
+    final rawAbnormal = analysis?.abnormalFindings ?? [];
+    final abnormalList = rawAbnormal.where((item) {
+      final name = item['test_name']?.toString() ?? item['parameter']?.toString() ?? item['original_name']?.toString() ?? '';
+      return !Helpers.isMetadataParameter(name);
+    }).toList();
 
     final demogEntities = analysis?.entities.where((e) => 
       (e['entity_group'] == 'PatientDemographic' || e['category'] == 'PatientDemographic')
     ).toList() ?? [];
+
+    final metadataItems = <Map<String, String>>[];
+    for (var e in demogEntities) {
+      final group = e['entity_group']?.toString() ?? e['category']?.toString() ?? 'Demographic';
+      final word = e['word']?.toString() ?? '';
+      if (word.isNotEmpty) {
+        metadataItems.add({'label': group, 'value': word});
+      }
+    }
+    for (var m in rawLabs.where((l) => Helpers.isMetadataParameter(l.testName))) {
+      metadataItems.add({'label': m.testName, 'value': '${m.value} ${m.unit}'.trim()});
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -169,9 +186,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
           const SizedBox(height: 24),
 
           // 3. Patient Information / Demographics (if extracted separately)
-          if (demogEntities.isNotEmpty) ...[
+          if (metadataItems.isNotEmpty) ...[
             const Text(
-              'Patient Information',
+              'Patient & Report Information',
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
@@ -183,13 +200,13 @@ class _PatientViewTabState extends State<PatientViewTab> {
                 border: Border.all(color: AppColors.border),
               ),
               child: Column(
-                children: demogEntities.map((e) => Padding(
+                children: metadataItems.map((item) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(e['entity_group']?.toString() ?? 'Demographic', style: const TextStyle(fontWeight: FontWeight.w600)),
-                      Text(e['word']?.toString() ?? '', style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+                      Text(item['label'] ?? 'Metadata', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(item['value'] ?? '', style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
                     ],
                   ),
                 )).toList(),

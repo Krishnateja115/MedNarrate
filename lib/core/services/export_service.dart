@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/api_models.dart';
+import '../utils/helpers.dart';
 
 import 'pdf_downloader/pdf_downloader.dart';
 
@@ -42,34 +43,28 @@ class ExportService {
     PdfColor textColor,
     pw.Font fontBold,
   ) {
-    final lines = text.split('\n');
+    final clean = Helpers.sanitizePdfText(text);
+    if (clean.isEmpty) return [];
+    
+    final lines = clean.split('\n');
     final widgets = <pw.Widget>[];
 
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim();
       if (line.isEmpty) {
-        widgets.add(pw.SizedBox(height: 8));
+        widgets.add(pw.SizedBox(height: 6));
         continue;
       }
 
-      // Filter out raw entity labels
-      line = line.replaceAll(RegExp(r'\([A-Z][a-z_]+\)'), '');
-      line = line.replaceAll(RegExp(r'\([a-z_]+\)'), '');
-      
-      // Remove known generation artifacts
-      line = line.replaceAll('<INPUT_TEXT>', '').replaceAll('</INPUT_TEXT>', '');
-      line = line.replaceAll('****End of Report****', '');
-      
-      line = line.trim();
-      if (line.isEmpty || line == 'Calculated') continue; // Skip empty after cleanup
-
-      bool isHeading = line.startsWith(RegExp(r'^#+ '));
+      // Headers (numbered or markdown headers)
+      bool isHeading = line.startsWith(RegExp(r'^\d+\.\s+')) || line.startsWith(RegExp(r'^[A-Z][a-zA-Z\s]{2,30}:'));
       if (isHeading) {
-        line = line.replaceAll(RegExp(r'^#+\s*'), ''); // Remove markdown heading markers
-        widgets.add(pw.Paragraph(
-          text: line.replaceAll('**', '').trim(),
-          style: pw.TextStyle(font: fontBold, fontSize: 12, color: _primary),
-          margin: const pw.EdgeInsets.only(top: 12, bottom: 6),
+        widgets.add(pw.Padding(
+          padding: const pw.EdgeInsets.only(top: 10, bottom: 4),
+          child: pw.Text(
+            line,
+            style: pw.TextStyle(font: fontBold, fontSize: 11, color: _primary),
+          ),
         ));
         continue;
       }
@@ -78,29 +73,26 @@ class ExportService {
       if (isBullet) {
         line = line.substring(2).trim();
         widgets.add(pw.Padding(
-          padding: const pw.EdgeInsets.only(left: 12, bottom: 6),
+          padding: const pw.EdgeInsets.only(left: 8, bottom: 4),
           child: pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Container(
-                margin: const pw.EdgeInsets.only(top: 4, right: 8),
+                margin: const pw.EdgeInsets.only(top: 4, right: 6),
                 width: 3,
                 height: 3,
                 decoration: pw.BoxDecoration(color: textColor, shape: pw.BoxShape.circle),
               ),
-              pw.Expanded(child: pw.Text(line.replaceAll('**', ''), style: baseStyle)),
-            ]
-          )
+              pw.Expanded(child: pw.Text(line, style: baseStyle)),
+            ],
+          ),
         ));
         continue;
       }
-      
-      bool looksLikeHeading = line.startsWith(RegExp(r'^\d+\. ')) || line.startsWith(RegExp(r'^[A-Z][a-z ]+ Findings:?'));
-      
-      widgets.add(pw.Paragraph(
-        text: line.replaceAll('**', ''),
-        style: looksLikeHeading ? boldStyle : baseStyle,
-        margin: const pw.EdgeInsets.only(bottom: 6),
+
+      widgets.add(pw.Padding(
+        padding: const pw.EdgeInsets.only(bottom: 4),
+        child: pw.Text(line, style: baseStyle),
       ));
     }
     return widgets;
@@ -114,177 +106,249 @@ class ExportService {
     final doc = pw.Document();
     final font = pw.Font.helvetica();
     final fontBold = pw.Font.helveticaBold();
-    final fontMono = pw.Font.courier();
 
-    final baseStyle = pw.TextStyle(font: font, fontSize: 10, color: _textDark, lineSpacing: 1.5);
-    final mutedStyle = pw.TextStyle(font: font, fontSize: 9, color: _textMuted);
-    final boldStyle = pw.TextStyle(font: fontBold, fontSize: 10, color: _textDark, lineSpacing: 1.5);
-    final headStyle = pw.TextStyle(font: fontBold, fontSize: 14, color: _primary);
-    final monoStyle = pw.TextStyle(font: fontMono, fontSize: 9, color: _textDark);
+    final baseStyle = pw.TextStyle(font: font, fontSize: 9.5, color: _textDark, lineSpacing: 1.4);
+    final mutedStyle = pw.TextStyle(font: font, fontSize: 8.5, color: _textMuted);
+    final boldStyle = pw.TextStyle(font: fontBold, fontSize: 9.5, color: _textDark, lineSpacing: 1.4);
+    final headStyle = pw.TextStyle(font: fontBold, fontSize: 13, color: _primary);
 
     pw.Widget sectionHeader(String title) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.SizedBox(height: 24),
+            pw.SizedBox(height: 16),
             pw.Text(title, style: headStyle),
-            pw.SizedBox(height: 4),
+            pw.SizedBox(height: 3),
             pw.Divider(color: _divider, thickness: 1),
-            pw.SizedBox(height: 12),
+            pw.SizedBox(height: 8),
           ],
         );
 
     pw.Widget flagBadge(String flag) {
       final color = _flagColor(flag);
+      final label = Helpers.sanitizePdfText(flag.toUpperCase());
       return pw.Container(
-        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: pw.BoxDecoration(
           color: color,
-          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
         ),
         child: pw.Text(
-          flag.toUpperCase(),
-          style: pw.TextStyle(font: fontBold, fontSize: 8, color: PdfColors.white),
+          label.isEmpty ? 'NORMAL' : label,
+          style: pw.TextStyle(font: fontBold, fontSize: 7.5, color: PdfColors.white),
         ),
       );
     }
 
+    // Separate lab values into actual lab results vs patient metadata
+    final metadataItems = <LabValue>[];
+    final labResults = <LabValue>[];
+
+    for (final lv in analysis.structuredLabValues) {
+      if (Helpers.isMetadataParameter(lv.testName)) {
+        metadataItems.add(lv);
+      } else {
+        labResults.add(lv);
+      }
+    }
+
+    final cleanTitle = Helpers.sanitizePdfText(reportTitle);
+    final cleanDate = Helpers.sanitizePdfText(reportDate);
+
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.symmetric(vertical: 40, horizontal: 50),
+        margin: const pw.EdgeInsets.symmetric(vertical: 36, horizontal: 44),
         header: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('MedNarrate', style: pw.TextStyle(font: fontBold, fontSize: 18, color: _primary)),
-                pw.Text('Medical Report Summary', style: pw.TextStyle(font: font, fontSize: 10, color: _textMuted)),
+                pw.Text('MedNarrate', style: pw.TextStyle(font: fontBold, fontSize: 16, color: _primary)),
+                pw.Text('Medical Report Summary', style: pw.TextStyle(font: font, fontSize: 9, color: _textMuted)),
               ],
             ),
-            pw.SizedBox(height: 8),
-            pw.Text(reportTitle, style: pw.TextStyle(font: fontBold, fontSize: 12, color: _textDark)),
-            pw.Text('Date: $reportDate', style: mutedStyle),
             pw.SizedBox(height: 6),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(cleanTitle, style: pw.TextStyle(font: fontBold, fontSize: 11, color: _textDark)),
+                pw.Text('Report Date: $cleanDate', style: mutedStyle),
+              ],
+            ),
+            pw.SizedBox(height: 4),
             pw.Divider(color: _primary, thickness: 1.5),
-            pw.SizedBox(height: 16),
+            pw.SizedBox(height: 10),
           ],
         ),
         footer: (context) => pw.Column(
           mainAxisSize: pw.MainAxisSize.min,
           children: [
-            pw.SizedBox(height: 16),
+            pw.SizedBox(height: 10),
             pw.Divider(color: _divider, thickness: 1),
-            pw.SizedBox(height: 8),
+            pw.SizedBox(height: 6),
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  'MedNarrate • Educational / Informational Summary',
-                  style: pw.TextStyle(font: font, fontSize: 8, color: _textMuted),
+                  'MedNarrate - Educational & Informational Summary',
+                  style: pw.TextStyle(font: font, fontSize: 7.5, color: _textMuted),
                 ),
                 pw.Text(
                   'Page ${context.pageNumber} of ${context.pagesCount}',
-                  style: pw.TextStyle(font: font, fontSize: 8, color: _textMuted),
+                  style: pw.TextStyle(font: font, fontSize: 7.5, color: _textMuted),
                 ),
               ],
             ),
           ],
         ),
         build: (context) => [
-          // Patient Summary
-          if (analysis.patientSummary != null && analysis.patientSummary!.isNotEmpty) ...[
+          // 1. Patient / Report Metadata Card
+          if (metadataItems.isNotEmpty) ...[
+            sectionHeader('Patient & Report Information'),
+            pw.TableHelper.fromTextArray(
+              headers: ['Parameter', 'Value'],
+              data: metadataItems.map((m) => [
+                Helpers.sanitizePdfText(m.testName),
+                Helpers.sanitizePdfText('${m.value} ${m.unit}'.trim()),
+              ]).toList(),
+              headerStyle: pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.white),
+              cellStyle: baseStyle,
+              headerDecoration: const pw.BoxDecoration(color: _primary),
+              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+              cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            ),
+          ],
+
+          // 2. Patient Summary
+          if (analysis.patientSummary != null && analysis.patientSummary!.trim().isNotEmpty) ...[
             sectionHeader('Plain Language Summary'),
             ..._buildMarkdown(analysis.patientSummary!, baseStyle, boldStyle, _textDark, fontBold),
           ],
 
-          // Clinician Summary
-          if (analysis.clinicianSummary != null && analysis.clinicianSummary!.isNotEmpty) ...[
-            sectionHeader('Clinical Summary'),
+          // 3. Clinical Executive Summary
+          if (analysis.clinicianSummary != null && analysis.clinicianSummary!.trim().isNotEmpty) ...[
+            sectionHeader('Clinical Executive Summary'),
             ..._buildMarkdown(analysis.clinicianSummary!, baseStyle, boldStyle, _textDark, fontBold),
           ],
 
-          // Lab Results
-          if (analysis.structuredLabValues.isNotEmpty) ...[
-            sectionHeader('Lab Results'),
+          // 4. Lab Results Table
+          sectionHeader('Complete Laboratory Results'),
+          if (labResults.isEmpty)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 8),
+              child: pw.Text('No laboratory results were identified in this report.', style: mutedStyle),
+            )
+          else
             pw.TableHelper.fromTextArray(
-              headers: ['Test', 'Value', 'Unit', 'Ref Low', 'Ref High', 'Status'],
-              data: analysis.structuredLabValues.map((lv) => [
-                lv.testName,
-                lv.value.toString(),
-                lv.unit,
-                lv.refLow?.toString() ?? '—',
-                lv.refHigh?.toString() ?? '—',
-                lv.flag.toUpperCase(),
-              ]).toList(),
-              headerStyle: pw.TextStyle(font: fontBold, fontSize: 9, color: PdfColors.white),
-              cellStyle: monoStyle,
-              headerDecoration: const pw.BoxDecoration(color: _primary),
-              oddRowDecoration: pw.BoxDecoration(color: PdfColors.grey100),
-              cellPadding: const pw.EdgeInsets.all(6),
-              cellAlignment: pw.Alignment.centerLeft,
-            ),
-          ],
-
-          // Abnormal Findings
-          if (analysis.abnormalFindings.isNotEmpty) ...[
-            sectionHeader('Abnormal Findings'),
-            ...analysis.abnormalFindings.map((f) => pw.Container(
-                  margin: const pw.EdgeInsets.only(bottom: 8),
-                  padding: const pw.EdgeInsets.all(12),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: _divider, width: 1),
-                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                    color: PdfColors.grey50,
-                  ),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Expanded(
-                        child: pw.Text(
-                          '${f['test_name']} — ${f['value']} ${f['unit']}',
-                          style: boldStyle,
-                        ),
-                      ),
-                      flagBadge(f['flag']?.toString() ?? 'normal'),
-                    ],
-                  ),
-                )),
-          ],
-
-          // Entities - Cleaned up to a structured table
-          if (analysis.entities.isNotEmpty) ...[
-            sectionHeader('Medical Entities Detected'),
-            pw.TableHelper.fromTextArray(
-              headers: ['Entity', 'Category'],
-              data: analysis.entities.map((e) {
-                final word = e['word']?.toString() ?? '';
-                var group = e['entity_group']?.toString() ?? '';
-                group = group.replaceAll('_', ' '); // Clean up internal labels
-                return [word, group];
+              headers: ['Test Name', 'Result Value', 'Unit', 'Ref Low', 'Ref High', 'Status'],
+              data: labResults.map((lv) {
+                final name = Helpers.sanitizePdfText(lv.testName);
+                final val = lv.value.toString();
+                final unit = Helpers.sanitizePdfText(lv.unit);
+                final low = lv.refLow?.toString() ?? '-';
+                final high = lv.refHigh?.toString() ?? '-';
+                final flag = Helpers.sanitizePdfText(lv.flag.toUpperCase());
+                return [name, val, unit, low, high, flag];
               }).toList(),
-              headerStyle: pw.TextStyle(font: fontBold, fontSize: 9, color: PdfColors.white),
+              headerStyle: pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.white),
               cellStyle: baseStyle,
               headerDecoration: const pw.BoxDecoration(color: _primary),
-              oddRowDecoration: pw.BoxDecoration(color: PdfColors.grey100),
-              cellPadding: const pw.EdgeInsets.all(6),
+              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+              cellPadding: const pw.EdgeInsets.all(5),
               cellAlignment: pw.Alignment.centerLeft,
+            ),
+
+          // 5. Abnormal Findings
+          sectionHeader('Abnormal Findings'),
+          if (analysis.abnormalFindings.isEmpty)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 8),
+              child: pw.Text('No abnormal laboratory results were identified based on the reported reference ranges.', style: mutedStyle),
+            )
+          else
+            ...analysis.abnormalFindings.where((f) => !Helpers.isMetadataParameter(f['test_name']?.toString() ?? '')).map((f) {
+              final name = Helpers.sanitizePdfText(f['test_name']?.toString() ?? 'Finding');
+              final val = f['value']?.toString() ?? '';
+              final unit = Helpers.sanitizePdfText(f['unit']?.toString() ?? '');
+              final flag = f['flag']?.toString() ?? 'normal';
+              return pw.Container(
+                margin: const pw.EdgeInsets.only(bottom: 6),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: _divider, width: 1),
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                  color: PdfColors.grey50,
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Expanded(
+                      child: pw.Text(
+                        '$name: $val $unit',
+                        style: boldStyle,
+                      ),
+                    ),
+                    flagBadge(flag),
+                  ],
+                ),
+              );
+            }),
+
+          // 6. Medications
+          sectionHeader('Reported Medications'),
+          if (analysis.medications.isEmpty)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 8),
+              child: pw.Text('No medications were identified in this report.', style: mutedStyle),
+            )
+          else
+            pw.TableHelper.fromTextArray(
+              headers: ['Medication', 'Dosage', 'Frequency', 'Notes'],
+              data: analysis.medications.map((m) => [
+                Helpers.sanitizePdfText(m['medication_name']?.toString() ?? ''),
+                Helpers.sanitizePdfText(m['dosage']?.toString() ?? '-'),
+                Helpers.sanitizePdfText(m['frequency']?.toString() ?? '-'),
+                Helpers.sanitizePdfText(m['notes']?.toString() ?? '-'),
+              ]).toList(),
+              headerStyle: pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.white),
+              cellStyle: baseStyle,
+              headerDecoration: const pw.BoxDecoration(color: _primary),
+              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+              cellPadding: const pw.EdgeInsets.all(5),
+            ),
+
+          // 7. Medical Entities
+          if (analysis.entities.isNotEmpty) ...[
+            sectionHeader('Extracted Medical Terms'),
+            pw.TableHelper.fromTextArray(
+              headers: ['Term / Finding', 'Category'],
+              data: analysis.entities.map((e) {
+                final word = Helpers.sanitizePdfText(e['word']?.toString() ?? '');
+                var group = Helpers.sanitizePdfText(e['entity_group']?.toString() ?? e['category']?.toString() ?? 'General');
+                group = group.replaceAll('_', ' ');
+                return [word, group];
+              }).toList(),
+              headerStyle: pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.white),
+              cellStyle: baseStyle,
+              headerDecoration: const pw.BoxDecoration(color: _primary),
+              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+              cellPadding: const pw.EdgeInsets.all(5),
             ),
           ],
 
-          pw.SizedBox(height: 30),
+          pw.SizedBox(height: 20),
           pw.Container(
-            padding: const pw.EdgeInsets.all(16),
+            padding: const pw.EdgeInsets.all(12),
             decoration: pw.BoxDecoration(
               color: PdfColors.orange50,
               border: pw.Border.all(color: _warning, width: 1),
-              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
             ),
             child: pw.Text(
-              '⚠ DISCLAIMER: This analysis is AI-generated and intended for informational '
-              'and educational purposes only. It does not constitute medical advice, diagnosis, or treatment. '
-              'Please consult a qualified healthcare professional before making any health decisions.',
-              style: pw.TextStyle(font: font, fontSize: 9, color: _textDark, lineSpacing: 1.4),
+              'DISCLAIMER: This report summary is generated by MedNarrate AI for educational and informational purposes only. '
+              'It does not constitute medical advice, diagnosis, or treatment. Please consult a qualified healthcare professional before making health decisions.',
+              style: pw.TextStyle(font: font, fontSize: 8, color: _textDark, lineSpacing: 1.3),
             ),
           ),
         ],
