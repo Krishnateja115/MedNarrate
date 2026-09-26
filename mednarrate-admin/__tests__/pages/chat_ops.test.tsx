@@ -6,6 +6,10 @@ jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
 }));
 
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ can: () => true }),
+}));
+
 describe('ChatOpsPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -23,10 +27,10 @@ describe('ChatOpsPage', () => {
   });
 
   it('renders sessions correctly', () => {
-    (useQuery as jest.Mock).mockReturnValue({
-      data: {
-        status: 'ok',
-        sessions: [
+    (useQuery as jest.Mock)
+      .mockReturnValueOnce({
+        data: {
+          items: [
           {
             id: 'sess-1',
             user_id: 'user-1',
@@ -34,12 +38,19 @@ describe('ChatOpsPage', () => {
             title: 'General question',
             created_at: '2023-10-27T10:00:00Z',
           }
-        ],
-        events: []
-      },
-      isLoading: false,
-      error: null,
-    });
+          ],
+          total: 1,
+          page: 1,
+          limit: 25,
+        },
+        isLoading: false,
+        error: null,
+      })
+      .mockReturnValueOnce({
+        data: { items: [], total: 0, page: 1, limit: 25 },
+        isLoading: false,
+        error: null,
+      });
 
     render(<ChatOpsPage />);
     expect(screen.getByText('sess-1')).toBeInTheDocument();

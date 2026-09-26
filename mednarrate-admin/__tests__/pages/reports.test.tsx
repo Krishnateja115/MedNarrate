@@ -26,8 +26,7 @@ describe('ReportsPage', () => {
   it('renders reports table correctly', () => {
     (useQuery as jest.Mock).mockReturnValue({
       data: {
-        status: 'ok',
-        reports: [
+        items: [
           {
             id: 'r1',
             user_id: 'u1',
@@ -38,7 +37,11 @@ describe('ReportsPage', () => {
             uploaded_at: '2023-10-27T10:00:00Z',
           }
         ],
-        pagination: { total: 1, limit: 50, offset: 0 }
+        total: 1,
+        page: 1,
+        limit: 25,
+        has_next: false,
+        has_previous: false,
       },
       isLoading: false,
       error: null,

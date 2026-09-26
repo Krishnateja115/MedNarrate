@@ -68,19 +68,19 @@ interface Alert {
 }
 
 export default function OverviewPage() {
-  const { data: summary, isLoading: isLoadingSummary } = useQuery<DashboardSummary>({
+  const { data: summary, isLoading: isLoadingSummary, error: summaryError } = useQuery<DashboardSummary>({
     queryKey: ['dashboard-summary'],
     queryFn: () => fetchApi('/api/v1/admin/dashboard/summary'),
     refetchInterval: 60000,
   });
 
-  const { data: health, isLoading: isLoadingHealth } = useQuery<SystemHealth>({
+  const { data: health, isLoading: isLoadingHealth, error: healthError } = useQuery<SystemHealth>({
     queryKey: ['system-health'],
     queryFn: () => fetchApi('/api/v1/admin/system/health'),
     refetchInterval: 60000,
   });
 
-  const { data: alertsData, isLoading: isLoadingAlerts } = useQuery<{ alerts: Alert[] }>({
+  const { data: alertsData, isLoading: isLoadingAlerts, error: alertsError } = useQuery<{ alerts: Alert[] }>({
     queryKey: ['dashboard-alerts'],
     queryFn: () => fetchApi('/api/v1/admin/dashboard/alerts'),
     refetchInterval: 60000,
@@ -101,6 +101,22 @@ export default function OverviewPage() {
             </Card>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (summaryError || healthError || alertsError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Command Center</h1>
+          <p className="text-muted-foreground mt-2">MedNarrate Operations Overview</p>
+        </div>
+        <Card>
+          <CardContent className="p-8 text-center text-destructive">
+            Failed to load command center. Check your connection and try again.
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -31,7 +31,7 @@ describe('OverviewPage (Command Center)', () => {
     });
 
     render(<OverviewPage />);
-    expect(screen.getByText('Failed to load command center')).toBeInTheDocument();
+    expect(screen.getByText(/Failed to load command center/i)).toBeInTheDocument();
   });
 
   it('renders dashboard metrics correctly', () => {
@@ -61,6 +61,17 @@ describe('OverviewPage (Command Center)', () => {
           error: null,
         };
       }
+      if (queryKey[0] === 'system-health') {
+        return {
+          data: {
+            status: 'healthy',
+            timestamp: '2023-10-27T10:00:00Z',
+            services: {},
+          },
+          isLoading: false,
+          error: null,
+        };
+      }
       return { data: null, isLoading: false, error: null };
     });
 
@@ -75,6 +86,6 @@ describe('OverviewPage (Command Center)', () => {
     expect(screen.getByText('98.5%')).toBeInTheDocument(); // analysis success rate
     
     // Check status
-    expect(screen.getByText('Healthy')).toBeInTheDocument();
+    expect(screen.getByText('HEALTHY')).toBeInTheDocument();
   });
 });

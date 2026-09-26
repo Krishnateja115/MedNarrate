@@ -6,7 +6,7 @@
  * - Safe rendering under: empty, loading, API error, failed ingestion, degraded health
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
 import RagOpsPage from '@/app/(protected)/rag-ops/page';
@@ -54,6 +54,8 @@ const renderPage = () =>
       <RagOpsPage />
     </QueryClientProvider>
   );
+
+const showDocuments = () => fireEvent.click(screen.getByRole('tab', { name: 'Documents' }));
 
 // ─── fixtures ─────────────────────────────────────────────────────────────────
 const ragStatus = {
@@ -113,6 +115,7 @@ describe('RagOpsPage', () => {
 
   it('renders document rows from items array', async () => {
     renderPage();
+    showDocuments();
     await waitFor(() => {
       const rows = screen.getAllByTestId('doc-row');
       expect(rows).toHaveLength(2);
@@ -122,13 +125,14 @@ describe('RagOpsPage', () => {
 
   it('shows loading state while fetching', () => {
     mockedFetchApi.mockReturnValue(new Promise(() => {})); // never resolves
-    renderPage();
-    expect(screen.getByTestId('loading')).toBeTruthy();
+    const { container } = renderPage();
+    expect(container.querySelector('.animate-pulse')).toBeTruthy();
   });
 
   it('shows error message when documents API fails', async () => {
     mockedFetchApi.mockRejectedValue(new Error('503 Service Unavailable'));
     renderPage();
+    showDocuments();
     await waitFor(() => {
       expect(screen.getByText(/Failed to load documents/i)).toBeTruthy();
     });
@@ -140,6 +144,7 @@ describe('RagOpsPage', () => {
       return Promise.resolve({ items: [], total: 0, page: 1, limit: 25 });
     });
     renderPage();
+    showDocuments();
     await waitFor(() => {
       const rows = screen.queryAllByTestId('doc-row');
       expect(rows).toHaveLength(0);
@@ -152,6 +157,7 @@ describe('RagOpsPage', () => {
       return Promise.resolve({ total: 0, page: 1, limit: 25 }); // no items key
     });
     expect(() => renderPage()).not.toThrow();
+    showDocuments();
     await waitFor(() => {
       const rows = screen.queryAllByTestId('doc-row');
       expect(rows).toHaveLength(0);

@@ -33,8 +33,7 @@ describe('UsersPage', () => {
   it('renders users table correctly', () => {
     (useQuery as jest.Mock).mockReturnValue({
       data: {
-        status: 'ok',
-        users: [
+        items: [
           {
             id: 'u1',
             email: 'test@example.com',
@@ -45,7 +44,11 @@ describe('UsersPage', () => {
             created_at: '2023-10-27T10:00:00Z',
           }
         ],
-        pagination: { total: 1, limit: 50, offset: 0 }
+        total: 1,
+        page: 1,
+        limit: 25,
+        has_next: false,
+        has_previous: false,
       },
       isLoading: false,
       error: null,
