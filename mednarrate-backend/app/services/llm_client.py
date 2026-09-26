@@ -451,7 +451,7 @@ class FallbackAIProvider(LLMProvider):
                     lines.append("Results Outside Reported Reference Ranges / Flagged Results:")
                     for val in abnormal_labs:
                         name = val.get("test_name") or val.get("original_name") or "Test"
-                        val = val.get("value")
+                        num_val = val.get("value")
                         unit = val.get("unit", "")
                         flag_str = (val.get("flag") or "").upper()
                         low = val.get("ref_low")
@@ -466,13 +466,13 @@ class FallbackAIProvider(LLMProvider):
                                 ref_str = f"> {low} {unit}".strip()
                             else:
                                 ref_str = "Not provided in the report"
-                        lines.append(f"• {name}: {val} {unit} — Flagged {flag_str} (Reported Reference Range: {ref_str}).")
+                        lines.append(f"• {name}: {num_val} {unit} — Flagged {flag_str} (Reported Reference Range: {ref_str}).")
                 
                 if normal_labs:
                     lines.append("\nResults Within Reported Normal Bounds:")
                     for val in normal_labs:
                         name = val.get("test_name") or val.get("original_name") or "Test"
-                        val = val.get("value")
+                        num_val = val.get("value")
                         unit = val.get("unit", "")
                         low = val.get("ref_low")
                         high = val.get("ref_high")
@@ -486,7 +486,7 @@ class FallbackAIProvider(LLMProvider):
                                 ref_str = f"> {low} {unit}".strip()
                             else:
                                 ref_str = "Not provided in the report"
-                        lines.append(f"• {name}: {val} {unit} — NORMAL (Reported Reference Range: {ref_str}).")
+                        lines.append(f"• {name}: {num_val} {unit} — NORMAL (Reported Reference Range: {ref_str}).")
 
                 lines.append("\n### 3. What These Terms Mean")
                 if any("glucose" in (val.get("test_name") or "").lower() for val in labs):
