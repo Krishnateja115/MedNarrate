@@ -324,6 +324,9 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                       key: const PageStorageKey('patient_view_tab'),
                       report: _controller.report!,
                       analysis: _controller.analysis,
+                      translation: _controller.translation,
+                      isTranslating: _controller.isTranslating,
+                      onTranslate: (lang) => _controller.translate(lang),
                     ),
                     ClinicalViewTab(
                       key: const PageStorageKey('clinical_view_tab'),

@@ -11,11 +11,17 @@ import 'package:mednarrate/l10n/app_localizations.dart';
 class PatientViewTab extends StatefulWidget {
   final ReportModel report;
   final ReportAnalysisModel? analysis;
+  final TranslationModel? translation;
+  final bool isTranslating;
+  final Future<void> Function(String)? onTranslate;
 
   const PatientViewTab({
     super.key,
     required this.report,
     this.analysis,
+    this.translation,
+    this.isTranslating = false,
+    this.onTranslate,
   });
 
   @override
@@ -23,11 +29,9 @@ class PatientViewTab extends StatefulWidget {
 }
 
 class _PatientViewTabState extends State<PatientViewTab> {
-  bool _translating = false;
-  String? _translatedSummary;
 
   Future<void> _translate(BuildContext context) async {
-    if (_translating) return;
+    if (widget.isTranslating || widget.onTranslate == null) return;
     final languages = {
       'en': 'English',
       'hi': 'Hindi (हिन्दी)',
@@ -63,20 +67,18 @@ class _PatientViewTabState extends State<PatientViewTab> {
     );
     if (selected == null) return;
     if (!context.mounted) return;
+    
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context)!;
-    setState(() => _translating = true);
+    
     try {
-      final t = await ApiService.instance.translateAnalysis(widget.report.id, selected);
-      if (mounted) setState(() => _translatedSummary = t.patientSummary);
+      await widget.onTranslate!(selected);
     } catch (_) {
       if (mounted) {
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.translationFailed)),
         );
       }
-    } finally {
-      if (mounted) setState(() => _translating = false);
     }
   }
 
@@ -87,7 +89,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
     final theme = Theme.of(context);
 
     final summary = Helpers.sanitizeDisplayText(
-      _translatedSummary ??
+      widget.translation?.patientSummary ??
           (analysis?.patientSummary ??
               report.aiSummary ??
               'No patient-friendly summary available for this report.'),
@@ -136,12 +138,12 @@ class _PatientViewTabState extends State<PatientViewTab> {
                 'Report at a Glance',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              _translating
+              widget.isTranslating
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : TextButton.icon(
                     onPressed: () => _translate(context),
                     icon: const Icon(Icons.translate, size: 16),
-                    label: Text(_translatedSummary != null ? 'Retranslate' : 'Translate'),
+                    label: Text(widget.translation != null ? 'Retranslate' : 'Translate'),
                   ),
             ],
           ),
@@ -261,7 +263,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: _generateDoctorDiscussionPoints(context, abnormalList, meds),
+              children: _generateDoctorDiscussionPoints(context, abnormalList, meds, widget.translation),
             ),
           ),
 
@@ -607,6 +609,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
     BuildContext context,
     List<Map<String, dynamic>> abnormalList,
     List<Map<String, dynamic>> meds,
+    TranslationModel? translation,
   ) {
     final points = <Widget>[];
 
@@ -616,9 +619,20 @@ class _PatientViewTabState extends State<PatientViewTab> {
         final val = abnormal['value']?.toString() ?? '';
         final unit = abnormal['unit']?.toString() ?? '';
         final flag = (abnormal['flag']?.toString() ?? 'abnormal').toUpperCase();
+
+        String? translatedExpl;
+        if (translation != null && translation.findingsJson.isNotEmpty) {
+          try {
+            final match = translation.findingsJson.firstWhere(
+              (f) => f['test_name']?.toString().toLowerCase() == name.toLowerCase(),
+            );
+            translatedExpl = match['translated_explanation']?.toString();
+          } catch (_) {}
+        }
+
         points.add(_buildDoctorBullet(
           context,
-          'Discuss the $flag $name level ($val $unit) with your healthcare provider.',
+          translatedExpl ?? 'Discuss the $flag $name level ($val $unit) with your healthcare provider.',
         ));
       }
     } else {

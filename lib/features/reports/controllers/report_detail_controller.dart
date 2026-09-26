@@ -18,6 +18,11 @@ class ReportDetailController extends ChangeNotifier {
   bool professionalMode = false;
   bool _disposed = false;
 
+  bool isTranslating = false;
+  TranslationModel? translation;
+  String? translationLanguage;
+  final Map<String, TranslationModel> _translationCache = {};
+
   @override
   void dispose() {
     _disposed = true;
@@ -121,5 +126,42 @@ class ReportDetailController extends ChangeNotifier {
   Future<void> deleteReport() async {
     if (report == null) return;
     await _apiService.deleteReport(report!.id);
+  }
+
+  Future<void> translate(String languageCode) async {
+    if (report == null) return;
+    if (languageCode == 'en') {
+      translation = null;
+      translationLanguage = 'en';
+      if (!_disposed) notifyListeners();
+      return;
+    }
+    
+    if (_translationCache.containsKey(languageCode)) {
+      translation = _translationCache[languageCode];
+      translationLanguage = languageCode;
+      if (!_disposed) notifyListeners();
+      return;
+    }
+
+    isTranslating = true;
+    if (!_disposed) notifyListeners();
+
+    try {
+      final t = await _apiService.translateAnalysis(report!.id, languageCode);
+      if (_disposed) return;
+      _translationCache[languageCode] = t;
+      translation = t;
+      translationLanguage = languageCode;
+    } catch (e) {
+      // Allow UI to handle the error or show a snackbar (by throwing it)
+      // or we just set error? Wait, we should probably rethrow so PatientViewTab can show SnackBar.
+      rethrow;
+    } finally {
+      if (!_disposed) {
+        isTranslating = false;
+        notifyListeners();
+      }
+    }
   }
 }
