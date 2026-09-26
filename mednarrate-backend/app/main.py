@@ -22,6 +22,7 @@ from app.services.scheduler import start_scheduler, stop_scheduler
 limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
@@ -46,6 +47,7 @@ async def lifespan(app: FastAPI):
     yield
     stop_scheduler()
 
+
 app = FastAPI(title="MedNarrate API", lifespan=lifespan)
 
 app.state.limiter = limiter
@@ -65,7 +67,7 @@ if is_wildcard:
 cors_origins.add("tauri://localhost")
 cors_origins.add("http://tauri.localhost")
 
-# Fallback: if cors_origins is completely empty because of removing "*", add a placeholder or localhost 
+# Fallback: if cors_origins is completely empty because of removing "*", add a placeholder or localhost
 # to satisfy allow_origins requirements when allow_credentials=True
 if not cors_origins:
     cors_origins.add("http://localhost:3000")
@@ -78,14 +80,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains"
+    )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     return response
+
 
 @app.middleware("http")
 async def prompt_injection_middleware(request: Request, call_next):
@@ -95,25 +101,32 @@ async def prompt_injection_middleware(request: Request, call_next):
         if "application/json" in content_type:
             try:
                 body = await request.body()
-                body_str = body.decode('utf-8').lower()
-                
+                body_str = body.decode("utf-8").lower()
+
                 # Robust Prompt Injection / Jailbreak Detection Regex
                 injection_pattern = re.compile(
-                    r"(ignore previous instructions|ignore all previous|system prompt|you are a helpful assistant|forget previous|override instructions|bypass|jailbreak|dan|do anything now)", 
-                    re.IGNORECASE
+                    r"(ignore previous instructions|ignore all previous|system prompt|you are a helpful assistant|forget previous|override instructions|bypass|jailbreak|dan|do anything now)",
+                    re.IGNORECASE,
                 )
-                
+
                 if injection_pattern.search(body_str):
                     from fastapi.responses import JSONResponse
-                    return JSONResponse(status_code=400, content={"detail": "Potential prompt injection detected."})
+
+                    return JSONResponse(
+                        status_code=400,
+                        content={"detail": "Potential prompt injection detected."},
+                    )
             except Exception:
                 pass
+
             # need to make the body available again for downstream consumers
             async def receive():
                 return {"type": "http.request", "body": body}
+
             request._receive = receive
     response = await call_next(request)
     return response
+
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
@@ -121,11 +134,12 @@ os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 # Files are now served via the authenticated /api/v1/reports/{id}/download endpoint.
 app.include_router(api_v1_router, prefix="/api/v1")
 
+
 @app.get("/health")
 async def health():
     return {
         "service": "mednarrate",
         "status": "ok",
         "version": os.environ.get("MEDNARRATE_VERSION", "1.0.0"),
-        "commit": os.environ.get("MEDNARRATE_COMMIT", "unknown")
+        "commit": os.environ.get("MEDNARRATE_COMMIT", "unknown"),
     }
