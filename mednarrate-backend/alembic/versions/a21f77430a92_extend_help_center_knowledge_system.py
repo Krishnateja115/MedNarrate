@@ -21,13 +21,26 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("help_articles", schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column("summary", sa.Text(), server_default="", nullable=False)
-        )
-        batch_op.add_column(sa.Column("published_at", sa.DateTime(), nullable=True))
+    # `init_db()` is intentionally useful for a fresh local development
+    # database and can create model tables before Alembic has recorded this
+    # revision. Make the upgrade safe for that supported bootstrap path.
+    connection = op.get_bind()
+    inspector = sa.inspect(connection)
+    article_columns = {column["name"] for column in inspector.get_columns("help_articles")}
+    if "summary" not in article_columns or "published_at" not in article_columns:
+        with op.batch_alter_table("help_articles", schema=None) as batch_op:
+            if "summary" not in article_columns:
+                batch_op.add_column(
+                    sa.Column("summary", sa.Text(), server_default="", nullable=False)
+                )
+            if "published_at" not in article_columns:
+                batch_op.add_column(
+                    sa.Column("published_at", sa.DateTime(), nullable=True)
+                )
 
-    op.create_table(
+    table_names = set(sa.inspect(connection).get_table_names())
+    if "help_article_versions" not in table_names:
+        op.create_table(
         "help_article_versions",
         sa.Column("id", sa.String(length=36), nullable=False),
         sa.Column("article_id", sa.String(length=36), nullable=False),
@@ -45,8 +58,9 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("article_id", "version", name="uq_help_article_version"),
-    )
-    op.create_table(
+        )
+    if "support_ticket_help_articles" not in table_names:
+        op.create_table(
         "support_ticket_help_articles",
         sa.Column("ticket_id", sa.String(length=36), nullable=False),
         sa.Column("article_id", sa.String(length=36), nullable=False),
@@ -59,9 +73,7 @@ def upgrade() -> None:
             ["ticket_id"], ["support_tickets.id"], ondelete="CASCADE"
         ),
         sa.PrimaryKeyConstraint("ticket_id", "article_id"),
-    )
-
-    connection = op.get_bind()
+        )
     permissions = (
         (
             "20000000-0000-0000-0000-000000000001",
