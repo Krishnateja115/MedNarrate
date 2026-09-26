@@ -54,6 +54,7 @@ const NAV_GROUPS = [
     title: 'Governance & Security',
     items: [
       { name: 'Security Overview', href: '/security', icon: Shield, permissions: ['security.view', 'audit_logs.view'] },
+      { name: 'Governance Center', href: '/governance', icon: Activity, permissions: ['dashboard.view', 'security.view', 'system.health.view'] },
       { name: 'Admin Accounts', href: '/admins', icon: Users, permissions: ['roles.view', 'users.manage'] },
       { name: 'Roles & Permissions', href: '/roles', icon: Lock, permissions: ['roles.view'] },
       { name: 'Audit Logs', href: '/audit', icon: FileText, permissions: ['audit_logs.view'] },
