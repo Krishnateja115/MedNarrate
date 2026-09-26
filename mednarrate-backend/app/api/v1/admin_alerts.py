@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import AdminContext, get_admin_context
 from app.core.database import get_db
+from app.models.admin import AdminAuditLog
 from app.models.incidents import Incident
 from app.models.llm_telemetry import LLMDiagnosticEvent
 from app.models.report import Report
@@ -41,7 +42,7 @@ async def get_admin_alerts(
         alerts.append(
             {
                 "id": alert_id,
-                "category": "Critical Incident",
+                "category": "incident",
                 "severity": "critical"
                 if sev_str in ["SEV-1", "SEV-2", "critical", "high"]
                 else "warning",
@@ -69,7 +70,7 @@ async def get_admin_alerts(
         alerts.append(
             {
                 "id": alert_id,
-                "category": "Report Processing",
+                "category": "report",
                 "severity": "warning" if failed_rep_cnt < 5 else "critical",
                 "title": "Failed Report Processing Spikes",
                 "message": f"{failed_rep_cnt} medical report processing failure(s) detected in the last 24 hours.",
@@ -93,7 +94,7 @@ async def get_admin_alerts(
         alerts.append(
             {
                 "id": alert_id,
-                "category": "Support",
+                "category": "support",
                 "severity": "warning",
                 "title": "Urgent Support Tickets",
                 "message": f"{urgent_tkt_cnt} high/urgent priority support ticket(s) currently awaiting resolution.",
@@ -117,11 +118,43 @@ async def get_admin_alerts(
         alerts.append(
             {
                 "id": alert_id,
-                "category": "AI Operations",
+                "category": "ai",
                 "severity": "warning",
                 "title": "LLM Provider Errors",
                 "message": f"{ai_errors_cnt} AI request failure(s) recorded in telemetry over past 24 hours.",
                 "target_url": "/ai-ops",
+                "timestamp": now.isoformat(),
+                "acknowledged": alert_id in _acknowledged_alerts,
+            }
+        )
+
+    # 5. Security events requiring operator review
+    security_event_count = (
+        await db.execute(
+            select(func.count(AdminAuditLog.id)).where(
+                AdminAuditLog.timestamp >= twenty_four_hours_ago,
+                AdminAuditLog.action.in_(
+                    [
+                        "FAILED_ADMIN_LOGIN",
+                        "SESSION_REVOCATION",
+                        "SUSPICIOUS_ACCESS",
+                        "PERMISSION_CHANGE",
+                    ]
+                ),
+                AdminAuditLog.result.in_(["failure", "denied"]),
+            )
+        )
+    ).scalar_one_or_none() or 0
+    if security_event_count > 0:
+        alert_id = "security_events_24h"
+        alerts.append(
+            {
+                "id": alert_id,
+                "category": "security",
+                "severity": "critical" if security_event_count >= 5 else "warning",
+                "title": "Security Events Require Review",
+                "message": f"{security_event_count} denied or failed security event(s) were recorded in the last 24 hours.",
+                "target_url": "/security",
                 "timestamp": now.isoformat(),
                 "acknowledged": alert_id in _acknowledged_alerts,
             }

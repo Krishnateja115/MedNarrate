@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from httpx import AsyncClient
@@ -6,7 +7,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, hash_password
-from app.models.admin import AdminRole, AdminRoleAssignment
+from app.models.admin import (
+    AdminAuditLog,
+    AdminRole,
+    AdminRoleAssignment,
+    SensitiveAccessGrant,
+)
 from app.models.user import User, UserRole
 
 
@@ -105,3 +111,78 @@ async def test_alerts_endpoint_and_acknowledge(
     )
     assert ack_res.status_code == 200
     assert ack_res.json()["alert_id"] == "test_alert_id"
+
+
+@pytest.mark.asyncio
+async def test_alerts_include_actionable_security_events(
+    client: AsyncClient,
+    release_super_admin: dict,
+    db_session: AsyncSession,
+):
+    db_session.add(
+        AdminAuditLog(
+            actor_admin_id=release_super_admin["user"].id,
+            action="SUSPICIOUS_ACCESS",
+            result="denied",
+            reason="Automated security regression fixture",
+        )
+    )
+    await db_session.commit()
+
+    response = await client.get(
+        "/api/v1/admin/alerts", headers=release_super_admin["headers"]
+    )
+
+    assert response.status_code == 200
+    security_alert = next(
+        alert
+        for alert in response.json()["alerts"]
+        if alert["id"] == "security_events_24h"
+    )
+    assert security_alert["category"] == "security"
+    assert security_alert["target_url"] == "/security"
+
+
+@pytest.mark.asyncio
+async def test_break_glass_summary_exposes_count_without_grant_details(
+    client: AsyncClient,
+    release_super_admin: dict,
+    db_session: AsyncSession,
+):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    db_session.add_all(
+        [
+            SensitiveAccessGrant(
+                admin_id=release_super_admin["user"].id,
+                resource_type="medical_report",
+                resource_id="active-report",
+                reason="Active grant used to verify the safe global summary",
+                status="active",
+                expires_at=now + timedelta(hours=1),
+            ),
+            SensitiveAccessGrant(
+                admin_id=release_super_admin["user"].id,
+                resource_type="medical_report",
+                resource_id="expired-report",
+                reason="Expired grant must not be included in the summary",
+                status="active",
+                expires_at=now - timedelta(hours=1),
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    response = await client.get(
+        "/api/v1/admin/break-glass/summary",
+        headers=release_super_admin["headers"],
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "attention", "active_count": 1}
+    assert "grants" not in response.json()
+
+
+@pytest.mark.asyncio
+async def test_break_glass_summary_requires_authentication(client: AsyncClient):
+    response = await client.get("/api/v1/admin/break-glass/summary")
+    assert response.status_code == 401

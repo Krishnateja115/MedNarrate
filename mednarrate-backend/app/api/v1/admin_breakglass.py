@@ -21,10 +21,10 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.admin_auth import AdminContext, require_permission
+from app.core.admin_auth import AdminContext, require_any_permission, require_permission
 from app.core.database import get_db
 from app.models.admin import SensitiveAccessGrant
 from app.models.user import User
@@ -276,6 +276,31 @@ async def list_break_glass_grants(
         await db.commit()
 
     return {"grants": [_serialize_grant(g, admins_map) for g in grants]}
+
+
+@router.get("/break-glass/summary")
+async def get_break_glass_summary(
+    db: AsyncSession = Depends(get_db),
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["security.view", "break_glass.read"])
+    ),
+):
+    """Return a non-sensitive count for global operational UI surfaces."""
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    active_count = (
+        await db.execute(
+            select(func.count(SensitiveAccessGrant.id)).where(
+                SensitiveAccessGrant.status == "active",
+                SensitiveAccessGrant.expires_at.is_not(None),
+                SensitiveAccessGrant.expires_at > now,
+            )
+        )
+    ).scalar_one()
+
+    return {
+        "status": "attention" if active_count else "ok",
+        "active_count": active_count,
+    }
 
 
 @router.get("/break-glass/grants/{grant_id}")
