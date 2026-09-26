@@ -86,8 +86,11 @@ class _PatientViewTabState extends State<PatientViewTab> {
     final analysis = widget.analysis;
     final theme = Theme.of(context);
 
-    final summary = _translatedSummary ?? (
-      analysis?.patientSummary ?? report.aiSummary ?? 'No patient-friendly summary available for this report.'
+    final summary = Helpers.sanitizeDisplayText(
+      _translatedSummary ??
+          (analysis?.patientSummary ??
+              report.aiSummary ??
+              'No patient-friendly summary available for this report.'),
     );
 
     final rawLabs = analysis?.structuredLabValues ?? [];

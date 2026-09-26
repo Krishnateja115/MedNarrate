@@ -215,9 +215,23 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                         analysis: analysis,
                         reportTitle: report.title,
                         reportDate: report.reportDate.toLocal().toString().split(' ').first,
+                        reportType: report.reportType,
                       );
+                      if (mounted) {
+                        messenger.showSnackBar(const SnackBar(
+                          content: Text('PDF downloaded successfully'),
+                          backgroundColor: Color(0xFF1B8A5A),
+                          behavior: SnackBarBehavior.floating,
+                        ));
+                      }
                     } catch (e) {
-                      messenger.showSnackBar(SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.red));
+                      if (mounted) {
+                        messenger.showSnackBar(SnackBar(
+                          content: Text('Export failed: $e'),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ));
+                      }
                     } finally {
                       if (mounted) setState(() => _exporting = false);
                     }
@@ -229,9 +243,11 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                       analysis: analysis,
                       reportTitle: report.title,
                       reportDate: report.reportDate.toLocal().toString().split(' ').first,
+                      reportType: report.reportType,
                     );
                   }
                 },
+
 
                 itemBuilder: (_) => [
                   if (_controller.analysis != null) ...[

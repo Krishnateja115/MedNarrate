@@ -21,7 +21,12 @@ class ClinicalViewTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final summary = analysis?.clinicianSummary ?? report.clinicalSummary ?? 'No clinical executive summary available for this report.';
+    final summary = Helpers.sanitizeDisplayText(
+      analysis?.clinicianSummary ??
+          report.clinicalSummary ??
+          'No clinical executive summary available for this report.',
+    );
+
     final rawLabs = analysis?.structuredLabValues ?? [];
     final labs = rawLabs.where((l) => !Helpers.isMetadataParameter(l.testName)).toList();
     final meds = analysis?.medications ?? [];

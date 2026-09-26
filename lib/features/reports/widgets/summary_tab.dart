@@ -71,11 +71,14 @@ class _SummaryTabState extends State<SummaryTab> {
     final report = widget.report;
     final isClinical = widget.isProfessionalMode;
 
-    final rawSummary = _translatedSummary ?? (
-      isClinical 
-        ? (report.clinicalSummary ?? 'No clinical summary available.')
-        : (report.aiSummary ?? 'No patient-friendly summary available.')
+    final rawSummary = Helpers.sanitizeDisplayText(
+      _translatedSummary ?? (
+        isClinical
+          ? (report.clinicalSummary ?? 'No clinical summary available.')
+          : (report.aiSummary ?? 'No patient-friendly summary available.')
+      ),
     );
+
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
