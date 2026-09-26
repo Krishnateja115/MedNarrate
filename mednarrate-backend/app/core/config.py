@@ -62,6 +62,8 @@ class Settings(BaseSettings):
     LLM_TIMEOUT_SECONDS: float = 60.0
     MAX_RAG_CHUNKS: int = 3
     MAX_RETRIES: int = 2
+    # Startup must remain responsive when model weights are not already cached.
+    NER_PREWARM_TIMEOUT_SECONDS: float = 10.0
 
     # Backward compatibility property aliases
     @property

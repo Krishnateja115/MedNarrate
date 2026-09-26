@@ -27,11 +27,22 @@ async def lifespan(app: FastAPI):
     await init_db()
     start_scheduler()
     try:
+        # Loading a Transformers model can download weights on a fresh machine.
+        # It must never prevent the API (and, consequently, session restoration)
+        # from becoming ready. The analysis path still loads the model on demand.
         logger.info("Pre-warming NER ML model...")
-        await asyncio.to_thread(get_ner_pipeline)
+        await asyncio.wait_for(
+            asyncio.to_thread(get_ner_pipeline),
+            timeout=settings.NER_PREWARM_TIMEOUT_SECONDS,
+        )
         logger.info("NER model pre-warmed successfully.")
+    except TimeoutError:
+        logger.warning(
+            "NER pre-warm timed out after %s seconds; continuing with on-demand loading.",
+            settings.NER_PREWARM_TIMEOUT_SECONDS,
+        )
     except Exception as e:
-        logger.warning(f"Failed to pre-warm NER model at startup: {e}")
+        logger.warning("Failed to pre-warm NER model at startup: %s", e)
     yield
     stop_scheduler()
 
