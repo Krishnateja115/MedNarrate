@@ -76,9 +76,12 @@ export function Sidebar() {
   return (
     <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col h-full overflow-y-auto">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center h-16 shrink-0">
-        <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center mr-3 shadow-sm">
-          <Activity className="w-5 h-5 text-white" />
-        </div>
+        <img
+          src="/brand/mednarrate-logo.png"
+          alt=""
+          aria-hidden="true"
+          className="mr-3 h-8 w-8 shrink-0 rounded-md object-contain"
+        />
         <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">MedNarrate Admin</span>
       </div>
       <nav className="flex-1 p-4 space-y-6">

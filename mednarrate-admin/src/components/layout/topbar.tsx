@@ -211,6 +211,13 @@ export function Topbar() {
           : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800'
         }`}
     >
+      <img
+        src="/brand/mednarrate-logo.png"
+        alt=""
+        aria-hidden="true"
+        className="mr-3 h-7 w-7 shrink-0 rounded-md object-contain sm:hidden"
+      />
+
       {/* ── Global Search ─────────────────────────────────────────────────── */}
       <div className="flex-1 flex items-center max-w-2xl relative" ref={searchRef}>
         <div className="relative w-full">

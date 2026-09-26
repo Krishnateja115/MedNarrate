@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Loader2, Stethoscope } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -51,9 +51,12 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-blue-50 via-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <div className="w-full max-w-md motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-8 duration-500 ease-out">
         <div className="flex flex-col items-center mb-8 space-y-2 text-center">
-          <div className="bg-primary/10 p-3 rounded-full mb-2">
-            <Stethoscope className="w-8 h-8 text-primary" />
-          </div>
+          <img
+            src="/brand/mednarrate-logo.png"
+            alt=""
+            aria-hidden="true"
+            className="mb-2 h-20 w-20 rounded-2xl object-contain shadow-sm"
+          />
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">MedNarrate</h1>
           <p className="text-muted-foreground font-medium">Administration Portal</p>
         </div>
