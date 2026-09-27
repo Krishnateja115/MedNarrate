@@ -25,13 +25,10 @@ from app.schemas.report import (
     ReportComparisonResult,
     ReportOut,
     ReportUpdate,
-    TranslationOut,
-    TranslationRequest,
 )
 from app.services.file_storage import delete_file, save_upload_file
 from app.services.lab_value_normalizer import normalize_parameter_name
 from app.services.llm_client import generate
-from app.services.multilingual import LANGUAGE_MAP, translate_report_summary
 from app.services.prompts import COMPARISON_PROMPT, TREND_NARRATIVE_PROMPT
 
 logger = logging.getLogger(__name__)

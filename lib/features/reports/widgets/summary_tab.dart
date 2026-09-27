@@ -4,25 +4,33 @@ import '../../reports/models/report_model.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/markdown_formatter.dart';
-import '../../../core/services/api_service.dart';
+import '../../../core/services/api_models.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
 class SummaryTab extends StatefulWidget {
   final ReportModel report;
   final bool isProfessionalMode;
+  final TranslationModel? translation;
+  final bool isTranslating;
+  final Future<void> Function(String)? onTranslate;
 
-  const SummaryTab({super.key, required this.report, required this.isProfessionalMode});
+  const SummaryTab({
+    super.key,
+    required this.report,
+    required this.isProfessionalMode,
+    this.translation,
+    this.isTranslating = false,
+    this.onTranslate,
+  });
 
   @override
   State<SummaryTab> createState() => _SummaryTabState();
 }
 
 class _SummaryTabState extends State<SummaryTab> {
-  bool _translating = false;
-  String? _translatedSummary;
 
   Future<void> _translate(BuildContext context) async {
-    if (_translating) return;
+    if (widget.isTranslating || widget.onTranslate == null) return;
     final languages = {
       'en': 'English',
       'hi': 'Hindi (हिन्दी)',
@@ -55,14 +63,10 @@ class _SummaryTabState extends State<SummaryTab> {
     if (!context.mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context)!;
-    setState(() => _translating = true);
     try {
-      final t = await ApiService.instance.translateAnalysis(widget.report.id, selected);
-      if (mounted) setState(() => _translatedSummary = t.patientSummary);
+      await widget.onTranslate!(selected);
     } catch (_) {
       if (mounted) messenger.showSnackBar(SnackBar(content: Text(l10n.translationFailed)));
-    } finally {
-      if (mounted) setState(() => _translating = false);
     }
   }
 
@@ -72,7 +76,7 @@ class _SummaryTabState extends State<SummaryTab> {
     final isClinical = widget.isProfessionalMode;
 
     final rawSummary = Helpers.sanitizeDisplayText(
-      _translatedSummary ?? (
+      widget.translation?.patientSummary ?? (
         isClinical
           ? (report.clinicalSummary ?? 'No clinical summary available.')
           : (report.aiSummary ?? 'No patient-friendly summary available.')
@@ -160,12 +164,12 @@ class _SummaryTabState extends State<SummaryTab> {
                 style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
               ),
               if (!isClinical)
-                _translating
+                widget.isTranslating
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : TextButton.icon(
                     onPressed: () => _translate(context),
                     icon: const Icon(Icons.translate, size: 16),
-                    label: Text(_translatedSummary != null ? 'Retranslate' : 'Translate'),
+                    label: Text(widget.translation != null ? 'Retranslate' : 'Translate'),
                   ),
             ],
           ),
