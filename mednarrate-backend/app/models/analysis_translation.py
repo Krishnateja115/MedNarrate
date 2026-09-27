@@ -22,6 +22,7 @@ class AnalysisTranslation(Base):
     language: Mapped[str] = mapped_column(String, nullable=False)
     patient_summary: Mapped[str] = mapped_column(Text, nullable=False)
     findings_json: Mapped[list] = mapped_column(JSONB, default=list)
+    medications_json: Mapped[list] = mapped_column(JSONB, default=list)
     ui_labels: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)
 

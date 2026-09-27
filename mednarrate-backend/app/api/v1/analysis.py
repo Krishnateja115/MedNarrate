@@ -155,6 +155,21 @@ async def translate_analysis(
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
 
+    from app.models.medication import MedicationSchedule
+    stmt_meds = select(MedicationSchedule).where(MedicationSchedule.report_id == report.id)
+    res_meds = await db.execute(stmt_meds)
+    meds = res_meds.scalars().all()
+    meds_list = [
+        {
+            "medication_name": m.medication_name,
+            "dosage": m.dosage,
+            "frequency": m.frequency,
+            "times_of_day": m.times_of_day or [],
+            "instructions": m.notes,
+        }
+        for m in meds
+    ]
+
     lang = req.language
     if lang == "en":
         return TranslationOut(
@@ -182,6 +197,7 @@ async def translate_analysis(
                 patient_summary=translation.patient_summary,
                 findings_json=translation.findings_json,
                 ui_labels=getattr(translation, 'ui_labels', {}) or {},
+                medications_json=getattr(translation, 'medications_json', []) or [],
             )
 
     # Cache miss - translate
@@ -201,6 +217,7 @@ async def translate_analysis(
         target_language=target_lang_name,
         patient_summary=analysis.patient_summary or "",
         abnormal_findings_json=json.dumps(analysis.abnormal_findings, indent=2),
+        medications_json=json.dumps(meds_list, indent=2),
     )
 
     print("\n========== TRANSLATION DEBUG START ==========")
@@ -248,6 +265,7 @@ async def translate_analysis(
             translated_summary = parsed.get("patient_summary", "[Translation failed]")
             translated_findings = parsed.get("abnormal_findings", [])
             translated_ui_labels = parsed.get("ui_labels", {})
+            translated_medications = parsed.get("medications", [])
             print("========== TRANSLATION DEBUG END ==========\n")
         except json.JSONDecodeError as e:
             print("PARSING SUCCESS: NO")
@@ -270,6 +288,7 @@ async def translate_analysis(
         patient_summary=translated_summary,
         findings_json=translated_findings,
         ui_labels=translated_ui_labels,
+        medications_json=translated_medications,
     )
     db.add(translation)
     await db.commit()
@@ -280,4 +299,5 @@ async def translate_analysis(
         patient_summary=translation.patient_summary,
         findings_json=translation.findings_json,
         ui_labels=getattr(translation, 'ui_labels', {}) or {},
+        medications_json=getattr(translation, 'medications_json', []) or [],
     )

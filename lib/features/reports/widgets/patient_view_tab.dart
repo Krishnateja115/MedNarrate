@@ -148,7 +148,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Report Overview Header
-          _buildOverviewCard(context, report, labs.length, meds.length, abnormalList.length),
+          _buildOverviewCard(context, report, labs.length, meds.length, abnormalList.length, widget.translation),
 
           const SizedBox(height: 20),
 
@@ -324,7 +324,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
     );
   }
 
-  Widget _buildOverviewCard(BuildContext context, ReportModel report, int labCount, int medCount, int abnormalCount) {
+  Widget _buildOverviewCard(BuildContext context, ReportModel report, int labCount, int medCount, int abnormalCount, [TranslationModel? translation]) {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
@@ -372,7 +372,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            Helpers.reportTypeLabel(report.reportType),
+                            translation?.uiLabels['chip_report_type'] ?? Helpers.reportTypeLabel(report.reportType),
                             style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentTeal),
                           ),
                         ),
@@ -389,9 +389,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatChip(context, '$labCount', 'Lab Results', Icons.science_outlined),
-              _buildStatChip(context, '$medCount', 'Medications', Icons.medication_outlined),
-              _buildStatChip(context, '$abnormalCount', 'Noteworthy', Icons.warning_amber_rounded, color: abnormalCount > 0 ? Colors.orange : null),
+              _buildStatChip(context, '$labCount', translation?.uiLabels['chip_lab_results'] ?? 'Lab Results', Icons.science_outlined),
+              _buildStatChip(context, '$medCount', translation?.uiLabels['chip_medications'] ?? 'Medications', Icons.medication_outlined),
+              _buildStatChip(context, '$abnormalCount', translation?.uiLabels['chip_noteworthy'] ?? 'Noteworthy', Icons.warning_amber_rounded, color: abnormalCount > 0 ? Colors.orange : null),
             ],
           ),
         ],
@@ -531,11 +531,28 @@ class _PatientViewTabState extends State<PatientViewTab> {
   Widget _buildMedicationCard(BuildContext context, Map<String, dynamic> med, [TranslationModel? translation]) {
     final theme = Theme.of(context);
     final name = med['medication_name']?.toString() ?? 'Medication';
-    final dosage = med['dosage']?.toString() ?? 'Not specified';
-    final frequency = med['frequency']?.toString() ?? 'Not specified';
+    String dosage = med['dosage']?.toString() ?? 'Not specified';
+    String frequency = med['frequency']?.toString() ?? 'Not specified';
     final l = translation?.uiLabels;
     
-    final times = List<String>.from(med['times_of_day'] ?? []);
+    List<String> times = List<String>.from(med['times_of_day'] ?? []);
+    
+    if (translation != null && translation.medicationsJson.isNotEmpty) {
+      try {
+        final match = translation.medicationsJson.firstWhere(
+          (m) => m['medication_name']?.toString().toLowerCase() == name.toLowerCase(),
+        );
+        dosage = match['translated_dosage']?.toString() ?? dosage;
+        frequency = match['translated_frequency']?.toString() ?? frequency;
+        final tTimes = match['translated_times_of_day'];
+        if (tTimes is List) {
+          times = List<String>.from(tTimes);
+        } else if (tTimes is String && tTimes.isNotEmpty) {
+          times = [tTimes];
+        }
+      } catch (_) {}
+    }
+
     final timingText = times.isNotEmpty ? times.join(', ') : 'Not specified';
     final provenance = med['provenance']?.toString() ?? 'Report Extracted';
 
@@ -662,22 +679,23 @@ class _PatientViewTabState extends State<PatientViewTab> {
     } else {
       points.add(_buildDoctorBullet(
         context,
-        'Review your test parameters and baseline values with your doctor.',
+        translation?.uiLabels['label_review_test_parameters'] ?? 'Review your test parameters and baseline values with your doctor.',
       ));
     }
 
     if (meds.isNotEmpty) {
       final medNames = meds.map((m) => m['medication_name']?.toString()).where((n) => n != null).take(2).join(', ');
       if (medNames.isNotEmpty) {
+        // We use a generic translated message here since we cannot easily substitute medNames into the translation map in Flutter without string interpolation. 
         points.add(_buildDoctorBullet(
           context,
-          'Confirm dosage and timing for $medNames mentioned in this report.',
+          translation?.uiLabels['label_confirm_dosage_timing'] ?? 'Confirm dosage and timing for the medications mentioned in this report.',
         ));
       }
     } else {
       points.add(_buildDoctorBullet(
         context,
-        'Confirm if any new medications or prescription changes are recommended based on these findings.',
+        translation?.uiLabels['label_confirm_new_medications'] ?? 'Confirm if any new medications or prescription changes are recommended based on these findings.',
       ));
     }
 
