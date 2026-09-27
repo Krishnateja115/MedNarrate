@@ -2,11 +2,13 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import JSON as JSONB
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
+
+TRANSLATION_SCHEMA_VERSION: int = 2
 
 
 class AnalysisTranslation(Base):
@@ -20,9 +22,11 @@ class AnalysisTranslation(Base):
         nullable=False,
     )
     language: Mapped[str] = mapped_column(String, nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     patient_summary: Mapped[str] = mapped_column(Text, nullable=False)
     findings_json: Mapped[list] = mapped_column(JSONB, default=list)
     medications_json: Mapped[list] = mapped_column(JSONB, default=list)
+    doctor_discussion_points: Mapped[list] = mapped_column(JSONB, default=list)
     ui_labels: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_at: Mapped[object] = mapped_column(DateTime, default=datetime.utcnow)
 

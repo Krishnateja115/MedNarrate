@@ -121,7 +121,9 @@ class TranslationOut(BaseModel):
     patient_summary: str
     findings_json: List[dict] = []
     medications_json: List[dict] = []
+    doctor_discussion_points: List[str] = []
     ui_labels: Dict[str, str] = {}
+    schema_version: int = 1
     cached: bool = False
 
 
