@@ -225,6 +225,17 @@ async def update_role(
     if not role:
         raise HTTPException(status_code=404, detail="Role not found.")
 
+    if role.name == "Super Admin" and not admin_ctx.is_super_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Only a Super Admin can modify the Super Admin role.",
+        )
+    if role.name == "Super Admin" and req.name and req.name != "Super Admin":
+        raise HTTPException(
+            status_code=409,
+            detail="The built-in Super Admin role cannot be renamed.",
+        )
+
     # Self-escalation check
     if not admin_ctx.is_super_admin:
         missing = [p for p in req.permission_names if p not in admin_ctx.permissions]

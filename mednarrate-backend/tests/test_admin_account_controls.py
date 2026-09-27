@@ -335,3 +335,36 @@ async def test_role_permission_update_uses_canonical_endpoint(
         {"role_id": role.id, "permission_id": permission.id},
     )
     assert assignment is not None
+
+
+@pytest.mark.asyncio
+async def test_non_super_cannot_modify_or_rename_super_admin_role(
+    client: AsyncClient, db_session: AsyncSession
+):
+    manager = await _admin(
+        db_session,
+        name="Role Manager",
+        permissions=["roles.manage", "admins.manage"],
+    )
+    super_user = await _admin(db_session, name="Protected Super", super_admin=True)
+    super_role = (
+        await db_session.execute(
+            select(AdminRole)
+            .join(AdminRoleAssignment, AdminRoleAssignment.role_id == AdminRole.id)
+            .where(AdminRoleAssignment.user_id == super_user.id)
+        )
+    ).scalars().one()
+
+    denied = await client.put(
+        f"/api/v1/admin/roles/{super_role.id}",
+        json={"permission_names": []},
+        headers=_headers(manager),
+    )
+    rename = await client.put(
+        f"/api/v1/admin/roles/{super_role.id}",
+        json={"name": "Former Super Admin", "permission_names": []},
+        headers=_headers(super_user),
+    )
+
+    assert denied.status_code == 403
+    assert rename.status_code == 409

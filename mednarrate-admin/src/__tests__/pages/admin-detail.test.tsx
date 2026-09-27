@@ -9,6 +9,9 @@ jest.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams('id=admin-1'),
 }));
 jest.mock('@/lib/api', () => ({ fetchApi: jest.fn() }));
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ can: () => true }),
+}));
 
 const mockedFetchApi = jest.mocked(fetchApi);
 
@@ -30,12 +33,14 @@ const admin = {
   roles: [],
   created_at: null,
   last_login_at: null,
+  assigned_roles: [],
 };
 
 const configureApi = (supportResponse: unknown = { status: 'ok', tickets: [] }) => {
   mockedFetchApi.mockImplementation((url) => {
     const path = String(url);
     if (path === '/api/v1/admin/admins/admin-1') return Promise.resolve(admin);
+    if (path === '/api/v1/admin/roles') return Promise.resolve([{ id: 'role-1', name: 'Support' }]);
     if (path.endsWith('/support_tickets')) return Promise.resolve(supportResponse);
     if (path.endsWith('/audit_logs')) return Promise.resolve({ logs: [] });
     return Promise.resolve({});
@@ -71,6 +76,7 @@ describe('Admin detail support tickets', () => {
     mockedFetchApi.mockImplementation((url) => {
       const path = String(url);
       if (path === '/api/v1/admin/admins/admin-1') return Promise.resolve(admin);
+      if (path === '/api/v1/admin/roles') return Promise.resolve([{ id: 'role-1', name: 'Support' }]);
       if (path.endsWith('/audit_logs')) return Promise.resolve({ logs: [] });
       if (path.endsWith('/support_tickets')) {
         attempts += 1;
@@ -86,5 +92,16 @@ describe('Admin detail support tickets', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(screen.getByText('No assigned tickets.')).toBeInTheDocument());
     expect(attempts).toBe(2);
+  });
+
+  it('assigns roles through the audited backend action', async () => {
+    configureApi();
+    renderPage();
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Support' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save role assignments' }));
+    await waitFor(() => expect(mockedFetchApi).toHaveBeenCalledWith(
+      '/api/v1/admin/admins/admin-1/roles',
+      { method: 'POST', data: { role_ids: ['role-1'] } },
+    ));
   });
 });

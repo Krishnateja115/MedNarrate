@@ -1,10 +1,11 @@
 /* eslint-disable */
 'use client';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
-import { useQuery } from '@tanstack/react-query';
-import { fetchApi } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiError, fetchApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,10 +17,15 @@ import Link from 'next/link';
 function AdminDetailPageContent() {
   const searchParams = useSearchParams();
   const extractedId = searchParams.get('id');
-  
   const adminId = extractedId;
-  
-  const { data: admin, isLoading: isLoadingAdmin } = useQuery<any>({
+  const queryClient = useQueryClient();
+  const { can } = useAuth();
+  const canManageAdmins = can('admins.manage');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [roleMessage, setRoleMessage] = useState<string | null>(null);
+
+  const { data: admin, isLoading: isLoadingAdmin, error: adminError } = useQuery<any>({
     queryKey: ['admin', adminId],
     queryFn: () => fetchApi(`/api/v1/admin/admins/${adminId}`),
     enabled: Boolean(adminId),
@@ -28,7 +34,7 @@ function AdminDetailPageContent() {
   const { data: auditLogs, isLoading: isLoadingLogs } = useQuery({
     queryKey: ['admin-audit-logs', adminId],
     queryFn: () => fetchApi(`/api/v1/admin/admins/${adminId}/audit_logs`),
-    enabled: Boolean(adminId),
+    enabled: Boolean(adminId) && activeTab === 'audit',
   });
 
   const {
@@ -39,7 +45,32 @@ function AdminDetailPageContent() {
   } = useQuery({
     queryKey: ['admin-support-tickets', adminId],
     queryFn: () => fetchApi(`/api/v1/admin/admins/${adminId}/support_tickets`),
-    enabled: Boolean(adminId),
+    enabled: Boolean(adminId) && activeTab === 'support',
+  });
+
+  const { data: availableRoles } = useQuery<Array<{ id: string; name: string }>>({
+    queryKey: ['admin-roles'],
+    queryFn: () => fetchApi('/api/v1/admin/roles'),
+    enabled: canManageAdmins,
+  });
+
+  useEffect(() => {
+    if (admin?.assigned_roles) {
+      setSelectedRoleIds(admin.assigned_roles.map((role: { id: string }) => role.id));
+    }
+  }, [admin]);
+
+  const updateRolesMutation = useMutation({
+    mutationFn: () => fetchApi(`/api/v1/admin/admins/${adminId}/roles`, {
+      method: 'POST',
+      data: { role_ids: selectedRoleIds },
+    }),
+    onSuccess: () => {
+      setRoleMessage('Roles updated successfully.');
+      queryClient.invalidateQueries({ queryKey: ['admin', adminId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (error: Error) => setRoleMessage(error.message || 'Failed to update roles.'),
   });
 
   if (isLoadingAdmin) {
@@ -51,18 +82,26 @@ function AdminDetailPageContent() {
     );
   }
 
-  if (!admin) {
+  if (adminError) {
+    const status = adminError instanceof ApiError ? adminError.status : 0;
+    const message = status === 403
+      ? 'You do not have permission to view this administrator.'
+      : status === 404
+        ? 'Admin Not Found'
+        : 'Administrator details could not be loaded.';
     return (
       <div className="space-y-6">
         <Link href="/admins" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Admins
         </Link>
         <div className="rounded-md bg-destructive/15 p-4 text-destructive border border-destructive/20 flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5" /> <h3 className="font-semibold">Admin Not Found</h3>
+          <ShieldAlert className="h-5 w-5" /> <h3 className="font-semibold">{message}</h3>
         </div>
       </div>
     );
   }
+
+  if (!admin) return null;
 
   return (
     <div className="space-y-6 fade-in w-full pb-10">
@@ -89,7 +128,7 @@ function AdminDetailPageContent() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="audit">Audit Log</TabsTrigger>
@@ -143,6 +182,44 @@ function AdminDetailPageContent() {
                 </div>
               </CardContent>
             </Card>
+
+            {canManageAdmins && (
+              <Card>
+                <CardHeader className="pb-3 border-b">
+                  <CardTitle className="text-base">Role assignments</CardTitle>
+                  <CardDescription>Changes are authorized and audited by the backend.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                  <div className="space-y-2">
+                    {(availableRoles || []).map((role) => (
+                      <label key={role.id} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedRoleIds.includes(role.id)}
+                          onChange={(event) => setSelectedRoleIds((current) =>
+                            event.target.checked
+                              ? [...current, role.id]
+                              : current.filter((roleId) => roleId !== role.id)
+                          )}
+                        />
+                        {role.name}
+                      </label>
+                    ))}
+                    {(availableRoles || []).length === 0 && (
+                      <p className="text-sm text-muted-foreground">No roles are available.</p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => updateRolesMutation.mutate()}
+                    disabled={updateRolesMutation.isPending}
+                  >
+                    {updateRolesMutation.isPending ? 'Saving roles...' : 'Save role assignments'}
+                  </Button>
+                  {roleMessage && <p className="text-sm text-muted-foreground">{roleMessage}</p>}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
