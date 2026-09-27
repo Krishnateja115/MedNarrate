@@ -7,6 +7,7 @@ from sqlalchemy import event, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, hash_token
+from app.core.admin_auth import AdminContext
 from app.models.admin import (
     AdminAuditLog,
     AdminPermission,
@@ -368,3 +369,43 @@ async def test_non_super_cannot_modify_or_rename_super_admin_role(
 
     assert denied.status_code == 403
     assert rename.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_canonical_permissions_authorize_legacy_route_names(
+    client: AsyncClient, db_session: AsyncSession
+):
+    auditor = await _admin(
+        db_session,
+        name="Canonical Auditor",
+        permissions=["audit.view", "roles.view"],
+    )
+
+    audit_response = await client.get(
+        "/api/v1/admin/audit-logs", headers=_headers(auditor)
+    )
+    permission_response = await client.get(
+        "/api/v1/admin/roles/permissions", headers=_headers(auditor)
+    )
+
+    assert audit_response.status_code == 200
+    assert permission_response.status_code == 200
+    names = {item["name"] for item in permission_response.json()}
+    assert {"rag.view", "jobs.view", "notifications.manage"}.issubset(names)
+
+
+def test_permission_compatibility_never_promotes_break_glass_read_access():
+    user = User(
+        email="permission-direction@example.com",
+        hashed_password="unused",
+        full_name="Permission Direction",
+        role=UserRole.admin,
+    )
+    read_only = AdminContext(user, ["break_glass.read"])
+    canonical_manager = AdminContext(user, ["breakglass.manage"])
+
+    assert read_only.has_permission("break_glass.read") is True
+    assert read_only.has_permission("approve_sensitive_access") is False
+    assert read_only.has_permission("break_glass.revoke") is False
+    assert canonical_manager.has_permission("break_glass.read") is True
+    assert canonical_manager.has_permission("approve_sensitive_access") is True

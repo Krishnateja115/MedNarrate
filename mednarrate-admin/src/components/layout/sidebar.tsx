@@ -55,16 +55,16 @@ const NAV_GROUPS = [
     items: [
       { name: 'Security Overview', href: '/security', icon: Shield, permissions: ['security.view', 'audit_logs.view'] },
       { name: 'Governance Center', href: '/governance', icon: Activity, permissions: ['dashboard.view', 'security.view', 'system.health.view'] },
-      { name: 'Admin Accounts', href: '/admins', icon: Users, permissions: ['roles.view', 'users.manage'] },
+      { name: 'Admin Accounts', href: '/admins', icon: Users, permissions: ['admins.view', 'admins.manage'] },
       { name: 'Roles & Permissions', href: '/roles', icon: Lock, permissions: ['roles.view'] },
-      { name: 'Audit Logs', href: '/audit', icon: FileText, permissions: ['audit_logs.view'] },
-      { name: 'Break-Glass Access', href: '/breakglass', icon: AlertTriangle, permissions: ['security.view'] },
+      { name: 'Audit Logs', href: '/audit', icon: FileText, permissions: ['audit.view', 'audit_logs:read'] },
+      { name: 'Break-Glass Access', href: '/breakglass', icon: AlertTriangle, permissions: ['security.view', 'breakglass.request', 'breakglass.manage', 'break_glass.read'] },
       { name: 'Privacy Center', href: '/privacy', icon: Lock, permissions: ['privacy.view'] },
-      { name: 'Feature Flags', href: '/feature-flags', icon: Sliders, permissions: ['configuration.view', 'feature_flags.view'] },
+      { name: 'Feature Flags', href: '/feature-flags', icon: Sliders, permissions: ['feature_flags.view', 'feature_flags:read'] },
       { name: 'AI Configuration', href: '/ai-config', icon: Bot, permissions: ['ai.manage'] },
       { name: 'System Health', href: '/health', icon: Activity, permissions: ['system.health.view'] },
-      { name: 'App Settings', href: '/settings', icon: Settings, permissions: ['configuration.view'] },
-      { name: 'Announcements', href: '/announcements', icon: Radio, permissions: ['support.manage'] },
+      { name: 'App Settings', href: '/settings', icon: Settings, permissions: ['settings.view', 'settings.manage', 'settings:read'] },
+      { name: 'Announcements', href: '/announcements', icon: Radio, permissions: ['announcements.view', 'announcements.manage', 'announcements:read'] },
     ]
   }
 ];

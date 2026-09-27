@@ -306,7 +306,11 @@ async def create_admin(
             if role_ids
             else []
         )
-        missing = sorted(set(requested_permissions) - admin_ctx.permissions)
+        missing = sorted(
+            permission
+            for permission in set(requested_permissions)
+            if not admin_ctx.has_permission(permission)
+        )
         if missing:
             await log_admin_action(
                 db=db,
@@ -502,7 +506,11 @@ async def assign_admin_roles(
             if role_ids
             else []
         )
-        missing = sorted(set(requested_permissions) - admin_ctx.permissions)
+        missing = sorted(
+            permission
+            for permission in set(requested_permissions)
+            if not admin_ctx.has_permission(permission)
+        )
         if missing:
             await log_admin_action(
                 db=db,

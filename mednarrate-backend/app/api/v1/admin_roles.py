@@ -60,6 +60,26 @@ DEFAULT_PERMISSIONS = [
     ("support.escalate", "Escalate support tickets to incidents"),
     ("help_center.view", "View and preview Help Center articles"),
     ("help_center.manage", "Create, publish, archive, and edit Help Center articles"),
+    ("analytics.view", "View operational analytics"),
+    ("system.health.view", "View live service health"),
+    ("system.view", "View system-level operational summaries"),
+    ("jobs.view", "View background and scheduled jobs"),
+    ("incidents.view", "View operational incidents"),
+    ("incidents.manage", "Create and update operational incidents"),
+    ("chat.view", "View chat metadata and safety events"),
+    ("chat.sensitive_view", "View sensitive chat content with break-glass access"),
+    ("rag.view", "View RAG documents and index status"),
+    ("rag.manage", "Manage RAG document lifecycle"),
+    ("automation.view", "View notification, reminder, and job automation"),
+    ("automation.manage", "Retry and manage automation operations"),
+    ("notifications.view", "View notification delivery logs"),
+    ("notifications.manage", "Dispatch and retry notifications"),
+    ("reports.manage", "Retry and reprocess reports"),
+    ("reports.sensitive_view", "View sensitive report data with break-glass access"),
+    ("ai.telemetry.view", "View detailed AI diagnostic telemetry"),
+    ("reports.diagnostics.view", "View report processing diagnostics"),
+    ("knowledge_base.view", "View knowledge-base statistics"),
+    ("announcements.view", "View administrator announcements"),
 ]
 
 
@@ -75,9 +95,15 @@ async def list_permissions(
     res = await db.execute(stmt)
     perms = res.scalars().all()
 
-    # Seed default permissions if table is empty
-    if not perms:
-        for name, desc in DEFAULT_PERMISSIONS:
+    # Keep the permission catalog complete for existing and fresh databases.
+    existing_names = {permission.name for permission in perms}
+    missing_defaults = [
+        (name, description)
+        for name, description in DEFAULT_PERMISSIONS
+        if name not in existing_names
+    ]
+    if missing_defaults:
+        for name, desc in missing_defaults:
             p = AdminPermission(name=name, description=desc)
             db.add(p)
         await db.commit()
@@ -160,7 +186,11 @@ async def create_role(
 ):
     # Self-escalation check
     if not admin_ctx.is_super_admin:
-        missing = [p for p in req.permission_names if p not in admin_ctx.permissions]
+        missing = [
+            permission
+            for permission in req.permission_names
+            if not admin_ctx.has_permission(permission)
+        ]
         if missing:
             await log_admin_action(
                 db=db,
@@ -238,7 +268,11 @@ async def update_role(
 
     # Self-escalation check
     if not admin_ctx.is_super_admin:
-        missing = [p for p in req.permission_names if p not in admin_ctx.permissions]
+        missing = [
+            permission
+            for permission in req.permission_names
+            if not admin_ctx.has_permission(permission)
+        ]
         if missing:
             await log_admin_action(
                 db=db,

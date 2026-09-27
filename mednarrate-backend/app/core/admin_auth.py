@@ -18,6 +18,30 @@ from app.models.admin import (
 from app.models.user import User, UserRole
 
 
+PERMISSION_COMPATIBILITY = {
+    "audit_logs:read": {"audit_logs:read", "audit_logs.view", "audit.view"},
+    "break_glass.request": {"break_glass.request", "breakglass.request"},
+    "break_glass.read": {"break_glass.read", "breakglass.manage"},
+    "break_glass.revoke": {"break_glass.revoke", "breakglass.manage"},
+    "approve_sensitive_access": {"approve_sensitive_access", "breakglass.manage"},
+    "privacy:read": {"privacy:read", "privacy.view"},
+    "privacy:manage": {"privacy:manage", "privacy.manage"},
+    "feature_flags:read": {"feature_flags:read", "feature_flags.view"},
+    "feature_flags:manage": {"feature_flags:manage", "feature_flags.manage"},
+    "settings:read": {"settings:read", "settings.view", "configuration.view"},
+    "settings:manage": {"settings:manage", "settings.manage"},
+    "maintenance:manage": {"maintenance:manage", "settings.manage"},
+    "announcements:read": {"announcements:read", "announcements.view"},
+    "announcements:manage": {"announcements:manage", "announcements.manage"},
+    "ai_config:read": {"ai_config:read", "ai.view"},
+    "ai_config:manage": {"ai_config:manage", "ai.manage"},
+}
+
+
+def _accepted_permissions(permission: str) -> set[str]:
+    return PERMISSION_COMPATIBILITY.get(permission, {permission})
+
+
 class AdminContext:
     def __init__(self, user: User, permissions: List[str]):
         self.user = user
@@ -33,7 +57,7 @@ class AdminContext:
     def has_permission(self, permission: str) -> bool:
         if self.is_super_admin:
             return True
-        return permission in self.permissions
+        return bool(_accepted_permissions(permission) & self.permissions)
 
 
 async def get_admin_context(
@@ -102,7 +126,7 @@ def require_any_permission(permissions: List[str]) -> Callable:
     ) -> AdminContext:
         if admin_ctx.is_super_admin:
             return admin_ctx
-        if not any(p in admin_ctx.permissions for p in permissions):
+        if not any(admin_ctx.has_permission(p) for p in permissions):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Requires one of permissions: {permissions}",
@@ -122,7 +146,7 @@ def require_all_permissions(permissions: List[str]) -> Callable:
     ) -> AdminContext:
         if admin_ctx.is_super_admin:
             return admin_ctx
-        missing = [p for p in permissions if p not in admin_ctx.permissions]
+        missing = [p for p in permissions if not admin_ctx.has_permission(p)]
         if missing:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
