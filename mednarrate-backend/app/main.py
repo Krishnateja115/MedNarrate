@@ -56,12 +56,19 @@ setup_exception_handlers(app)
 
 app.add_middleware(CorrelationIdMiddleware)
 
-is_wildcard = "*" in settings.CORS_ORIGINS
 cors_origins = set(settings.CORS_ORIGINS)
-if is_wildcard:
+if "*" in cors_origins:
     cors_origins.remove("*")
-    if settings.ADMIN_APP_ORIGIN:
-        cors_origins.add(settings.ADMIN_APP_ORIGIN)
+    cors_origins.update([
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ])
+if settings.ADMIN_APP_ORIGIN:
+    cors_origins.add(settings.ADMIN_APP_ORIGIN)
 
 # Always allow Tauri desktop app origins
 cors_origins.add("tauri://localhost")
@@ -75,6 +82,7 @@ if not cors_origins:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(cors_origins),
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

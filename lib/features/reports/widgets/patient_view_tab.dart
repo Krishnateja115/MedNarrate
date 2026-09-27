@@ -11,11 +11,17 @@ import 'package:mednarrate/l10n/app_localizations.dart';
 class PatientViewTab extends StatefulWidget {
   final ReportModel report;
   final ReportAnalysisModel? analysis;
+  final TranslationModel? translation;
+  final bool isTranslating;
+  final Future<void> Function(String)? onTranslate;
 
   const PatientViewTab({
     super.key,
     required this.report,
     this.analysis,
+    this.translation,
+    this.isTranslating = false,
+    this.onTranslate,
   });
 
   @override
@@ -23,11 +29,9 @@ class PatientViewTab extends StatefulWidget {
 }
 
 class _PatientViewTabState extends State<PatientViewTab> {
-  bool _translating = false;
-  String? _translatedSummary;
 
   Future<void> _translate(BuildContext context) async {
-    if (_translating) return;
+    if (widget.isTranslating || widget.onTranslate == null) return;
     final languages = {
       'en': 'English',
       'hi': 'Hindi (हिन्दी)',
@@ -63,20 +67,18 @@ class _PatientViewTabState extends State<PatientViewTab> {
     );
     if (selected == null) return;
     if (!context.mounted) return;
+    
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context)!;
-    setState(() => _translating = true);
+    
     try {
-      final t = await ApiService.instance.translateAnalysis(widget.report.id, selected);
-      if (mounted) setState(() => _translatedSummary = t.patientSummary);
+      await widget.onTranslate!(selected);
     } catch (_) {
       if (mounted) {
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.translationFailed)),
         );
       }
-    } finally {
-      if (mounted) setState(() => _translating = false);
     }
   }
 
@@ -86,17 +88,37 @@ class _PatientViewTabState extends State<PatientViewTab> {
     final analysis = widget.analysis;
     final theme = Theme.of(context);
 
-    final summary = _translatedSummary ?? (
-      analysis?.patientSummary ?? report.aiSummary ?? 'No patient-friendly summary available for this report.'
+    final summary = Helpers.sanitizeDisplayText(
+      widget.translation?.patientSummary ??
+          (analysis?.patientSummary ??
+              report.aiSummary ??
+              'No patient-friendly summary available for this report.'),
     );
 
-    final labs = analysis?.structuredLabValues ?? [];
+    final rawLabs = analysis?.structuredLabValues ?? [];
+    final labs = rawLabs.where((lab) => !Helpers.isMetadataParameter(lab.testName)).toList();
     final meds = analysis?.medications ?? [];
-    final abnormalList = analysis?.abnormalFindings ?? [];
+    final rawAbnormal = analysis?.abnormalFindings ?? [];
+    final abnormalList = rawAbnormal.where((item) {
+      final name = item['test_name']?.toString() ?? item['parameter']?.toString() ?? item['original_name']?.toString() ?? '';
+      return !Helpers.isMetadataParameter(name);
+    }).toList();
 
     final demogEntities = analysis?.entities.where((e) => 
       (e['entity_group'] == 'PatientDemographic' || e['category'] == 'PatientDemographic')
     ).toList() ?? [];
+
+    final metadataItems = <Map<String, String>>[];
+    for (var e in demogEntities) {
+      final group = e['entity_group']?.toString() ?? e['category']?.toString() ?? 'Demographic';
+      final word = e['word']?.toString() ?? '';
+      if (word.isNotEmpty) {
+        metadataItems.add({'label': group, 'value': word});
+      }
+    }
+    for (var m in rawLabs.where((l) => Helpers.isMetadataParameter(l.testName))) {
+      metadataItems.add({'label': m.testName, 'value': '${m.value} ${m.unit}'.trim()});
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -116,12 +138,12 @@ class _PatientViewTabState extends State<PatientViewTab> {
                 'Report at a Glance',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              _translating
+              widget.isTranslating
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : TextButton.icon(
                     onPressed: () => _translate(context),
                     icon: const Icon(Icons.translate, size: 16),
-                    label: Text(_translatedSummary != null ? 'Retranslate' : 'Translate'),
+                    label: Text(widget.translation != null ? 'Retranslate' : 'Translate'),
                   ),
             ],
           ),
@@ -169,9 +191,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
           const SizedBox(height: 24),
 
           // 3. Patient Information / Demographics (if extracted separately)
-          if (demogEntities.isNotEmpty) ...[
+          if (metadataItems.isNotEmpty) ...[
             const Text(
-              'Patient Information',
+              'Patient & Report Information',
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
@@ -183,13 +205,13 @@ class _PatientViewTabState extends State<PatientViewTab> {
                 border: Border.all(color: AppColors.border),
               ),
               child: Column(
-                children: demogEntities.map((e) => Padding(
+                children: metadataItems.map((item) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(e['entity_group']?.toString() ?? 'Demographic', style: const TextStyle(fontWeight: FontWeight.w600)),
-                      Text(e['word']?.toString() ?? '', style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+                      Text(item['label'] ?? 'Metadata', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(item['value'] ?? '', style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
                     ],
                   ),
                 )).toList(),
@@ -241,7 +263,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: _generateDoctorDiscussionPoints(context, abnormalList, meds),
+              children: _generateDoctorDiscussionPoints(context, abnormalList, meds, widget.translation),
             ),
           ),
 
@@ -587,6 +609,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
     BuildContext context,
     List<Map<String, dynamic>> abnormalList,
     List<Map<String, dynamic>> meds,
+    TranslationModel? translation,
   ) {
     final points = <Widget>[];
 
@@ -596,9 +619,20 @@ class _PatientViewTabState extends State<PatientViewTab> {
         final val = abnormal['value']?.toString() ?? '';
         final unit = abnormal['unit']?.toString() ?? '';
         final flag = (abnormal['flag']?.toString() ?? 'abnormal').toUpperCase();
+
+        String? translatedExpl;
+        if (translation != null && translation.findingsJson.isNotEmpty) {
+          try {
+            final match = translation.findingsJson.firstWhere(
+              (f) => f['test_name']?.toString().toLowerCase() == name.toLowerCase(),
+            );
+            translatedExpl = match['translated_explanation']?.toString();
+          } catch (_) {}
+        }
+
         points.add(_buildDoctorBullet(
           context,
-          'Discuss the $flag $name level ($val $unit) with your healthcare provider.',
+          translatedExpl ?? 'Discuss the $flag $name level ($val $unit) with your healthcare provider.',
         ));
       }
     } else {

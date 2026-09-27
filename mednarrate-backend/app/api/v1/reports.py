@@ -376,60 +376,6 @@ async def compare_previous(
     )
 
 
-@router.post("/{report_id}/analysis/translate", response_model=TranslationOut)
-async def translate_report(
-    report_id: str,
-    req: TranslationRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    if req.language not in LANGUAGE_MAP:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported language. Supported: {', '.join(LANGUAGE_MAP.keys())}",
-        )
-
-    await verify_report_ownership(report_id, str(current_user.id), db)
-
-    stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == report_id)
-    analysis = (await db.execute(stmt_analysis)).scalars().first()
-    if not analysis or not analysis.patient_summary:
-        raise HTTPException(
-            status_code=400, detail="No patient summary available to translate"
-        )
-
-    from app.models.report_translation import ReportTranslation
-
-    r_uuid = (
-        uuid.UUID(str(report_id)) if not isinstance(report_id, uuid.UUID) else report_id
-    )
-    # Check cache first to set the 'cached' boolean correctly
-    stmt_cache = select(ReportTranslation).where(
-        ReportTranslation.report_id == r_uuid,
-        ReportTranslation.language_code == req.language,
-    )
-    cached_translation = (await db.execute(stmt_cache)).scalars().first()
-
-    if cached_translation:
-        return TranslationOut(
-            language=req.language,
-            patient_summary=cached_translation.translated_text,
-            findings_json=[],
-            cached=True,
-        )
-
-    translated_text = await translate_report_summary(
-        report_id, analysis.patient_summary, req.language, db
-    )
-
-    return TranslationOut(
-        language=req.language,
-        patient_summary=translated_text,
-        findings_json=[],
-        cached=False,
-    )
-
-
 @router.get("/compare", response_model=ReportComparisonResult)
 async def compare_reports_multiple(
     report_ids: str,
