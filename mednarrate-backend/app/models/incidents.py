@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, String, Text
 from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -40,7 +40,7 @@ class Incident(Base):
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    started_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     created_by_id: Mapped[uuid.UUID | None] = mapped_column(
