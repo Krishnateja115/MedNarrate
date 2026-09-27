@@ -20,6 +20,12 @@ SECURITY_EVENT_ACTIONS = (
     "FAILED_ADMIN_LOGIN",
     "ADMIN_LOGOUT",
     "SESSION_REVOCATION",
+    "ADMIN_FORCE_LOGOUT",
+    "ADMIN_CREATED",
+    "ADMIN_DEACTIVATED",
+    "ADMIN_REACTIVATED",
+    "ADMIN_ROLE_CHANGED",
+    # Legacy action names remain recognized for historical rows.
     "FORCE_LOGOUT_ADMIN",
     "CREATE_ADMIN",
     "DEACTIVATE_ADMIN",

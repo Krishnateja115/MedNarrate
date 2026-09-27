@@ -194,6 +194,12 @@ async def refresh_token(
     if expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
+    refresh_user = await db.get(User, db_refresh_token.user_id)
+    if not refresh_user or not refresh_user.is_active:
+        db_refresh_token.revoked = True
+        await db.commit()
+        raise HTTPException(status_code=401, detail="Account is inactive")
+
     # Revoke the current token
     db_refresh_token.revoked = True
 

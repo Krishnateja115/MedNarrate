@@ -32,6 +32,7 @@ OPEN_TICKET_STATUSES = (
     TicketStatus.waiting_eng,
 )
 GOVERNANCE_ACTIONS = (
+    "ADMIN_ROLE_CHANGED",
     "ROLE_CHANGE",
     "PERMISSION_CHANGE",
     "ai_config_update",
@@ -46,6 +47,9 @@ GOVERNANCE_ACTIONS = (
     "break_glass_requested",
     "break_glass_approved",
     "break_glass_revoked",
+    "ADMIN_FORCE_LOGOUT",
+    "ADMIN_DEACTIVATED",
+    "ADMIN_REACTIVATED",
     "FORCE_LOGOUT_ADMIN",
     "DEACTIVATE_ADMIN",
     "REACTIVATE_ADMIN",

@@ -6,6 +6,7 @@ import { Suspense, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,21 +21,25 @@ function AdminDetailPageContent() {
   
   const { data: admin, isLoading: isLoadingAdmin } = useQuery<any>({
     queryKey: ['admin', adminId],
-    queryFn: async () => {
-      // Find the specific admin in the list
-      const data = await fetchApi('/api/v1/admin/admins');
-      return data.admins?.find((a: any) => a.id === adminId);
-    },
+    queryFn: () => fetchApi(`/api/v1/admin/admins/${adminId}`),
+    enabled: Boolean(adminId),
   });
 
   const { data: auditLogs, isLoading: isLoadingLogs } = useQuery({
     queryKey: ['admin-audit-logs', adminId],
     queryFn: () => fetchApi(`/api/v1/admin/admins/${adminId}/audit_logs`),
+    enabled: Boolean(adminId),
   });
 
-  const { data: supportTickets, isLoading: isLoadingTickets } = useQuery({
+  const {
+    data: supportTickets,
+    isLoading: isLoadingTickets,
+    isError: isSupportTicketsError,
+    refetch: refetchSupportTickets,
+  } = useQuery({
     queryKey: ['admin-support-tickets', adminId],
     queryFn: () => fetchApi(`/api/v1/admin/admins/${adminId}/support_tickets`),
+    enabled: Boolean(adminId),
   });
 
   if (isLoadingAdmin) {
@@ -181,7 +186,20 @@ function AdminDetailPageContent() {
               <CardDescription>Support tickets currently assigned to this administrator.</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              {isLoadingTickets ? <Skeleton className="h-32 w-full" /> : supportTickets?.tickets ? (
+              {isLoadingTickets ? <Skeleton className="h-32 w-full" /> : isSupportTicketsError ? (
+                <div className="rounded-md border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+                  <p>Failed to load assigned tickets.</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => refetchSupportTickets()}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : supportTickets?.tickets ? (
                 <div className="divide-y">
                   {supportTickets.tickets.length > 0 ? supportTickets.tickets.map((ticket: any) => (
                     <div key={ticket.id} className="py-3 flex justify-between items-center">
@@ -196,7 +214,7 @@ function AdminDetailPageContent() {
                     </div>
                   )) : <p className="text-sm text-muted-foreground py-4 text-center">No assigned tickets.</p>}
                 </div>
-              ) : <p className="text-sm text-destructive py-4">Failed to load tickets.</p>}
+              ) : <p className="text-sm text-muted-foreground py-4 text-center">No ticket data returned.</p>}
             </CardContent>
           </Card>
         </TabsContent>

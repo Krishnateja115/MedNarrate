@@ -15,6 +15,7 @@ from app.models.admin import (
 from app.models.user import User, UserRole
 from app.models.report import FileType, ProcessingStatus, Report, ReportType
 from app.models.job_execution import JobExecution, JobStatus
+from app.models.support import SupportTicket, TicketPriority, TicketStatus
 
 
 @pytest.fixture
@@ -44,6 +45,7 @@ async def dashboard_admin_user(db_session: AsyncSession):
         "incidents.view",
         "incidents.manage",
         "rag.view",
+        "admins.view",
     ]
     from sqlalchemy import select
 
@@ -440,3 +442,89 @@ async def test_admin_copilot_chat(
     assert data["status"] == "ok"
     assert "active accounts" in data["reply"]
     assert "placeholder" not in data["reply"].lower()
+
+
+@pytest.mark.asyncio
+async def test_admin_support_tickets_endpoints(
+    client: AsyncClient, dashboard_admin_user: dict, db_session: AsyncSession
+):
+    token = dashboard_admin_user["token"]
+    admin_id = dashboard_admin_user["user"].id
+
+    # 1 & 2. Test authorized admin with zero support tickets -> 200
+    res = await client.get(
+        f"/api/v1/admin/admins/{admin_id}/support_tickets",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert data["tickets"] == []
+
+    # Create dummy user to link the ticket
+    dummy_user = User(
+        email=f"dummy_{uuid.uuid4()}@example.com",
+        hashed_password="pw",
+        full_name="Dummy User",
+    )
+    db_session.add(dummy_user)
+    await db_session.flush()
+
+    # 6. Create ticket with nullable fields
+    ticket1 = SupportTicket(
+        user_id=str(dummy_user.id),
+        title="Nullable fields ticket",
+        description="Desc",
+        assigned_admin_id=str(admin_id),
+        status=TicketStatus.new,
+        priority=TicketPriority.p3,
+    )
+
+    # 7. Create another ticket to test multiple tickets list
+    ticket2 = SupportTicket(
+        user_id=str(dummy_user.id),
+        title="Full ticket",
+        description="Desc",
+        assigned_admin_id=str(admin_id),
+        status=TicketStatus.resolved,
+        priority=TicketPriority.p1,
+    )
+    db_session.add(ticket1)
+    db_session.add(ticket2)
+    await db_session.commit()
+
+    # Test authorized admin with support tickets -> 200
+    res = await client.get(
+        f"/api/v1/admin/admins/{admin_id}/support_tickets",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data["tickets"]) == 2
+    assert any(t["subject"] == "Nullable fields ticket" for t in data["tickets"])
+    assert any(t["subject"] == "Full ticket" for t in data["tickets"])
+
+    # 3. Test nonexistent admin -> 404
+    fake_id = str(uuid.uuid4())
+    res = await client.get(
+        f"/api/v1/admin/admins/{fake_id}/support_tickets",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert res.status_code == 404
+
+    # 4. Test unauthenticated -> 401
+    res = await client.get(f"/api/v1/admin/admins/{admin_id}/support_tickets")
+    assert res.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_admin_support_tickets_unauthorized(
+    client: AsyncClient, token_headers: dict, db_session: AsyncSession
+):
+    # token_headers is a normal user token fixture
+    # 5. Test unauthorized -> 403
+    admin_id = str(uuid.uuid4())
+    res = await client.get(
+        f"/api/v1/admin/admins/{admin_id}/support_tickets", headers=token_headers
+    )
+    assert res.status_code == 403

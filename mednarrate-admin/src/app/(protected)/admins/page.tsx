@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Users, UserPlus, LogOut, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminUser {
   id: string;
@@ -26,6 +27,8 @@ interface AdminUser {
 
 export default function AdminManagementPage() {
   const queryClient = useQueryClient();
+  const { user, can } = useAuth();
+  const canManageAdmins = can('admins.manage');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -57,10 +60,10 @@ export default function AdminManagementPage() {
     }
   });
 
-  const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, currentIsActive }: { id: string; currentIsActive: boolean }) =>
       fetchApi(
-        `/api/v1/admin/admins/${id}/${is_active ? 'deactivate' : 'reactivate'}`,
+        `/api/v1/admin/admins/${id}/${currentIsActive ? 'deactivate' : 'reactivate'}`,
         { method: 'POST' },
       ),
     onSuccess: () => {
@@ -79,6 +82,7 @@ export default function AdminManagementPage() {
     onSuccess: () => {
       setSuccessMsg('Force logout issued successfully. Tokens revoked.');
       setErrorMsg(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     },
     onError: (err: any) => {
       setErrorMsg(err.message || 'Failed to force logout');
@@ -97,6 +101,22 @@ export default function AdminManagementPage() {
     });
   };
 
+  const confirmStatusChange = (admin: AdminUser) => {
+    const action = admin.is_active ? 'Deactivate' : 'Reactivate';
+    const consequence = admin.is_active
+      ? 'Active sessions will be revoked and this administrator will no longer be able to sign in.'
+      : 'This administrator will be able to sign in again.';
+    if (window.confirm(`${action} ${admin.full_name || admin.email} (${admin.email})?\n\n${consequence}`)) {
+      updateStatusMutation.mutate({ id: admin.id, currentIsActive: admin.is_active });
+    }
+  };
+
+  const confirmForceLogout = (admin: AdminUser) => {
+    if (window.confirm(`Force logout ${admin.full_name || admin.email} (${admin.email})?\n\nAll active sessions will be revoked.`)) {
+      forceLogoutMutation.mutate(admin.id);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center">
@@ -108,9 +128,11 @@ export default function AdminManagementPage() {
             Provision administrators, manage role assignments, toggle account status, and invalidate active sessions.
           </p>
         </div>
-        <Button onClick={() => setShowCreateForm(!showCreateForm)} className="flex items-center gap-2">
-          <UserPlus className="w-4 h-4" /> {showCreateForm ? 'Cancel' : 'Create Admin Account'}
-        </Button>
+        {canManageAdmins && (
+          <Button onClick={() => setShowCreateForm(!showCreateForm)} className="flex items-center gap-2">
+            <UserPlus className="w-4 h-4" /> {showCreateForm ? 'Cancel' : 'Create Admin Account'}
+          </Button>
+        )}
       </div>
 
       {errorMsg && (
@@ -238,23 +260,27 @@ export default function AdminManagementPage() {
                             View Profile
                           </Button>
                         </Link>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleActiveMutation.mutate({ id: adm.id, is_active: !adm.is_active })}
-                          disabled={toggleActiveMutation.isPending}
-                        >
-                          {adm.is_active ? 'Deactivate' : 'Reactivate'}
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => forceLogoutMutation.mutate(adm.id)}
-                          disabled={forceLogoutMutation.isPending}
-                          className="flex items-center gap-1"
-                        >
-                          <LogOut className="w-3.5 h-3.5" /> Force Logout
-                        </Button>
+                        {canManageAdmins && user?.id !== adm.id && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => confirmStatusChange(adm)}
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              {adm.is_active ? 'Deactivate' : 'Reactivate'}
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => confirmForceLogout(adm)}
+                              disabled={forceLogoutMutation.isPending}
+                              className="flex items-center gap-1"
+                            >
+                              <LogOut className="w-3.5 h-3.5" /> Force Logout
+                            </Button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}

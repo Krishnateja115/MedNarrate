@@ -1,8 +1,9 @@
 import uuid
-from typing import List
+from collections import defaultdict
+from typing import Dict, List, Sequence, Set
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, timezone
 
 from sqlalchemy import delete, desc, func
@@ -30,11 +31,153 @@ class AdminCreateReq(BaseModel):
     email: EmailStr
     password: str
     full_name: str
-    role_ids: List[str] = []
+    role_ids: List[str] = Field(default_factory=list)
 
 
 class RoleAssignReq(BaseModel):
     role_ids: List[str]
+
+
+SUPER_ADMIN_ROLE_NAME = "Super Admin"
+
+
+def _parse_admin_id(value: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(value)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid admin ID.") from exc
+
+
+def _parse_role_ids(values: Sequence[str]) -> List[uuid.UUID]:
+    parsed: List[uuid.UUID] = []
+    for value in values:
+        try:
+            role_id = uuid.UUID(value)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid role ID format: {value}"
+            ) from exc
+        if role_id not in parsed:
+            parsed.append(role_id)
+    return parsed
+
+
+async def _get_admin_or_404(db: AsyncSession, admin_id: uuid.UUID) -> User:
+    admin = (
+        await db.execute(
+            select(User).where(User.id == admin_id, User.role == UserRole.admin)
+        )
+    ).scalars().first()
+    if not admin:
+        raise HTTPException(status_code=404, detail="Admin account not found.")
+    return admin
+
+
+async def _load_roles_for_users(
+    db: AsyncSession, user_ids: Sequence[uuid.UUID]
+) -> Dict[uuid.UUID, List[AdminRole]]:
+    roles_by_user: Dict[uuid.UUID, List[AdminRole]] = defaultdict(list)
+    if not user_ids:
+        return roles_by_user
+    rows = (
+        await db.execute(
+            select(AdminRoleAssignment.user_id, AdminRole)
+            .join(AdminRole, AdminRole.id == AdminRoleAssignment.role_id)
+            .where(AdminRoleAssignment.user_id.in_(user_ids))
+        )
+    ).all()
+    for user_id, role in rows:
+        roles_by_user[user_id].append(role)
+    return roles_by_user
+
+
+async def _load_permissions_for_user(
+    db: AsyncSession, user_id: uuid.UUID
+) -> Set[str]:
+    permissions = (
+        await db.execute(
+            select(AdminPermission.name)
+            .select_from(AdminRoleAssignment)
+            .join(
+                AdminRolePermission,
+                AdminRoleAssignment.role_id == AdminRolePermission.role_id,
+            )
+            .join(
+                AdminPermission,
+                AdminPermission.id == AdminRolePermission.permission_id,
+            )
+            .where(AdminRoleAssignment.user_id == user_id)
+        )
+    ).scalars().all()
+    return set(permissions)
+
+
+async def _assert_can_manage_target(
+    db: AsyncSession,
+    admin_ctx: AdminContext,
+    target: User,
+    *,
+    block_self: bool = False,
+) -> List[AdminRole]:
+    if block_self and target.id == admin_ctx.user.id:
+        raise HTTPException(
+            status_code=400, detail="You cannot perform this action on your own account."
+        )
+
+    target_roles = (await _load_roles_for_users(db, [target.id])).get(target.id, [])
+    target_is_super = any(role.name == SUPER_ADMIN_ROLE_NAME for role in target_roles)
+    if target_is_super and not admin_ctx.is_super_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Only a Super Admin can manage another Super Admin account.",
+        )
+
+    if not admin_ctx.is_super_admin:
+        target_permissions = await _load_permissions_for_user(db, target.id)
+        if not target_permissions.issubset(admin_ctx.permissions):
+            raise HTTPException(
+                status_code=403,
+                detail="You cannot manage an administrator with greater privileges.",
+            )
+    return target_roles
+
+
+async def _active_super_admin_count(db: AsyncSession) -> int:
+    count = await db.scalar(
+        select(func.count(func.distinct(User.id)))
+        .select_from(User)
+        .join(AdminRoleAssignment, AdminRoleAssignment.user_id == User.id)
+        .join(AdminRole, AdminRole.id == AdminRoleAssignment.role_id)
+        .where(
+            User.role == UserRole.admin,
+            User.is_active.is_(True),
+            AdminRole.name == SUPER_ADMIN_ROLE_NAME,
+        )
+    )
+    return int(count or 0)
+
+
+def _serialize_admin(
+    admin: User,
+    roles: Sequence[AdminRole],
+    session_count: int = 0,
+    last_login: datetime | None = None,
+) -> dict:
+    role_list = [{"id": str(role.id), "name": role.name} for role in roles]
+    role_names = [role["name"] for role in role_list]
+    return {
+        "id": str(admin.id),
+        "email": admin.email,
+        "full_name": admin.full_name,
+        "role": admin.role.value,
+        "is_active": admin.is_active,
+        "created_at": admin.created_at.isoformat() if admin.created_at else None,
+        "assigned_roles": role_list,
+        "roles": role_names,
+        "is_super_admin": SUPER_ADMIN_ROLE_NAME in role_names,
+        "last_login_at": last_login.isoformat() if last_login else None,
+        "active_sessions": session_count,
+    }
 
 
 @router.get("")
@@ -50,6 +193,7 @@ async def list_admins(
     )
     res = await db.execute(stmt)
     admins = res.scalars().all()
+    admin_ids = [admin.id for admin in admins]
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     session_counts = dict(
@@ -71,38 +215,16 @@ async def list_admins(
         ).all()
     )
 
+    roles_by_user = await _load_roles_for_users(db, admin_ids)
     out = []
     for admin in admins:
-        # Fetch assigned roles
-        stmt_roles = (
-            select(AdminRole)
-            .join(AdminRoleAssignment, AdminRole.id == AdminRoleAssignment.role_id)
-            .where(AdminRoleAssignment.user_id == admin.id)
-        )
-        roles = (await db.execute(stmt_roles)).scalars().all()
-        role_list = [{"id": str(r.id), "name": r.name} for r in roles]
-        role_names = [role["name"] for role in role_list]
-
         out.append(
-            {
-                "id": str(admin.id),
-                "email": admin.email,
-                "full_name": admin.full_name,
-                "role": admin.role.value,
-                "is_active": admin.is_active,
-                "created_at": (
-                    admin.created_at.isoformat() if admin.created_at else None
-                ),
-                "assigned_roles": role_list,
-                "roles": role_names,
-                "is_super_admin": "Super Admin" in role_names,
-                "last_login_at": (
-                    last_logins.get(admin.id).isoformat()
-                    if last_logins.get(admin.id)
-                    else None
-                ),
-                "active_sessions": session_counts.get(admin.id, 0),
-            }
+            _serialize_admin(
+                admin,
+                roles_by_user.get(admin.id, []),
+                session_counts.get(admin.id, 0),
+                last_logins.get(admin.id),
+            )
         )
 
     await log_admin_action(
@@ -116,6 +238,34 @@ async def list_admins(
     return {"admins": out}
 
 
+@router.get("/{id}")
+async def get_admin(
+    id: str,
+    admin_ctx: AdminContext = Depends(
+        require_any_permission(["admins.view", "super_admin"])
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+    admin_uuid = _parse_admin_id(id)
+    admin = await _get_admin_or_404(db, admin_uuid)
+    roles = (await _load_roles_for_users(db, [admin_uuid])).get(admin_uuid, [])
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    session_count = await db.scalar(
+        select(func.count(RefreshToken.id)).where(
+            RefreshToken.user_id == admin_uuid,
+            RefreshToken.revoked.is_(False),
+            RefreshToken.expires_at > now,
+        )
+    )
+    last_login = await db.scalar(
+        select(func.max(AdminAuditLog.timestamp)).where(
+            AdminAuditLog.actor_admin_id == admin_uuid,
+            AdminAuditLog.action == "ADMIN_LOGIN_SUCCESS",
+        )
+    )
+    return _serialize_admin(admin, roles, int(session_count or 0), last_login)
+
+
 @router.post("", status_code=201)
 async def create_admin(
     req: AdminCreateReq,
@@ -125,40 +275,52 @@ async def create_admin(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    # Self-escalation check: check if requesting admin possesses the permissions of all requested roles
-    if not admin_ctx.is_super_admin:
-        for r_id in req.role_ids:
-            try:
-                role_uuid = uuid.UUID(r_id)
-            except ValueError:
-                raise HTTPException(
-                    status_code=400, detail=f"Invalid role ID format: {r_id}"
-                )
+    role_ids = _parse_role_ids(req.role_ids)
+    roles = (
+        (
+            await db.execute(select(AdminRole).where(AdminRole.id.in_(role_ids)))
+        ).scalars().all()
+        if role_ids
+        else []
+    )
+    if len(roles) != len(role_ids):
+        raise HTTPException(status_code=400, detail="One or more roles do not exist.")
 
-            stmt_role_perms = (
-                select(AdminPermission.name)
-                .join(
-                    AdminRolePermission,
-                    AdminPermission.id == AdminRolePermission.permission_id,
-                )
-                .where(AdminRolePermission.role_id == role_uuid)
+    # Self-escalation check: requesting admin must possess every granted permission.
+    if not admin_ctx.is_super_admin:
+        if any(role.name == SUPER_ADMIN_ROLE_NAME for role in roles):
+            raise HTTPException(
+                status_code=403, detail="Only a Super Admin can grant Super Admin."
             )
-            r_perms = (await db.execute(stmt_role_perms)).scalars().all()
-            missing = [p for p in r_perms if p not in admin_ctx.permissions]
-            if missing:
-                await log_admin_action(
-                    db=db,
-                    action="CREATE_ADMIN_SELF_ESCALATION_BLOCKED",
-                    actor_admin_id=admin_ctx.user.id,
-                    result="denied",
-                    reason=f"Cannot assign role with unheld permissions: {missing}",
-                    request=request,
+        requested_permissions = (
+            (
+                await db.execute(
+                    select(AdminPermission.name)
+                    .join(
+                        AdminRolePermission,
+                        AdminPermission.id == AdminRolePermission.permission_id,
+                    )
+                    .where(AdminRolePermission.role_id.in_(role_ids))
                 )
-                await db.commit()
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Self-escalation blocked: You cannot assign a role with permissions you do not possess ({missing}).",
-                )
+            ).scalars().all()
+            if role_ids
+            else []
+        )
+        missing = sorted(set(requested_permissions) - admin_ctx.permissions)
+        if missing:
+            await log_admin_action(
+                db=db,
+                action="CREATE_ADMIN_SELF_ESCALATION_BLOCKED",
+                actor_admin_id=admin_ctx.user.id,
+                result="denied",
+                reason=f"Cannot assign role with unheld permissions: {missing}",
+                request=request,
+            )
+            await db.commit()
+            raise HTTPException(
+                status_code=403,
+                detail=f"Self-escalation blocked: unheld permissions {missing}.",
+            )
 
     # Check email exists
     stmt_check = select(User).where(User.email == req.email)
@@ -178,21 +340,18 @@ async def create_admin(
     db.add(new_admin)
     await db.flush()
 
-    for r_id in req.role_ids:
-        try:
-            role_uuid = uuid.UUID(r_id)
-            assign = AdminRoleAssignment(
+    for role_id in role_ids:
+        db.add(
+            AdminRoleAssignment(
                 user_id=new_admin.id,
-                role_id=role_uuid,
+                role_id=role_id,
                 assigned_by_id=admin_ctx.user.id,
             )
-            db.add(assign)
-        except ValueError:
-            pass
+        )
 
     await log_admin_action(
         db=db,
-        action="CREATE_ADMIN",
+        action="ADMIN_CREATED",
         actor_admin_id=admin_ctx.user.id,
         resource_type="User",
         resource_id=str(new_admin.id),
@@ -214,20 +373,21 @@ async def deactivate_admin(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    try:
-        admin_uuid = uuid.UUID(id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid admin ID.")
-
-    if admin_uuid == admin_ctx.user.id:
+    admin_uuid = _parse_admin_id(id)
+    target_admin = await _get_admin_or_404(db, admin_uuid)
+    target_roles = await _assert_can_manage_target(
+        db, admin_ctx, target_admin, block_self=True
+    )
+    target_is_super = any(role.name == SUPER_ADMIN_ROLE_NAME for role in target_roles)
+    if (
+        target_admin.is_active
+        and target_is_super
+        and await _active_super_admin_count(db) <= 1
+    ):
         raise HTTPException(
-            status_code=400, detail="You cannot deactivate your own admin account."
+            status_code=409,
+            detail="Cannot deactivate the final active Super Admin.",
         )
-
-    stmt = select(User).where(User.id == admin_uuid, User.role == UserRole.admin)
-    target_admin = (await db.execute(stmt)).scalars().first()
-    if not target_admin:
-        raise HTTPException(status_code=404, detail="Admin account not found.")
 
     target_admin.is_active = False
 
@@ -238,7 +398,7 @@ async def deactivate_admin(
 
     await log_admin_action(
         db=db,
-        action="DEACTIVATE_ADMIN",
+        action="ADMIN_DEACTIVATED",
         actor_admin_id=admin_ctx.user.id,
         resource_type="User",
         resource_id=id,
@@ -263,21 +423,15 @@ async def reactivate_admin(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    try:
-        admin_uuid = uuid.UUID(id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid admin ID.")
-
-    stmt = select(User).where(User.id == admin_uuid, User.role == UserRole.admin)
-    target_admin = (await db.execute(stmt)).scalars().first()
-    if not target_admin:
-        raise HTTPException(status_code=404, detail="Admin account not found.")
+    admin_uuid = _parse_admin_id(id)
+    target_admin = await _get_admin_or_404(db, admin_uuid)
+    await _assert_can_manage_target(db, admin_ctx, target_admin)
 
     target_admin.is_active = True
 
     await log_admin_action(
         db=db,
-        action="REACTIVATE_ADMIN",
+        action="ADMIN_REACTIVATED",
         actor_admin_id=admin_ctx.user.id,
         resource_type="User",
         resource_id=id,
@@ -299,62 +453,89 @@ async def assign_admin_roles(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    try:
-        admin_uuid = uuid.UUID(id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid admin ID.")
+    admin_uuid = _parse_admin_id(id)
+    target_admin = await _get_admin_or_404(db, admin_uuid)
+    current_roles = await _assert_can_manage_target(db, admin_ctx, target_admin)
+    role_ids = _parse_role_ids(req.role_ids)
+    requested_roles = (
+        (
+            await db.execute(select(AdminRole).where(AdminRole.id.in_(role_ids)))
+        ).scalars().all()
+        if role_ids
+        else []
+    )
+    if len(requested_roles) != len(role_ids):
+        raise HTTPException(status_code=400, detail="One or more roles do not exist.")
+
+    currently_super = any(role.name == SUPER_ADMIN_ROLE_NAME for role in current_roles)
+    remains_super = any(
+        role.name == SUPER_ADMIN_ROLE_NAME for role in requested_roles
+    )
+    if (
+        target_admin.is_active
+        and currently_super
+        and not remains_super
+        and await _active_super_admin_count(db) <= 1
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot remove Super Admin from the final active Super Admin.",
+        )
 
     # Self-escalation check: non-super admin cannot grant unheld permissions
     if not admin_ctx.is_super_admin:
-        for r_id in req.role_ids:
-            try:
-                role_uuid = uuid.UUID(r_id)
-            except ValueError:
-                continue
-            stmt_role_perms = (
-                select(AdminPermission.name)
-                .join(
-                    AdminRolePermission,
-                    AdminPermission.id == AdminRolePermission.permission_id,
-                )
-                .where(AdminRolePermission.role_id == role_uuid)
+        if any(role.name == SUPER_ADMIN_ROLE_NAME for role in requested_roles):
+            raise HTTPException(
+                status_code=403, detail="Only a Super Admin can grant Super Admin."
             )
-            r_perms = (await db.execute(stmt_role_perms)).scalars().all()
-            missing = [p for p in r_perms if p not in admin_ctx.permissions]
-            if missing:
-                await log_admin_action(
-                    db=db,
-                    action="ROLE_ASSIGN_SELF_ESCALATION_BLOCKED",
-                    actor_admin_id=admin_ctx.user.id,
-                    resource_type="User",
-                    resource_id=id,
-                    result="denied",
-                    reason=f"Cannot assign role with unheld permissions: {missing}",
-                    request=request,
+        requested_permissions = (
+            (
+                await db.execute(
+                    select(AdminPermission.name)
+                    .join(
+                        AdminRolePermission,
+                        AdminPermission.id == AdminRolePermission.permission_id,
+                    )
+                    .where(AdminRolePermission.role_id.in_(role_ids))
                 )
-                await db.commit()
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Self-escalation blocked: You cannot assign a role with permissions you do not possess ({missing}).",
-                )
+            ).scalars().all()
+            if role_ids
+            else []
+        )
+        missing = sorted(set(requested_permissions) - admin_ctx.permissions)
+        if missing:
+            await log_admin_action(
+                db=db,
+                action="ROLE_ASSIGN_SELF_ESCALATION_BLOCKED",
+                actor_admin_id=admin_ctx.user.id,
+                resource_type="User",
+                resource_id=id,
+                result="denied",
+                reason=f"Cannot assign role with unheld permissions: {missing}",
+                request=request,
+            )
+            await db.commit()
+            raise HTTPException(
+                status_code=403,
+                detail=f"Self-escalation blocked: unheld permissions {missing}.",
+            )
 
     # Re-assign roles
     await db.execute(
         delete(AdminRoleAssignment).where(AdminRoleAssignment.user_id == admin_uuid)
     )
-    for r_id in req.role_ids:
-        try:
-            role_uuid = uuid.UUID(r_id)
-            assign = AdminRoleAssignment(
-                user_id=admin_uuid, role_id=role_uuid, assigned_by_id=admin_ctx.user.id
+    for role_id in role_ids:
+        db.add(
+            AdminRoleAssignment(
+                user_id=admin_uuid,
+                role_id=role_id,
+                assigned_by_id=admin_ctx.user.id,
             )
-            db.add(assign)
-        except ValueError:
-            pass
+        )
 
     await log_admin_action(
         db=db,
-        action="ROLE_CHANGE",
+        action="ADMIN_ROLE_CHANGED",
         actor_admin_id=admin_ctx.user.id,
         resource_type="User",
         resource_id=id,
@@ -376,10 +557,9 @@ async def force_logout_admin(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    try:
-        admin_uuid = uuid.UUID(id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid admin ID.")
+    admin_uuid = _parse_admin_id(id)
+    target_admin = await _get_admin_or_404(db, admin_uuid)
+    await _assert_can_manage_target(db, admin_ctx, target_admin, block_self=True)
 
     revoked_sessions = (
         await db.execute(delete(RefreshToken).where(RefreshToken.user_id == admin_uuid))
@@ -387,7 +567,7 @@ async def force_logout_admin(
 
     await log_admin_action(
         db=db,
-        action="FORCE_LOGOUT_ADMIN",
+        action="ADMIN_FORCE_LOGOUT",
         actor_admin_id=admin_ctx.user.id,
         resource_type="User",
         resource_id=id,
@@ -453,11 +633,27 @@ async def get_admin_support_tickets(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid admin ID.")
 
+    from app.models.user import User, UserRole
+
+    admin_exists = (
+        (
+            await db.execute(
+                select(User.id).where(
+                    User.id == admin_uuid, User.role == UserRole.admin
+                )
+            )
+        )
+        .scalars()
+        .first()
+    )
+    if not admin_exists:
+        raise HTTPException(status_code=404, detail="Admin not found.")
+
     from app.models.support import SupportTicket
 
     stmt = (
         select(SupportTicket)
-        .where(SupportTicket.assigned_to_id == admin_uuid)
+        .where(SupportTicket.assigned_admin_id == str(admin_uuid))
         .order_by(desc(SupportTicket.created_at))
     )
     tickets = (await db.execute(stmt)).scalars().all()
@@ -467,7 +663,7 @@ async def get_admin_support_tickets(
         "tickets": [
             {
                 "id": str(t.id),
-                "subject": t.subject,
+                "subject": t.title,
                 "status": t.status.value if t.status else "unknown",
                 "priority": t.priority.value if t.priority else "unknown",
                 "created_at": t.created_at.isoformat() if t.created_at else None,
