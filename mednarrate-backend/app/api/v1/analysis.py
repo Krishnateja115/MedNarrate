@@ -155,7 +155,7 @@ async def translate_analysis(
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
 
-    from app.models.medication import MedicationSchedule
+
     stmt_meds = select(MedicationSchedule).where(MedicationSchedule.report_id == report.id)
     res_meds = await db.execute(stmt_meds)
     meds = res_meds.scalars().all()
