@@ -7,6 +7,38 @@ from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
 
+
+class TranslationServiceError(Exception):
+    """Raised when the LLM translation pipeline cannot produce a structurally
+    valid, fully-translated medical report. This is a controlled "translation
+    unavailable" failure rather than a silent 500 or a malformed partial
+    response that would later trip the validator.
+
+    The handler maps this to HTTP 502 (Bad Gateway) so callers (Flutter) can
+    distinguish "upstream translation service is currently unable" from a
+    generic internal bug.
+    """
+
+    def __init__(self, detail: str = "Translation is currently unavailable."):
+        super().__init__(detail)
+        self.detail = detail
+
+
+async def translation_service_error_handler(request: Request, exc: TranslationServiceError):
+    request_id = getattr(request.state, "request_id", None) or request.headers.get("x-request-id", "unknown")
+    logger.warning(
+        f"TranslationServiceError on {request.method} {request.url.path} "
+        f"(request_id={request_id}): {exc.detail}"
+    )
+    return JSONResponse(
+        status_code=502,
+        content={
+            "detail": exc.detail,
+            "code": "translation_service_unavailable",
+            "request_id": request_id,
+        },
+    )
+
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     # Surface per-field Pydantic validation errors to the client so callers get
     # actionable messages (e.g. "report_date: invalid date format") instead of
@@ -69,4 +101,5 @@ def setup_exception_handlers(app):
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)
     app.add_exception_handler(IntegrityError, integrity_exception_handler)
+    app.add_exception_handler(TranslationServiceError, translation_service_error_handler)
 

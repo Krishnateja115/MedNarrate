@@ -34,7 +34,7 @@ class _SummaryTabState extends State<SummaryTab> {
     final bool isTranslated = t != null && t.language != 'en';
 
     if (labels == null) {
-      return fallback;
+      return isTranslated ? '' : fallback;
     }
     final val = labels[key];
     if (val != null && val.trim().isNotEmpty) {
@@ -131,8 +131,8 @@ class _SummaryTabState extends State<SummaryTab> {
     final disclaimerSummary = _label('label_disclaimer_summary',
         fallback:
             'Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.');
-    final reportTypeLabel = t?.uiLabels['chip_report_type'] ??
-        Helpers.reportTypeLabel(report.reportType);
+    final reportTypeLabel = _label('chip_report_type',
+        fallback: Helpers.reportTypeLabel(report.reportType));
 
     final translateBtnLabel =
         widget.translation != null ? labelRetranslate : labelTranslate;

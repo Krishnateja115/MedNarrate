@@ -26,7 +26,7 @@ class ClinicalViewTab extends StatelessWidget {
     final bool isTranslated = t != null && t.language != 'en';
 
     if (labels == null) {
-      return fallback;
+      return isTranslated ? '' : fallback;
     }
     final val = labels[key];
     if (val != null && val.trim().isNotEmpty) {

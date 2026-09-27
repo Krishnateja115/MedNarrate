@@ -401,11 +401,13 @@ class FallbackAIProvider(LLMProvider):
         elif is_chat:
             content = "AI service is temporarily unavailable. Please try again."
         elif is_translation:
-            import json
-            content = json.dumps({
-                "patient_summary": "This is an automated translation of the report summary into the selected language. All extracted numerical values and findings are preserved.",
-                "abnormal_findings": []
-            })
+            from app.exceptions import TranslationServiceError
+            raise TranslationServiceError(
+                "Translation is currently unavailable: the primary LLM provider failed "
+                "and the fallback provider cannot safely synthesize a structured, "
+                "fully-translated medical report with complete ui_labels and doctor "
+                "discussion points. Please try again shortly."
+            )
         else:
             import json
             import re

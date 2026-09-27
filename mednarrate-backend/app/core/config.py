@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     # Vertex AI (Primary Production Provider - Fallback for Gemini)
     VERTEX_PROJECT_ID: str | None = None
     VERTEX_LOCATION: str = "us-central1"
-    VERTEX_MODEL: str = "gemini-1.5-flash"
+    VERTEX_MODEL: str = "gemini-3.8-flash"
     VERTEX_TIMEOUT_SECONDS: float = 30.0
 
     # Ollama (Secondary Private/Local Provider)

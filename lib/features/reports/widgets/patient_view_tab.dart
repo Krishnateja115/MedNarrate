@@ -35,7 +35,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
     final bool isTranslated = t != null && t.language != 'en';
 
     if (labels == null) {
-      return fallback;
+      return isTranslated ? '' : fallback;
     }
     final val = labels[key];
     if (val != null && val.trim().isNotEmpty) {
@@ -488,8 +488,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            translation?.uiLabels['chip_report_type'] ??
-                                Helpers.reportTypeLabel(report.reportType),
+                            _label('chip_report_type',
+                                fallback:
+                                    Helpers.reportTypeLabel(report.reportType)),
                             style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -512,18 +513,16 @@ class _PatientViewTabState extends State<PatientViewTab> {
               _buildStatChip(
                   context,
                   '$labCount',
-                  translation?.uiLabels['chip_lab_results'] ??
-                      'Lab Results',
+                  _label('chip_lab_results', fallback: 'Lab Results'),
                   Icons.science_outlined),
               _buildStatChip(
                   context,
                   '$medCount',
-                  translation?.uiLabels['chip_medications'] ??
-                      'Medications',
+                  _label('chip_medications', fallback: 'Medications'),
                   Icons.medication_outlined),
               _buildStatChip(
                   context, '$abnormalCount',
-                  translation?.uiLabels['chip_noteworthy'] ?? 'Noteworthy',
+                  _label('chip_noteworthy', fallback: 'Noteworthy'),
                   Icons.warning_amber_rounded,
                   color: abnormalCount > 0 ? Colors.orange : null),
             ],
@@ -926,17 +925,19 @@ class _PatientViewTabState extends State<PatientViewTab> {
           // Safety net: translated mode + no backend discussion + no
           // translated explanation = surface a translated generic
           // "discuss with your doctor" label so no English leaks.
-          bullet = translation.uiLabels['label_review_test_parameters'] ??
-              'Review your test parameters and baseline values with your doctor.';
+          final generic = translation.uiLabels['label_review_test_parameters'];
+          bullet = (generic != null && generic.trim().isNotEmpty)
+              ? generic.trim()
+              : (isTranslated ? '' : 'Review your test parameters and baseline values with your doctor.');
         }
         points.add(_buildDoctorBullet(context, bullet));
       }
     } else {
-      points.add(_buildDoctorBullet(
-        context,
-        translation?.uiLabels['label_review_test_parameters'] ??
-            'Review your test parameters and baseline values with your doctor.',
-      ));
+      final generic = translation?.uiLabels['label_review_test_parameters'];
+      final text = (generic != null && generic.trim().isNotEmpty)
+          ? generic.trim()
+          : (isTranslated ? '' : 'Review your test parameters and baseline values with your doctor.');
+      points.add(_buildDoctorBullet(context, text));
     }
 
     if (meds.isNotEmpty) {
@@ -946,25 +947,27 @@ class _PatientViewTabState extends State<PatientViewTab> {
           .take(2)
           .join(', ');
       if (medNames.isNotEmpty) {
-        points.add(_buildDoctorBullet(
-          context,
-          translation?.uiLabels['label_confirm_dosage_timing'] ??
-              'Confirm dosage and timing for the medications mentioned in this report.',
-        ));
+        final label = translation?.uiLabels['label_confirm_dosage_timing'];
+        final text = (label != null && label.trim().isNotEmpty)
+            ? label.trim()
+            : (isTranslated ? '' : 'Confirm dosage and timing for the medications mentioned in this report.');
+        points.add(_buildDoctorBullet(context, text));
       }
     } else {
-      points.add(_buildDoctorBullet(
-        context,
-        translation?.uiLabels['label_confirm_new_medications'] ??
-            'Confirm if any new medications or prescription changes are recommended based on these findings.',
-      ));
+      final label = translation?.uiLabels['label_confirm_new_medications'];
+      final text = (label != null && label.trim().isNotEmpty)
+          ? label.trim()
+          : (isTranslated ? '' : 'Confirm if any new medications or prescription changes are recommended based on these findings.');
+      points.add(_buildDoctorBullet(context, text));
     }
 
-    points.add(_buildDoctorBullet(
-      context,
-      translation?.uiLabels['label_confirm_followup'] ??
-          'Ask if follow-up testing or baseline comparisons are recommended for future monitoring.',
-    ));
+    {
+      final label = translation?.uiLabels['label_confirm_followup'];
+      final text = (label != null && label.trim().isNotEmpty)
+          ? label.trim()
+          : (isTranslated ? '' : 'Ask if follow-up testing or baseline comparisons are recommended for future monitoring.');
+      points.add(_buildDoctorBullet(context, text));
+    }
 
     debugPrint(
         '[TRANSLATION][FLUTTER] discussion_points_source=legacy_english_or_partial count=${points.length} is_translated=$isTranslated');
