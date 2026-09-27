@@ -309,3 +309,29 @@ async def test_direct_admin_detail_and_list_query_count_is_constant(
         and "admin_permissions" not in sql.lower()
     ]
     assert len(role_queries) <= 2
+
+
+@pytest.mark.asyncio
+async def test_role_permission_update_uses_canonical_endpoint(
+    client: AsyncClient, db_session: AsyncSession
+):
+    actor = await _admin(db_session, name="Role Super Admin", super_admin=True)
+    role = AdminRole(name=f"Editable Role {uuid.uuid4()}", description="Before")
+    permission = AdminPermission(
+        name=f"test.permission.{uuid.uuid4()}", description="Test permission"
+    )
+    db_session.add_all([role, permission])
+    await db_session.commit()
+
+    response = await client.put(
+        f"/api/v1/admin/roles/{role.id}",
+        json={"permission_names": [permission.name]},
+        headers=_headers(actor),
+    )
+
+    assert response.status_code == 200
+    assignment = await db_session.get(
+        AdminRolePermission,
+        {"role_id": role.id, "permission_id": permission.id},
+    )
+    assert assignment is not None

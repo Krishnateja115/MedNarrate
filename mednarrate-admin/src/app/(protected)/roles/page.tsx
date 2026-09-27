@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Lock, ShieldAlert, CheckCircle, Plus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Permission {
   id: string;
@@ -25,6 +26,8 @@ interface Role {
 
 export default function RolesAndPermissionsPage() {
   const queryClient = useQueryClient();
+  const { can } = useAuth();
+  const canManageRoles = can('roles.manage');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -61,7 +64,7 @@ export default function RolesAndPermissionsPage() {
 
   const updateRolePermsMutation = useMutation({
     mutationFn: ({ roleId, permissions }: { roleId: string; permissions: string[] }) =>
-      fetchApi(`/api/v1/admin/roles/${roleId}/permissions`, { method: 'PUT', data: { permission_names: permissions } }),
+      fetchApi(`/api/v1/admin/roles/${roleId}`, { method: 'PUT', data: { permission_names: permissions } }),
     onSuccess: () => {
       setSuccessMsg('Role permissions updated successfully');
       setErrorMsg(null);
@@ -99,9 +102,11 @@ export default function RolesAndPermissionsPage() {
             Define fine-grained roles, inspect granular permissions, and prevent self-escalation server-side.
           </p>
         </div>
-        <Button onClick={() => setShowCreateRole(!showCreateRole)} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" /> {showCreateRole ? 'Cancel' : 'Create Custom Role'}
-        </Button>
+        {canManageRoles && (
+          <Button onClick={() => setShowCreateRole(!showCreateRole)} className="flex items-center gap-2">
+            <Plus className="w-4 h-4" /> {showCreateRole ? 'Cancel' : 'Create Custom Role'}
+          </Button>
+        )}
       </div>
 
       {errorMsg && (
@@ -196,7 +201,7 @@ export default function RolesAndPermissionsPage() {
                               type="checkbox"
                               checked={isAssigned}
                               onChange={() => handleTogglePermission(role, p.name)}
-                              disabled={role.name === 'SuperAdmin'}
+                              disabled={!canManageRoles || role.name === 'Super Admin'}
                               className="w-4 h-4 text-blue-600 rounded cursor-pointer disabled:opacity-50"
                             />
                           </td>

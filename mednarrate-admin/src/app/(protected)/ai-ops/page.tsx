@@ -34,17 +34,17 @@ interface AITrace {
 }
 
 export default function AIOperationsPage() {
-  const { data: overviewData, isLoading: overviewLoading } = useQuery<{status: string, overview: AIOverview}>({
+  const { data: overviewData, isLoading: overviewLoading, isError: overviewError } = useQuery<{status: string, overview: AIOverview}>({
     queryKey: ['ai_overview'],
     queryFn: () => fetchApi('/api/v1/admin/ai-ops/overview'),
   });
 
-  const { data: tracesData, isLoading: tracesLoading } = useQuery<{status: string, traces: AITrace[]}>({
+  const { data: tracesData, isLoading: tracesLoading, isError: tracesError } = useQuery<{status: string, traces: AITrace[]}>({
     queryKey: ['ai_traces'],
     queryFn: () => fetchApi('/api/v1/admin/ai-ops/traces'),
   });
 
-  const { data: failuresData, isLoading: failuresLoading } = useQuery<{status: string, failures: {category: string, count: number}[]}>({
+  const { data: failuresData, isLoading: failuresLoading, isError: failuresError } = useQuery<{status: string, failures: {category: string, count: number}[]}>({
     queryKey: ['ai_failures'],
     queryFn: () => fetchApi('/api/v1/admin/ai-ops/failures'),
   });
@@ -81,27 +81,31 @@ export default function AIOperationsPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 w-full" />)}
             </div>
+          ) : overviewError || !overviewData?.overview ? (
+            <div className="rounded-md border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+              AI overview could not be loaded. No metrics are shown until the API responds.
+            </div>
           ) : (
             <>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <MetricCard 
                   title="Total Requests" 
-                  value={overviewData?.overview.total_requests.toLocaleString() || '0'} 
+                  value={overviewData.overview.total_requests.toLocaleString()} 
                   icon={<Activity className="h-4 w-4 text-muted-foreground" />}
                 />
                 <MetricCard 
                   title="Success Rate" 
-                  value={`${overviewData?.overview.success_rate.toFixed(1) || '0'}%`} 
+                  value={`${overviewData.overview.success_rate.toFixed(1)}%`} 
                   icon={<ActivitySquare className="h-4 w-4 text-emerald-500" />}
                 />
                 <MetricCard 
                   title="Avg Latency" 
-                  value={`${overviewData?.overview.avg_latency_ms.toFixed(0) || '0'} ms`} 
+                  value={`${overviewData.overview.avg_latency_ms.toFixed(0)} ms`} 
                   icon={<Server className="h-4 w-4 text-blue-500" />}
                 />
                 <MetricCard 
                   title="Fallback Usage" 
-                  value={overviewData?.overview.fallback_usage.toLocaleString() || '0'} 
+                  value={overviewData.overview.fallback_usage.toLocaleString()} 
                   icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
                 />
               </div>
@@ -118,7 +122,7 @@ export default function AIOperationsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {overviewData?.overview.providers.map(p => (
+                      {overviewData.overview.providers.map(p => (
                         <TableRow key={p.provider}>
                           <TableCell className="font-medium capitalize">{p.provider}</TableCell>
                           <TableCell className="text-right">{p.requests.toLocaleString()}</TableCell>
@@ -141,6 +145,8 @@ export default function AIOperationsPage() {
             <CardContent>
               {tracesLoading ? (
                 <Skeleton className="h-[400px] w-full" />
+              ) : tracesError || !tracesData?.traces ? (
+                <div className="p-4 text-sm text-destructive">Request traces could not be loaded.</div>
               ) : (
                 <Table>
                   <TableHeader>
@@ -154,7 +160,7 @@ export default function AIOperationsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tracesData?.traces.map(trace => (
+                    {tracesData.traces.map(trace => (
                       <TableRow key={trace.id}>
                         <TableCell className="text-xs text-muted-foreground">{new Date(trace.timestamp).toLocaleString()}</TableCell>
                         <TableCell className="font-mono text-xs">{trace.request_id || '-'}</TableCell>
@@ -188,6 +194,8 @@ export default function AIOperationsPage() {
             <CardContent>
               {failuresLoading ? (
                 <Skeleton className="h-[400px] w-full" />
+              ) : failuresError || !failuresData?.failures ? (
+                <div className="p-4 text-sm text-destructive">Failure analysis could not be loaded.</div>
               ) : (
                 <Table>
                   <TableHeader>
@@ -197,13 +205,13 @@ export default function AIOperationsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {failuresData?.failures.map(f => (
+                    {failuresData.failures.map(f => (
                       <TableRow key={f.category}>
                         <TableCell className="font-mono text-sm text-destructive">{f.category}</TableCell>
                         <TableCell className="text-right">{f.count.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
-                    {(!failuresData?.failures || failuresData.failures.length === 0) && (
+                    {failuresData.failures.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={2} className="text-center text-muted-foreground p-8">No failures recorded.</TableCell>
                       </TableRow>

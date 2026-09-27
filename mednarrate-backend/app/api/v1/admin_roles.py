@@ -1,9 +1,10 @@
 import uuid
+from collections import defaultdict
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
-from sqlalchemy import delete
+from pydantic import BaseModel, Field
+from sqlalchemy import delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -23,13 +24,13 @@ router = APIRouter()
 class RoleCreateReq(BaseModel):
     name: str
     description: Optional[str] = None
-    permission_names: List[str] = []
+    permission_names: List[str] = Field(default_factory=list)
 
 
 class RoleUpdateReq(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    permission_names: List[str] = []
+    permission_names: List[str] = Field(default_factory=list)
 
 
 DEFAULT_PERMISSIONS = [
@@ -100,32 +101,39 @@ async def list_roles(
     res = await db.execute(stmt)
     roles = res.scalars().all()
 
-    out = []
-    for r in roles:
-        # Fetch perms
-        stmt_perms = (
-            select(AdminPermission)
+    permissions_by_role = defaultdict(list)
+    permission_rows = (
+        await db.execute(
+            select(AdminRolePermission.role_id, AdminPermission.name)
             .join(
-                AdminRolePermission,
+                AdminPermission,
                 AdminPermission.id == AdminRolePermission.permission_id,
             )
-            .where(AdminRolePermission.role_id == r.id)
         )
-        perms = (await db.execute(stmt_perms)).scalars().all()
+    ).all()
+    for role_id, permission_name in permission_rows:
+        permissions_by_role[role_id].append(permission_name)
 
-        # Count assigned admins
-        stmt_count = select(AdminRoleAssignment).where(
-            AdminRoleAssignment.role_id == r.id
-        )
-        assigned_count = len((await db.execute(stmt_count)).scalars().all())
+    assigned_counts = dict(
+        (
+            await db.execute(
+                select(
+                    AdminRoleAssignment.role_id,
+                    func.count(AdminRoleAssignment.id),
+                ).group_by(AdminRoleAssignment.role_id)
+            )
+        ).all()
+    )
 
+    out = []
+    for r in roles:
         out.append(
             {
                 "id": str(r.id),
                 "name": r.name,
                 "description": r.description,
-                "permissions": [p.name for p in perms],
-                "assigned_admins_count": assigned_count,
+                "permissions": permissions_by_role.get(r.id, []),
+                "assigned_admins_count": assigned_counts.get(r.id, 0),
             }
         )
 
