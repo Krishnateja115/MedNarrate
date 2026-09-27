@@ -14,6 +14,7 @@ from app.models.admin import (
     AdminRole,
     AdminRoleAssignment,
     AdminRolePermission,
+    SensitiveAccessGrant,
 )
 from app.models.refresh_token import RefreshToken
 from app.models.user import User, UserRole
@@ -26,10 +27,15 @@ async def test_security_metrics_are_exact_for_admin_status_and_sessions(
 ):
     """Active admins and active sessions remain distinct database counts."""
     # Controlled zero-admin baseline.  Delete dependent rows first because these
-    # fixtures share the test database with the API client.
+    # fixtures share the test database with the API client. SensitiveAccessGrant
+    # rows are included because other test modules exercise the break-glass
+    # request/approve flow and intentionally leave an active grant behind (that
+    # is what those tests are verifying), which otherwise leaks into this
+    # module's "zero baseline" assertion below.
     await db_session.execute(delete(AdminAuditLog))
     await db_session.execute(delete(RefreshToken))
     await db_session.execute(delete(AdminRoleAssignment))
+    await db_session.execute(delete(SensitiveAccessGrant))
     await db_session.execute(delete(User))
     await db_session.commit()
 

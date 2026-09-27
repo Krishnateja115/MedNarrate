@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchApi } from '@/lib/api';
@@ -211,10 +212,12 @@ export function Topbar() {
           : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800'
         }`}
     >
-      <img
+      <Image
         src="/brand/mednarrate-logo.png"
         alt=""
         aria-hidden="true"
+        width={28}
+        height={28}
         className="mr-3 h-7 w-7 shrink-0 rounded-md object-contain sm:hidden"
       />
 

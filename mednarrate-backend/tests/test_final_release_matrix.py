@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, hash_password
@@ -150,6 +150,13 @@ async def test_break_glass_summary_exposes_count_without_grant_details(
     db_session: AsyncSession,
 ):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
+    # Other test modules exercise the break-glass request/approve flow and
+    # intentionally leave an active grant behind (that's what those tests are
+    # verifying). Clear those out first so this test's exact "active_count == 1"
+    # assertion below reflects only the two grants it creates itself, not
+    # whatever else happens to be sitting in the shared test database.
+    await db_session.execute(delete(SensitiveAccessGrant))
+    await db_session.commit()
     db_session.add_all(
         [
             SensitiveAccessGrant(
