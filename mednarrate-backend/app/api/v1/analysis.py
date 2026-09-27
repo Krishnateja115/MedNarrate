@@ -171,11 +171,17 @@ async def translate_analysis(
     ]
 
     lang = req.language
+    #region debug-point trans-backend-001
+    print(f"[TRANSLATION] report_id={report.id} analysis_id={analysis.id} requested_language={lang} endpoint=POST /reports/{id}/analysis/translate")
+    print(f"[TRANSLATION] abnormal_count={len(analysis.abnormal_findings or [])} medication_count={len(meds_list)} source_patient_summary_chars={len(analysis.patient_summary or '')}")
+    #endregion
     if lang == "en":
         return TranslationOut(
             language="en",
             patient_summary=analysis.patient_summary or "",
             findings_json=[],
+            medications_json=[],
+            ui_labels={},
         )
 
     stmt_trans = select(AnalysisTranslation).where(
@@ -187,7 +193,14 @@ async def translate_analysis(
 
     if translation:
         # Cache hit
+        #region debug-point trans-backend-002
+        _f = getattr(translation, 'findings_json', []) or []
+        _m = getattr(translation, 'medications_json', []) or []
+        _u = getattr(translation, 'ui_labels', {}) or {}
+        print(f"[TRANSLATION] cache_hit=true cache_language={translation.language} findings_count={len(_f)} medications_count={len(_m)} ui_labels_count={len(_u)}")
+        #endregion
         if translation.patient_summary.startswith("[Translation") or translation.patient_summary.startswith("This is an automated"):
+            print("[TRANSLATION] cache_invalidated_reason=stale_automated_prefix")
             await db.delete(translation)
             await db.commit()
             translation = None
@@ -199,6 +212,10 @@ async def translate_analysis(
                 ui_labels=getattr(translation, 'ui_labels', {}) or {},
                 medications_json=getattr(translation, 'medications_json', []) or [],
             )
+    else:
+        #region debug-point trans-backend-003
+        print(f"[TRANSLATION] cache_hit=false target_language_name={target_lang_name if False else LANGUAGE_MAP.get(lang, lang)} provider=gemini_json_prompt")
+        #endregion
 
     # Cache miss - translate
     LANGUAGE_MAP = {
@@ -286,6 +303,10 @@ async def translate_analysis(
             translated_findings = parsed.get("abnormal_findings", parsed.get("findings_json", []))
             translated_ui_labels = parsed.get("ui_labels", {})
             translated_medications = parsed.get("medications", parsed.get("medications_json", []))
+            translated_discussion = parsed.get("doctor_discussion_points", parsed.get("discussion_points", []))
+            #region debug-point trans-backend-004
+            print(f"[TRANSLATION] llm_parse_ok=true summary_present={bool(translated_summary and translated_summary != '[Translation failed]')} findings_count={len(translated_findings)} medications_count={len(translated_medications)} ui_labels_count={len(translated_ui_labels)} doctor_discussion_count={len(translated_discussion) if isinstance(translated_discussion, list) else 0}")
+            #endregion
             print("========== TRANSLATION DEBUG END ==========\n")
         except json.JSONDecodeError as e:
             print("PARSING SUCCESS: NO")

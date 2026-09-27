@@ -652,6 +652,15 @@ class _PatientViewTabState extends State<PatientViewTab> {
     List<Map<String, dynamic>> meds,
     TranslationModel? translation,
   ) {
+    //region debug-point trans-flutter-001
+    final _tLang = translation?.language ?? 'en';
+    final _tFindings = translation?.findingsJson.length ?? 0;
+    final _tLabels = translation?.uiLabels.length ?? 0;
+    final _tMeds = translation?.medicationsJson.length ?? 0;
+    final _abnCount = abnormalList.length;
+    final _medCount = meds.length;
+    debugPrint('[TRANSLATION][FLUTTER] discussion_points_generator selected_language=$_tLang findings_in_translation=$_tFindings ui_labels_count=$_tLabels meds_in_translation=$_tMeds abnormal_source_count=$_abnCount meds_source_count=$_medCount');
+    //endregion
     final points = <Widget>[];
 
     if (abnormalList.isNotEmpty) {
@@ -670,6 +679,11 @@ class _PatientViewTabState extends State<PatientViewTab> {
             translatedExpl = match['translated_explanation']?.toString();
           } catch (_) {}
         }
+
+        //region debug-point trans-flutter-002
+        final _hit = translatedExpl != null && translatedExpl.isNotEmpty;
+        debugPrint('[TRANSLATION][FLUTTER] abnormal_point test=$name flag=$flag value=$val translated_hit=$_hit using_fallback_english=${!_hit && translation != null && translation.language != "en"}');
+        //endregion
 
         points.add(_buildDoctorBullet(
           context,
