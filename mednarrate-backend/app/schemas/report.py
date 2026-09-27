@@ -120,6 +120,7 @@ class TranslationOut(BaseModel):
     language: str
     patient_summary: str
     findings_json: List[dict] = []
+    ui_labels: Dict[str, str] = {}
     cached: bool = False
 
 

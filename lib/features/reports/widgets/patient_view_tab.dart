@@ -156,9 +156,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Report at a Glance',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                widget.translation?.uiLabels['section_report_at_a_glance'] ?? 'Report at a Glance',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               widget.isTranslating
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
@@ -243,37 +243,37 @@ class _PatientViewTabState extends State<PatientViewTab> {
           ],
 
           // 4. Important Lab Results (Cards)
-          const Text(
-            'Important Results',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            widget.translation?.uiLabels['section_important_results'] ?? 'Important Results',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
 
           if (labs.isEmpty)
-            _buildEmptyStateCard(context, 'No laboratory results identified in this report.')
+            _buildEmptyStateCard(context, widget.translation?.uiLabels['label_no_lab_results'] ?? 'No laboratory results identified in this report.')
           else
-            ...labs.map((lab) => _buildLabCard(context, lab)),
+            ...labs.map((lab) => _buildLabCard(context, lab, widget.translation)),
 
           const SizedBox(height: 24),
 
           // 5. Reported Medications
-          const Text(
-            'Reported Medications',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            widget.translation?.uiLabels['section_reported_medications'] ?? 'Reported Medications',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
 
           if (meds.isEmpty)
-            _buildEmptyStateCard(context, 'No medications listed in this report.')
+            _buildEmptyStateCard(context, widget.translation?.uiLabels['label_no_medications'] ?? 'No medications listed in this report.')
           else
-            ...meds.map((med) => _buildMedicationCard(context, med)),
+            ...meds.map((med) => _buildMedicationCard(context, med, widget.translation)),
 
           const SizedBox(height: 24),
 
           // 6. What to Discuss With Your Doctor
-          const Text(
-            'What to Discuss With Your Doctor',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            widget.translation?.uiLabels['section_what_to_discuss'] ?? 'What to Discuss With Your Doctor',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
           Container(
@@ -413,27 +413,28 @@ class _PatientViewTabState extends State<PatientViewTab> {
     );
   }
 
-  Widget _buildLabCard(BuildContext context, LabValue lab) {
+  Widget _buildLabCard(BuildContext context, LabValue lab, [TranslationModel? translation]) {
     final theme = Theme.of(context);
     final flag = lab.flag.toLowerCase();
+    final l = translation?.uiLabels;
 
     Color flagColor = Colors.grey;
-    String flagLabel = 'Not classified';
+    String flagLabel = l?['label_not_classified'] ?? 'Not classified';
     if (flag == 'high') {
       flagColor = Colors.redAccent;
-      flagLabel = 'High';
+      flagLabel = l?['label_high'] ?? 'High';
     } else if (flag == 'low') {
       flagColor = Colors.orange;
-      flagLabel = 'Low';
+      flagLabel = l?['label_low'] ?? 'Low';
     } else if (flag == 'critical') {
       flagColor = Colors.purpleAccent;
-      flagLabel = 'Critical';
+      flagLabel = l?['label_critical'] ?? 'Critical';
     } else if (flag == 'normal') {
       flagColor = const Color(0xFF00C48C);
-      flagLabel = 'Normal';
+      flagLabel = l?['label_normal'] ?? 'Normal';
     }
 
-    String rangeText = 'Not provided in report';
+    String rangeText = l?['label_not_provided'] ?? 'Not provided in report';
     final hasRange = lab.refLow != null && lab.refHigh != null;
     if (hasRange) {
       rangeText = '${lab.refLow} – ${lab.refHigh} ${lab.unit}';
@@ -491,7 +492,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
           Row(
             children: [
               Text(
-                'Result: ',
+                '${l?['label_result'] ?? 'Result'}: ',
                 style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
               ),
               Text(
@@ -502,12 +503,12 @@ class _PatientViewTabState extends State<PatientViewTab> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Reported range: $rangeText',
+            '${l?['label_reported_range'] ?? 'Reported range'}: $rangeText',
             style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
           ),
           const SizedBox(height: 2),
           Text(
-            'Status: $flagLabel',
+            '${l?['label_status'] ?? 'Status'}: $flagLabel',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: flagColor),
           ),
           if (hasRange) ...[
@@ -527,11 +528,12 @@ class _PatientViewTabState extends State<PatientViewTab> {
     );
   }
 
-  Widget _buildMedicationCard(BuildContext context, Map<String, dynamic> med) {
+  Widget _buildMedicationCard(BuildContext context, Map<String, dynamic> med, [TranslationModel? translation]) {
     final theme = Theme.of(context);
     final name = med['medication_name']?.toString() ?? 'Medication';
     final dosage = med['dosage']?.toString() ?? 'Not specified';
     final frequency = med['frequency']?.toString() ?? 'Not specified';
+    final l = translation?.uiLabels;
     
     final times = List<String>.from(med['times_of_day'] ?? []);
     final timingText = times.isNotEmpty ? times.join(', ') : 'Not specified';
@@ -566,17 +568,17 @@ class _PatientViewTabState extends State<PatientViewTab> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Dose: $dosage',
+                  '${l?['label_dose'] ?? 'Dose'}: $dosage',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface.withValues(alpha: 0.9)),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Frequency: $frequency',
+                  '${l?['label_frequency'] ?? 'Frequency'}: $frequency',
                   style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withValues(alpha: 0.75)),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Timing: $timingText',
+                  '${l?['label_timing'] ?? 'Timing'}: $timingText',
                   style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                 ),
               ],
@@ -679,10 +681,11 @@ class _PatientViewTabState extends State<PatientViewTab> {
       ));
     }
 
-    points.add(_buildDoctorBullet(
-      context,
-      'Ask if follow-up testing or baseline comparisons are recommended for future monitoring.',
-    ));
+      points.add(_buildDoctorBullet(
+          context,
+          translation?.uiLabels['label_confirm_followup'] ??
+              'Ask if follow-up testing or baseline comparisons are recommended for future monitoring.',
+        ));
 
     return points;
   }

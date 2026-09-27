@@ -416,18 +416,22 @@ class TranslationModel {
   final String language;
   final String patientSummary;
   final List<Map<String, dynamic>> findingsJson;
+  final Map<String, String> uiLabels;
 
   const TranslationModel({
     required this.language,
     required this.patientSummary,
     required this.findingsJson,
+    this.uiLabels = const {},
   });
 
   factory TranslationModel.fromMap(Map<String, dynamic> map) {
+    final rawLabels = map['ui_labels'] as Map<String, dynamic>? ?? {};
     return TranslationModel(
       language: map['language'] as String,
       patientSummary: map['patient_summary'] as String,
       findingsJson: List<Map<String, dynamic>>.from(map['findings_json'] ?? []),
+      uiLabels: rawLabels.map((k, v) => MapEntry(k, v?.toString() ?? '')),
     );
   }
 }

@@ -181,6 +181,7 @@ async def translate_analysis(
                 language=lang,
                 patient_summary=translation.patient_summary,
                 findings_json=translation.findings_json,
+                ui_labels=getattr(translation, 'ui_labels', {}) or {},
             )
 
     # Cache miss - translate
@@ -246,6 +247,7 @@ async def translate_analysis(
             print("PARSING SUCCESS: YES")
             translated_summary = parsed.get("patient_summary", "[Translation failed]")
             translated_findings = parsed.get("abnormal_findings", [])
+            translated_ui_labels = parsed.get("ui_labels", {})
             print("========== TRANSLATION DEBUG END ==========\n")
         except json.JSONDecodeError as e:
             print("PARSING SUCCESS: NO")
@@ -267,6 +269,7 @@ async def translate_analysis(
         language=lang,
         patient_summary=translated_summary,
         findings_json=translated_findings,
+        ui_labels=translated_ui_labels,
     )
     db.add(translation)
     await db.commit()
@@ -276,4 +279,5 @@ async def translate_analysis(
         language=lang,
         patient_summary=translation.patient_summary,
         findings_json=translation.findings_json,
+        ui_labels=getattr(translation, 'ui_labels', {}) or {},
     )
