@@ -5,7 +5,6 @@ import sys
 # Ensure backend path is configured
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mednarrate-backend")))
 
-from app.services.llm_client import llm_client_instance
 from app.services.llm_client import generate
 
 

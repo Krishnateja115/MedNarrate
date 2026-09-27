@@ -1,7 +1,6 @@
 import asyncio
 from app.core.database import AsyncSessionLocal
 from app.api.v1.admin_health import get_system_health
-from fastapi import Request
 
 # Create a mock AdminContext
 from app.models.user import User

@@ -1,12 +1,7 @@
-import asyncio
-from app.api.v1.admin_users import get_users
 from app.core.database import AsyncSessionLocal
-from app.models.user import User
-from sqlalchemy import select
-import json
 
 async def run():
-    async with AsyncSessionLocal() as session:
+    async with AsyncSessionLocal():
         # We need a mock admin context
         class MockCtx:
             user_id = 1

@@ -300,15 +300,15 @@ class ExportService {
     required String reportTitle,
     required String reportDate,
   }) async {
-    print('[MEDNARRATE EXPORT] EXPORT PDF BUTTON CLICKED');
-    print('[MEDNARRATE EXPORT] GENERATING PDF');
+    debugPrint('[MEDNARRATE EXPORT] EXPORT PDF BUTTON CLICKED');
+    debugPrint('[MEDNARRATE EXPORT] GENERATING PDF');
     final doc = await _buildDocument(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
     );
     final bytes = await doc.save();
-    print('[MEDNARRATE EXPORT] PDF GENERATED');
+    debugPrint('[MEDNARRATE EXPORT] PDF GENERATED');
 
     final safeTitle = reportTitle.replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '_');
     final filename = 'MedNarrate_${safeTitle}_$reportDate.pdf';
@@ -334,15 +334,15 @@ class ExportService {
     required String reportTitle,
     required String reportDate,
   }) async {
-    print('[MEDNARRATE PRINT] PRINT/PREVIEW BUTTON CLICKED');
-    print('[MEDNARRATE PRINT] GENERATING PDF');
+    debugPrint('[MEDNARRATE PRINT] PRINT/PREVIEW BUTTON CLICKED');
+    debugPrint('[MEDNARRATE PRINT] GENERATING PDF');
     final doc = await _buildDocument(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
     );
     final bytes = await doc.save();
-    print('[MEDNARRATE PRINT] STARTING PRINT PREVIEW');
+    debugPrint('[MEDNARRATE PRINT] STARTING PRINT PREVIEW');
     // layoutPdf uses the browser/system print dialog
     await Printing.layoutPdf(onLayout: (_) async => bytes);
   }

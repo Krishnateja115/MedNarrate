@@ -1,5 +1,4 @@
 import asyncio
-from sqlalchemy import select
 from app.core.database import AsyncSessionLocal
 from app.api.v1.admin_dashboard import get_dashboard_summary
 

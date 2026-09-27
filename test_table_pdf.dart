@@ -20,8 +20,10 @@ void main() async {
   try {
     final bytes = await doc.save();
     File('test_output.pdf').writeAsBytesSync(bytes);
+    // ignore: avoid_print
     print("Table span test: Success!");
   } catch (e) {
+    // ignore: avoid_print
     print("Table span test Error: $e");
   }
 }

@@ -1,5 +1,4 @@
 import re
-import json
 import logging
 import asyncio
 from typing import List
@@ -197,7 +196,7 @@ class RagService:
         try:
             # We use retrieve_kb_context which queries the chroma db or fallback.
             # Just do a fast test query.
-            result = await asyncio.wait_for(
+            await asyncio.wait_for(
                 retrieve_kb_context("test health ping", top_k=1),
                 timeout=timeout_seconds
             )

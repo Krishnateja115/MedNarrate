@@ -1,6 +1,5 @@
 import os
 import glob
-import shutil
 
 # Find all [id] directories
 dynamic_dirs = glob.glob('src/app/**/\[id\]', recursive=True)

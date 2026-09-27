@@ -1,4 +1,3 @@
-import os
 import glob
 
 files = glob.glob('src/app/**/\[id\]/page.tsx', recursive=True)

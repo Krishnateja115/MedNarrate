@@ -10,7 +10,7 @@ import 'connectivity_service.dart';
 import 'cache_service.dart';
 import 'offline_queue_service.dart';
 import '../../models/cached/offline_action.dart';
-import '../../../features/reports/models/report_model.dart';
+import '../../features/reports/models/report_model.dart';
 import '../../models/comparison_models.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 

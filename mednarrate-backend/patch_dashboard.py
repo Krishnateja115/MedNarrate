@@ -1,4 +1,3 @@
-import re
 
 with open("app/api/v1/admin_dashboard.py", "r") as f:
     content = f.read()

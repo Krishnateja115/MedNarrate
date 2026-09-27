@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import httpx
 import os
 
 logging.basicConfig(level=logging.DEBUG)
@@ -15,7 +14,6 @@ os.environ["GEMINI_MODEL"] = "gemini-3.8-flash"
 os.environ["GEMINI_API_KEY"] = "dummy"
 os.environ["ENVIRONMENT"] = "development"
 
-from app.core.config import settings
 from app.services.llm_client import DevGeminiProvider
 
 async def test_llm():

@@ -1,7 +1,6 @@
 import asyncio
 from sqlalchemy import text
 from app.core.database import AsyncSessionLocal
-from app.models.help_center import HelpArticle
 
 async def check():
     async with AsyncSessionLocal() as session:

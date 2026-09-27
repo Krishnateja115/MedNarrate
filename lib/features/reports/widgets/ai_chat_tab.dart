@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/services/api_service.dart';
-import '../../../../core/services/api_models.dart';
-import '../../../../core/services/api_exception.dart';
-import '../../../../core/utils/helpers.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/services/api_models.dart';
+import '../../../core/services/api_exception.dart';
+import '../../../core/utils/helpers.dart';
 import '../../chat/widgets/typing_indicator.dart';
 import '../../chat/widgets/quick_question_chips.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';

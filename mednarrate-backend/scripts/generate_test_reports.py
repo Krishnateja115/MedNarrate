@@ -1,8 +1,6 @@
 import os
-import random
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from PIL import Image, ImageDraw, ImageFont
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "tests", "data")
 

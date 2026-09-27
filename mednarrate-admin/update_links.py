@@ -17,7 +17,7 @@ def process_file(filepath):
     for route in routes_to_fix:
         # Regex to find: /route/${var}
         # Be careful not to replace /route/detail?id=${var} if already there
-        pattern = rf'/{route}/\${{([^}]+)}}'
+        pattern = rf'/{route}/\${{([^}}]+)}}'
         replacement = rf'/{route}/detail?id=${{\1}}'
         content = re.sub(pattern, replacement, content)
         
