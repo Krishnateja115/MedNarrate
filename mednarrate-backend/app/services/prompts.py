@@ -110,6 +110,7 @@ Answer:"""
 
 TRANSLATION_PROMPT = """You are a professional medical translator. Translate the following patient summary and list of abnormal findings into {target_language}.
 Maintain a medically accurate, calm, and patient-friendly tone.
+CRITICAL RULE: DO NOT translate or modify numerical values, units, reference ranges, dates, or dosages. Preserve them exactly as they appear in the original text.
 
 INPUT DATA:
 Patient Summary: {patient_summary}

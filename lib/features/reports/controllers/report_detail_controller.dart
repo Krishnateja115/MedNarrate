@@ -137,13 +137,6 @@ class ReportDetailController extends ChangeNotifier {
       return;
     }
     
-    if (_translationCache.containsKey(languageCode)) {
-      translation = _translationCache[languageCode];
-      translationLanguage = languageCode;
-      if (!_disposed) notifyListeners();
-      return;
-    }
-
     isTranslating = true;
     if (!_disposed) notifyListeners();
 

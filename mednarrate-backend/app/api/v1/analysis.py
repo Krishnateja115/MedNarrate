@@ -19,7 +19,7 @@ from app.schemas.report import (
     TranslationRequest,
 )
 from app.services.analysis_pipeline import run_analysis
-from app.services.llm_client import generate
+from app.services.llm_client import generate, generate_with_metadata
 from app.services.prompts import TRANSLATION_PROMPT
 
 router = APIRouter()
@@ -172,20 +172,44 @@ async def translate_analysis(
 
     if translation:
         # Cache hit
-        return TranslationOut(
-            language=lang,
-            patient_summary=translation.patient_summary,
-            findings_json=translation.findings_json,
-        )
+        if translation.patient_summary.startswith("[Translation") or translation.patient_summary.startswith("This is an automated"):
+            await db.delete(translation)
+            await db.commit()
+            translation = None
+        else:
+            return TranslationOut(
+                language=lang,
+                patient_summary=translation.patient_summary,
+                findings_json=translation.findings_json,
+            )
 
     # Cache miss - translate
+    LANGUAGE_MAP = {
+        "en": "English",
+        "hi": "Hindi",
+        "ta": "Tamil",
+        "te": "Telugu",
+        "kn": "Kannada",
+        "ml": "Malayalam",
+        "bn": "Bengali",
+        "mr": "Marathi",
+    }
+    target_lang_name = LANGUAGE_MAP.get(lang, lang)
+    
     prompt = TRANSLATION_PROMPT.format(
-        target_language=lang,
+        target_language=target_lang_name,
         patient_summary=analysis.patient_summary or "",
         abnormal_findings_json=json.dumps(analysis.abnormal_findings, indent=2),
     )
 
-    response_text = await generate(prompt)
+    llm_res = await generate_with_metadata(prompt)
+    response_text = llm_res.get("content", "")
+    provider = llm_res.get("provider", "unknown")
+
+    if provider == "fallback":
+        raise HTTPException(
+            status_code=503, detail="Translation service is temporarily unavailable."
+        )
 
     # Strip markdown wrappers if LLM returned them
     response_text = response_text.strip()
@@ -202,9 +226,9 @@ async def translate_analysis(
         translated_summary = parsed.get("patient_summary", "[Translation failed]")
         translated_findings = parsed.get("abnormal_findings", [])
     except json.JSONDecodeError:
-        # Fallback if LLM failed to return valid JSON
-        translated_summary = "[Translation Parsing Error] " + response_text[:100]
-        translated_findings = []
+        raise HTTPException(
+            status_code=502, detail="Translation provider returned invalid JSON."
+        )
 
     translation = AnalysisTranslation(
         report_analysis_id=analysis.id,

@@ -401,7 +401,11 @@ class FallbackAIProvider(LLMProvider):
         elif is_chat:
             content = "AI service is temporarily unavailable. Please try again."
         elif is_translation:
-            content = "This is an automated translation of the report summary into the selected language. All extracted numerical values and findings are preserved."
+            import json
+            content = json.dumps({
+                "patient_summary": "This is an automated translation of the report summary into the selected language. All extracted numerical values and findings are preserved.",
+                "abnormal_findings": []
+            })
         else:
             import json
             import re
