@@ -248,32 +248,54 @@ async def translate_analysis(
                 status_code=503, detail="Translation service is temporarily unavailable."
             )
 
-        # Strip markdown wrappers if LLM returned them
-        response_text = response_text.strip()
-        if response_text.startswith("```json"):
-            response_text = response_text[7:]
-        elif response_text.startswith("```"):
-            response_text = response_text[3:]
-        if response_text.endswith("```"):
-            response_text = response_text[:-3]
-        response_text = response_text.strip()
+        # Robust extraction: strip markdown, then find outermost JSON object
+        import re as _re
+        raw = response_text.strip()
+        # Remove ```json ... ``` or ``` ... ``` wrappers
+        m = _re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', raw)
+        if m:
+            raw = m.group(1).strip()
+        # Find the first '{' and the last '}' that closes it
+        start = raw.find('{')
+        if start == -1:
+            print("PARSING SUCCESS: NO")
+            print("ERROR TYPE: NoJSON")
+            print("ERROR MESSAGE: No JSON object found in response")
+            print(f"RAW RESPONSE: {raw[:300]}")
+            print("========== TRANSLATION DEBUG END ==========\n")
+            raise HTTPException(status_code=502, detail="Translation provider returned no JSON object.")
+        # Walk from end backwards to find closing }
+        depth = 0
+        end = -1
+        for i in range(len(raw) - 1, start - 1, -1):
+            if raw[i] == '}':
+                if depth == 0:
+                    end = i
+                depth += 1
+            elif raw[i] == '{':
+                depth -= 1
+                if depth == 0:
+                    break
+        json_str = raw[start:end + 1] if end != -1 else raw[start:]
 
         try:
-            parsed = json.loads(response_text)
+            parsed = json.loads(json_str)
             print(f"RESPONSE KEYS: {list(parsed.keys())}")
             print("PARSING SUCCESS: YES")
             translated_summary = parsed.get("patient_summary", "[Translation failed]")
-            translated_findings = parsed.get("abnormal_findings", [])
+            translated_findings = parsed.get("abnormal_findings", parsed.get("findings_json", []))
             translated_ui_labels = parsed.get("ui_labels", {})
-            translated_medications = parsed.get("medications", [])
+            translated_medications = parsed.get("medications", parsed.get("medications_json", []))
             print("========== TRANSLATION DEBUG END ==========\n")
         except json.JSONDecodeError as e:
             print("PARSING SUCCESS: NO")
             print("ERROR TYPE: JSONDecodeError")
             print(f"ERROR MESSAGE: {str(e)}")
+            print(f"CHAR POSITION: {e.pos}")
+            print(f"JSON_STR LENGTH: {len(json_str)}")
             print("========== TRANSLATION DEBUG END ==========\n")
             raise HTTPException(
-                status_code=502, detail="Translation provider returned invalid JSON."
+                status_code=502, detail=f"Translation provider returned invalid JSON at pos {e.pos}: {str(e)}"
             )
     except Exception as e:
         print("RESPONSE RECEIVED: NO")
