@@ -1,5 +1,7 @@
 /* eslint-disable */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+// Use the same-origin API proxy by default. It keeps the HTTP-only session
+// cookies first-party, which is required for browser session restoration.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
 
 export class ApiError extends Error {
   public status: number;
@@ -113,4 +115,3 @@ export async function fetchApi<T = any>(endpoint: string, options: FetchOptions 
 }
 
 export const apiFetch = fetchApi;
-

@@ -149,6 +149,8 @@ async def test_break_glass_summary_exposes_count_without_grant_details(
     release_super_admin: dict,
     db_session: AsyncSession,
 ):
+    await db_session.execute(delete(SensitiveAccessGrant))
+    await db_session.commit()
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     # Other test modules exercise the break-glass request/approve flow and
     # intentionally leave an active grant behind (that's what those tests are

@@ -106,14 +106,6 @@ async def get_rag_status(
             )
         )
     ).scalar() or 0
-    failed_docs = (
-        await db.execute(
-            select(func.count(KnowledgeDocument.id)).where(
-                KnowledgeDocument.status == DocLifecycleStatus.failed
-            )
-        )
-    ).scalar() or 0
-
     # Real RAG health probe
     rag_index_status = "unknown"
     rag_error = None
@@ -139,6 +131,5 @@ async def get_rag_status(
             "total_chunks": total_chunks,
             "total_documents": total_docs,
             "published_documents": published_docs,
-            "failed_documents": failed_docs,
         },
     }

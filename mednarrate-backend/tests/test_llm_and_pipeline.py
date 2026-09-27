@@ -104,7 +104,7 @@ async def test_llm_provider_auto_selection(monkeypatch):
     monkeypatch.setattr(settings, "OLLAMA_URL", "http://127.0.0.1:99999")
     monkeypatch.setattr(settings, "ENABLE_LLM_FALLBACK", False)
 
-    with pytest.raises(RuntimeError, match="AI analysis is currently unavailable"):
+    with pytest.raises(LLMConfigurationError, match="not configured or is invalid"):
         await generate("Test prompt", timeout=0.5)
 
 

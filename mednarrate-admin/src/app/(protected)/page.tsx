@@ -24,8 +24,9 @@ interface DashboardSummary {
     reports_today: number;
     reports_this_week: number;
     reports_processing: number;
+    reports_completed: number;
     reports_failed: number;
-    average_processing_time_ms: number;
+    average_processing_time_ms: number | null;
   };
   analysis: {
     analysis_success_rate: number;
@@ -146,7 +147,7 @@ export default function OverviewPage() {
           </div>
           <div>
             <p className="text-sm font-medium">{name}</p>
-            {service.latency_ms !== undefined && <p className="text-xs text-muted-foreground">{service.latency_ms}ms</p>}
+            {service.latency_ms != null && <p className="text-xs text-muted-foreground">{service.latency_ms}ms</p>}
           </div>
         </div>
         <Badge variant={healthy ? 'outline' : down ? 'destructive' : 'secondary'} className={healthy ? 'text-emerald-600 border-emerald-200' : ''}>
@@ -261,7 +262,7 @@ export default function OverviewPage() {
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-500"/> Completed</span>
-                <span className="font-medium text-emerald-600">{summary.reports ? formatNumber(summary.reports.reports_today - summary.reports.reports_failed - summary.reports.reports_processing) : 'N/A'}</span>
+                <span className="font-medium text-emerald-600">{formatNumber(summary.reports?.reports_completed)}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="flex items-center gap-2"><XCircle className="w-4 h-4 text-destructive"/> Failed</span>
@@ -270,7 +271,7 @@ export default function OverviewPage() {
               <div className="pt-2 border-t mt-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Avg Processing Time</span>
-                  <span className="font-mono text-sm">{summary.reports?.average_processing_time_ms ? `${(summary.reports.average_processing_time_ms / 1000).toFixed(1)}s` : 'N/A'}</span>
+                  <span className="font-mono text-sm">{summary.reports?.average_processing_time_ms != null ? `${(summary.reports.average_processing_time_ms / 1000).toFixed(1)}s` : 'N/A'}</span>
                 </div>
               </div>
             </div>

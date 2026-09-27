@@ -20,7 +20,7 @@ export default function AdminCopilotPage() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: 'Hello! I am your Admin Copilot. I can help you analyze system health, query the knowledge base, review recent incidents, and provide security context. How can I assist you today?'
+      content: 'Hello! I can check current account counts, system health, active incidents, and recent administrative audit activity using verified MedNarrate data. I cannot access raw clinical data or run unrestricted commands.'
     }
   ]);
   const [input, setInput] = useState('');
@@ -42,9 +42,11 @@ export default function AdminCopilotPage() {
     setIsLoading(true);
 
     try {
+      const conversation = [...messages.slice(1), userMessage].map(m => ({ role: m.role, content: m.content }));
+
       const response = await fetchApi('/api/v1/admin/copilot/chat', {
         method: 'POST',
-        body: JSON.stringify({ message: userMessage.content, history: messages.slice(1).map(m => ({ role: m.role, content: m.content })) })
+        data: { messages: conversation }
       });
 
       setMessages(prev => [
@@ -73,7 +75,7 @@ export default function AdminCopilotPage() {
     <div className="space-y-6 fade-in h-[calc(100vh-8rem)] flex flex-col">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Admin Copilot</h1>
-        <p className="text-muted-foreground">Your AI assistant for system administration and diagnostics.</p>
+        <p className="text-muted-foreground">A read-only assistant for verified operational data.</p>
       </div>
 
       <Card className="flex-1 flex flex-col min-h-0">
@@ -141,7 +143,7 @@ export default function AdminCopilotPage() {
               <Input 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about system health, recent incidents, or security logs..."
+                placeholder="Ask about system health, active incidents, account counts, or audit activity..."
                 className="flex-1 pr-10"
                 disabled={isLoading}
               />

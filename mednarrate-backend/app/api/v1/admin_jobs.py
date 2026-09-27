@@ -30,6 +30,14 @@ ALLOWED_SORT_FIELDS = {
 }
 
 
+def _safe_error_message(job: JobExecution) -> Optional[str]:
+    """Expose an actionable summary without returning raw internal error details."""
+    if job.status == "failed" or getattr(job.status, "value", None) == "failed":
+        category = job.failure_category or "unclassified"
+        return f"Job failed ({category}); use the request ID to inspect server logs."
+    return None
+
+
 @router.get("")
 async def get_background_jobs(
     admin_ctx: AdminContext = Depends(require_permission("jobs.view")),
@@ -79,7 +87,9 @@ async def get_background_jobs(
             "started_at": h.started_at.isoformat() if h.started_at else None,
             "finished_at": h.finished_at.isoformat() if h.finished_at else None,
             "duration_seconds": h.duration_seconds,
-            "error_message": h.error_message,
+            "error_message": _safe_error_message(h),
+            "failure_category": h.failure_category,
+            "request_id": h.request_id,
             "resource_id": getattr(h, "resource_id", None),
         }
         for h in history
@@ -119,7 +129,9 @@ async def get_job_detail(
         "started_at": job.started_at.isoformat() if job.started_at else None,
         "finished_at": job.finished_at.isoformat() if job.finished_at else None,
         "duration_seconds": job.duration_seconds,
-        "error_message": job.error_message,
+        "error_message": _safe_error_message(job),
+        "failure_category": job.failure_category,
+        "request_id": job.request_id,
         "resource_id": getattr(job, "resource_id", None),
         # Never include internal connection strings or credentials in error details
     }

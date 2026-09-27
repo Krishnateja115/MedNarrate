@@ -29,7 +29,7 @@ interface AnalyticsData {
     total_users: number;
     new_registrations: number;
     active_users: number;
-    retention_rate_pct: number;
+    retention_rate_pct: number | null;
     feature_usage: {
       reports_uploaded: number;
       chat_messages: number;
@@ -41,30 +41,31 @@ interface AnalyticsData {
     completed: number;
     processing: number;
     failed: number;
+    success_rate_pct: number | null;
+    failure_rate_pct: number | null;
     failure_categories: Record<string, number>;
-    avg_processing_time_sec: number;
+    avg_processing_time_sec: number | null;
   };
   ai: {
     total_requests: number;
-    success_rate_pct: number;
-    failure_rate_pct: number;
-    timeout_rate_pct: number;
-    avg_latency_ms: number;
+    successful: number;
+    failed: number;
+    success_rate_pct: number | null;
+    failure_rate_pct: number | null;
+    avg_latency_ms: number | null;
     provider_distribution: Array<{ provider: string; model: string; count: number }>;
-    fallback_usage_count: number;
-    verification_status: Record<string, number>;
+    failure_categories: Record<string, number>;
   };
   chat: {
     sessions: number;
     messages: number;
     safety_classifications: Record<string, number>;
-    rag_usage_pct: number;
   };
   notifications: {
     sent: number;
     failed: number;
-    delivery_rate_pct: number;
-    retry_volume: number;
+    total: number;
+    delivery_rate_pct: number | null;
   };
 }
 
@@ -74,6 +75,9 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const formatTelemetry = (value: number | null | undefined, suffix = '') =>
+    value == null ? 'Unavailable' : `${value}${suffix}`;
 
   const fetchAnalytics = async () => {
     setIsLoading(true);
@@ -240,7 +244,7 @@ export default function AnalyticsPage() {
                       <BarChart3 className="w-5 h-5 text-amber-600" />
                     </div>
                     <div className="text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
-                      {data.product.retention_rate_pct}%
+                      {formatTelemetry(data.product.retention_rate_pct, '%')}
                     </div>
                     <p className="text-xs text-slate-500 mt-1">Active return rate from prior period</p>
                   </CardContent>
@@ -310,7 +314,7 @@ export default function AnalyticsPage() {
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900 rounded">
                     <span className="text-sm font-medium">Average Processing Duration</span>
-                    <span className="font-bold text-blue-600">{data.reports.avg_processing_time_sec}s</span>
+                    <span className="font-bold text-blue-600">{formatTelemetry(data.reports.avg_processing_time_sec, 's')}</span>
                   </div>
 
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">Failure Category Breakdown</h4>
@@ -346,19 +350,19 @@ export default function AnalyticsPage() {
                 <Card>
                   <CardContent className="pt-6">
                     <span className="text-xs font-semibold text-emerald-600 uppercase">Success Rate</span>
-                    <div className="text-3xl font-extrabold text-emerald-600 mt-2">{data.ai.success_rate_pct}%</div>
+                    <div className="text-3xl font-extrabold text-emerald-600 mt-2">{formatTelemetry(data.ai.success_rate_pct, '%')}</div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="pt-6">
                     <span className="text-xs font-semibold text-rose-600 uppercase">Failure Rate</span>
-                    <div className="text-3xl font-extrabold text-rose-600 mt-2">{data.ai.failure_rate_pct}%</div>
+                    <div className="text-3xl font-extrabold text-rose-600 mt-2">{formatTelemetry(data.ai.failure_rate_pct, '%')}</div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="pt-6">
                     <span className="text-xs font-semibold text-blue-600 uppercase">Average Latency</span>
-                    <div className="text-3xl font-extrabold text-blue-600 mt-2">{data.ai.avg_latency_ms} ms</div>
+                    <div className="text-3xl font-extrabold text-blue-600 mt-2">{formatTelemetry(data.ai.avg_latency_ms, ' ms')}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -416,8 +420,10 @@ export default function AnalyticsPage() {
                 </Card>
                 <Card>
                   <CardContent className="pt-6">
-                    <span className="text-xs font-semibold text-blue-600 uppercase">RAG Injection Rate</span>
-                    <div className="text-3xl font-extrabold text-blue-600 mt-2">{data.chat.rag_usage_pct}%</div>
+                    <span className="text-xs font-semibold text-blue-600 uppercase">Safety Events</span>
+                    <div className="text-3xl font-extrabold text-blue-600 mt-2">
+                      {Object.values(data.chat.safety_classifications || {}).reduce((total, count) => total + count, 0)}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -443,7 +449,7 @@ export default function AnalyticsPage() {
                 <Card>
                   <CardContent className="pt-6">
                     <span className="text-xs font-semibold text-blue-600 uppercase">Delivery Rate</span>
-                    <div className="text-3xl font-extrabold text-blue-600 mt-2">{data.notifications.delivery_rate_pct}%</div>
+                    <div className="text-3xl font-extrabold text-blue-600 mt-2">{formatTelemetry(data.notifications.delivery_rate_pct, '%')}</div>
                   </CardContent>
                 </Card>
               </div>

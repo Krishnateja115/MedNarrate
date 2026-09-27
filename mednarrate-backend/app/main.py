@@ -59,16 +59,20 @@ app.add_middleware(CorrelationIdMiddleware)
 cors_origins = set(settings.CORS_ORIGINS)
 if "*" in cors_origins:
     cors_origins.remove("*")
-    cors_origins.update([
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-    ])
-if settings.ADMIN_APP_ORIGIN:
-    cors_origins.add(settings.ADMIN_APP_ORIGIN)
+    if settings.ADMIN_APP_ORIGIN:
+        cors_origins.add(settings.ADMIN_APP_ORIGIN)
+    if (settings.ENVIRONMENT or "").lower() == "development":
+        cors_origins.update(
+            {
+                "http://localhost:3000",
+                "http://localhost:3001",
+                "http://localhost:3002",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:3001",
+                "http://127.0.0.1:3002",
+            }
+        )
+
 
 # Always allow Tauri desktop app origins
 cors_origins.add("tauri://localhost")

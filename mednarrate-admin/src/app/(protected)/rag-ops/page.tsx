@@ -32,7 +32,6 @@ interface RagOverview {
   total_chunks: number;
   total_documents: number;
   published_documents: number;
-  failed_documents: number;
 }
 
 interface RagStatusResponse {
@@ -243,23 +242,6 @@ export default function RagOpsPage() {
                   icon={<Database className="h-4 w-4 text-blue-500" />}
                 />
               </div>
-
-              {/* Failed documents alert */}
-              {(overview?.failed_documents ?? 0) > 0 && (
-                <Card className="border-red-300 bg-red-50 dark:bg-red-950/20">
-                  <CardContent className="pt-4 flex items-center gap-3">
-                    <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-                    <div>
-                      <p className="font-semibold text-sm text-destructive">
-                        {overview?.failed_documents} document{(overview?.failed_documents ?? 0) > 1 ? 's' : ''} failed ingestion
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Review the Documents tab, then update lifecycle to re-trigger ingestion.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Error summary from vector store probe */}
               {overview?.error_summary && (

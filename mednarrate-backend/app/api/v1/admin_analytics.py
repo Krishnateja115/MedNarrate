@@ -9,7 +9,7 @@ Metric definitions are documented inline.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional
+from typing import Dict, Iterable, Optional
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, select
@@ -38,6 +38,19 @@ def _safe_pct(numerator: int, denominator: int) -> Optional[float]:
     if denominator == 0:
         return None
     return round(numerator / denominator * 100, 1)
+
+
+def _average_duration_seconds(
+    timestamp_pairs: Iterable[tuple[datetime, datetime]],
+) -> Optional[float]:
+    """Return the mean duration for typed timestamp pairs, or None if empty."""
+    durations = [
+        (processed_at - uploaded_at).total_seconds()
+        for processed_at, uploaded_at in timestamp_pairs
+    ]
+    if not durations:
+        return None
+    return round(sum(durations) / len(durations), 1)
 
 
 def _parse_since(timeframe: str, now: datetime) -> datetime:
@@ -171,15 +184,11 @@ async def get_admin_analytics(
     if uncategorized_failures > 0:
         failure_categories["uncategorized"] = uncategorized_failures
 
-    # Real average processing time (seconds): processed_at - reports.uploaded_at
-    avg_time_res = await db.execute(
-        select(
-            func.avg(
-                func.julianday(ReportAnalysis.processed_at)
-                - func.julianday(Report.uploaded_at)
-            )
-            * 86400
-        )
+    # Real average processing time (seconds): processed_at - reports.uploaded_at.
+    # Calculate from typed timestamps so this works consistently on SQLite and
+    # PostgreSQL instead of depending on a database-specific date function.
+    processing_time_rows = await db.execute(
+        select(ReportAnalysis.processed_at, Report.uploaded_at)
         .join(Report, ReportAnalysis.report_id == Report.id)
         .where(
             Report.uploaded_at >= since_naive,
@@ -187,12 +196,12 @@ async def get_admin_analytics(
             Report.processing_status == ProcessingStatus.completed,
         )
     )
-    avg_processing_time_sec_raw = avg_time_res.scalar_one_or_none()
-    avg_processing_time_sec = (
-        round(avg_processing_time_sec_raw, 1)
-        if avg_processing_time_sec_raw is not None
-        else None
-    )
+    timestamp_pairs = [
+        (processed_at, uploaded_at)
+        for processed_at, uploaded_at in processing_time_rows.all()
+        if processed_at is not None and uploaded_at is not None
+    ]
+    avg_processing_time_sec = _average_duration_seconds(timestamp_pairs)
 
     # ---- 3. AI / LLM METRICS ----
     # Source: llm_diagnostic_events table
@@ -240,15 +249,13 @@ async def get_admin_analytics(
     # Real failure category breakdown from LLM events
     llm_fail_cat_rows = (
         await db.execute(
-            select(
-                LLMDiagnosticEvent.failure_category, func.count(LLMDiagnosticEvent.id)
-            )
+            select(LLMDiagnosticEvent.error_category, func.count(LLMDiagnosticEvent.id))
             .where(
                 LLMDiagnosticEvent.timestamp >= since_naive,
                 LLMDiagnosticEvent.status != "success",
-                LLMDiagnosticEvent.failure_category.isnot(None),
+                LLMDiagnosticEvent.error_category.isnot(None),
             )
-            .group_by(LLMDiagnosticEvent.failure_category)
+            .group_by(LLMDiagnosticEvent.error_category)
         )
         if ai_failed > 0
         else None

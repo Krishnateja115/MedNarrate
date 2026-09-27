@@ -66,7 +66,6 @@ const ragStatus = {
     total_chunks: 142,
     total_documents: 2,
     published_documents: 1,
-    failed_documents: 0,
   },
 };
 
@@ -78,7 +77,6 @@ const ragStatusDegraded = {
     total_chunks: 0,
     total_documents: 2,
     published_documents: 0,
-    failed_documents: 2,
   },
 };
 
@@ -161,17 +159,6 @@ describe('RagOpsPage', () => {
     await waitFor(() => {
       const rows = screen.queryAllByTestId('doc-row');
       expect(rows).toHaveLength(0);
-    });
-  });
-
-  it('renders failed documents alert when failed_documents > 0', async () => {
-    mockedFetchApi.mockImplementation((url) => {
-      if ((url as string).includes('/status')) return Promise.resolve(ragStatusDegraded);
-      return Promise.resolve(paginatedDocs);
-    });
-    renderPage();
-    await waitFor(() => {
-      expect(screen.getByText(/failed ingestion/i)).toBeTruthy();
     });
   });
 

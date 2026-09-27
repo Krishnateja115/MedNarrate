@@ -1,7 +1,7 @@
 from datetime import datetime, time, timedelta, timezone
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import Date, cast, desc, func, select
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import AdminContext, require_permission
@@ -18,7 +18,7 @@ router = APIRouter()
 
 @router.get("/summary")
 async def get_dashboard_summary(
-    days: int = 30,
+    days: int = Query(30, ge=1, le=365),
     admin_ctx: AdminContext = Depends(require_permission("dashboard.view")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -35,19 +35,37 @@ async def get_dashboard_summary(
     total_users = (await db.execute(total_users_stmt)).scalar() or 0
 
     # Active Users
-    active_users_stmt = select(func.count(User.id)).where(User.is_active is True)
+    active_users_stmt = select(func.count(User.id)).where(User.is_active.is_(True))
     active_users = (await db.execute(active_users_stmt)).scalar() or 0
 
-    new_users_today = (await db.execute(select(func.count(User.id)).where(User.created_at >= today_start))).scalar() or 0
-    new_users_this_week = (await db.execute(select(func.count(User.id)).where(User.created_at >= this_week_start))).scalar() or 0
-    new_users_this_month = (await db.execute(select(func.count(User.id)).where(User.created_at >= this_month_start))).scalar() or 0
-    suspended_users = (await db.execute(select(func.count(User.id)).where(User.is_active is False))).scalar() or 0
+    new_users_today = (
+        await db.execute(
+            select(func.count(User.id)).where(User.created_at >= today_start)
+        )
+    ).scalar() or 0
+    new_users_this_week = (
+        await db.execute(
+            select(func.count(User.id)).where(User.created_at >= this_week_start)
+        )
+    ).scalar() or 0
+    new_users_this_month = (
+        await db.execute(
+            select(func.count(User.id)).where(User.created_at >= this_month_start)
+        )
+    ).scalar() or 0
+    suspended_users = (
+        await db.execute(select(func.count(User.id)).where(User.is_active.is_(False)))
+    ).scalar() or 0
 
     reports_today_stmt = select(func.count(Report.id)).where(
         Report.uploaded_at >= today_start
     )
     reports_today = (await db.execute(reports_today_stmt)).scalar() or 0
-    reports_this_week = (await db.execute(select(func.count(Report.id)).where(Report.uploaded_at >= this_week_start))).scalar() or 0
+    reports_this_week = (
+        await db.execute(
+            select(func.count(Report.id)).where(Report.uploaded_at >= this_week_start)
+        )
+    ).scalar() or 0
 
     # Reports Processing & Failed (Time Window)
     reports_processing_stmt = select(func.count(Report.id)).where(
@@ -68,7 +86,25 @@ async def get_dashboard_summary(
     )
     reports_completed = (await db.execute(reports_completed_stmt)).scalar() or 0
 
-    avg_processing_time = 0.0
+    processing_time_rows = await db.execute(
+        select(ReportAnalysis.processed_at, Report.uploaded_at)
+        .join(Report, ReportAnalysis.report_id == Report.id)
+        .where(
+            Report.uploaded_at >= time_window_start,
+            ReportAnalysis.processed_at.isnot(None),
+            Report.processing_status == ProcessingStatus.completed,
+        )
+    )
+    processing_durations_ms = [
+        (processed_at - uploaded_at).total_seconds() * 1000
+        for processed_at, uploaded_at in processing_time_rows.all()
+        if processed_at is not None and uploaded_at is not None
+    ]
+    avg_processing_time = (
+        sum(processing_durations_ms) / len(processing_durations_ms)
+        if processing_durations_ms
+        else None
+    )
 
     total_processed = reports_failed + reports_completed
     analysis_success_rate = (
@@ -93,7 +129,7 @@ async def get_dashboard_summary(
     # Chart Data (Daily Success vs Failure)
     chart_stmt = (
         select(
-            cast(Report.uploaded_at, Date).label("day"),
+            func.date(Report.uploaded_at).label("day"),
             Report.processing_status,
             func.count(Report.id),
         )
@@ -103,8 +139,8 @@ async def get_dashboard_summary(
                 [ProcessingStatus.completed, ProcessingStatus.failed]
             ),
         )
-        .group_by(cast(Report.uploaded_at, Date), Report.processing_status)
-        .order_by(cast(Report.uploaded_at, Date))
+        .group_by(func.date(Report.uploaded_at), Report.processing_status)
+        .order_by(func.date(Report.uploaded_at))
     )
 
     chart_rows = await db.execute(chart_stmt)
@@ -159,10 +195,24 @@ async def get_dashboard_summary(
     return {
         "status": "ok",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "users": {"total_users": total_users, "active_users": active_users, "new_users_today": new_users_today, "new_users_this_week": new_users_this_week, "new_users_this_month": new_users_this_month, "suspended_users": suspended_users},
+        "users": {
+            "total_users": total_users,
+            "active_users": active_users,
+            "new_users_today": new_users_today,
+            "new_users_this_week": new_users_this_week,
+            "new_users_this_month": new_users_this_month,
+            "suspended_users": suspended_users,
+        },
         "reports": {
-            "reports_today": reports_today, "reports_this_week": reports_this_week, "average_processing_time_ms": round(avg_processing_time, 2),
+            "reports_today": reports_today,
+            "reports_this_week": reports_this_week,
+            "average_processing_time_ms": (
+                round(avg_processing_time, 2)
+                if avg_processing_time is not None
+                else None
+            ),
             "reports_processing": reports_processing,
+            "reports_completed": reports_completed,
             "reports_failed": reports_failed,
         },
         "analysis": {
@@ -172,12 +222,71 @@ async def get_dashboard_summary(
         },
         "chart_data": chart_data,
         "support": {
-                    "open_support_tickets": (await db.execute(select(func.count(SupportTicket.id)).where(SupportTicket.status.in_([TicketStatus.new, TicketStatus.triaged, TicketStatus.investigating, TicketStatus.waiting_user, TicketStatus.waiting_eng])))).scalar() or 0,
-            "p1_tickets": (await db.execute(select(func.count(SupportTicket.id)).where(SupportTicket.status.not_in([TicketStatus.resolved, TicketStatus.closed]), SupportTicket.priority == TicketPriority.p1))).scalar() or 0,
-            "p2_tickets": (await db.execute(select(func.count(SupportTicket.id)).where(SupportTicket.status.not_in([TicketStatus.resolved, TicketStatus.closed]), SupportTicket.priority == TicketPriority.p2))).scalar() or 0,
-            "unassigned_tickets": (await db.execute(select(func.count(SupportTicket.id)).where(SupportTicket.status.not_in([TicketStatus.resolved, TicketStatus.closed]), SupportTicket.assigned_admin_id.is_(None)))).scalar() or 0,
-            "waiting_for_user": (await db.execute(select(func.count(SupportTicket.id)).where(SupportTicket.status == TicketStatus.waiting_user))).scalar() or 0,
-            "escalated": (await db.execute(select(func.count(SupportTicket.id)).where(SupportTicket.status == TicketStatus.waiting_eng))).scalar() or 0,
+            "open_support_tickets": (
+                await db.execute(
+                    select(func.count(SupportTicket.id)).where(
+                        SupportTicket.status.in_(
+                            [
+                                TicketStatus.new,
+                                TicketStatus.triaged,
+                                TicketStatus.investigating,
+                                TicketStatus.waiting_user,
+                                TicketStatus.waiting_eng,
+                            ]
+                        )
+                    )
+                )
+            ).scalar()
+            or 0,
+            "p1_tickets": (
+                await db.execute(
+                    select(func.count(SupportTicket.id)).where(
+                        SupportTicket.status.not_in(
+                            [TicketStatus.resolved, TicketStatus.closed]
+                        ),
+                        SupportTicket.priority == TicketPriority.p1,
+                    )
+                )
+            ).scalar()
+            or 0,
+            "p2_tickets": (
+                await db.execute(
+                    select(func.count(SupportTicket.id)).where(
+                        SupportTicket.status.not_in(
+                            [TicketStatus.resolved, TicketStatus.closed]
+                        ),
+                        SupportTicket.priority == TicketPriority.p2,
+                    )
+                )
+            ).scalar()
+            or 0,
+            "unassigned_tickets": (
+                await db.execute(
+                    select(func.count(SupportTicket.id)).where(
+                        SupportTicket.status.not_in(
+                            [TicketStatus.resolved, TicketStatus.closed]
+                        ),
+                        SupportTicket.assigned_admin_id.is_(None),
+                    )
+                )
+            ).scalar()
+            or 0,
+            "waiting_for_user": (
+                await db.execute(
+                    select(func.count(SupportTicket.id)).where(
+                        SupportTicket.status == TicketStatus.waiting_user
+                    )
+                )
+            ).scalar()
+            or 0,
+            "escalated": (
+                await db.execute(
+                    select(func.count(SupportTicket.id)).where(
+                        SupportTicket.status == TicketStatus.waiting_eng
+                    )
+                )
+            ).scalar()
+            or 0,
         },
         "incidents": {
             "critical_incidents": critical_incidents,
