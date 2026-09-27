@@ -202,33 +202,65 @@ async def translate_analysis(
         abnormal_findings_json=json.dumps(analysis.abnormal_findings, indent=2),
     )
 
-    llm_res = await generate_with_metadata(prompt)
-    response_text = llm_res.get("content", "")
-    provider = llm_res.get("provider", "unknown")
-
-    if provider == "fallback":
-        raise HTTPException(
-            status_code=503, detail="Translation service is temporarily unavailable."
-        )
-
-    # Strip markdown wrappers if LLM returned them
-    response_text = response_text.strip()
-    if response_text.startswith("```json"):
-        response_text = response_text[7:]
-    elif response_text.startswith("```"):
-        response_text = response_text[3:]
-    if response_text.endswith("```"):
-        response_text = response_text[:-3]
-    response_text = response_text.strip()
-
+    print("\n========== TRANSLATION DEBUG START ==========")
+    print(f"REPORT ID: {analysis.report_id}")
+    print(f"TARGET LANGUAGE: {target_lang_name}")
+    print(f"SOURCE LANGUAGE: en")
+    print(f"ENDPOINT: POST /reports/{id}/analysis/translate")
+    print(f"HTTP METHOD: POST")
+    
+    print("REQUEST SENT: YES")
+    
     try:
-        parsed = json.loads(response_text)
-        translated_summary = parsed.get("patient_summary", "[Translation failed]")
-        translated_findings = parsed.get("abnormal_findings", [])
-    except json.JSONDecodeError:
-        raise HTTPException(
-            status_code=502, detail="Translation provider returned invalid JSON."
-        )
+        llm_res = await generate_with_metadata(prompt)
+        print(f"HTTP STATUS: 200 (LLM Success)")
+        print("RESPONSE RECEIVED: YES")
+        
+        response_text = llm_res.get("content", "")
+        provider = llm_res.get("provider", "unknown")
+        
+        print(f"RESPONSE CONTENT TYPE: application/json")
+        print(f"RESPONSE LENGTH: {len(response_text)}")
+        
+        if provider == "fallback":
+            print("ERROR TYPE: ProviderFallback")
+            print("ERROR MESSAGE: Primary LLM failed, fell back to local string.")
+            print("========== TRANSLATION DEBUG END ==========\n")
+            raise HTTPException(
+                status_code=503, detail="Translation service is temporarily unavailable."
+            )
+
+        # Strip markdown wrappers if LLM returned them
+        response_text = response_text.strip()
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        elif response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
+
+        try:
+            parsed = json.loads(response_text)
+            print(f"RESPONSE KEYS: {list(parsed.keys())}")
+            print("PARSING SUCCESS: YES")
+            translated_summary = parsed.get("patient_summary", "[Translation failed]")
+            translated_findings = parsed.get("abnormal_findings", [])
+            print("========== TRANSLATION DEBUG END ==========\n")
+        except json.JSONDecodeError as e:
+            print("PARSING SUCCESS: NO")
+            print("ERROR TYPE: JSONDecodeError")
+            print(f"ERROR MESSAGE: {str(e)}")
+            print("========== TRANSLATION DEBUG END ==========\n")
+            raise HTTPException(
+                status_code=502, detail="Translation provider returned invalid JSON."
+            )
+    except Exception as e:
+        print("RESPONSE RECEIVED: NO")
+        print(f"ERROR TYPE: {type(e).__name__}")
+        print(f"ERROR MESSAGE: {str(e)}")
+        print("========== TRANSLATION DEBUG END ==========\n")
+        raise
 
     translation = AnalysisTranslation(
         report_analysis_id=analysis.id,

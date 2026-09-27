@@ -44,26 +44,48 @@ class _PatientViewTabState extends State<PatientViewTab> {
     };
     final selected = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              AppLocalizations.of(context)!.translateSummary,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ...languages.entries.map((e) => ListTile(
-              title: Text(e.value),
-              onTap: () => Navigator.pop(context, e.key),
-            )),
-          ],
-        ),
-      ),
+      builder: (sheetCtx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.3,
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (_, scrollController) => Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                AppLocalizations.of(context)!.translateSummary,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    ...languages.entries.map((e) => ListTile(
+                      title: Text(e.value),
+                      onTap: () => Navigator.pop(sheetCtx, e.key),
+                    )),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
     if (selected == null) return;
     if (!context.mounted) return;
