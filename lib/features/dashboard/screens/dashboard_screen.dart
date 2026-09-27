@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/api_exception.dart';
 import '../../../core/services/reminder_service.dart';
 import '../../reports/models/report_model.dart';
 import '../widgets/dashboard_header.dart';
@@ -29,6 +30,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _loading = true;
+  String? _loadError;
   String _userName = 'User';
   List<ReportModel> _recentReports = [];
   int _totalReports = 0;
@@ -72,6 +74,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadData() async {
+    if (mounted) setState(() { _loading = true; _loadError = null; });
     try {
       final user = await ApiService.instance.getMe();
       final reports = await ApiService.instance.listReports();
@@ -133,8 +136,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _loading = false;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadError = error is ApiException
+              ? error.message
+              : 'Unable to load your dashboard. Please try again.';
+        });
+      }
     }
   }
 
@@ -153,6 +163,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         padding: EdgeInsets.all(22),
                         child: SkeletonDashboard(),
                       )
+                    : _loadError != null
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.cloud_off_outlined, size: 48),
+                                  const SizedBox(height: 16),
+                                  Text(_loadError!, textAlign: TextAlign.center),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: _loadData,
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Try again'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
                     : SingleChildScrollView(
                         padding: const EdgeInsets.all(22),
                         child: Column(

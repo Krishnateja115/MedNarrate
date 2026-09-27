@@ -3,12 +3,25 @@ import 'package:flutter/foundation.dart';
 class AppConfig {
   static const bool isLocalDevMode = bool.fromEnvironment('LOCAL_DEV_MODE', defaultValue: kDebugMode);
 
+  /// API_BASE_URL is always the backend origin (without /api/v1).
   static const String _rawApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: isLocalDevMode ? 'http://127.0.0.1:8000' : 'https://api.mednarrate.com', // TODO: replace with real deployed backend URL
   );
   
-  static String get apiBaseUrl => validateApiBaseUrl(environment, _rawApiBaseUrl);
+  static String get apiBaseUrl {
+    var url = _rawApiBaseUrl.trim().replaceFirst(RegExp(r'/+$'), '');
+    // Accept the old value temporarily, but expose only the origin to callers.
+    if (url.endsWith('/api/v1')) url = url.substring(0, url.length - 7);
+    if (defaultTargetPlatform == TargetPlatform.android &&
+        isLocalDevMode &&
+        url == 'http://127.0.0.1:8000') {
+      return 'http://10.0.2.2:8000';
+    }
+    return validateApiBaseUrl(environment, url);
+  }
+
+  static String get apiRoot => '$apiBaseUrl/api/v1';
 
   static String validateApiBaseUrl(String env, String url) {
     if (env == 'production' && url.startsWith('http://')) {

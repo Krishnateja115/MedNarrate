@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
@@ -6,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'api_exception.dart';
 import 'api_models.dart';
 import 'storage_service.dart';
+import '../config/app_config.dart';
 import 'connectivity_service.dart';
 import 'cache_service.dart';
 import 'offline_queue_service.dart';
@@ -25,15 +27,8 @@ class ApiService {
   ApiService._();
   static ApiService instance = ApiService._();
 
-  static String get _baseUrl {
-    const envUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
-    if (envUrl.isNotEmpty) return envUrl;
-    if (kIsWeb) return 'http://localhost:8000/api/v1';
-    try {
-      if (Platform.isIOS || Platform.isMacOS) return 'http://localhost:8000/api/v1';
-    } catch (_) {}
-    return 'http://10.0.2.2:8000/api/v1';
-  }
+  static String get _baseUrl => AppConfig.apiRoot;
+  static Duration get _timeout => Duration(seconds: AppConfig.apiTimeoutSeconds);
 
   // ─────────────────────── internal HTTP helpers ───────────────────────
 
@@ -45,43 +40,79 @@ class ApiService {
     };
   }
 
-  Future<http.Response> _get(String path) async {
-    final resp = await http.get(
-      Uri.parse('$_baseUrl$path'),
-      headers: await _authHeaders(),
-    );
-    return _handleResponse(resp, () => _get(path));
+  Future<http.Response> _get(String path, {bool allowRefresh = true}) async {
+    try {
+      final resp = await http.get(
+        Uri.parse('$_baseUrl$path'),
+        headers: await _authHeaders(),
+      ).timeout(_timeout);
+      return _handleResponse(resp, () => _get(path, allowRefresh: false), allowRefresh: allowRefresh);
+    } catch (error) {
+      throw _networkException(error);
+    }
   }
 
-  Future<http.Response> _post(String path, {Object? body, bool isJson = true}) async {
-    final headers = await _authHeaders();
-    final resp = await http.post(
-      Uri.parse('$_baseUrl$path'),
-      headers: headers,
-      body: isJson ? jsonEncode(body) : body,
-    );
-    return _handleResponse(resp, () => _post(path, body: body, isJson: isJson));
+  Future<http.Response> _post(String path, {Object? body, bool isJson = true, bool allowRefresh = true}) async {
+    try {
+      final headers = await _authHeaders();
+      final resp = await http.post(
+        Uri.parse('$_baseUrl$path'),
+        headers: headers,
+        body: isJson ? jsonEncode(body) : body,
+      ).timeout(_timeout);
+      return _handleResponse(resp, () => _post(path, body: body, isJson: isJson, allowRefresh: false), allowRefresh: allowRefresh);
+    } catch (error) {
+      throw _networkException(error);
+    }
   }
 
-  Future<http.Response> _patch(String path, {Object? body}) async {
-    final headers = await _authHeaders();
-    final resp = await http.patch(
-      Uri.parse('$_baseUrl$path'),
-      headers: headers,
-      body: jsonEncode(body),
-    );
-    return _handleResponse(resp, () => _patch(path, body: body));
+  Future<http.Response> _patch(String path, {Object? body, bool allowRefresh = true}) async {
+    try {
+      final headers = await _authHeaders();
+      final resp = await http.patch(
+        Uri.parse('$_baseUrl$path'),
+        headers: headers,
+        body: jsonEncode(body),
+      ).timeout(_timeout);
+      return _handleResponse(resp, () => _patch(path, body: body, allowRefresh: false), allowRefresh: allowRefresh);
+    } catch (error) {
+      throw _networkException(error);
+    }
   }
 
-  Future<http.Response> _delete(String path) async {
-    final resp = await http.delete(
-      Uri.parse('$_baseUrl$path'),
-      headers: await _authHeaders(),
-    );
-    return _handleResponse(resp, () => _delete(path));
+  Future<http.Response> _delete(String path, {bool allowRefresh = true}) async {
+    try {
+      final resp = await http.delete(
+        Uri.parse('$_baseUrl$path'),
+        headers: await _authHeaders(),
+      ).timeout(_timeout);
+      return _handleResponse(resp, () => _delete(path, allowRefresh: false), allowRefresh: allowRefresh);
+    } catch (error) {
+      throw _networkException(error);
+    }
   }
 
-  bool _retrying = false;
+  Future<void>? _refreshInFlight;
+
+  ApiException _networkException(Object error) {
+    if (error is ApiException) return error;
+    if (error is TimeoutException) {
+      return const ApiException(0, 'The request timed out. Check your connection and try again.');
+    }
+    if (error is SocketException || error is http.ClientException) {
+      return const ApiException(0, 'Unable to connect to MedNarrate. Check that the backend is running and try again.');
+    }
+    return const ApiException(0, 'Something went wrong while contacting MedNarrate. Please try again.');
+  }
+
+  Future<void> _refreshSingleFlight() {
+    final current = _refreshInFlight;
+    if (current != null) return current;
+    final refreshFuture = refresh();
+    _refreshInFlight = refreshFuture;
+    refreshFuture.whenComplete(() => _refreshInFlight = null);
+    return refreshFuture;
+  }
 
   /// If the response is 401 and we haven't already retried, attempt a token
   /// refresh and retry the original request once. On double-failure, clears
@@ -89,21 +120,19 @@ class ApiService {
   Future<http.Response> _handleResponse(
     http.Response resp,
     Future<http.Response> Function() retry,
+    {bool allowRefresh = true}
   ) async {
-    if (resp.statusCode == 401 && !_retrying) {
-      _retrying = true;
+    if (resp.statusCode == 401 && allowRefresh) {
       try {
-        await refresh();
-        final retried = await retry();
-        _retrying = false;
-        return retried;
+        await _refreshSingleFlight();
       } catch (_) {
-        _retrying = false;
         await StorageService.instance.clearTokens();
         throw const UnauthorizedException();
       }
+      // A successful refresh must not hide the original request's response
+      // (for example a legitimate 403) as an authentication failure.
+      return await retry();
     }
-    _retrying = false;
     if (resp.statusCode >= 400) {
       String message = resp.reasonPhrase ?? 'Unknown error';
       try {
@@ -126,17 +155,21 @@ class ApiService {
       'full_name': fullName,
     });
     // signup returns UserOut; then we log in to get tokens
-    await login(email, password);
     return await login(email, password);
   }
 
   Future<AuthTokens> login(String email, String password) async {
     // OAuth2PasswordRequestForm requires form-encoded body
-    final resp = await http.post(
-      Uri.parse('$_baseUrl/auth/login'),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: 'username=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
-    );
+    late final http.Response resp;
+    try {
+      resp = await http.post(
+        Uri.parse('$_baseUrl/auth/login'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'username=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
+      ).timeout(_timeout);
+    } catch (error) {
+      throw _networkException(error);
+    }
     if (resp.statusCode >= 400) {
       String message = resp.reasonPhrase ?? 'Login failed';
       try {
@@ -154,11 +187,16 @@ class ApiService {
   Future<void> refresh() async {
     final refreshToken = await StorageService.instance.getRefreshToken();
     if (refreshToken == null) throw const UnauthorizedException();
-    final resp = await http.post(
-      Uri.parse('$_baseUrl/auth/refresh'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'refresh_token': refreshToken}),
-    );
+    late final http.Response resp;
+    try {
+      resp = await http.post(
+        Uri.parse('$_baseUrl/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refresh_token': refreshToken}),
+      ).timeout(_timeout);
+    } catch (error) {
+      throw _networkException(error);
+    }
     if (resp.statusCode >= 400) throw const UnauthorizedException();
     final data = jsonDecode(resp.body) as Map<String, dynamic>;
     await StorageService.instance.saveTokens(
@@ -200,36 +238,12 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> forgotPassword(String email) async {
-    final resp = await http.post(
-      Uri.parse('$_baseUrl/auth/forgot-password'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email}),
-    );
-    if (resp.statusCode >= 400) {
-      String message = resp.reasonPhrase ?? 'Error';
-      try {
-        final d = jsonDecode(resp.body) as Map<String, dynamic>;
-        message = d['detail']?.toString() ?? message;
-      } catch (_) {}
-      throw ApiException(resp.statusCode, message);
-    }
+    final resp = await _post('/auth/forgot-password', body: {'email': email}, allowRefresh: false);
     return jsonDecode(resp.body) as Map<String, dynamic>;
   }
 
   Future<void> resetPassword({required String token, required String newPassword}) async {
-    final resp = await http.post(
-      Uri.parse('$_baseUrl/auth/reset-password'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'token': token, 'new_password': newPassword}),
-    );
-    if (resp.statusCode >= 400) {
-      String message = resp.reasonPhrase ?? 'Error';
-      try {
-        final d = jsonDecode(resp.body) as Map<String, dynamic>;
-        message = d['detail']?.toString() ?? message;
-      } catch (_) {}
-      throw ApiException(resp.statusCode, message);
-    }
+    await _post('/auth/reset-password', body: {'token': token, 'new_password': newPassword}, allowRefresh: false);
   }
 
   Future<UserModel> getMe() async {
@@ -338,7 +352,7 @@ class ApiService {
       } else {
         request.files.add(await http.MultipartFile.fromPath('file', file.path!));
       }
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(_timeout);
       return await http.Response.fromStream(streamedResponse);
     }
     
@@ -367,12 +381,9 @@ class ApiService {
       if (isFavourite != null) params['is_favourite'] = isFavourite.toString();
       if (search != null) params['search'] = search;
       final uri = Uri.parse('$_baseUrl/reports').replace(queryParameters: params);
-      final resp = await http.get(uri, headers: await _authHeaders());
-      await _handleResponse(resp, () => listReports(
-          limit: limit, offset: offset, reportType: reportType,
-          isFavourite: isFavourite, search: search)
-          .then((_) => throw const UnauthorizedException()));
-      final list = jsonDecode(resp.body) as List<dynamic>;
+      final resp = await http.get(uri, headers: await _authHeaders()).timeout(_timeout);
+      final handled = await _handleResponse(resp, () async => http.get(uri, headers: await _authHeaders()).timeout(_timeout));
+      final list = jsonDecode(handled.body) as List<dynamic>;
       final reports = <ReportModel>[];
       for (var e in list) {
         try {
@@ -388,6 +399,9 @@ class ApiService {
       return reports;
     } catch (e) {
       if (e is ApiException) rethrow;
+      if (e is TimeoutException || e is SocketException || e is http.ClientException) {
+        throw _networkException(e);
+      }
       throw ApiException(500, 'Failed to parse reports: $e');
     }
   }

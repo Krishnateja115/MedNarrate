@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/api_exception.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/routing/routes.dart';
@@ -22,6 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fade;
   late Animation<double> _scale;
+  String? _startupError;
 
   @override
   void initState() {
@@ -60,8 +62,13 @@ class _SplashScreenState extends State<SplashScreen>
           context.go(Routes.dashboard);
         }
         return;
-      } catch (_) {
-        // Token invalid — fall through to login/onboarding
+      } catch (error) {
+        if (error is ApiException && error.statusCode == 0) {
+          if (mounted) setState(() => _startupError = error.message);
+          return;
+        }
+        // Invalid or revoked credentials — fall through to login/onboarding.
+        await StorageService.instance.clearTokens();
       }
     }
 
@@ -83,6 +90,35 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_startupError != null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off_outlined, size: 56),
+                const SizedBox(height: 16),
+                const Text('Unable to connect', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                Text(_startupError!, textAlign: TextAlign.center),
+                const SizedBox(height: 22),
+                ElevatedButton.icon(
+                  onPressed: () => setState(() {
+                    _startupError = null;
+                    Timer(const Duration(milliseconds: 100), _checkAuthAndNavigate);
+                  }),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(

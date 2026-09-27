@@ -25,6 +25,7 @@ import '../../features/navigation/screens/main_navigation_screen.dart';
 import 'routes.dart';
 
 import '../services/biometric_service.dart';
+import '../services/storage_service.dart';
 
 class AppRouter {
   AppRouter._();
@@ -32,6 +33,22 @@ class AppRouter {
   static final router = GoRouter(
     initialLocation: Routes.splash,
     redirect: (context, state) async {
+      final location = state.uri.path;
+      const publicPaths = {
+        Routes.splash,
+        Routes.login,
+        Routes.signup,
+        Routes.forgotPassword,
+        Routes.onboarding,
+        '/app-lock',
+        Routes.termsOfService,
+        Routes.privacyPolicy,
+        Routes.customLicenses,
+      };
+      if (!publicPaths.contains(location)) {
+        final accessToken = await StorageService.instance.getAccessToken();
+        if (accessToken == null || accessToken.isEmpty) return Routes.login;
+      }
       final isBioEnabled = await BiometricService.instance.isBiometricEnabled();
       final isUnlocked = BiometricService.instance.isUnlocked;
 
