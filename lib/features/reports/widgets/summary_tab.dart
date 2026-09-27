@@ -28,10 +28,31 @@ class SummaryTab extends StatefulWidget {
 }
 
 class _SummaryTabState extends State<SummaryTab> {
+  String _label(String key, {required String fallback}) {
+    final t = widget.translation;
+    final labels = t?.uiLabels;
+    final bool isTranslated = t != null && t.language != 'en';
+
+    if (labels == null) {
+      return fallback;
+    }
+    final val = labels[key];
+    if (val != null && val.trim().isNotEmpty) {
+      return val.trim();
+    }
+    if (isTranslated) {
+      final missing = t.uiLabels['label_review_test_parameters'];
+      if (missing != null && missing.trim().isNotEmpty) {
+        return missing.trim();
+      }
+      return '';
+    }
+    return fallback;
+  }
 
   Future<void> _translate(BuildContext context) async {
     if (widget.isTranslating || widget.onTranslate == null) return;
-    final languages = {
+    const languages = {
       'en': 'English',
       'hi': 'Hindi (हिन्दी)',
       'ta': 'Tamil (தமிழ்)',
@@ -43,18 +64,21 @@ class _SummaryTabState extends State<SummaryTab> {
     };
     final selected = await showModalBottomSheet<String>(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(AppLocalizations.of(context)!.translateSummary, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.translateSummary,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             ...languages.entries.map((e) => ListTile(
-              title: Text(e.value),
-              onTap: () => Navigator.pop(context, e.key),
-            )),
+                  title: Text(e.value),
+                  onTap: () => Navigator.pop(context, e.key),
+                )),
           ],
         ),
       ),
@@ -66,7 +90,10 @@ class _SummaryTabState extends State<SummaryTab> {
     try {
       await widget.onTranslate!(selected);
     } catch (_) {
-      if (mounted) messenger.showSnackBar(SnackBar(content: Text(l10n.translationFailed)));
+      if (mounted) {
+        messenger.showSnackBar(
+            SnackBar(content: Text(l10n.translationFailed)));
+      }
     }
   }
 
@@ -74,15 +101,41 @@ class _SummaryTabState extends State<SummaryTab> {
   Widget build(BuildContext context) {
     final report = widget.report;
     final isClinical = widget.isProfessionalMode;
+    final t = widget.translation;
 
     final rawSummary = Helpers.sanitizeDisplayText(
-      widget.translation?.patientSummary ?? (
-        isClinical
-          ? (report.clinicalSummary ?? 'No clinical summary available.')
-          : (report.aiSummary ?? 'No patient-friendly summary available.')
-      ),
+      t?.patientSummary ??
+          (isClinical
+              ? (report.clinicalSummary ?? 'No clinical summary available.')
+              : (report.aiSummary ??
+                  'No patient-friendly summary available.')),
     );
 
+    final headingPatient =
+        _label('label_patient_report_heading', fallback: 'For You — Plain Language Summary');
+    final headingClinical = _label('label_clinical_report_heading',
+        fallback: 'Clinical Executive Summary');
+    final headingImportantFindings = _label('section_important_findings', fallback: 'Important Findings');
+    final headingKeyClinicalFindings =
+        _label('section_key_clinical_findings', fallback: 'Key Clinical Findings');
+    final labelNoKeyFindings =
+        _label('label_no_key_findings', fallback: AppLocalizations.of(context)!.noKeyFindings);
+    final expansionPatient = _label('label_key_finding_expansion_patient',
+        fallback:
+            'This result is outside the standard reference range. Please discuss this finding with your physician during your next consultation.');
+    final expansionClinician = _label('label_key_finding_expansion_clinician',
+        fallback:
+            'Clinical Finding Note: Out-of-range measurement observed. Review patient history and cross-reference with baseline laboratory parameters.');
+    final labelTranslate = _label('label_translate', fallback: 'Translate');
+    final labelRetranslate = _label('label_retranslate', fallback: 'Retranslate');
+    final disclaimerSummary = _label('label_disclaimer_summary',
+        fallback:
+            'Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.');
+    final reportTypeLabel = t?.uiLabels['chip_report_type'] ??
+        Helpers.reportTypeLabel(report.reportType);
+
+    final translateBtnLabel =
+        widget.translation != null ? labelRetranslate : labelTranslate;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -103,7 +156,9 @@ class _SummaryTabState extends State<SummaryTab> {
                   radius: 28,
                   backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   child: Icon(
-                    isClinical ? Icons.medical_services_outlined : Icons.person_outline,
+                    isClinical
+                        ? Icons.medical_services_outlined
+                        : Icons.person_outline,
                     color: AppColors.primary,
                     size: 28,
                   ),
@@ -115,33 +170,46 @@ class _SummaryTabState extends State<SummaryTab> {
                     children: [
                       Text(
                         report.title,
-                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 17, fontWeight: FontWeight.bold),
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (report.hospital.isNotEmpty && report.hospital != 'Unknown Hospital')
+                      if (report.hospital.isNotEmpty &&
+                          report.hospital != 'Unknown Hospital')
                         Text(
                           report.hospital,
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6),
                             fontSize: 13,
                           ),
                         ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 13, color: Theme.of(context).colorScheme.primary),
+                          Icon(Icons.calendar_today,
+                              size: 13,
+                              color: Theme.of(context).colorScheme.primary),
                           const SizedBox(width: 4),
-                          Text(Formatters.formatDate(report.reportDate), style: const TextStyle(fontSize: 12)),
+                          Text(Formatters.formatDate(report.reportDate),
+                              style: const TextStyle(fontSize: 12)),
                           const SizedBox(width: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.accentTeal.withValues(alpha: 0.12),
+                              color:
+                                  AppColors.accentTeal.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              Helpers.reportTypeLabel(report.reportType),
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentTeal),
+                              reportTypeLabel,
+                              style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.accentTeal),
                             ),
                           ),
                         ],
@@ -152,7 +220,7 @@ class _SummaryTabState extends State<SummaryTab> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
 
           // View Title & Translation Action
@@ -160,17 +228,21 @@ class _SummaryTabState extends State<SummaryTab> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isClinical ? 'Clinical Executive Summary' : 'For You — Plain Language Summary',
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                isClinical ? headingClinical : headingPatient,
+                style:
+                    const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
               ),
               if (!isClinical)
                 widget.isTranslating
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : TextButton.icon(
-                    onPressed: () => _translate(context),
-                    icon: const Icon(Icons.translate, size: 16),
-                    label: Text(widget.translation != null ? 'Retranslate' : 'Translate'),
-                  ),
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : TextButton.icon(
+                        onPressed: () => _translate(context),
+                        icon: const Icon(Icons.translate, size: 16),
+                        label: Text(translateBtnLabel),
+                      ),
             ],
           ),
           const SizedBox(height: 10),
@@ -188,14 +260,14 @@ class _SummaryTabState extends State<SummaryTab> {
           ),
 
           const SizedBox(height: 24),
-          
+
           // Section: Key Takeaways / Findings
           Text(
-            isClinical ? 'Key Clinical Findings' : 'Important Findings',
+            isClinical ? headingKeyClinicalFindings : headingImportantFindings,
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          
+
           if (report.metrics.isEmpty)
             Container(
               padding: const EdgeInsets.all(16),
@@ -205,16 +277,30 @@ class _SummaryTabState extends State<SummaryTab> {
                 border: Border.all(color: AppColors.border),
               ),
               child: Text(
-                AppLocalizations.of(context)!.noKeyFindings,
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
+                labelNoKeyFindings,
+                style: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.54)),
               ),
             )
           else
-            ...report.metrics.where((m) => m['flag'] != null && m['flag'] != 'normal' && m['flag'] != 'not_classified').map((m) {
+            ...report.metrics
+                .where((m) =>
+                    m['flag'] != null &&
+                    m['flag'] != 'normal' &&
+                    m['flag'] != 'not_classified')
+                .map((m) {
               final flag = m['flag']?.toString() ?? 'not_classified';
-              final severity = flag == 'high' || flag == 'low' ? (flag == 'high' ? 'red' : 'amber') : 'green';
+              final severity = flag == 'high' || flag == 'low'
+                  ? (flag == 'high' ? 'red' : 'amber')
+                  : 'green';
               final label = '${m['parameter']} is $flag (${m['value']} ${m['unit']})';
-              return _buildKeyFinding(context, label, severity, isClinical);
+              return _buildKeyFinding(
+                  context, label, severity, isClinical,
+                  expansionPatient: expansionPatient,
+                  expansionClinician: expansionClinician);
             }),
 
           const SizedBox(height: 24),
@@ -225,20 +311,25 @@ class _SummaryTabState extends State<SummaryTab> {
             decoration: BoxDecoration(
               color: Colors.amber.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.amber.shade700.withValues(alpha: 0.3)),
+              border: Border.all(
+                  color: Colors.amber.shade700.withValues(alpha: 0.3)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline_rounded, color: Colors.amber.shade800, size: 20),
+                Icon(Icons.info_outline_rounded,
+                    color: Colors.amber.shade800, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    "Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.",
+                    disclaimerSummary,
                     style: TextStyle(
                       fontSize: 12.5,
                       height: 1.4,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.8),
                     ),
                   ),
                 ),
@@ -252,7 +343,10 @@ class _SummaryTabState extends State<SummaryTab> {
     );
   }
 
-  Widget _buildKeyFinding(BuildContext context, String text, String severity, bool isClinical) {
+  Widget _buildKeyFinding(
+      BuildContext context, String text, String severity, bool isClinical,
+      {required String expansionPatient,
+      required String expansionClinician}) {
     Color dotColor = Colors.green;
     if (severity == 'amber') dotColor = Colors.orange;
     if (severity == 'red') dotColor = Colors.red;
@@ -266,21 +360,28 @@ class _SummaryTabState extends State<SummaryTab> {
           height: 10,
           decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
         ),
-        title: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        title: Text(text,
+            style:
+                const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 12, left: 24, right: 8),
+            margin:
+                const EdgeInsets.only(bottom: 12, left: 24, right: 8),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.border),
             ),
             child: Text(
-              isClinical
-                ? "Clinical Finding Note: Out-of-range measurement observed. Review patient history and cross-reference with baseline laboratory parameters."
-                : "What does this mean? This result is outside the standard reference range. Please discuss this finding with your physician during your next consultation.",
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75), fontSize: 13, height: 1.4),
+              isClinical ? expansionClinician : expansionPatient,
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.75),
+                  fontSize: 13,
+                  height: 1.4),
             ),
           ),
         ],

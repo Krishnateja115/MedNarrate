@@ -417,24 +417,37 @@ class TranslationModel {
   final String patientSummary;
   final List<Map<String, dynamic>> findingsJson;
   final List<Map<String, dynamic>> medicationsJson;
+  final List<String> doctorDiscussionPoints;
   final Map<String, String> uiLabels;
+  final int schemaVersion;
 
   const TranslationModel({
     required this.language,
     required this.patientSummary,
     required this.findingsJson,
     this.medicationsJson = const [],
+    this.doctorDiscussionPoints = const [],
     this.uiLabels = const {},
+    this.schemaVersion = 1,
   });
 
   factory TranslationModel.fromMap(Map<String, dynamic> map) {
     final rawLabels = map['ui_labels'] as Map<String, dynamic>? ?? {};
+    final rawDiscussion = map['doctor_discussion_points'];
+    final List<String> discussion;
+    if (rawDiscussion is List) {
+      discussion = rawDiscussion.map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList();
+    } else {
+      discussion = [];
+    }
     return TranslationModel(
       language: map['language'] as String,
-      patientSummary: map['patient_summary'] as String,
+      patientSummary: map['patient_summary'] as String? ?? '',
       findingsJson: List<Map<String, dynamic>>.from(map['findings_json'] ?? []),
       medicationsJson: List<Map<String, dynamic>>.from(map['medications_json'] ?? []),
+      doctorDiscussionPoints: discussion,
       uiLabels: rawLabels.map((k, v) => MapEntry(k, v?.toString() ?? '')),
+      schemaVersion: (map['schema_version'] as num?)?.toInt() ?? 1,
     );
   }
 }

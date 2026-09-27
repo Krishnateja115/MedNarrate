@@ -333,6 +333,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                       report: _controller.report!,
                       analysis: _controller.analysis,
                       comparison: _controller.comparison,
+                      translation: _controller.translation,
                     ),
                     LabResultsTab(
                       key: const PageStorageKey('lab_results_tab'),
