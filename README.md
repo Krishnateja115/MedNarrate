@@ -273,7 +273,3 @@ mednarrate/
 
 ---
 
-## License
-
-MIT © 2024 MedNarrate Team
-CI trigger
