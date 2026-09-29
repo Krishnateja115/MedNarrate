@@ -11,6 +11,19 @@ async def test_role_escalation_blocked(client: AsyncClient, token_headers: dict)
         json={"role": "admin", "full_name": "Hacker User"},
     )
 
-    # extra='forbid' should cause a 422 Unprocessable Entity
+    # Self-service role switching is restricted to patient and clinician.
     assert response.status_code == 422
-    assert "Extra inputs are not permitted" in response.text
+
+
+@pytest.mark.asyncio
+async def test_patient_can_switch_to_doctor_profile(
+    client: AsyncClient, token_headers: dict
+):
+    response = await client.patch(
+        "/api/v1/users/me",
+        headers=token_headers,
+        json={"role": "clinician"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["role"] == "clinician"

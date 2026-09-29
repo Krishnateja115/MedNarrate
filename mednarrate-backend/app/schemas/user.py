@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
@@ -175,6 +175,7 @@ class UserWithProfileOut(UserOut):
 class UserUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     full_name: Optional[str] = None
+    role: Optional[Literal["patient", "clinician"]] = None
     preferred_language: Optional[str] = None
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None

@@ -26,7 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const _roles = [
     {'value': 'patient', 'label': 'Patient', 'icon': Icons.person},
     {'value': 'clinician', 'label': 'Doctor', 'icon': Icons.local_hospital},
-    {'value': 'caregiver', 'label': 'Caregiver', 'icon': Icons.favorite},
   ];
 
   static const _commonSpecialties = [
@@ -117,14 +116,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _updateRole(String role) async {
-    if (_savingRole) return;
+    if (_savingRole || _user?.role == role) return;
     setState(() => _savingRole = true);
     try {
       await ApiService.instance.updateMe(role: role);
       await _loadUser();
       if (mounted) setState(() => _savingRole = false);
     } catch (_) {
-      if (mounted) setState(() => _savingRole = false);
+      if (!mounted) return;
+      setState(() => _savingRole = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not switch profile. Please try again.'),
+        ),
+      );
     }
   }
 
