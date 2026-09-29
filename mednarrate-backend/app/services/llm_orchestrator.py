@@ -110,34 +110,23 @@ async def translate_text_indic(text: str, target_lang_code: str) -> str:
     logger.info(
         f"[ORCHESTRATOR] Routing to TRANSLATION_MODEL ({settings.TRANSLATION_MODEL_PROVIDER})"
     )
+    from app.exceptions import TranslationServiceError
+    from app.services.translation_validation import require_script, preserve_numbers
+
+    if target_lang_code == "en":
+        return text
     url = settings.TRANSLATION_MODEL_URL
     if not url:
-        logger.warning(
-            "[ORCHESTRATOR] IndicTrans2 URL not configured. Returning original text."
-        )
-        return text
-
-    payload = {
-        "text": text,
-        "source_language": "en",
-        "target_language": target_lang_code,
-    }
-
+        raise TranslationServiceError("Translation service is not configured.")
+    payload = {"text": text, "source_language": "en", "target_language": target_lang_code}
     try:
         async with httpx.AsyncClient(timeout=settings.LLM_TIMEOUT_SECONDS) as client:
             resp = await client.post(url, json=payload)
-            if resp.status_code == 200:
-                return resp.json().get("translated_text", text)
-            else:
-                logger.warning(
-                    f"[ORCHESTRATOR] Translation service returned {resp.status_code}. Returning original."
-                )
-                return text
-    except httpx.ConnectError:
-        logger.warning(
-            "[ORCHESTRATOR] Translation service unreachable. Returning original."
-        )
-        return text
-    except Exception as e:
-        logger.error(f"[ORCHESTRATOR] Translation failed: {e}. Returning original.")
-        return text
+            resp.raise_for_status()
+            translated = resp.json().get("translated_text")
+        require_script(translated, target_lang_code)
+        preserve_numbers(text, translated)
+        return translated
+    except Exception as exc:
+        logger.warning("Indic translation failed: %s", type(exc).__name__)
+        raise TranslationServiceError() from exc

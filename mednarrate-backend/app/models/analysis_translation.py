@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 
-TRANSLATION_SCHEMA_VERSION: int = 2
+TRANSLATION_SCHEMA_VERSION: int = 3
 
 
 class AnalysisTranslation(Base):

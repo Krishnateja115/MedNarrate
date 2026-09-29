@@ -41,10 +41,6 @@ class _PatientViewTabState extends State<PatientViewTab> {
       return val.trim();
     }
     if (isTranslated) {
-      final missing = t.uiLabels['label_review_test_parameters'];
-      if (missing != null && missing.trim().isNotEmpty) {
-        return missing.trim();
-      }
       return '';
     }
     return fallback;
@@ -827,6 +823,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
   }
 
   Widget _buildDoctorBullet(BuildContext context, String text) {
+    if (text.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(

@@ -9,6 +9,7 @@ import '../services/api_models.dart';
 import '../utils/helpers.dart';
 
 import 'pdf_downloader/pdf_downloader.dart';
+import 'translated_report_pdf.dart';
 
 /// ExportService — generates a professional, structured PDF from a ReportAnalysisModel.
 /// Export PDF  → direct download, NO print dialog.
@@ -755,8 +756,12 @@ class ExportService {
     required String reportTitle,
     required String reportDate,
     String reportType = '',
+    TranslationModel? translation,
   }) async {
-    final doc = await _buildDocument(
+    final doc = translation != null && translation.language != 'en'
+        ? await buildTranslatedReportPdf(analysis: analysis, translation: translation,
+            reportTitle: reportTitle, reportDate: reportDate, reportType: reportType)
+        : await _buildDocument(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
@@ -788,8 +793,12 @@ class ExportService {
     required String reportTitle,
     required String reportDate,
     String reportType = '',
+    TranslationModel? translation,
   }) async {
-    final doc = await _buildDocument(
+    final doc = translation != null && translation.language != 'en'
+        ? await buildTranslatedReportPdf(analysis: analysis, translation: translation,
+            reportTitle: reportTitle, reportDate: reportDate, reportType: reportType)
+        : await _buildDocument(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,

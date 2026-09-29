@@ -1,4 +1,6 @@
+import hashlib
 import json
+import logging
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,10 +24,13 @@ from app.schemas.report import (
     TranslationRequest,
 )
 from app.services.analysis_pipeline import run_analysis
-from app.services.llm_client import generate, generate_with_metadata
+from app.services.llm_client import generate_translation
+from app.services.translation_validation import parse_translation, validate_translation
+from app.exceptions import TranslationServiceError
 from app.services.prompts import TRANSLATION_PROMPT
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Canonical supported language ISO-639-1 code -> English display name
 SUPPORTED_TRANSLATION_LANGUAGES = {
@@ -253,11 +258,6 @@ async def translate_analysis(
         if not _is_metadata_finding(f)
     ]
 
-    #region debug-point trans-backend-001
-    print(f"[TRANSLATION] report_id={report.id} analysis_id={analysis.id} requested_language={lang} target_name={target_lang_name} endpoint=POST /reports/{id}/analysis/translate")
-    print(f"[TRANSLATION] abnormal_count={len(abnormal_findings_source)} medication_count={len(meds_list)} source_patient_summary_chars={len(analysis.patient_summary or '')} schema_version_required={TRANSLATION_SCHEMA_VERSION}")
-    #endregion
-
     if lang == "en":
         # English is the baseline/original language — no translation needed.
         return TranslationOut(
@@ -277,255 +277,67 @@ async def translate_analysis(
     res_trans = await db.execute(stmt_trans)
     translation = res_trans.scalars().first()
 
-    if translation is not None:
-        # region debug-point trans-backend-002
-        _f = getattr(translation, "findings_json", []) or []
-        _m = getattr(translation, "medications_json", []) or []
-        _d = getattr(translation, "doctor_discussion_points", []) or []
-        _u = getattr(translation, "ui_labels", {}) or {}
-        _sv = getattr(translation, "schema_version", 1)
-        print(
-            f"[TRANSLATION] cache_hit=true cache_language={translation.language} "
-            f"cache_schema_version={_sv} required_schema_version={TRANSLATION_SCHEMA_VERSION} "
-            f"findings_count={len(_f)} medications_count={len(_m)} "
-            f"discussion_count={len(_d)} ui_labels_count={len(_u)}"
-        )
-        # endregion
-        cache_valid = True
-        if _sv < TRANSLATION_SCHEMA_VERSION:
-            print("[TRANSLATION] cache_invalidated_reason=old_schema_version")
-            cache_valid = False
-        elif translation.patient_summary.startswith("[Translation") or translation.patient_summary.startswith("This is an automated"):
-            print("[TRANSLATION] cache_invalidated_reason=stale_automated_prefix")
-            cache_valid = False
-        elif not isinstance(_d, list) or len(_d) == 0:
-            print("[TRANSLATION] cache_invalidated_reason=missing_doctor_discussion_points")
-            cache_valid = False
-        elif not all(k in _u and isinstance(_u.get(k), str) and _u.get(k).strip() for k in REQUIRED_UI_LABEL_KEYS):
-            missing = [k for k in REQUIRED_UI_LABEL_KEYS if not (_u.get(k) or "").strip()]
-            print(f"[TRANSLATION] cache_invalidated_reason=missing_ui_labels missing_count={len(missing)} sample_missing={missing[:5]}")
-            cache_valid = False
-
-        if cache_valid:
-            return TranslationOut(
-                language=lang,
-                patient_summary=translation.patient_summary,
-                findings_json=_f,
-                medications_json=_m,
-                doctor_discussion_points=_d,
-                ui_labels={k: str(v) for k, v in _u.items()},
-                schema_version=_sv,
-                cached=True,
-            )
+    source_fingerprint = hashlib.sha256(json.dumps(
+        [analysis.patient_summary or "", abnormal_findings_source, meds_list],
+        sort_keys=True, ensure_ascii=False,
+    ).encode("utf-8")).hexdigest()
+    if (translation is not None
+            and translation.schema_version >= TRANSLATION_SCHEMA_VERSION
+            and (translation.ui_labels or {}).get("_source_fingerprint") == source_fingerprint):
+        cached_payload = {
+            "patient_summary": translation.patient_summary,
+            "abnormal_findings": translation.findings_json,
+            "medications": translation.medications_json,
+            "doctor_discussion_points": translation.doctor_discussion_points,
+            "ui_labels": translation.ui_labels,
+        }
+        try:
+            validate_translation(cached_payload, lang, analysis.patient_summary or "",
+                                 abnormal_findings_source, meds_list, REQUIRED_UI_LABEL_KEYS)
+        except (ValueError, TypeError, KeyError):
+            logger.info("Translation cache failed validation language=%s", lang)
         else:
-            await db.delete(translation)
-            await db.commit()
-            translation = None
-    else:
-        # region debug-point trans-backend-003
-        print(
-            f"[TRANSLATION] cache_hit=false target_language_name={target_lang_name} "
-            f"provider=gemini_structured_json schema_version={TRANSLATION_SCHEMA_VERSION}"
-        )
-        # endregion
+            return TranslationOut(
+                language=lang, patient_summary=translation.patient_summary,
+                findings_json=translation.findings_json,
+                medications_json=translation.medications_json,
+                doctor_discussion_points=translation.doctor_discussion_points,
+                ui_labels=translation.ui_labels,
+                schema_version=translation.schema_version, cached=True,
+            )
 
-    # ------------------------------------------------------------------
-    # Cache miss — call the LLM translation provider with the structured
-    # prompt and validate the response BEFORE we persist anything.
-    # ------------------------------------------------------------------
     prompt = TRANSLATION_PROMPT.format(
         target_language=target_lang_name,
         patient_summary=analysis.patient_summary or "",
-        abnormal_findings_json=json.dumps(abnormal_findings_source, indent=2, ensure_ascii=False),
-        medications_json=json.dumps(meds_list, indent=2, ensure_ascii=False),
+        abnormal_findings_json=json.dumps(abnormal_findings_source, ensure_ascii=False),
+        medications_json=json.dumps(meds_list, ensure_ascii=False),
     )
-
-    print("\n========== TRANSLATION DEBUG START ==========")
-    print(f"REPORT ID: {analysis.report_id}")
-    print(f"TARGET LANGUAGE: {target_lang_name}")
-    print(f"SOURCE LANGUAGE: en")
-    print(f"ENDPOINT: POST /reports/{id}/analysis/translate")
-    print(f"HTTP METHOD: POST")
-    print("REQUEST SENT: YES")
-
+    logger.info("Translation requested language=%s input_chars=%d", lang, len(prompt))
+    llm_res = await generate_translation(prompt)
+    if llm_res.get("provider") == "fallback":
+        raise TranslationServiceError()
     try:
-        llm_res = await generate_with_metadata(prompt)
-        print("HTTP STATUS: 200 (LLM Success)")
-        print("RESPONSE RECEIVED: YES")
-
-        response_text = llm_res.get("content", "")
-        provider = llm_res.get("provider", "unknown")
-
-        print(f"RESPONSE CONTENT TYPE: application/json")
-        print(f"RESPONSE LENGTH: {len(response_text)}")
-        print(f"PROVIDER: {provider}")
-
-        if provider == "fallback":
-            print("ERROR TYPE: ProviderFallback")
-            print("ERROR MESSAGE: Primary LLM failed, fell back to local string.")
-            print("========== TRANSLATION DEBUG END ==========\n")
-            raise HTTPException(
-                status_code=503,
-                detail="Translation service is temporarily unavailable.",
-            )
-
-        # Robust JSON extraction: strip markdown fences, find outermost {...}
-        import re as _re
-
-        raw = response_text.strip()
-        fences = _re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw)
-        if fences:
-            raw = fences.group(1).strip()
-        start = raw.find("{")
-        if start == -1:
-            print("PARSING SUCCESS: NO")
-            print("ERROR TYPE: NoJSON")
-            print("ERROR MESSAGE: No JSON object found in response")
-            print(f"RAW RESPONSE: {raw[:300]}")
-            print("========== TRANSLATION DEBUG END ==========\n")
-            raise HTTPException(
-                status_code=502,
-                detail="Translation provider returned no JSON object.",
-            )
-        depth = 0
-        end = -1
-        for i in range(len(raw) - 1, start - 1, -1):
-            c = raw[i]
-            if c == "}":
-                if depth == 0:
-                    end = i
-                depth += 1
-            elif c == "{":
-                depth -= 1
-                if depth == 0:
-                    break
-        json_str = raw[start : end + 1] if end != -1 else raw[start:]
-
-        try:
-            parsed = json.loads(json_str)
-        except json.JSONDecodeError as e:
-            print("PARSING SUCCESS: NO")
-            print("ERROR TYPE: JSONDecodeError")
-            print(f"ERROR MESSAGE: {str(e)}")
-            print(f"CHAR POSITION: {e.pos}")
-            print(f"JSON_STR LENGTH: {len(json_str)}")
-            print("========== TRANSLATION DEBUG END ==========\n")
-            raise HTTPException(
-                status_code=502,
-                detail=f"Translation provider returned invalid JSON at pos {e.pos}: {str(e)}",
-            )
-
-        print(f"RESPONSE KEYS: {list(parsed.keys())}")
-        print("PARSING SUCCESS: YES")
-
-        translated_summary = parsed.get("patient_summary") or ""
-        translated_findings = parsed.get("abnormal_findings", parsed.get("findings_json", [])) or []
-        translated_medications = parsed.get("medications", parsed.get("medications_json", [])) or []
-        translated_discussion = parsed.get("doctor_discussion_points", parsed.get("discussion_points", [])) or []
-        translated_ui_labels_raw = parsed.get("ui_labels", {}) or {}
-        translated_ui_labels = {
-            str(k): "" if v is None else str(v)
-            for k, v in translated_ui_labels_raw.items()
-        }
-
-        # ---- Completeness validation (refuse to store/serve partial translations) ----
-        missing_top_keys = [
-            k
-            for k in ("patient_summary", "abnormal_findings", "medications", "doctor_discussion_points", "ui_labels")
-            if k not in parsed
-        ]
-        if missing_top_keys:
-            print("[TRANSLATION] validation_failed=missing_top_level_keys missing=" + str(missing_top_keys))
-            raise HTTPException(
-                status_code=502,
-                detail=f"Translation provider response missing required keys: {missing_top_keys}",
-            )
-        if not translated_summary.strip():
-            print("[TRANSLATION] validation_failed=empty_patient_summary")
-            raise HTTPException(
-                status_code=502,
-                detail="Translation provider returned empty patient summary.",
-            )
-        if not isinstance(translated_findings, list):
-            print("[TRANSLATION] validation_failed=findings_not_list")
-            raise HTTPException(status_code=502, detail="Translation: abnormal_findings must be a list.")
-        if not isinstance(translated_medications, list):
-            print("[TRANSLATION] validation_failed=meds_not_list")
-            raise HTTPException(status_code=502, detail="Translation: medications must be a list.")
-        if not isinstance(translated_discussion, list):
-            print("[TRANSLATION] validation_failed=discussion_not_list")
-            raise HTTPException(status_code=502, detail="Translation: doctor_discussion_points must be a list.")
-        if len(translated_discussion) == 0:
-            print("[TRANSLATION] validation_failed=empty_doctor_discussion")
-            raise HTTPException(
-                status_code=502,
-                detail="Translation: doctor_discussion_points is empty; at minimum the follow-up bullet is required.",
-            )
-        if not all(isinstance(s, str) and s.strip() for s in translated_discussion):
-            bad = [i for i, s in enumerate(translated_discussion) if not (isinstance(s, str) and s.strip())]
-            print(f"[TRANSLATION] validation_failed=discussion_nonstring_or_empty indices={bad}")
-            raise HTTPException(
-                status_code=502,
-                detail="Translation: doctor_discussion_points must be non-empty strings.",
-            )
-
-        missing_labels = [
-            k
-            for k in REQUIRED_UI_LABEL_KEYS
-            if not translated_ui_labels.get(k, "").strip()
-        ]
-        if missing_labels:
-            print(f"[TRANSLATION] validation_failed=missing_ui_labels count={len(missing_labels)} sample={missing_labels[:8]}")
-            raise HTTPException(
-                status_code=502,
-                detail=(
-                    "Translation provider response missing "
-                    f"{len(missing_labels)} required ui_labels: "
-                    + ", ".join(missing_labels[:8])
-                    + ("…" if len(missing_labels) > 8 else "")
-                ),
-            )
-
-        # Normalize medications translated_times_of_day into a list.
-        # (If Gemini returned a single string despite the prompt asking for an
-        # array, coerce it here so the Flutter UI never has to guess.)
-        normalized_meds = []
-        for med in translated_medications:
-            if not isinstance(med, dict):
-                continue
-            times = med.get("translated_times_of_day")
-            if isinstance(times, str) and times.strip():
-                times_list = [times.strip()]
-            elif isinstance(times, list):
-                times_list = [t for t in times if isinstance(t, str) and t.strip()]
-            else:
-                times_list = []
-            normalized_meds.append(
-                {
-                    "medication_name": med.get("medication_name", ""),
-                    "translated_dosage": med.get("translated_dosage", ""),
-                    "translated_frequency": med.get("translated_frequency", ""),
-                    "translated_times_of_day": times_list,
-                    "translated_instructions": med.get("translated_instructions", ""),
-                }
-            )
-
-        # region debug-point trans-backend-004
-        print(
-            f"[TRANSLATION] llm_parse_ok=true summary_chars={len(translated_summary)} "
-            f"findings_count={len(translated_findings)} medications_count={len(normalized_meds)} "
-            f"ui_labels_count={len(translated_ui_labels)} doctor_discussion_count={len(translated_discussion)}"
+        parsed = validate_translation(
+            parse_translation(llm_res.get("content", "")), lang,
+            analysis.patient_summary or "", abnormal_findings_source,
+            meds_list, REQUIRED_UI_LABEL_KEYS,
         )
-        # endregion
-        print("========== TRANSLATION DEBUG END ==========\n")
-    except HTTPException:
-        raise
-    except Exception as e:
-        print("RESPONSE RECEIVED: NO")
-        print(f"ERROR TYPE: {type(e).__name__}")
-        print(f"ERROR MESSAGE: {str(e)}")
-        print("========== TRANSLATION DEBUG END ==========\n")
-        raise
+    except (ValueError, TypeError, KeyError) as exc:
+        # Do not log the model response or medical data.
+        logger.warning("Translation validation failed language=%s error_type=%s", lang, type(exc).__name__)
+        raise TranslationServiceError(
+            "The translation could not be verified. Please try again."
+        ) from exc
+    translated_summary = parsed["patient_summary"]
+    translated_findings = parsed["abnormal_findings"]
+    normalized_meds = parsed["medications"]
+    translated_discussion = parsed["doctor_discussion_points"]
+    translated_ui_labels = {**parsed["ui_labels"], "_source_fingerprint": source_fingerprint}
+
+    # Keep the previous row until generation succeeds; replace it atomically.
+    if translation is not None:
+        await db.delete(translation)
+        await db.flush()
 
     translation = AnalysisTranslation(
         report_analysis_id=analysis.id,

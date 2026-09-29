@@ -116,7 +116,10 @@ CRITICAL RULES:
 2. DO NOT add, remove, or invent any medical information.
 3. Translation only — not reinterpretation.
 4. Output MUST be strictly valid JSON — no markdown fences, no extra text before or after the JSON object.
-5. ALL patient-facing strings must be translated into {target_language}; do not leave any English text in translated fields (except the explicitly-preserved medical identifiers listed above).
+5. Use the native Unicode script of {target_language}, never Latin transliteration.
+6. Keep arrays in source order and return exactly one item for each source finding/medication. Use empty arrays for absent sections.
+7. Copy medication dosage and clock times EXACTLY; translate only explanatory phrasing.
+8. ALL patient-facing strings must be translated into {target_language}; do not leave any English text in translated fields (except the explicitly-preserved medical identifiers listed above).
 
 INPUT:
 Patient Summary (translate fully):
@@ -125,7 +128,7 @@ Patient Summary (translate fully):
 Abnormal Findings JSON (keep test_name in English as identifier; translate ONLY the explanation/exposition text):
 {abnormal_findings_json}
 
-Medications JSON (keep medication_name in English; translate dosage, frequency, times_of_day, and instructions):
+Medications JSON (keep medication_name in English; copy dosage exactly; translate frequency, non-clock times_of_day, and instructions):
 {medications_json}
 
 Doctor Discussion Points Generation Rules (CRITICAL — produce exactly these bullet points, all fully translated into {target_language}):
@@ -181,7 +184,7 @@ OUTPUT (strictly valid JSON, absolutely no markdown, every listed key MUST be po
   "medications": [
     {{
       "medication_name": "<original English name — DO NOT change>",
-      "translated_dosage": "<translated dosage phrasing in {target_language}; preserve any numbers/units>",
+      "translated_dosage": "<exact original dosage string, or empty string if absent>",
       "translated_frequency": "<translated frequency phrasing in {target_language}>",
       "translated_times_of_day": ["<array of 0 or more strings, each a translated time-of-day label in {target_language}>"],
       "translated_instructions": "<translated notes/instructions in {target_language}>"

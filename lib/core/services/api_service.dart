@@ -52,15 +52,15 @@ class ApiService {
     }
   }
 
-  Future<http.Response> _post(String path, {Object? body, bool isJson = true, bool allowRefresh = true}) async {
+  Future<http.Response> _post(String path, {Object? body, bool isJson = true, bool allowRefresh = true, Duration? requestTimeout}) async {
     try {
       final headers = await _authHeaders();
       final resp = await http.post(
         Uri.parse('$_baseUrl$path'),
         headers: headers,
         body: isJson ? jsonEncode(body) : body,
-      ).timeout(_timeout);
-      return _handleResponse(resp, () => _post(path, body: body, isJson: isJson, allowRefresh: false), allowRefresh: allowRefresh);
+      ).timeout(requestTimeout ?? _timeout);
+      return _handleResponse(resp, () => _post(path, body: body, isJson: isJson, allowRefresh: false, requestTimeout: requestTimeout), allowRefresh: allowRefresh);
     } catch (error) {
       throw _networkException(error);
     }
@@ -444,9 +444,10 @@ class ApiService {
   Future<TranslationModel> translateAnalysis(
       String id, String language) async {
     final resp = await _post('/reports/$id/analysis/translate',
-        body: {'language': language});
+        body: {'language': language},
+        requestTimeout: const Duration(seconds: 270));
     return TranslationModel.fromMap(
-        jsonDecode(resp.body) as Map<String, dynamic>);
+        jsonDecode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>);
   }
 
   Future<ReportComparisonResult> compareReports(List<String> reportIds) async {

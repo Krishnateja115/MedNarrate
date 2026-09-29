@@ -41,7 +41,15 @@ async def translate_report_summary(
     cached = result.scalars().first()
 
     if cached:
-        return cached.translated_text
+        from app.services.translation_validation import require_script, preserve_numbers
+        try:
+            if target_language != "en":
+                require_script(cached.translated_text, target_language)
+            preserve_numbers(summary_text, cached.translated_text)
+        except (ValueError, TypeError):
+            pass
+        else:
+            return cached.translated_text
 
     # 2. Translate using IndicTrans2
     from app.services.llm_orchestrator import translate_text_indic
@@ -53,6 +61,9 @@ async def translate_report_summary(
         raise e
 
     # 3. Cache the translation
+    if cached:
+        await db.delete(cached)
+        await db.flush()
     translation = ReportTranslation(
         report_id=report_uuid,
         language_code=target_language,

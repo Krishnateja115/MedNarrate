@@ -21,7 +21,12 @@ class ReportDetailController extends ChangeNotifier {
   bool isTranslating = false;
   TranslationModel? translation;
   String? translationLanguage;
-  final Map<String, TranslationModel> _translationCache = {};
+  int _translationRequest = 0;
+  String? _pendingLanguage;
+  final Future<TranslationModel> Function(String, String) _translateAnalysis;
+
+  ReportDetailController({Future<TranslationModel> Function(String, String)? translateAnalysis})
+      : _translateAnalysis = translateAnalysis ?? ApiService.instance.translateAnalysis;
 
   @override
   void dispose() {
@@ -129,30 +134,35 @@ class ReportDetailController extends ChangeNotifier {
   }
 
   Future<void> translate(String languageCode) async {
-    if (report == null) return;
+    if (_disposed || report == null) return;
+    if (isTranslating && _pendingLanguage == languageCode) return;
+    final request = ++_translationRequest;
+    _pendingLanguage = languageCode;
     if (languageCode == 'en') {
       translation = null;
       translationLanguage = 'en';
-      if (!_disposed) notifyListeners();
+      isTranslating = false;
+      _pendingLanguage = null;
+      notifyListeners();
       return;
     }
-    
-    isTranslating = true;
-    if (!_disposed) notifyListeners();
 
+    isTranslating = true;
+    notifyListeners();
     try {
-      final t = await _apiService.translateAnalysis(report!.id, languageCode);
-      if (_disposed) return;
-      _translationCache[languageCode] = t;
+      final t = await _translateAnalysis(report!.id, languageCode);
+      if (_disposed || request != _translationRequest) return;
+      if (t.language != languageCode || t.patientSummary.trim().isEmpty) {
+        throw const ApiException(502, 'Translation returned an unexpected language or empty report.');
+      }
       translation = t;
-      translationLanguage = languageCode;
-    } catch (e) {
-      // Allow UI to handle the error or show a snackbar (by throwing it)
-      // or we just set error? Wait, we should probably rethrow so PatientViewTab can show SnackBar.
-      rethrow;
+      translationLanguage = t.language;
+    } catch (_) {
+      if (!_disposed && request == _translationRequest) rethrow;
     } finally {
-      if (!_disposed) {
+      if (!_disposed && request == _translationRequest) {
         isTranslating = false;
+        _pendingLanguage = null;
         notifyListeners();
       }
     }

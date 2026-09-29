@@ -35,6 +35,10 @@ class Settings(BaseSettings):
         "http://localhost:8001/translate"  # Placeholder for local IndicTrans2 service
     )
 
+    # Structured translations include the report body and all UI labels.
+    TRANSLATION_MAX_OUTPUT_TOKENS: int = 16384
+    TRANSLATION_TIMEOUT_SECONDS: float = 270.0  # Includes up to 75s of 503-retry backoff
+
     ENABLE_LLM_FALLBACK: bool = True
 
     # Vertex AI (Primary Production Provider - Fallback for Gemini)

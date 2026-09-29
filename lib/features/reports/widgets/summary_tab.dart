@@ -41,10 +41,6 @@ class _SummaryTabState extends State<SummaryTab> {
       return val.trim();
     }
     if (isTranslated) {
-      final missing = t.uiLabels['label_review_test_parameters'];
-      if (missing != null && missing.trim().isNotEmpty) {
-        return missing.trim();
-      }
       return '';
     }
     return fallback;

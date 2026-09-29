@@ -265,6 +265,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                             .split(' ')
                             .first,
                         reportType: report.reportType,
+                        translation: _controller.translation,
                       );
                     }
                   },
