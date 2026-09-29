@@ -100,13 +100,17 @@ def validate_translation(
                 raise ValueError("Translation changed report identifiers or order")
     for original, result in zip(findings, output_findings):
         require_script(result.get("translated_explanation"), language)
+        if result.get("translated_test_name"):
+            require_script(result.get("translated_test_name"), language)
         if set(_numbers(result["translated_explanation"])) - allowed_numbers:
             raise ValueError("Translation invented a finding value")
         # Keep structured values available without trusting model copies.
-        for key in ("test_name", "value", "unit", "ref_low", "ref_high", "flag"):
-            if key in original:
-                result[key] = original[key]
+        for key in ("test_name", "translated_test_name", "value", "unit", "ref_low", "ref_high", "flag"):
+            if key in original or key in result:
+                result[key] = result.get(key) if key == "translated_test_name" else original.get(key)
     for original, result in zip(medications, output_meds):
+        if result.get("translated_medication_name"):
+            require_script(result.get("translated_medication_name"), language)
         for key in ("translated_dosage", "translated_frequency", "translated_instructions"):
             if not isinstance(result.get(key), str):
                 raise ValueError("Invalid translated medication field")

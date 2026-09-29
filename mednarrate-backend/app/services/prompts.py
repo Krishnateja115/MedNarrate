@@ -131,9 +131,12 @@ Abnormal Findings JSON (keep test_name in English as identifier; translate ONLY 
 Medications JSON (keep medication_name in English; copy dosage exactly; translate frequency, non-clock times_of_day, and instructions):
 {medications_json}
 
+All unique English test/parameter names present in the report (provide translations for ALL of these in the `translated_parameters` output map):
+{unique_parameters_json}
+
 Doctor Discussion Points Generation Rules (CRITICAL — produce exactly these bullet points, all fully translated into {target_language}):
 A) For EACH abnormal finding listed above (up to the first 3):
-   Generate a SINGLE patient-facing sentence in {target_language} that naturally incorporates the preserved test name, flag (HIGH/LOW/CRITICAL/NOT_CLASSIFIED/NORMAL), numeric value, and unit exactly as they appear.
+   Generate a SINGLE patient-facing sentence in {target_language} that naturally incorporates the translated test name, flag (HIGH/LOW/CRITICAL/NOT_CLASSIFIED/NORMAL), numeric value, and unit exactly as they appear.
    The sentence must suggest talking to the healthcare provider about that result. Use the wording natural in {target_language}.
    Preserve the exact flag label (HIGH, LOW, CRITICAL, NOT_CLASSIFIED, NORMAL) inside the translated sentence in UPPERCASE inside parentheses when natural.
 B) If there are NO abnormal findings at all:
@@ -178,12 +181,14 @@ OUTPUT (strictly valid JSON, absolutely no markdown, every listed key MUST be po
   "abnormal_findings": [
     {{
       "test_name": "<original English test name — DO NOT change>",
+      "translated_test_name": "<translated test name in {target_language}>",
       "translated_explanation": "<full translated explanation in {target_language} including the 'Discuss the FLAG TEST level (VALUE UNIT) with your healthcare provider' style sentence already translated so the UI never needs to build it>"
     }}
   ],
   "medications": [
     {{
       "medication_name": "<original English name — DO NOT change>",
+      "translated_medication_name": "<translated medication name in {target_language}>",
       "translated_dosage": "<exact original dosage string, or empty string if absent>",
       "translated_frequency": "<translated frequency phrasing in {target_language}>",
       "translated_times_of_day": ["<array of 0 or more strings, each a translated time-of-day label in {target_language}>"],
@@ -243,10 +248,14 @@ OUTPUT (strictly valid JSON, absolutely no markdown, every listed key MUST be po
     "label_retranslate": "<translated 'Retranslate'>",
     "label_disclaimer_patient": "<translated full patient-view disclaimer>",
     "label_disclaimer_summary": "<translated full summary-tab disclaimer>"
+  }},
+  "translated_parameters": {{
+    "<English parameter 1>": "<translated parameter 1>",
+    "<English parameter 2>": "<translated parameter 2>"
   }}
 }}
 
-Output the JSON now. Every key shown above must appear in the JSON object. Do not omit any ui_labels key. doctor_discussion_points must be an array with 2-5 fully-translated strings depending on input (at minimum: A1..An + (B or C/D) + E). No markdown."""
+Output the JSON now. Every key shown above must appear in the JSON object. Do not omit any ui_labels key. The translated_parameters dictionary must contain translations for EVERY unique parameter name present in the provided report's structured_lab_values and abnormal_findings. doctor_discussion_points must be an array with 2-5 fully-translated strings depending on input (at minimum: A1..An + (B or C/D) + E). No markdown."""
 
 
 CHAT_EMERGENCY_RESPONSE = "This sounds like a medical emergency. Please call your local emergency services (like 911) or go to the nearest emergency room immediately. I am an AI and cannot provide emergency medical support."

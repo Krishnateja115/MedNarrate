@@ -192,7 +192,7 @@ class _SummaryTabState extends State<SummaryTab> {
                           Icon(Icons.calendar_today,
                               size: 13, color: AppColors.primary),
                           const SizedBox(width: 4),
-                          Text(Formatters.formatDate(report.reportDate),
+                          Text(Formatters.formatDate(report.reportDate, widget.translation?.language ?? 'en'),
                               style: const TextStyle(fontSize: 12)),
                           const SizedBox(width: 10),
                           Container(

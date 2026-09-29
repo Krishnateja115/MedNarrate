@@ -258,7 +258,7 @@ class ClinicalViewTab extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ClinicalViewTab.buildValidationMetadataCard(
-              context, report, analysis),
+              context, report, analysis, translation),
 
           const SizedBox(height: 40),
         ],
@@ -314,7 +314,7 @@ class ClinicalViewTab extends StatelessWidget {
                           fontSize: 17, fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      'Hospital: ${report.hospital.isNotEmpty ? report.hospital : "Unspecified"} • Date: ${Formatters.formatDate(report.reportDate)}',
+                      'Hospital: ${report.hospital.isNotEmpty ? report.hospital : "Unspecified"} • Date: ${Formatters.formatDate(report.reportDate, translation?.language ?? 'en')}',
                       style: TextStyle(
                           fontSize: 12.5,
                           color: theme.colorScheme.onSurface
@@ -665,7 +665,7 @@ class ClinicalViewTab extends StatelessWidget {
   }
 
   static Widget buildValidationMetadataCard(
-      BuildContext context, ReportModel report, ReportAnalysisModel? analysis) {
+      BuildContext context, ReportModel report, ReportAnalysisModel? analysis, [TranslationModel? translation]) {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
@@ -679,7 +679,7 @@ class ClinicalViewTab extends StatelessWidget {
           ClinicalViewTab.buildMetaRow(
               context, 'Source Document', report.fileName),
           ClinicalViewTab.buildMetaRow(
-              context, 'Report Date', Formatters.formatDate(report.reportDate)),
+              context, 'Report Date', Formatters.formatDate(report.reportDate, translation?.language ?? 'en')),
           ClinicalViewTab.buildMetaRow(
               context, 'Report Type', report.reportType),
           ClinicalViewTab.buildMetaRow(

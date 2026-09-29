@@ -4,11 +4,13 @@ import 'lab_result_row.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
+import '../../../core/services/api_models.dart';
 
 class LabResultsTab extends StatefulWidget {
   final ReportModel report;
+  final TranslationModel? translation;
 
-  const LabResultsTab({super.key, required this.report});
+  const LabResultsTab({super.key, required this.report, this.translation});
 
   @override
   State<LabResultsTab> createState() => _LabResultsTabState();
@@ -166,8 +168,11 @@ class _LabResultsTabState extends State<LabResultsTab> {
                     final String flag =
                         m['flag']?.toString() ?? 'not_classified';
 
+                    final String parameterName = m['parameter']?.toString() ?? '';
+                    final String translatedName = widget.translation?.uiLabels['param_$parameterName'] ?? parameterName;
+
                     return LabResultRow(
-                      parameter: m['parameter'],
+                      parameter: translatedName,
                       unit: m['unit'] ?? '',
                       value: val,
                       minRange: minR,

@@ -484,7 +484,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
                         Icon(Icons.calendar_today,
                             size: 12, color: theme.colorScheme.primary),
                         const SizedBox(width: 4),
-                        Text(Formatters.formatDate(report.reportDate),
+                        Text(Formatters.formatDate(report.reportDate, translation?.language ?? 'en'),
                             style: const TextStyle(fontSize: 12)),
                         const SizedBox(width: 10),
                         Container(
@@ -619,7 +619,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
             children: [
               Expanded(
                 child: Text(
-                  lab.testName,
+                  l?['param_${lab.testName}'] ?? lab.testName,
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,
@@ -697,7 +697,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
     required String sourceLatestReport,
   }) {
     final theme = Theme.of(context);
-    final name = med['medication_name']?.toString() ?? 'Medication';
+    final name = med['translated_medication_name']?.toString() ?? med['medication_name']?.toString() ?? 'Medication';
     String dosage = med['dosage']?.toString() ?? 'Not specified';
     String frequency = med['frequency']?.toString() ?? 'Not specified';
     final l = translation?.uiLabels;

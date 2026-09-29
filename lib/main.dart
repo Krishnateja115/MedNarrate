@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/routing/app_router.dart';
 import 'core/services/notification_service.dart';
@@ -296,6 +297,7 @@ Widget _bootApp(Widget home) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
+  await initializeDateFormatting();
 
   runApp(_bootApp(const BootScreen(status: 'Starting local server...')));
 

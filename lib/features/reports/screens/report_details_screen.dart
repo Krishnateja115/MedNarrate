@@ -375,6 +375,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                       LabResultsTab(
                         key: const PageStorageKey('lab_results_tab'),
                         report: _controller.report!,
+                        translation: _controller.translation,
                       ),
                       AIChatTab(
                         key: const PageStorageKey('ai_chat_tab'),

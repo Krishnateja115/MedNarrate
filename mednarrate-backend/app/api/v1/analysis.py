@@ -306,11 +306,18 @@ async def translate_analysis(
                 schema_version=translation.schema_version, cached=True,
             )
 
+    unique_params = list(set([
+        str(m.get("parameter")) for m in (analysis.structured_lab_values or []) if m.get("parameter")
+    ] + [
+        str(f.get("test_name")) for f in abnormal_findings_source if f.get("test_name")
+    ]))
+
     prompt = TRANSLATION_PROMPT.format(
         target_language=target_lang_name,
         patient_summary=analysis.patient_summary or "",
         abnormal_findings_json=json.dumps(abnormal_findings_source, ensure_ascii=False),
         medications_json=json.dumps(meds_list, ensure_ascii=False),
+        unique_parameters_json=json.dumps(unique_params, ensure_ascii=False),
     )
     logger.info("Translation requested language=%s input_chars=%d", lang, len(prompt))
     llm_res = await generate_translation(prompt)
@@ -333,6 +340,9 @@ async def translate_analysis(
     normalized_meds = parsed["medications"]
     translated_discussion = parsed["doctor_discussion_points"]
     translated_ui_labels = {**parsed["ui_labels"], "_source_fingerprint": source_fingerprint}
+    if "translated_parameters" in parsed and isinstance(parsed["translated_parameters"], dict):
+        for k, v in parsed["translated_parameters"].items():
+            translated_ui_labels[f"param_{k}"] = v
 
     # Keep the previous row until generation succeeds; replace it atomically.
     if translation is not None:
