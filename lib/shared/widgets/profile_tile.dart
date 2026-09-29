@@ -53,7 +53,10 @@ class ProfileTile extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.60),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.60),
                       fontSize: 14,
                     ),
                   ),
@@ -62,7 +65,10 @@ class ProfileTile extends StatelessWidget {
             ),
             Icon(
               Icons.arrow_forward_ios,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.38),
               size: 18,
             ),
           ],

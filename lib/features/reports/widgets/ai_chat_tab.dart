@@ -21,7 +21,7 @@ class AIChatTab extends StatefulWidget {
 class _AIChatTabState extends State<AIChatTab> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   bool _initializing = true;
   bool _sending = false;
   String? _sessionId;
@@ -46,16 +46,22 @@ class _AIChatTabState extends State<AIChatTab> {
   Future<void> _initSession() async {
     try {
       final sessions = await ApiService.instance.listChatSessions();
-      final existing = sessions.where((s) => s.reportId == widget.reportId).toList();
+      final existing =
+          sessions.where((s) => s.reportId == widget.reportId).toList();
       if (existing.isNotEmpty) {
         _sessionId = existing.first.id;
       } else {
-        final session = await ApiService.instance.createChatSession(reportId: widget.reportId);
+        final session = await ApiService.instance
+            .createChatSession(reportId: widget.reportId);
         _sessionId = session.id;
       }
       await _loadMessages();
     } on ApiException catch (e) {
-      if (mounted) setState(() { _error = e.message; _initializing = false; });
+      if (mounted)
+        setState(() {
+          _error = e.message;
+          _initializing = false;
+        });
     }
   }
 
@@ -72,7 +78,11 @@ class _AIChatTabState extends State<AIChatTab> {
         _scrollToBottom();
       }
     } on ApiException catch (e) {
-      if (mounted) setState(() { _error = e.message; _initializing = false; });
+      if (mounted)
+        setState(() {
+          _error = e.message;
+          _initializing = false;
+        });
     }
   }
 
@@ -108,7 +118,8 @@ class _AIChatTabState extends State<AIChatTab> {
     _scrollToBottom();
 
     try {
-      final response = await ApiService.instance.sendChatMessage(_sessionId!, text);
+      final response =
+          await ApiService.instance.sendChatMessage(_sessionId!, text);
       if (mounted) {
         setState(() {
           _messages.add(response);
@@ -174,7 +185,8 @@ class _AIChatTabState extends State<AIChatTab> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
                 ),
                 child: TypingIndicator(),
               ),
@@ -189,7 +201,9 @@ class _AIChatTabState extends State<AIChatTab> {
           ),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            border: Border(top: BorderSide(color: AppColors.border)),
+            border: Border(
+                top: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant)),
           ),
           child: Row(
             children: [
@@ -199,7 +213,8 @@ class _AIChatTabState extends State<AIChatTab> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).scaffoldBackgroundColor,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant),
                   ),
                   child: TextField(
                     controller: _messageController,
@@ -239,16 +254,21 @@ class _AIChatTabState extends State<AIChatTab> {
         onLongPress: () {
           if (!isUser) {
             // Show copy
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.messageCopied)));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(AppLocalizations.of(context)!.messageCopied)));
           }
         },
         child: Container(
           margin: const EdgeInsets.only(bottom: 16),
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+          constraints:
+              BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isUser ? AppColors.primary : Theme.of(context).cardColor,
-            border: isUser ? null : Border.all(color: AppColors.border),
+            border: isUser
+                ? null
+                : Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(16),
               topRight: const Radius.circular(16),
@@ -259,7 +279,9 @@ class _AIChatTabState extends State<AIChatTab> {
           child: SelectableText(
             msg.content,
             style: TextStyle(
-              color: isUser ? Colors.white : Theme.of(context).colorScheme.onSurface,
+              color: isUser
+                  ? Colors.white
+                  : Theme.of(context).colorScheme.onSurface,
               height: 1.5,
               fontSize: 15,
             ),

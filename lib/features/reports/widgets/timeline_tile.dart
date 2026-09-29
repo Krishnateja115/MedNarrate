@@ -45,9 +45,11 @@ class ReportTimelineTile extends StatelessWidget {
                     Container(
                       width: 2,
                       height: 18,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.24),
                     ),
-
                   Container(
                     width: 14,
                     height: 14,
@@ -56,19 +58,19 @@ class ReportTimelineTile extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-
                   if (!isLast)
                     Container(
                       width: 2,
                       height: 70,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.24),
                     ),
                 ],
               ),
             ),
-
             SizedBox(width: 14),
-
             Expanded(
               child: Container(
                 padding: const EdgeInsets.all(18),
@@ -77,8 +79,7 @@ class ReportTimelineTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
@@ -88,33 +89,36 @@ class ReportTimelineTile extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     SizedBox(height: 8),
-
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.70),
                         fontSize: 14,
                       ),
                     ),
-
                     SizedBox(height: 10),
-
                     Row(
                       children: [
                         Icon(
                           Icons.calendar_today,
                           size: 16,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.54),
                         ),
-
                         SizedBox(width: 6),
-
                         Text(
                           date,
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.54),
                             fontSize: 13,
                           ),
                         ),

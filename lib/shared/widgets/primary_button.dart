@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 
 class PrimaryButton extends StatefulWidget {
   final String text;
@@ -20,11 +19,13 @@ class PrimaryButton extends StatefulWidget {
 }
 
 class _PrimaryButtonState extends State<PrimaryButton> {
-
   double scale = 1;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isEnabled = widget.onPressed != null && !widget.loading;
+
     return GestureDetector(
       onTapDown: (_) {
         if (widget.onPressed == null || widget.loading) return;
@@ -50,46 +51,48 @@ class _PrimaryButtonState extends State<PrimaryButton> {
         scale: scale,
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
-
         child: Container(
-          height: 58,
-
+          height: 54,
           decoration: BoxDecoration(
-            color: AppColors.primary,
-
-            borderRadius: BorderRadius.circular(20),
-
+            color: isEnabled
+                ? theme.colorScheme.primary
+                : theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isEnabled
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outlineVariant,
+            ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.20),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                blurRadius: 12,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
-
           child: Center(
-                    child: widget.loading
-                ? const CircularProgressIndicator(
-                    color: Colors.white,
+            child: widget.loading
+                ? CircularProgressIndicator(
+                    color: theme.colorScheme.onPrimary,
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-
                       if (widget.icon != null)
                         Icon(
                           widget.icon,
-                          color: Colors.white,
+                          color: isEnabled
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurfaceVariant,
                         ),
-
-                      if (widget.icon != null)
-                        SizedBox(width: 10),
-
+                      if (widget.icon != null) SizedBox(width: 10),
                       Text(
                         widget.text,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: isEnabled
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurfaceVariant,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),

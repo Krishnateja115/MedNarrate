@@ -63,7 +63,8 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
                 // Header Banner
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   color: theme.cardColor,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,7 +74,10 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.12),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
@@ -97,7 +101,8 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
                               Text(
                                 '${_packageLicenses.length} Third-Party Libraries',
                                 style: TextStyle(
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
                                   fontSize: 13,
                                 ),
                               ),
@@ -113,17 +118,20 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
                         onChanged: (val) => setState(() => _searchQuery = val),
                         decoration: InputDecoration(
                           hintText: 'Search packages...',
-                          prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                          prefixIcon:
+                              const Icon(Icons.search_rounded, size: 20),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear_rounded, size: 18),
+                                  icon:
+                                      const Icon(Icons.clear_rounded, size: 18),
                                   onPressed: () {
                                     _searchController.clear();
                                     setState(() => _searchQuery = '');
                                   },
                                 )
                               : null,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 16),
                           filled: true,
                           fillColor: theme.colorScheme.surface,
                           border: OutlineInputBorder(
@@ -145,14 +153,16 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
                           child: Text(
                             'No licenses match "$_searchQuery"',
                             style: TextStyle(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.6),
                             ),
                           ),
                         )
                       : ListView.separated(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           itemCount: filteredPackages.length,
-                          separatorBuilder: (context, index) => const Divider(height: 1, indent: 20),
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1, indent: 20),
                           itemBuilder: (context, index) {
                             final package = filteredPackages[index];
                             final count = _packageLicenses[package]!.length;
@@ -169,14 +179,16 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
                               subtitle: Text(
                                 '$count ${count == 1 ? 'license' : 'licenses'}',
                                 style: TextStyle(
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
                                   fontSize: 13,
                                 ),
                               ),
                               trailing: Icon(
                                 Icons.arrow_forward_ios_rounded,
                                 size: 14,
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.4),
                               ),
                               onTap: () {
                                 Navigator.push(
@@ -253,7 +265,8 @@ class _PackageLicenseDetailScreen extends StatelessWidget {
                       fontFamily: 'monospace',
                       fontSize: 12.5,
                       height: 1.5,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.85),
                     ),
                   ),
                 ],

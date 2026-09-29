@@ -91,8 +91,7 @@ class _SummaryTabState extends State<SummaryTab> {
       await widget.onTranslate!(selected);
     } catch (_) {
       if (mounted) {
-        messenger.showSnackBar(
-            SnackBar(content: Text(l10n.translationFailed)));
+        messenger.showSnackBar(SnackBar(content: Text(l10n.translationFailed)));
       }
     }
   }
@@ -107,19 +106,19 @@ class _SummaryTabState extends State<SummaryTab> {
       t?.patientSummary ??
           (isClinical
               ? (report.clinicalSummary ?? 'No clinical summary available.')
-              : (report.aiSummary ??
-                  'No patient-friendly summary available.')),
+              : (report.aiSummary ?? 'No patient-friendly summary available.')),
     );
 
-    final headingPatient =
-        _label('label_patient_report_heading', fallback: 'For You — Plain Language Summary');
+    final headingPatient = _label('label_patient_report_heading',
+        fallback: 'For You — Plain Language Summary');
     final headingClinical = _label('label_clinical_report_heading',
         fallback: 'Clinical Executive Summary');
-    final headingImportantFindings = _label('section_important_findings', fallback: 'Important Findings');
-    final headingKeyClinicalFindings =
-        _label('section_key_clinical_findings', fallback: 'Key Clinical Findings');
-    final labelNoKeyFindings =
-        _label('label_no_key_findings', fallback: AppLocalizations.of(context)!.noKeyFindings);
+    final headingImportantFindings =
+        _label('section_important_findings', fallback: 'Important Findings');
+    final headingKeyClinicalFindings = _label('section_key_clinical_findings',
+        fallback: 'Key Clinical Findings');
+    final labelNoKeyFindings = _label('label_no_key_findings',
+        fallback: AppLocalizations.of(context)!.noKeyFindings);
     final expansionPatient = _label('label_key_finding_expansion_patient',
         fallback:
             'This result is outside the standard reference range. Please discuss this finding with your physician during your next consultation.');
@@ -127,7 +126,8 @@ class _SummaryTabState extends State<SummaryTab> {
         fallback:
             'Clinical Finding Note: Out-of-range measurement observed. Review patient history and cross-reference with baseline laboratory parameters.');
     final labelTranslate = _label('label_translate', fallback: 'Translate');
-    final labelRetranslate = _label('label_retranslate', fallback: 'Retranslate');
+    final labelRetranslate =
+        _label('label_retranslate', fallback: 'Retranslate');
     final disclaimerSummary = _label('label_disclaimer_summary',
         fallback:
             'Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.');
@@ -148,13 +148,17 @@ class _SummaryTabState extends State<SummaryTab> {
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.1),
                   child: Icon(
                     isClinical
                         ? Icons.medical_services_outlined
@@ -190,8 +194,7 @@ class _SummaryTabState extends State<SummaryTab> {
                       Row(
                         children: [
                           Icon(Icons.calendar_today,
-                              size: 13,
-                              color: Theme.of(context).colorScheme.primary),
+                              size: 13, color: AppColors.primary),
                           const SizedBox(width: 4),
                           Text(Formatters.formatDate(report.reportDate),
                               style: const TextStyle(fontSize: 12)),
@@ -254,7 +257,8 @@ class _SummaryTabState extends State<SummaryTab> {
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: MarkdownFormatter.formatText(context, rawSummary),
           ),
@@ -274,7 +278,8 @@ class _SummaryTabState extends State<SummaryTab> {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: Text(
                 labelNoKeyFindings,
@@ -296,9 +301,9 @@ class _SummaryTabState extends State<SummaryTab> {
               final severity = flag == 'high' || flag == 'low'
                   ? (flag == 'high' ? 'red' : 'amber')
                   : 'green';
-              final label = '${m['parameter']} is $flag (${m['value']} ${m['unit']})';
-              return _buildKeyFinding(
-                  context, label, severity, isClinical,
+              final label =
+                  '${m['parameter']} is $flag (${m['value']} ${m['unit']})';
+              return _buildKeyFinding(context, label, severity, isClinical,
                   expansionPatient: expansionPatient,
                   expansionClinician: expansionClinician);
             }),
@@ -345,8 +350,7 @@ class _SummaryTabState extends State<SummaryTab> {
 
   Widget _buildKeyFinding(
       BuildContext context, String text, String severity, bool isClinical,
-      {required String expansionPatient,
-      required String expansionClinician}) {
+      {required String expansionPatient, required String expansionClinician}) {
     Color dotColor = Colors.green;
     if (severity == 'amber') dotColor = Colors.orange;
     if (severity == 'red') dotColor = Colors.red;
@@ -361,17 +365,16 @@ class _SummaryTabState extends State<SummaryTab> {
           decoration: BoxDecoration(shape: BoxShape.circle, color: dotColor),
         ),
         title: Text(text,
-            style:
-                const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            margin:
-                const EdgeInsets.only(bottom: 12, left: 24, right: 8),
+            margin: const EdgeInsets.only(bottom: 12, left: 24, right: 8),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Text(
               isClinical ? expansionClinician : expansionPatient,

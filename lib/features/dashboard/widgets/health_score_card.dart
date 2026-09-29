@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_colors.dart';
-
 /// HealthScoreCard — now accepts real computed data.
 /// Score is computed as: (normal lab values / total lab values) * 100
 /// Falls back to "No data yet" if score is null.
@@ -37,7 +35,8 @@ class HealthScoreCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant, width: 1),
       ),
       child: Row(
         children: [
@@ -47,13 +46,24 @@ class HealthScoreCard extends StatelessWidget {
               children: [
                 Text(
                   'Health Score',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 15),
+                  style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.70),
+                      fontSize: 15),
                 ),
                 SizedBox(height: 6),
                 totalLabValues == 0
                     ? Text(
                         '—',
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 36, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.54),
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold),
                       )
                     : Text(
                         '$score%',
@@ -66,13 +76,23 @@ class HealthScoreCard extends StatelessWidget {
                 SizedBox(height: 4),
                 Text(
                   _scoreLabel,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 13),
+                  style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.70),
+                      fontSize: 13),
                 ),
                 if (totalLabValues > 0) ...[
                   SizedBox(height: 10),
                   Text(
                     '$abnormalCount abnormal / $totalLabValues total values',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.60), fontSize: 11),
+                    style: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.60),
+                        fontSize: 11),
                   ),
                 ],
               ],
@@ -86,7 +106,10 @@ class HealthScoreCard extends StatelessWidget {
                 height: 76,
                 child: CircularProgressIndicator(
                   value: totalLabValues == 0 ? 0 : score / 100,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.24),
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.24),
                   color: _scoreColor,
                   strokeWidth: 7,
                 ),

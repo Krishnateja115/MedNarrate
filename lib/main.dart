@@ -6,7 +6,6 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 import 'core/routing/app_router.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/storage_service.dart';
@@ -28,13 +27,16 @@ class AppLifecycleObserver extends WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
 
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.inactive) {
       _backgroundedAt ??= DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
       if (_backgroundedAt != null) {
         final diff = DateTime.now().difference(_backgroundedAt!);
         if (diff.inMinutes >= 3) {
-          final isEnabled = await BiometricService.instance.isBiometricEnabled();
+          final isEnabled =
+              await BiometricService.instance.isBiometricEnabled();
           if (isEnabled) {
             BiometricService.instance.isUnlocked = false;
             AppRouter.router.go('/app-lock');
@@ -53,24 +55,32 @@ Future<bool> _isBackendHealthy() async {
         .getUrl(Uri.parse('${AppConfig.apiBaseUrl}/health'))
         .then((req) => req.close())
         .timeout(const Duration(seconds: 2));
-    
+
     if (result.statusCode == 200) {
       final body = await result.transform(utf8.decoder).join();
-      final isMedNarrate = body.contains('"service":"mednarrate"') || body.contains('"service": "mednarrate"');
-      final isCorrectVersion = body.contains('"version":"${AppConfig.appVersion}"') || body.contains('"version": "${AppConfig.appVersion}"');
-      final isCorrectCommit = body.contains('"commit":"${AppConfig.appCommit}"') || body.contains('"commit": "${AppConfig.appCommit}"');
-      
+      final isMedNarrate = body.contains('"service":"mednarrate"') ||
+          body.contains('"service": "mednarrate"');
+      final isCorrectVersion =
+          body.contains('"version":"${AppConfig.appVersion}"') ||
+              body.contains('"version": "${AppConfig.appVersion}"');
+      final isCorrectCommit =
+          body.contains('"commit":"${AppConfig.appCommit}"') ||
+              body.contains('"commit": "${AppConfig.appCommit}"');
+
       if (isMedNarrate && isCorrectVersion && isCorrectCommit) {
         return true;
       } else if (isMedNarrate) {
-        throw Exception("Stale MedNarrate backend version detected on port 8000. Please restart your application or kill the old backend process.");
+        throw Exception(
+            "Stale MedNarrate backend version detected on port 8000. Please restart your application or kill the old backend process.");
       }
-      
-      throw Exception("Port 8000 is occupied by an unknown service. Please free the port.");
+
+      throw Exception(
+          "Port 8000 is occupied by an unknown service. Please free the port.");
     }
     return false;
   } catch (e) {
-    if (e.toString().contains("unknown service") || e.toString().contains("Stale MedNarrate")) {
+    if (e.toString().contains("unknown service") ||
+        e.toString().contains("Stale MedNarrate")) {
       rethrow;
     }
     return false;
@@ -96,8 +106,11 @@ Future<void> _ensureBackendRunningOnMacOS() async {
   if (await _isBackendHealthy()) return;
 
   String? backendPath = await _resolveBackendPath();
-  if (backendPath == null || !await Directory(backendPath).exists() || backendPath == '/') {
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath(dialogTitle: 'Select mednarrate-backend folder');
+  if (backendPath == null ||
+      !await Directory(backendPath).exists() ||
+      backendPath == '/') {
+    String? selectedDirectory = await FilePicker.platform
+        .getDirectoryPath(dialogTitle: 'Select mednarrate-backend folder');
     if (selectedDirectory != null) {
       await _saveBackendPath(selectedDirectory);
       backendPath = selectedDirectory;
@@ -129,7 +142,10 @@ Future<void> _ensureBackendRunningOnMacOS() async {
 
   await Process.start(
     '/bin/sh',
-    ['-c', 'cd "$backendPath" && "$pythonExe" run_server.py > /tmp/mednarrate_backend.log 2>&1'],
+    [
+      '-c',
+      'cd "$backendPath" && "$pythonExe" run_server.py > /tmp/mednarrate_backend.log 2>&1'
+    ],
     mode: ProcessStartMode.detached,
     environment: {
       'MEDNARRATE_VERSION': AppConfig.appVersion,
@@ -182,7 +198,7 @@ Future<void> _runBootSequence() async {
         await _ensureBackendRunningOnWindows();
       }
     }
-    
+
     // Proceed to app init
     WidgetsBinding.instance.addObserver(AppLifecycleObserver());
     await NotificationService.instance.initialize();
@@ -191,7 +207,7 @@ Future<void> _runBootSequence() async {
     } catch (e) {
       debugPrint("CacheService init error: $e");
     }
-    
+
     final savedThemeMode = await StorageService.instance.getThemeMode();
     themeModeNotifier.value = savedThemeMode;
 
@@ -200,12 +216,13 @@ Future<void> _runBootSequence() async {
 
     runApp(const MedNarrateApp());
   } on NeedsSetupException catch (e) {
-    runApp(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: BootSetupScreen(
+    runApp(_bootApp(
+      BootSetupScreen(
         backendPath: e.backendPath,
         onComplete: () {
-          runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: BootScreen(status: 'Starting local server...')));
+          runApp(_bootApp(
+            const BootScreen(status: 'Starting local server...'),
+          ));
           _runBootSequence();
         },
       ),
@@ -213,44 +230,65 @@ Future<void> _runBootSequence() async {
   } catch (e) {
     if (!kIsWeb) {
       try {
-        File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: ${e.toString()}\n', mode: FileMode.append);
+        File('/tmp/mednarrate_debug.log').writeAsStringSync(
+            'BootError: ${e.toString()}\n',
+            mode: FileMode.append);
       } catch (_) {}
     }
-    runApp(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: BootErrorScreen(
+    runApp(_bootApp(
+      BootErrorScreen(
         error: e.toString(),
         onRetry: () {
           if (!kIsWeb) {
             try {
-              File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: Retrying\n', mode: FileMode.append);
+              File('/tmp/mednarrate_debug.log').writeAsStringSync(
+                  'BootError: Retrying\n',
+                  mode: FileMode.append);
             } catch (_) {}
           }
-          runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: BootScreen(status: 'Retrying connection...')));
+          runApp(_bootApp(
+            const BootScreen(status: 'Retrying connection...'),
+          ));
           _runBootSequence();
         },
-        onChangeBackend: (!kIsWeb && Platform.isMacOS) ? () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.remove('macos_backend_path');
-          if (!kIsWeb) {
-            try {
-              File('/tmp/mednarrate_debug.log').writeAsStringSync('BootError: Reset backend path\n', mode: FileMode.append);
-            } catch (_) {}
-          }
-          runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: BootScreen(status: 'Retrying connection...')));
-          _runBootSequence();
-        } : null,
+        onChangeBackend: (!kIsWeb && Platform.isMacOS)
+            ? () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('macos_backend_path');
+                if (!kIsWeb) {
+                  try {
+                    File('/tmp/mednarrate_debug.log').writeAsStringSync(
+                        'BootError: Reset backend path\n',
+                        mode: FileMode.append);
+                  } catch (_) {}
+                }
+                runApp(_bootApp(
+                  const BootScreen(status: 'Retrying connection...'),
+                ));
+                _runBootSequence();
+              }
+            : null,
       ),
     ));
   }
 }
 
+Widget _bootApp(Widget home) {
+  return MaterialApp(
+    debugShowCheckedModeBanner: false,
+    theme: AppTheme.lightTheme,
+    darkTheme: AppTheme.darkTheme,
+    themeMode: ThemeMode.system,
+    home: home,
+  );
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
-  
-  runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: BootScreen(status: 'Starting local server...')));
-  
+
+  runApp(_bootApp(const BootScreen(status: 'Starting local server...')));
+
   await _runBootSequence();
 }
 
@@ -267,7 +305,8 @@ class MedNarrateApp extends StatelessWidget {
           builder: (context, locale, _) {
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
-              onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+              onGenerateTitle: (context) =>
+                  AppLocalizations.of(context)!.appTitle,
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
               themeMode: themeMode,

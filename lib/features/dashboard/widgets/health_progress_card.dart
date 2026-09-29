@@ -53,7 +53,10 @@ class HealthProgressCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -99,7 +102,10 @@ class HealthProgressCard extends StatelessWidget {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.10),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.10),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -135,13 +141,15 @@ class HealthProgressCard extends StatelessWidget {
                     icon: const Icon(Icons.add_rounded, size: 18),
                     label: const Text(
                       "Upload Report",
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style:
+                          TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 11),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -156,7 +164,9 @@ class HealthProgressCard extends StatelessWidget {
     }
 
     // STATE 2: 1 Report analyzed
-    if (completedReportsCount == 1 || !hasPreviousPeriodData || previousScore == null) {
+    if (completedReportsCount == 1 ||
+        !hasPreviousPeriodData ||
+        previousScore == null) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -171,7 +181,11 @@ class HealthProgressCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.check_circle_outline_rounded, color: AppColors.primary, size: 20),
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   "Latest report analyzed",
@@ -200,8 +214,13 @@ class HealthProgressCard extends StatelessWidget {
                 label: const Text("Upload Another Report"),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
-                  side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  side: BorderSide(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.4)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ],
@@ -236,7 +255,10 @@ class HealthProgressCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -262,17 +284,38 @@ class HealthProgressCard extends StatelessWidget {
             children: [
               Column(
                 children: [
-                  Text("Previous", style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                  Text("Previous",
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.5))),
                   const SizedBox(height: 4),
-                  Text("$previousScore%", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text("$previousScore%",
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
-              const Icon(Icons.arrow_forward_rounded, color: AppColors.primary, size: 20),
+              Icon(
+                Icons.arrow_forward_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
               Column(
                 children: [
-                  Text("Current", style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                  Text("Current",
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.5))),
                   const SizedBox(height: 4),
-                  Text("$currentScore%", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  Text(
+                    "$currentScore%",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
                 ],
               ),
             ],

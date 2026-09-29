@@ -52,21 +52,31 @@ class ClinicalViewTab extends StatelessWidget {
     );
 
     final rawLabs = analysis?.structuredLabValues ?? [];
-    final labs = rawLabs.where((l) => !Helpers.isMetadataParameter(l.testName)).toList();
+    final labs =
+        rawLabs.where((l) => !Helpers.isMetadataParameter(l.testName)).toList();
     final meds = analysis?.medications ?? [];
-    final rawAbnormal = analysis?.abnormalFindings ?? labs.where((l) => l.flag != 'normal' && l.flag != 'not_classified').toList();
+    final rawAbnormal = analysis?.abnormalFindings ??
+        labs
+            .where((l) => l.flag != 'normal' && l.flag != 'not_classified')
+            .toList();
     final abnormalList = rawAbnormal.where((item) {
       if (item is LabValue) return !Helpers.isMetadataParameter(item.testName);
       if (item is Map<String, dynamic>) {
-        final name = item['test_name']?.toString() ?? item['parameter']?.toString() ?? item['original_name']?.toString() ?? '';
+        final name = item['test_name']?.toString() ??
+            item['parameter']?.toString() ??
+            item['original_name']?.toString() ??
+            '';
         return !Helpers.isMetadataParameter(name);
       }
       return true;
     }).toList();
 
-    final diagnoses = analysis?.entities.where((e) => 
-      e['entity_group'] == 'Diagnosis' || e['category'] == 'Diagnosis'
-    ).toList() ?? [];
+    final diagnoses = analysis?.entities
+            .where((e) =>
+                e['entity_group'] == 'Diagnosis' ||
+                e['category'] == 'Diagnosis')
+            .toList() ??
+        [];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -90,7 +100,8 @@ class ClinicalViewTab extends StatelessWidget {
             decoration: BoxDecoration(
               color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,13 +111,19 @@ class ClinicalViewTab extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Icon(Icons.auto_awesome, size: 14, color: AppColors.primary.withValues(alpha: 0.7)),
+                    Icon(Icons.auto_awesome,
+                        size: 14,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.7)),
                     const SizedBox(width: 4),
                     Text(
                       _aiAttributionLabel(),
                       style: TextStyle(
                         fontSize: 11,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -127,15 +144,25 @@ class ClinicalViewTab extends StatelessWidget {
           const SizedBox(height: 12),
 
           if (abnormalList.isEmpty)
-            _buildInfoBox(context, 'No out-of-range clinical parameters flagged in this report.')
+            _buildInfoBox(context,
+                'No out-of-range clinical parameters flagged in this report.')
           else
             ...abnormalList.map((item) {
               if (item is LabValue) {
-                return ClinicalViewTab.buildAbnormalFindingRow(context, item.testName, '${item.value} ${item.unit}', item.flag, item.refLow, item.refHigh, null);
+                return ClinicalViewTab.buildAbnormalFindingRow(
+                    context,
+                    item.testName,
+                    '${item.value} ${item.unit}',
+                    item.flag,
+                    item.refLow,
+                    item.refHigh,
+                    null);
               } else if (item is Map<String, dynamic>) {
                 return ClinicalViewTab.buildAbnormalFindingRow(
                   context,
-                  item['test_name']?.toString() ?? item['parameter']?.toString() ?? 'Finding',
+                  item['test_name']?.toString() ??
+                      item['parameter']?.toString() ??
+                      'Finding',
                   '${item['value'] ?? ''} ${item['unit'] ?? ''}',
                   item['flag']?.toString() ?? 'HIGH',
                   (item['ref_low'] as num?)?.toDouble(),
@@ -156,7 +183,8 @@ class ClinicalViewTab extends StatelessWidget {
           const SizedBox(height: 12),
 
           if (labs.isEmpty)
-            _buildInfoBox(context, 'No laboratory results found in structured analysis.')
+            _buildInfoBox(
+                context, 'No laboratory results found in structured analysis.')
           else
             ClinicalViewTab.buildLabTable(context, labs),
 
@@ -188,22 +216,30 @@ class ClinicalViewTab extends StatelessWidget {
               decoration: BoxDecoration(
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: Column(
-                children: diagnoses.map((d) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.medical_information_outlined, size: 18, color: AppColors.primary),
-                      const SizedBox(width: 10),
-                      Text(
-                        d['word']?.toString() ?? '',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                )).toList(),
+                children: diagnoses
+                    .map((d) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.medical_information_outlined,
+                                size: 18,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                d['word']?.toString() ?? '',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ))
+                    .toList(),
               ),
             ),
             const SizedBox(height: 24),
@@ -225,7 +261,8 @@ class ClinicalViewTab extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          ClinicalViewTab.buildValidationMetadataCard(context, report, analysis),
+          ClinicalViewTab.buildValidationMetadataCard(
+              context, report, analysis),
 
           const SizedBox(height: 40),
         ],
@@ -249,14 +286,15 @@ class ClinicalViewTab extends StatelessWidget {
         fallback: 'Generated in offline mode');
   }
 
-  Widget _buildClinicalHeader(BuildContext context, ReportModel report, ReportAnalysisModel? analysis) {
+  Widget _buildClinicalHeader(
+      BuildContext context, ReportModel report, ReportAnalysisModel? analysis) {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,7 +304,8 @@ class ClinicalViewTab extends StatelessWidget {
               CircleAvatar(
                 radius: 24,
                 backgroundColor: AppColors.accentTeal.withValues(alpha: 0.1),
-                child: const Icon(Icons.medical_services_outlined, color: AppColors.accentTeal, size: 26),
+                child: const Icon(Icons.medical_services_outlined,
+                    color: AppColors.accentTeal, size: 26),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -275,36 +314,51 @@ class ClinicalViewTab extends StatelessWidget {
                   children: [
                     Text(
                       report.title,
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       'Hospital: ${report.hospital.isNotEmpty ? report.hospital : "Unspecified"} • Date: ${Formatters.formatDate(report.reportDate)}',
-                      style: TextStyle(fontSize: 12.5, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                      style: TextStyle(
+                          fontSize: 12.5,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6)),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppColors.accentTeal.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             'Status: ${report.processingStatus.toUpperCase()}',
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentTeal),
+                            style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.accentTeal),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.12),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
                             'Validation: PASSED',
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
+                            style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary),
                           ),
                         ),
                       ],
@@ -319,7 +373,14 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  static Widget buildAbnormalFindingRow(BuildContext context, String testName, String result, String flag, double? refLow, double? refHigh, String? explanation) {
+  static Widget buildAbnormalFindingRow(
+      BuildContext context,
+      String testName,
+      String result,
+      String flag,
+      double? refLow,
+      double? refHigh,
+      String? explanation) {
     final theme = Theme.of(context);
     final flagLower = flag.toLowerCase();
 
@@ -332,7 +393,7 @@ class ClinicalViewTab extends StatelessWidget {
       color = Colors.orange;
       statusTitle = 'Low';
     } else if (flagLower == 'critical') {
-      color = Colors.purpleAccent;
+      color = AppColors.warning;
       statusTitle = 'Critical';
     } else if (flagLower == 'normal') {
       color = const Color(0xFF00C48C);
@@ -367,21 +428,37 @@ class ClinicalViewTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(testName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(testName,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                child: Text(statusTitle, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8)),
+                child: Text(statusTitle,
+                    style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11)),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text('Result: $result', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          Text('Result: $result',
+              style:
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Text('Reported range: $refText', style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
+          Text('Reported range: $refText',
+              style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
           const SizedBox(height: 2),
-          Text('Status: $statusTitle', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+          Text('Status: $statusTitle',
+              style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.bold, color: color)),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(10),
@@ -392,14 +469,26 @@ class ClinicalViewTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Why it was flagged:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                Text('Why it was flagged:',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary)),
                 const SizedBox(height: 2),
-                Text(reason, style: TextStyle(fontSize: 12.5, color: theme.colorScheme.onSurface.withValues(alpha: 0.85), height: 1.3)),
+                Text(reason,
+                    style: TextStyle(
+                        fontSize: 12.5,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                        height: 1.3)),
               ],
             ),
           ),
           const SizedBox(height: 6),
-          Text('Source: Uploaded report', style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+          Text('Source: Uploaded report',
+              style: TextStyle(
+                  fontSize: 10,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
         ],
       ),
     );
@@ -411,20 +500,31 @@ class ClinicalViewTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(theme.colorScheme.onSurface.withValues(alpha: 0.04)),
+            headingRowColor: WidgetStateProperty.all(
+                theme.colorScheme.onSurface.withValues(alpha: 0.04)),
             columns: const [
-              DataColumn(label: Text('Parameter', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Result', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Unit', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Reference Range', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Parameter',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Result',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Unit',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Reference Range',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Status',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
             ],
             rows: labs.map((l) {
               String ref = 'Not provided';
@@ -438,11 +538,14 @@ class ClinicalViewTab extends StatelessWidget {
               if (flagStr == 'NORMAL') c = const Color(0xFF00C48C);
 
               return DataRow(cells: [
-                DataCell(Text(l.testName, style: const TextStyle(fontWeight: FontWeight.w600))),
+                DataCell(Text(l.testName,
+                    style: const TextStyle(fontWeight: FontWeight.w600))),
                 DataCell(Text('${l.value}')),
                 DataCell(Text(l.unit)),
                 DataCell(Text(ref)),
-                DataCell(Text(flagStr, style: TextStyle(color: c, fontWeight: FontWeight.bold, fontSize: 12))),
+                DataCell(Text(flagStr,
+                    style: TextStyle(
+                        color: c, fontWeight: FontWeight.bold, fontSize: 12))),
               ]);
             }).toList(),
           ),
@@ -451,41 +554,56 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  static Widget buildMedicationsTable(BuildContext context, List<Map<String, dynamic>> meds) {
+  static Widget buildMedicationsTable(
+      BuildContext context, List<Map<String, dynamic>> meds) {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(theme.colorScheme.onSurface.withValues(alpha: 0.04)),
+            headingRowColor: WidgetStateProperty.all(
+                theme.colorScheme.onSurface.withValues(alpha: 0.04)),
             columns: const [
-              DataColumn(label: Text('Medication', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Dosage', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Frequency', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Timing', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('Provenance', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Medication',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Dosage',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Frequency',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Timing',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                  label: Text('Provenance',
+                      style: TextStyle(fontWeight: FontWeight.bold))),
             ],
             rows: meds.map((m) {
               final name = m['medication_name']?.toString() ?? 'Medication';
               final dose = m['dosage']?.toString() ?? 'Not specified';
               final freq = m['frequency']?.toString() ?? 'Not specified';
               final times = List<String>.from(m['times_of_day'] ?? []);
-              final timing = times.isNotEmpty ? times.join(', ') : 'Not specified';
+              final timing =
+                  times.isNotEmpty ? times.join(', ') : 'Not specified';
               final prov = m['provenance']?.toString() ?? 'Report Extracted';
 
               return DataRow(cells: [
-                DataCell(Text(name, style: const TextStyle(fontWeight: FontWeight.bold))),
+                DataCell(Text(name,
+                    style: const TextStyle(fontWeight: FontWeight.bold))),
                 DataCell(Text(dose)),
                 DataCell(Text(freq)),
                 DataCell(Text(timing)),
-                DataCell(Text(prov, style: const TextStyle(fontSize: 11, color: Colors.grey))),
+                DataCell(Text(prov,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey))),
               ]);
             }).toList(),
           ),
@@ -494,7 +612,8 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  static Widget buildHistoricalComparison(BuildContext context, ComparePreviousResult? comp) {
+  static Widget buildHistoricalComparison(
+      BuildContext context, ComparePreviousResult? comp) {
     final theme = Theme.of(context);
     if (comp == null || !comp.comparable) {
       return Container(
@@ -503,11 +622,15 @@ class ClinicalViewTab extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
+          border:
+              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Text(
-          comp?.reason ?? 'No previous comparable report is available for baseline comparison.',
-          style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
+          comp?.reason ??
+              'No previous comparable report is available for baseline comparison.',
+          style: TextStyle(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              fontSize: 14),
         ),
       );
     }
@@ -517,45 +640,56 @@ class ClinicalViewTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (comp.narrativeSummary != null && comp.narrativeSummary!.isNotEmpty)
-            Text(comp.narrativeSummary!, style: const TextStyle(fontSize: 14, height: 1.4)),
+          if (comp.narrativeSummary != null &&
+              comp.narrativeSummary!.isNotEmpty)
+            Text(comp.narrativeSummary!,
+                style: const TextStyle(fontSize: 14, height: 1.4)),
           const SizedBox(height: 10),
           ...comp.comparedFindings.map((f) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(f['parameter']?.toString() ?? 'Test', style: const TextStyle(fontWeight: FontWeight.w600)),
-                Text('${f['previous_value']} ➔ ${f['current_value']} ${f['unit']} (${f['change']})', style: const TextStyle(fontSize: 13)),
-              ],
-            ),
-          )),
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(f['parameter']?.toString() ?? 'Test',
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                        '${f['previous_value']} ➔ ${f['current_value']} ${f['unit']} (${f['change']})',
+                        style: const TextStyle(fontSize: 13)),
+                  ],
+                ),
+              )),
         ],
       ),
     );
   }
 
-  static Widget buildValidationMetadataCard(BuildContext context, ReportModel report, ReportAnalysisModel? analysis) {
+  static Widget buildValidationMetadataCard(
+      BuildContext context, ReportModel report, ReportAnalysisModel? analysis) {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         children: [
-          ClinicalViewTab.buildMetaRow(context, 'Source Document', report.fileName),
-          ClinicalViewTab.buildMetaRow(context, 'Report Date', Formatters.formatDate(report.reportDate)),
-          ClinicalViewTab.buildMetaRow(context, 'Report Type', report.reportType),
-          ClinicalViewTab.buildMetaRow(context, 'RAG Search Index', 'Active (TF-IDF Lexical Retriever)'),
-          ClinicalViewTab.buildMetaRow(context, 'Medical Validation', 'Passed (Grounding & Range Rules)'),
+          ClinicalViewTab.buildMetaRow(
+              context, 'Source Document', report.fileName),
+          ClinicalViewTab.buildMetaRow(
+              context, 'Report Date', Formatters.formatDate(report.reportDate)),
+          ClinicalViewTab.buildMetaRow(
+              context, 'Report Type', report.reportType),
+          ClinicalViewTab.buildMetaRow(
+              context, 'RAG Search Index', 'Active (TF-IDF Lexical Retriever)'),
+          ClinicalViewTab.buildMetaRow(context, 'Medical Validation',
+              'Passed (Grounding & Range Rules)'),
         ],
       ),
     );
@@ -568,8 +702,13 @@ class ClinicalViewTab extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+          Text(value,
+              style:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -583,9 +722,12 @@ class ClinicalViewTab extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
-      child: Text(text, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 14)),
+      child: Text(text,
+          style: TextStyle(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.54),
+              fontSize: 14)),
     );
   }
 }

@@ -39,34 +39,27 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         filled: true,
         fillColor: Theme.of(context).cardColor,
-
         prefixIcon: Icon(
           icon,
           color: AppColors.primary,
         ),
-
         labelText: label,
         errorText: errorText,
-
         labelStyle: TextStyle(
           color: AppColors.textSecondary,
         ),
-
         contentPadding: const EdgeInsets.symmetric(
           vertical: 22,
           horizontal: 20,
         ),
-
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide.none,
         ),
-
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide.none,
         ),
-
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(

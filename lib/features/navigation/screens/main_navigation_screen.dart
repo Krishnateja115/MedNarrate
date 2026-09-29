@@ -1,11 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../../reports/screens/reports_screen.dart';
 import '../../settings/screens/settings_screen.dart';
 import '../../profile/screens/profile_screen.dart';
-import '../../../core/constants/app_colors.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -33,32 +31,38 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         children: screens,
       ),
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color:
+                  Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: AppColors.border.withValues(alpha: 0.5), 
-                  width: 1,
-                ),
-              ),
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                  splashFactory: NoSplash.splashFactory,
-                ),
-                child: BottomNavigationBar(
+          borderRadius: BorderRadius.circular(22),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              splashFactory: NoSplash.splashFactory,
+            ),
+            child: BottomNavigationBar(
               type: BottomNavigationBarType.fixed,
               elevation: 0,
-              backgroundColor: Colors.transparent,
-              selectedItemColor: AppColors.primary,
-              unselectedItemColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              selectedItemColor: Theme.of(context).colorScheme.primary,
+              unselectedItemColor: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.38),
               showSelectedLabels: true,
               showUnselectedLabels: true,
               currentIndex: _selectedIndex,
@@ -93,13 +97,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   activeIcon: Icon(Icons.person_rounded),
                   label: AppLocalizations.of(context)!.profile,
                 ),
-                ],
-              ),
+              ],
             ),
           ),
         ),
       ),
-    ),
     );
   }
 }

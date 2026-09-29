@@ -16,19 +16,32 @@ class LabResultsTab extends StatefulWidget {
 
 class _LabResultsTabState extends State<LabResultsTab> {
   String _searchQuery = '';
-  
+
   final Map<String, List<String>> _categories = {
     'CBC': ['Hemoglobin', 'WBC', 'RBC', 'Platelets', 'Hematocrit'],
-    'Lipid Panel': ['Total Cholesterol', 'LDL Cholesterol', 'HDL Cholesterol', 'Triglycerides'],
+    'Lipid Panel': [
+      'Total Cholesterol',
+      'LDL Cholesterol',
+      'HDL Cholesterol',
+      'Triglycerides'
+    ],
     'Liver Function': ['ALT', 'AST', 'ALP', 'Bilirubin'],
     'Kidney Function': ['Creatinine', 'BUN', 'eGFR'],
-    'Vitamins & Minerals': ['Vitamin D', 'Vitamin B12', 'Iron', 'Calcium', 'Potassium'],
+    'Vitamins & Minerals': [
+      'Vitamin D',
+      'Vitamin B12',
+      'Iron',
+      'Calcium',
+      'Potassium'
+    ],
   };
 
-  void _showParameterDetails(BuildContext context, Map<String, dynamic> metric) {
+  void _showParameterDetails(
+      BuildContext context, Map<String, dynamic> metric) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) {
         return Padding(
           padding: const EdgeInsets.all(24),
@@ -36,13 +49,25 @@ class _LabResultsTabState extends State<LabResultsTab> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(metric['parameter'], style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(metric['parameter'],
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('What is ${metric['parameter']}?', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+              Text(
+                'What is ${metric['parameter']}?',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 'This measures ${metric['parameter']} in your medical document. Always consult your physician for interpretation.',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+                style: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7)),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -63,7 +88,8 @@ class _LabResultsTabState extends State<LabResultsTab> {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> filteredMetrics = widget.report.metrics.where((m) {
+    List<Map<String, dynamic>> filteredMetrics =
+        widget.report.metrics.where((m) {
       final paramName = m['parameter'].toString();
       if (Helpers.isMetadataParameter(paramName)) {
         return false;
@@ -75,7 +101,8 @@ class _LabResultsTabState extends State<LabResultsTab> {
     for (var m in filteredMetrics) {
       String cat = 'Uncategorized';
       for (var entry in _categories.entries) {
-        if (entry.value.any((v) => v.toLowerCase() == m['parameter'].toString().toLowerCase())) {
+        if (entry.value.any((v) =>
+            v.toLowerCase() == m['parameter'].toString().toLowerCase())) {
           cat = entry.key;
           break;
         }
@@ -116,13 +143,28 @@ class _LabResultsTabState extends State<LabResultsTab> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(cat, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                    child: Text(cat,
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary)),
                   ),
                   ...items.map((m) {
-                    final double val = (m['value'] is num) ? (m['value'] as num).toDouble() : 0.0;
-                    final double? minR = (m['min_range'] is num) ? (m['min_range'] as num).toDouble() : ((m['ref_low'] is num) ? (m['ref_low'] as num).toDouble() : null);
-                    final double? maxR = (m['max_range'] is num) ? (m['max_range'] as num).toDouble() : ((m['ref_high'] is num) ? (m['ref_high'] as num).toDouble() : null);
-                    final String flag = m['flag']?.toString() ?? 'not_classified';
+                    final double val = (m['value'] is num)
+                        ? (m['value'] as num).toDouble()
+                        : 0.0;
+                    final double? minR = (m['min_range'] is num)
+                        ? (m['min_range'] as num).toDouble()
+                        : ((m['ref_low'] is num)
+                            ? (m['ref_low'] as num).toDouble()
+                            : null);
+                    final double? maxR = (m['max_range'] is num)
+                        ? (m['max_range'] as num).toDouble()
+                        : ((m['ref_high'] is num)
+                            ? (m['ref_high'] as num).toDouble()
+                            : null);
+                    final String flag =
+                        m['flag']?.toString() ?? 'not_classified';
 
                     return LabResultRow(
                       parameter: m['parameter'],

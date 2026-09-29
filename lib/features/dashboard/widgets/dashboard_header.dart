@@ -59,12 +59,23 @@ class _DashboardHeaderState extends State<DashboardHeader> {
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: isEnabled ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38) : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                  color: isEnabled
+                      ? Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.38)
+                      : Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.12),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.10),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.10),
                     blurRadius: 10,
                     offset: Offset(0, 4),
                   ),
@@ -75,8 +86,15 @@ class _DashboardHeaderState extends State<DashboardHeader> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    isEnabled ? Icons.notifications_active_rounded : Icons.notifications_off_outlined,
-                    color: isEnabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
+                    isEnabled
+                        ? Icons.notifications_active_rounded
+                        : Icons.notifications_off_outlined,
+                    color: isEnabled
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.54),
                     size: 17,
                   ),
                   SizedBox(width: 8),
@@ -171,16 +189,22 @@ class _DashboardHeaderState extends State<DashboardHeader> {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border, width: 1),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                    width: 1),
               ),
               child: IconButton(
                 icon: Icon(
                   isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.70),
                   size: 20,
                 ),
                 onPressed: _toggleTheme,
-                tooltip: isDark ? "Switch to Light Mode" : "Switch to Dark Mode",
+                tooltip:
+                    isDark ? "Switch to Light Mode" : "Switch to Dark Mode",
               ),
             );
           },
@@ -190,13 +214,19 @@ class _DashboardHeaderState extends State<DashboardHeader> {
         Container(
           decoration: BoxDecoration(
             color: _notificationsEnabled
-                ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)
+                ? Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.12)
                 : Theme.of(context).cardColor,
             shape: BoxShape.circle,
             border: Border.all(
               color: _notificationsEnabled
-                  ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)
-                  : AppColors.border,
+                  ? Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.54)
+                  : Theme.of(context).colorScheme.outlineVariant,
               width: 1,
             ),
           ),
@@ -205,11 +235,18 @@ class _DashboardHeaderState extends State<DashboardHeader> {
               _notificationsEnabled
                   ? Icons.notifications_active_rounded
                   : Icons.notifications_off_outlined,
-              color: _notificationsEnabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+              color: _notificationsEnabled
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.38),
               size: 20,
             ),
             onPressed: _toggleNotifications,
-            tooltip: _notificationsEnabled ? "Disable Notifications" : "Enable Notifications",
+            tooltip: _notificationsEnabled
+                ? "Disable Notifications"
+                : "Enable Notifications",
           ),
         ),
       ],

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../models/report_model.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
@@ -25,7 +24,8 @@ class ReportCard extends StatelessWidget {
     if (onShare != null) {
       onShare!();
     } else {
-      final text = 'MedNarrate Medical Report: ${report.title}\nHospital: ${report.hospital}\nDate: ${report.reportDate.toLocal().toString().split(" ").first}\nType: ${report.reportType}';
+      final text =
+          'MedNarrate Medical Report: ${report.title}\nHospital: ${report.hospital}\nDate: ${report.reportDate.toLocal().toString().split(" ").first}\nType: ${report.reportType}';
       Share.share(text);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sharing report details...')),
@@ -44,7 +44,7 @@ class ReportCard extends StatelessWidget {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.1) : AppColors.border,
+          color: theme.colorScheme.outlineVariant,
           width: 1,
         ),
         boxShadow: [
@@ -89,14 +89,16 @@ class ReportCard extends StatelessWidget {
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.12),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Text(
                   AppLocalizations.of(context)!.processing,
-                  style: const TextStyle(
-                    color: Colors.blue,
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -123,7 +125,8 @@ class ReportCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 "•",
-                style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.40)),
+                style: TextStyle(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.40)),
               ),
               const SizedBox(width: 6),
               Text(
@@ -138,13 +141,14 @@ class ReportCard extends StatelessWidget {
         ),
         trailing: Theme(
           data: theme.copyWith(
-            cardColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+            cardColor: theme.cardColor,
           ),
           child: PopupMenuButton<String>(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: theme.cardColor,
             surfaceTintColor: Colors.transparent,
             elevation: 8,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             icon: Icon(
               Icons.more_vert_rounded,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
@@ -171,7 +175,8 @@ class ReportCard extends StatelessWidget {
                     Icon(
                       Icons.analytics_outlined,
                       size: 20,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.85),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -192,7 +197,8 @@ class ReportCard extends StatelessWidget {
                     Icon(
                       Icons.share_outlined,
                       size: 20,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.85),
                     ),
                     const SizedBox(width: 12),
                     Text(

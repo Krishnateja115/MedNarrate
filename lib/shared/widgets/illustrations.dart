@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_colors.dart';
+
 /// Medical-themed SVG illustrations rendered as Flutter widgets.
 /// These use CustomPainter so no external asset files are needed.
 
@@ -22,39 +24,49 @@ class _Illustration1Painter extends CustomPainter {
     final paint = Paint()..style = PaintingStyle.fill;
 
     // Background circle
-    paint.color = Color(0xFFE8F0FF);
+    paint.color = AppColors.primarySoft;
     canvas.drawCircle(Offset(size.width / 2, size.height / 2), 100, paint);
 
     // Document shape
-    paint.color = Color(0xFF0F172A);
+    paint.color = AppColors.light900;
     final docRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset(size.width / 2, size.height / 2 + 5), width: 100, height: 130),
+      Rect.fromCenter(
+          center: Offset(size.width / 2, size.height / 2 + 5),
+          width: 100,
+          height: 130),
       const Radius.circular(10),
     );
     canvas.drawRRect(docRect, paint);
-    paint.color = Color(0xFF1A6BFF).withValues(alpha: 0.15);
+    paint.color = AppColors.primary.withValues(alpha: 0.15);
     canvas.drawRRect(docRect, paint);
 
     // Lines on document
     final linePaint = Paint()
-      ..color = Color(0xFF1A6BFF).withValues(alpha: 0.4)
+      ..color = AppColors.primary.withValues(alpha: 0.4)
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
 
     for (int i = 0; i < 5; i++) {
       final y = size.height / 2 - 35.0 + i * 18.0;
       final xEnd = i == 2 ? size.width / 2 + 25 : size.width / 2 + 38;
-      canvas.drawLine(Offset(size.width / 2 - 38, y), Offset(xEnd, y), linePaint);
+      canvas.drawLine(
+          Offset(size.width / 2 - 38, y), Offset(xEnd, y), linePaint);
     }
 
     // Medical cross
-    paint.color = Color(0xFF1A6BFF);
+    paint.color = AppColors.primary;
     canvas.drawRect(
-      Rect.fromCenter(center: Offset(size.width / 2 + 42, size.height / 2 - 55), width: 6, height: 22),
+      Rect.fromCenter(
+          center: Offset(size.width / 2 + 42, size.height / 2 - 55),
+          width: 6,
+          height: 22),
       paint,
     );
     canvas.drawRect(
-      Rect.fromCenter(center: Offset(size.width / 2 + 42, size.height / 2 - 55), width: 22, height: 6),
+      Rect.fromCenter(
+          center: Offset(size.width / 2 + 42, size.height / 2 - 55),
+          width: 22,
+          height: 6),
       paint,
     );
 
@@ -63,7 +75,8 @@ class _Illustration1Painter extends CustomPainter {
       ..color = Color(0xFF00C48C)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4;
-    canvas.drawCircle(Offset(size.width / 2 + 50, size.height / 2 + 45), 18, glassPaint);
+    canvas.drawCircle(
+        Offset(size.width / 2 + 50, size.height / 2 + 45), 18, glassPaint);
     canvas.drawLine(
       Offset(size.width / 2 + 63, size.height / 2 + 58),
       Offset(size.width / 2 + 72, size.height / 2 + 68),
@@ -98,15 +111,15 @@ class _Illustration2Painter extends CustomPainter {
     final cy = size.height / 2;
 
     // Background
-    paint.color = Color(0xFFE8F0FF);
+    paint.color = AppColors.primarySoft;
     canvas.drawCircle(Offset(cx, cy), 100, paint);
 
     // Bar chart bars
     final barColors = [
-      Color(0xFF1A6BFF),
+      AppColors.primary,
       Color(0xFF00C48C),
       Color(0xFFF5A623),
-      Color(0xFF1A6BFF),
+      AppColors.primary,
     ];
     final barHeights = [60.0, 90.0, 45.0, 75.0];
     final barWidth = 20.0;
@@ -115,12 +128,14 @@ class _Illustration2Painter extends CustomPainter {
     for (int i = 0; i < 4; i++) {
       paint.color = barColors[i];
       final x = startX + i * (barWidth + 8);
-      final barRect = Rect.fromLTWH(x, cy + 30 - barHeights[i], barWidth, barHeights[i]);
-      canvas.drawRRect(RRect.fromRectAndRadius(barRect, const Radius.circular(4)), paint);
+      final barRect =
+          Rect.fromLTWH(x, cy + 30 - barHeights[i], barWidth, barHeights[i]);
+      canvas.drawRRect(
+          RRect.fromRectAndRadius(barRect, const Radius.circular(4)), paint);
     }
 
     // Highlight badge
-    paint.color = Color(0xFF0F172A);
+    paint.color = AppColors.light900;
     final badge = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(cx + 55, cy - 55), width: 80, height: 36),
       const Radius.circular(12),
@@ -133,9 +148,13 @@ class _Illustration2Painter extends CustomPainter {
     // Warning dot
     paint.color = Color(0xFFE53935);
     canvas.drawCircle(Offset(cx - 65, cy - 60), 10, paint);
-    paint.color = Color(0xFF0F172A);
-    canvas.drawRect(Rect.fromCenter(center: Offset(cx - 65, cy - 60), width: 10, height: 2), paint);
-    canvas.drawRect(Rect.fromCenter(center: Offset(cx - 65, cy - 54), width: 3, height: 3), paint);
+    paint.color = AppColors.light900;
+    canvas.drawRect(
+        Rect.fromCenter(center: Offset(cx - 65, cy - 60), width: 10, height: 2),
+        paint);
+    canvas.drawRect(
+        Rect.fromCenter(center: Offset(cx - 65, cy - 54), width: 3, height: 3),
+        paint);
   }
 
   @override
@@ -165,7 +184,7 @@ class _Illustration3Painter extends CustomPainter {
     final cy = size.height / 2;
 
     // Background
-    paint.color = Color(0xFFE8F0FF);
+    paint.color = AppColors.primarySoft;
     canvas.drawCircle(Offset(cx, cy), 100, paint);
 
     // Three person circles
@@ -176,7 +195,7 @@ class _Illustration3Painter extends CustomPainter {
     ];
     final colors = [
       Color(0xFF00C48C),
-      Color(0xFF1A6BFF),
+      AppColors.primary,
       Color(0xFFF5A623),
     ];
     final sizes = [32.0, 40.0, 32.0];
@@ -233,18 +252,18 @@ class _EmptyHistoryPainter extends CustomPainter {
     final cx = size.width / 2;
     final cy = size.height / 2;
 
-    paint.color = Color(0xFFE8F0FF);
+    paint.color = AppColors.primarySoft;
     canvas.drawCircle(Offset(cx, cy), 75, paint);
 
     // Folder shape
-    paint.color = Color(0xFF1A6BFF).withValues(alpha: 0.3);
+    paint.color = AppColors.primary.withValues(alpha: 0.3);
     final folder = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(cx, cy + 10), width: 90, height: 65),
       const Radius.circular(8),
     );
     canvas.drawRRect(folder, paint);
 
-    paint.color = Color(0xFF1A6BFF).withValues(alpha: 0.15);
+    paint.color = AppColors.primary.withValues(alpha: 0.15);
     final tab = RRect.fromRectAndRadius(
       Rect.fromLTWH(cx - 45, cy - 22, 35, 12),
       const Radius.circular(4),
@@ -256,7 +275,7 @@ class _EmptyHistoryPainter extends CustomPainter {
       text: const TextSpan(
         text: '?',
         style: TextStyle(
-          color: Color(0xFF1A6BFF),
+          color: AppColors.primary,
           fontSize: 36,
           fontWeight: FontWeight.bold,
         ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_colors.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
@@ -25,11 +24,12 @@ class ReportDetailsScreen extends StatefulWidget {
   State<ReportDetailsScreen> createState() => _ReportDetailsScreenState();
 }
 
-class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTickerProviderStateMixin {
+class _ReportDetailsScreenState extends State<ReportDetailsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ReportDetailController _controller = ReportDetailController();
   bool _exporting = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -58,7 +58,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 24),
+            const Icon(Icons.delete_outline_rounded,
+                color: Colors.redAccent, size: 24),
             const SizedBox(width: 10),
             Text(AppLocalizations.of(context)!.deleteReportTitle),
           ],
@@ -69,18 +70,24 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
               AppLocalizations.of(context)!.cancel,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7)),
             ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(
               AppLocalizations.of(context)!.delete,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -100,7 +107,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
             content: Text(AppLocalizations.of(context)!.reportDeleted),
             backgroundColor: const Color(0xFF00C48C),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
         DashboardScreen.onRefreshRequested?.call();
@@ -146,8 +154,6 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
@@ -178,173 +184,203 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
             ),
           ),
           title: Text(AppLocalizations.of(context)!.reportDetails),
-        actions: [
-          if (_controller.report != null) ...[
-            IconButton(
-              onPressed: _controller.toggleFavourite,
-              icon: Icon(
-                _controller.report!.isFavourite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                color: _controller.report!.isFavourite ? Colors.redAccent : theme.colorScheme.onSurface.withValues(alpha: 0.70),
-              ),
-              tooltip: _controller.report!.isFavourite ? 'Unfavourite' : 'Favourite',
-            ),
-            Theme(
-              data: theme.copyWith(
-                cardColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-              ),
-              child: PopupMenuButton<String>(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                surfaceTintColor: Colors.transparent,
-                elevation: 8,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          actions: [
+            if (_controller.report != null) ...[
+              IconButton(
+                onPressed: _controller.toggleFavourite,
                 icon: Icon(
-                  Icons.more_vert_rounded,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
+                  _controller.report!.isFavourite
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  color: _controller.report!.isFavourite
+                      ? Colors.redAccent
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.70),
                 ),
-                onSelected: (value) async {
-                  if (value == 'delete') {
-                    _handleDelete();
-                  } else if (value == 'export_pdf') {
-                    final analysis = _controller.analysis;
-                    final report = _controller.report;
-                    if (analysis == null || report == null) return;
-                    setState(() => _exporting = true);
-                    final messenger = ScaffoldMessenger.of(context);
-                    try {
-                      await ExportService.instance.exportReportPdf(
+                tooltip: _controller.report!.isFavourite
+                    ? 'Unfavourite'
+                    : 'Favourite',
+              ),
+              Theme(
+                data: theme.copyWith(
+                  cardColor: theme.cardColor,
+                ),
+                child: PopupMenuButton<String>(
+                  color: theme.cardColor,
+                  surfaceTintColor: Colors.transparent,
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
+                  ),
+                  onSelected: (value) async {
+                    if (value == 'delete') {
+                      _handleDelete();
+                    } else if (value == 'export_pdf') {
+                      final analysis = _controller.analysis;
+                      final report = _controller.report;
+                      if (analysis == null || report == null) return;
+                      setState(() => _exporting = true);
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        await ExportService.instance.exportReportPdf(
+                          analysis: analysis,
+                          reportTitle: report.title,
+                          reportDate: report.reportDate
+                              .toLocal()
+                              .toString()
+                              .split(' ')
+                              .first,
+                          reportType: report.reportType,
+                        );
+                        if (mounted) {
+                          messenger.showSnackBar(const SnackBar(
+                            content: Text('PDF downloaded successfully'),
+                            backgroundColor: Color(0xFF1B8A5A),
+                            behavior: SnackBarBehavior.floating,
+                          ));
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          messenger.showSnackBar(SnackBar(
+                            content: Text('Export failed: $e'),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                          ));
+                        }
+                      } finally {
+                        if (mounted) setState(() => _exporting = false);
+                      }
+                    } else if (value == 'print') {
+                      final analysis = _controller.analysis;
+                      final report = _controller.report;
+                      if (analysis == null || report == null) return;
+                      await ExportService.instance.previewReportPdf(
                         analysis: analysis,
                         reportTitle: report.title,
-                        reportDate: report.reportDate.toLocal().toString().split(' ').first,
+                        reportDate: report.reportDate
+                            .toLocal()
+                            .toString()
+                            .split(' ')
+                            .first,
                         reportType: report.reportType,
                       );
-                      if (mounted) {
-                        messenger.showSnackBar(const SnackBar(
-                          content: Text('PDF downloaded successfully'),
-                          backgroundColor: Color(0xFF1B8A5A),
-                          behavior: SnackBarBehavior.floating,
-                        ));
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        messenger.showSnackBar(SnackBar(
-                          content: Text('Export failed: $e'),
-                          backgroundColor: Colors.red,
-                          behavior: SnackBarBehavior.floating,
-                        ));
-                      }
-                    } finally {
-                      if (mounted) setState(() => _exporting = false);
                     }
-                  } else if (value == 'print') {
-                    final analysis = _controller.analysis;
-                    final report = _controller.report;
-                    if (analysis == null || report == null) return;
-                    await ExportService.instance.previewReportPdf(
-                      analysis: analysis,
-                      reportTitle: report.title,
-                      reportDate: report.reportDate.toLocal().toString().split(' ').first,
-                      reportType: report.reportType,
-                    );
-                  }
-                },
-
-
-                itemBuilder: (_) => [
-                  if (_controller.analysis != null) ...[
-                    PopupMenuItem(
-                      value: 'export_pdf',
-                      child: Row(
-                        children: [
-                          Icon(Icons.picture_as_pdf_outlined,
-                              size: 20, color: theme.colorScheme.onSurface.withValues(alpha: 0.85)),
-                          const SizedBox(width: 12),
-                          Text(
-                            _exporting ? 'Exporting…' : 'Export PDF',
-                            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'print',
-                      child: Row(
-                        children: [
-                          Icon(Icons.print_outlined,
-                              size: 20, color: theme.colorScheme.onSurface.withValues(alpha: 0.85)),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Print / Preview',
-                            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                        const SizedBox(width: 12),
-                        Text(
-                          AppLocalizations.of(context)!.deleteReport,
-                          style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600, fontSize: 14),
+                  },
+                  itemBuilder: (_) => [
+                    if (_controller.analysis != null) ...[
+                      PopupMenuItem(
+                        value: 'export_pdf',
+                        child: Row(
+                          children: [
+                            Icon(Icons.picture_as_pdf_outlined,
+                                size: 20,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.85)),
+                            const SizedBox(width: 12),
+                            Text(
+                              _exporting ? 'Exporting…' : 'Export PDF',
+                              style: TextStyle(
+                                  color: theme.colorScheme.onSurface,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-        bottom: _controller.report == null ? null : TabBar(
-          controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-          indicatorColor: AppColors.primary,
-          indicatorWeight: 3,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: "For You"),
-            Tab(text: "Clinical View"),
-            Tab(text: "Lab Results"),
-            Tab(text: "AI Chat"),
-          ],
-        ),
-      ),
-      body: _controller.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _controller.error != null
-              ? _buildNotFoundState(context)
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    PatientViewTab(
-                      key: const PageStorageKey('patient_view_tab'),
-                      report: _controller.report!,
-                      analysis: _controller.analysis,
-                      translation: _controller.translation,
-                      isTranslating: _controller.isTranslating,
-                      onTranslate: (lang) => _controller.translate(lang),
-                    ),
-                    ClinicalViewTab(
-                      key: const PageStorageKey('clinical_view_tab'),
-                      report: _controller.report!,
-                      analysis: _controller.analysis,
-                      comparison: _controller.comparison,
-                      translation: _controller.translation,
-                    ),
-                    LabResultsTab(
-                      key: const PageStorageKey('lab_results_tab'),
-                      report: _controller.report!,
-                    ),
-                    AIChatTab(
-                      key: const PageStorageKey('ai_chat_tab'),
-                      reportId: _controller.report!.id,
+                      ),
+                      PopupMenuItem(
+                        value: 'print',
+                        child: Row(
+                          children: [
+                            Icon(Icons.print_outlined,
+                                size: 20,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.85)),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Print / Preview',
+                              style: TextStyle(
+                                  color: theme.colorScheme.onSurface,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.delete_outline_rounded,
+                              color: Colors.redAccent, size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            AppLocalizations.of(context)!.deleteReport,
+                            style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
+              ),
+            ],
+          ],
+          bottom: _controller.report == null
+              ? null
+              : TabBar(
+                  controller: _tabController,
+                  labelColor: theme.colorScheme.primary,
+                  unselectedLabelColor:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  indicatorColor: theme.colorScheme.primary,
+                  indicatorWeight: 3,
+                  isScrollable: true,
+                  tabs: const [
+                    Tab(text: "For You"),
+                    Tab(text: "Clinical View"),
+                    Tab(text: "Lab Results"),
+                    Tab(text: "AI Chat"),
+                  ],
+                ),
+        ),
+        body: _controller.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _controller.error != null
+                ? _buildNotFoundState(context)
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      PatientViewTab(
+                        key: const PageStorageKey('patient_view_tab'),
+                        report: _controller.report!,
+                        analysis: _controller.analysis,
+                        translation: _controller.translation,
+                        isTranslating: _controller.isTranslating,
+                        onTranslate: (lang) => _controller.translate(lang),
+                      ),
+                      ClinicalViewTab(
+                        key: const PageStorageKey('clinical_view_tab'),
+                        report: _controller.report!,
+                        analysis: _controller.analysis,
+                        comparison: _controller.comparison,
+                        translation: _controller.translation,
+                      ),
+                      LabResultsTab(
+                        key: const PageStorageKey('lab_results_tab'),
+                        report: _controller.report!,
+                      ),
+                      AIChatTab(
+                        key: const PageStorageKey('ai_chat_tab'),
+                        reportId: _controller.report!.id,
+                      ),
+                    ],
+                  ),
       ),
     );
   }
@@ -395,8 +431,10 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
               style: FilledButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: () {
                 if (context.canPop()) {
@@ -405,10 +443,14 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> with SingleTi
                   context.go(Routes.reports);
                 }
               },
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+              icon: const Icon(Icons.arrow_back_rounded,
+                  color: Colors.white, size: 20),
               label: const Text(
                 'Back to Reports',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15),
               ),
             ),
           ],

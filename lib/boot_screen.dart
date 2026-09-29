@@ -6,14 +6,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/config/app_config.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_strings.dart';
+
 class BootScreen extends StatelessWidget {
   final String status;
   const BootScreen({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -22,19 +25,42 @@ class BootScreen extends StatelessWidget {
               height: 110,
               width: 110,
               decoration: BoxDecoration(
-                color: AppColors.primary,
+                color: theme.colorScheme.primary,
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: const Icon(Icons.medical_services_rounded, size: 60, color: Colors.white),
+              child: Icon(
+                Icons.medical_services_rounded,
+                size: 60,
+                color: theme.colorScheme.onPrimary,
+              ),
             ),
             const SizedBox(height: 28),
-            const Text(AppStrings.appName, style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: Colors.black)),
+            Text(AppStrings.appName,
+                style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface)),
             const SizedBox(height: 8),
-            const Text(AppStrings.appTagline, style: TextStyle(fontSize: 16, color: AppColors.textSecondary)),
+            Text(
+              AppStrings.appTagline,
+              style: TextStyle(
+                fontSize: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 50),
-            const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 3)),
+            const SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(strokeWidth: 3)),
             const SizedBox(height: 16),
-            Text(status, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+            Text(
+              status,
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
       ),
@@ -46,12 +72,18 @@ class BootErrorScreen extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;
   final VoidCallback? onChangeBackend;
-  const BootErrorScreen({super.key, required this.error, required this.onRetry, this.onChangeBackend});
+  const BootErrorScreen(
+      {super.key,
+      required this.error,
+      required this.onRetry,
+      this.onChangeBackend});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -60,9 +92,18 @@ class BootErrorScreen extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, size: 60, color: Colors.red),
               const SizedBox(height: 16),
-              const Text('Backend Connection Failed', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+              Text('Backend Connection Failed',
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface)),
               const SizedBox(height: 12),
-              Text(error, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+              Text(error,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  )),
               const SizedBox(height: 32),
               ElevatedButton.icon(
                 onPressed: onRetry,
@@ -118,8 +159,8 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
     final envFile = File('${widget.backendPath}/.env');
     if (await envFile.exists()) {
       final content = await envFile.readAsString();
-      if (!content.contains('GEMINI_API_KEY=') || 
-          content.contains('GEMINI_API_KEY=""') || 
+      if (!content.contains('GEMINI_API_KEY=') ||
+          content.contains('GEMINI_API_KEY=""') ||
           content.contains("GEMINI_API_KEY=''")) {
         setState(() => _needsApiKey = true);
       }
@@ -131,7 +172,8 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
   void _onOutput(String line) {
     if (!kIsWeb) {
       try {
-        File('/tmp/mednarrate_setup.log').writeAsStringSync('$line\n', mode: FileMode.append);
+        File('/tmp/mednarrate_setup.log')
+            .writeAsStringSync('$line\n', mode: FileMode.append);
       } catch (_) {}
     }
     if (mounted) {
@@ -153,7 +195,8 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
   Future<bool> _runFirstTimeBackendSetup(String backendPath) async {
     final pythonCheck = await Process.run('which', ['python3']);
     if (pythonCheck.exitCode != 0) {
-      _onOutput('ERROR: python3 not found on this system. Please install Python 3.11+ from python.org and try again.');
+      _onOutput(
+          'ERROR: python3 not found on this system. Please install Python 3.11+ from python.org and try again.');
       return false;
     }
 
@@ -161,7 +204,8 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
     final venvDir = Directory(venvPath);
     if (!await venvDir.exists()) {
       _onOutput('Creating virtual environment...');
-      final venvResult = await Process.run('python3', ['-m', 'venv', 'venv'], workingDirectory: backendPath);
+      final venvResult = await Process.run('python3', ['-m', 'venv', 'venv'],
+          workingDirectory: backendPath);
       if (venvResult.exitCode != 0) {
         _onOutput('ERROR creating venv: ${venvResult.stderr}');
         return false;
@@ -176,13 +220,20 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
       ['install', '-r', 'requirements.txt'],
       workingDirectory: backendPath,
     );
-    
-    pipProcess.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen(_onOutput);
-    pipProcess.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen(_onOutput);
-    
+
+    pipProcess.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(_onOutput);
+    pipProcess.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(_onOutput);
+
     final exitCode = await pipProcess.exitCode;
     if (exitCode != 0) {
-      _onOutput('ERROR: dependency installation failed with exit code $exitCode.');
+      _onOutput(
+          'ERROR: dependency installation failed with exit code $exitCode.');
       return false;
     }
 
@@ -204,9 +255,10 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
       if (await exampleEnv.exists()) {
         envContent = await exampleEnv.readAsString();
       }
-      
+
       if (envContent.contains('GEMINI_API_KEY=')) {
-        envContent = envContent.replaceFirst(RegExp(r'GEMINI_API_KEY=.*'), 'GEMINI_API_KEY="${_apiKeyController.text.trim()}"');
+        envContent = envContent.replaceFirst(RegExp(r'GEMINI_API_KEY=.*'),
+            'GEMINI_API_KEY="${_apiKeyController.text.trim()}"');
       } else {
         envContent += '\nGEMINI_API_KEY="${_apiKeyController.text.trim()}"\n';
       }
@@ -237,7 +289,10 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
     if (!AppConfig.isLocalDevMode) {
       return const Scaffold(
         backgroundColor: Colors.white,
-        body: Center(child: Text("ERROR: Setup screen is not available in production mode.", style: TextStyle(color: Colors.red))),
+        body: Center(
+            child: Text(
+                "ERROR: Setup screen is not available in production mode.",
+                style: TextStyle(color: Colors.red))),
       );
     }
 
@@ -260,13 +315,15 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
             ),
             const SizedBox(height: 24),
             if (_needsApiKey && !_isSettingUp && !_setupFailed) ...[
-              const Text('Gemini API Key (Optional but recommended)', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Gemini API Key (Optional but recommended)',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               TextField(
                 controller: _apiKeyController,
                 decoration: InputDecoration(
                   hintText: 'Paste API key from aistudio.google.com/apikey',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
                 obscureText: true,
               ),
@@ -286,7 +343,8 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
                 onPressed: _startSetup,
                 icon: const Icon(Icons.refresh),
                 label: const Text('Retry Setup'),
-                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16)),
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
@@ -297,7 +355,8 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
             ],
             if (_isSettingUp || _setupFailed) ...[
               const SizedBox(height: 24),
-              const Text('Setup Progress:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Setup Progress:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Expanded(
                 child: Container(
@@ -312,7 +371,10 @@ class _BootSetupScreenState extends State<BootSetupScreen> {
                     itemBuilder: (context, index) {
                       return Text(
                         _logs[index],
-                        style: const TextStyle(color: Colors.greenAccent, fontFamily: 'monospace', fontSize: 12),
+                        style: const TextStyle(
+                            color: Colors.greenAccent,
+                            fontFamily: 'monospace',
+                            fontSize: 12),
                       );
                     },
                   ),

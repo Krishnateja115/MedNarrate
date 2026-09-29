@@ -28,7 +28,6 @@ class PatientViewTab extends StatefulWidget {
 }
 
 class _PatientViewTabState extends State<PatientViewTab> {
-
   String _label(String key, {required String fallback}) {
     final t = widget.translation;
     final labels = t?.uiLabels;
@@ -157,9 +156,8 @@ class _PatientViewTabState extends State<PatientViewTab> {
     }).toList();
 
     final demogEntities = analysis?.entities
-            .where((e) =>
-                (e['entity_group'] == 'PatientDemographic' ||
-                    e['category'] == 'PatientDemographic'))
+            .where((e) => (e['entity_group'] == 'PatientDemographic' ||
+                e['category'] == 'PatientDemographic'))
             .toList() ??
         [];
 
@@ -173,7 +171,8 @@ class _PatientViewTabState extends State<PatientViewTab> {
         metadataItems.add({'label': group, 'value': word});
       }
     }
-    for (var m in rawLabs.where((l) => Helpers.isMetadataParameter(l.testName))) {
+    for (var m
+        in rawLabs.where((l) => Helpers.isMetadataParameter(l.testName))) {
       metadataItems.add({
         'label': m.testName,
         'value': '${m.value} ${m.unit}'.trim(),
@@ -209,11 +208,11 @@ class _PatientViewTabState extends State<PatientViewTab> {
     final sectionPatientReportInfo = _label('section_patient_report_info',
         fallback: 'Patient & Report Information');
 
-    final sourceLatestReport = _label('label_source_latest_report',
-        fallback: 'Source: Latest report');
+    final sourceLatestReport =
+        _label('label_source_latest_report', fallback: 'Source: Latest report');
 
-    final labelReportExtracted = _label('label_report_extracted',
-        fallback: 'Report Extracted');
+    final labelReportExtracted =
+        _label('label_report_extracted', fallback: 'Report Extracted');
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -257,7 +256,8 @@ class _PatientViewTabState extends State<PatientViewTab> {
             decoration: BoxDecoration(
               color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,14 +268,18 @@ class _PatientViewTabState extends State<PatientViewTab> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Icon(Icons.auto_awesome,
-                        size: 14, color: AppColors.primary.withValues(alpha: 0.7)),
+                        size: 14,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.7)),
                     const SizedBox(width: 4),
                     Text(
                       aiAttribution,
                       style: TextStyle(
                         fontSize: 11,
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.5),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
                         fontStyle: FontStyle.italic,
                       ),
                     ),
@@ -291,8 +295,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
           if (metadataItems.isNotEmpty) ...[
             Text(
               sectionPatientReportInfo,
-              style:
-                  const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             Container(
@@ -300,7 +303,8 @@ class _PatientViewTabState extends State<PatientViewTab> {
               decoration: BoxDecoration(
                 color: theme.cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: Column(
                 children: metadataItems
@@ -379,7 +383,8 @@ class _PatientViewTabState extends State<PatientViewTab> {
             decoration: BoxDecoration(
               color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,7 +443,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,9 +452,15 @@ class _PatientViewTabState extends State<PatientViewTab> {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                child:
-                    const Icon(Icons.person_outline, color: AppColors.primary, size: 26),
+                backgroundColor: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.1),
+                child: Icon(
+                  Icons.person_outline,
+                  color: AppColors.primary,
+                  size: 26,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -521,7 +532,8 @@ class _PatientViewTabState extends State<PatientViewTab> {
                   _label('chip_medications', fallback: 'Medications'),
                   Icons.medication_outlined),
               _buildStatChip(
-                  context, '$abnormalCount',
+                  context,
+                  '$abnormalCount',
                   _label('chip_noteworthy', fallback: 'Noteworthy'),
                   Icons.warning_amber_rounded,
                   color: abnormalCount > 0 ? Colors.orange : null),
@@ -532,8 +544,8 @@ class _PatientViewTabState extends State<PatientViewTab> {
     );
   }
 
-  Widget _buildStatChip(BuildContext context, String value, String label,
-      IconData icon,
+  Widget _buildStatChip(
+      BuildContext context, String value, String label, IconData icon,
       {Color? color}) {
     final theme = Theme.of(context);
     final c = color ?? theme.colorScheme.primary;
@@ -542,8 +554,8 @@ class _PatientViewTabState extends State<PatientViewTab> {
         Icon(icon, size: 16, color: c),
         const SizedBox(width: 6),
         Text(value,
-            style: TextStyle(
-                fontWeight: FontWeight.bold, fontSize: 15, color: c)),
+            style:
+                TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: c)),
         const SizedBox(width: 4),
         Text(label,
             style: TextStyle(
@@ -568,7 +580,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
       flagColor = Colors.orange;
       flagLabel = l?['label_low'] ?? 'Low';
     } else if (flag == 'critical') {
-      flagColor = Colors.purpleAccent;
+      flagColor = AppColors.warning;
       flagLabel = l?['label_critical'] ?? 'Critical';
     } else if (flag == 'normal') {
       flagColor = const Color(0xFF00C48C);
@@ -601,7 +613,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -726,8 +738,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
 
     final List<Widget> medInfo = [
       Text(name,
-          style:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       const SizedBox(height: 6),
       Text('${l?['label_dose'] ?? 'Dose'}: $dosage',
           style: TextStyle(
@@ -735,8 +746,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.9))),
       const SizedBox(height: 2),
-      Text(
-          '${l?['label_frequency'] ?? 'Frequency'}: $frequency',
+      Text('${l?['label_frequency'] ?? 'Frequency'}: $frequency',
           style: TextStyle(
               fontSize: 13,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.75))),
@@ -765,7 +775,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -788,8 +798,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(8),
@@ -799,7 +808,8 @@ class _PatientViewTabState extends State<PatientViewTab> {
                   style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                 ),
               ),
               const SizedBox(height: 4),
@@ -807,8 +817,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
                 sourceLatestReport,
                 style: TextStyle(
                     fontSize: 10,
-                    color:
-                        theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
               ),
             ],
           ),
@@ -856,8 +865,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
     //endregion
 
     final points = <Widget>[];
-    final isTranslated =
-        translation != null && translation.language != 'en';
+    final isTranslated = translation != null && translation.language != 'en';
 
     // ------------------------------------------------------------------
     // PRIMARY SOURCE: backend-generated structured doctor_discussion_points.
@@ -899,8 +907,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
             'lab test';
         final val = abnormal['value']?.toString() ?? '';
         final unit = abnormal['unit']?.toString() ?? '';
-        final flag =
-            (abnormal['flag']?.toString() ?? 'abnormal').toUpperCase();
+        final flag = (abnormal['flag']?.toString() ?? 'abnormal').toUpperCase();
 
         String? translatedExpl;
         if (translation != null && translation.findingsJson.isNotEmpty) {
@@ -928,7 +935,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
           final generic = translation.uiLabels['label_review_test_parameters'];
           bullet = (generic != null && generic.trim().isNotEmpty)
               ? generic.trim()
-              : (isTranslated ? '' : 'Review your test parameters and baseline values with your doctor.');
+              : (isTranslated
+                  ? ''
+                  : 'Review your test parameters and baseline values with your doctor.');
         }
         points.add(_buildDoctorBullet(context, bullet));
       }
@@ -936,7 +945,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
       final generic = translation?.uiLabels['label_review_test_parameters'];
       final text = (generic != null && generic.trim().isNotEmpty)
           ? generic.trim()
-          : (isTranslated ? '' : 'Review your test parameters and baseline values with your doctor.');
+          : (isTranslated
+              ? ''
+              : 'Review your test parameters and baseline values with your doctor.');
       points.add(_buildDoctorBullet(context, text));
     }
 
@@ -950,14 +961,18 @@ class _PatientViewTabState extends State<PatientViewTab> {
         final label = translation?.uiLabels['label_confirm_dosage_timing'];
         final text = (label != null && label.trim().isNotEmpty)
             ? label.trim()
-            : (isTranslated ? '' : 'Confirm dosage and timing for the medications mentioned in this report.');
+            : (isTranslated
+                ? ''
+                : 'Confirm dosage and timing for the medications mentioned in this report.');
         points.add(_buildDoctorBullet(context, text));
       }
     } else {
       final label = translation?.uiLabels['label_confirm_new_medications'];
       final text = (label != null && label.trim().isNotEmpty)
           ? label.trim()
-          : (isTranslated ? '' : 'Confirm if any new medications or prescription changes are recommended based on these findings.');
+          : (isTranslated
+              ? ''
+              : 'Confirm if any new medications or prescription changes are recommended based on these findings.');
       points.add(_buildDoctorBullet(context, text));
     }
 
@@ -965,7 +980,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
       final label = translation?.uiLabels['label_confirm_followup'];
       final text = (label != null && label.trim().isNotEmpty)
           ? label.trim()
-          : (isTranslated ? '' : 'Ask if follow-up testing or baseline comparisons are recommended for future monitoring.');
+          : (isTranslated
+              ? ''
+              : 'Ask if follow-up testing or baseline comparisons are recommended for future monitoring.');
       points.add(_buildDoctorBullet(context, text));
     }
 
@@ -982,7 +999,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Text(
         text,

@@ -90,14 +90,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.logOutTitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-        content: Text(AppLocalizations.of(context)!.logOutConfirm, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+        title: Text(AppLocalizations.of(context)!.logOutTitle,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        content: Text(AppLocalizations.of(context)!.logOutConfirm,
+            style: TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.7))),
         backgroundColor: Theme.of(context).cardColor,
         actions: [
-          TextButton(onPressed: () => context.pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
+          TextButton(
+              onPressed: () => context.pop(false),
+              child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
             onPressed: () => context.pop(true),
-            child: Text(AppLocalizations.of(context)!.logOut, style: TextStyle(color: Colors.redAccent)),
+            child: Text(AppLocalizations.of(context)!.logOut,
+                style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -158,7 +167,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     int maxDays;
     if (month == 2) {
-      final bool isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+      final bool isLeapYear =
+          (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
       maxDays = isLeapYear ? 29 : 28;
     } else if ([4, 6, 9, 11].contains(month)) {
       maxDays = 30;
@@ -168,7 +178,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (day < 1 || day > maxDays) {
       if (month == 2) {
-        final bool isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+        final bool isLeapYear =
+            (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
         return isLeapYear
             ? 'February $year (leap year) has only 29 days'
             : 'February $year has only 28 days';
@@ -189,10 +200,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showEditPatientPersonalInfoDialog() {
     if (_user == null) return;
-    
+
     final nameCtrl = TextEditingController(text: _user!.fullName);
     final dobCtrl = TextEditingController(text: _user!.dateOfBirth ?? '');
-    
+
     bool saving = false;
     String? nameError;
     String? dobError;
@@ -204,7 +215,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text(AppLocalizations.of(context)!.editPersonalInfo, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              title: Text(AppLocalizations.of(context)!.editPersonalInfo,
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface)),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -215,7 +228,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.person_outline,
                       errorText: nameError,
                       onChanged: (_) {
-                        if (nameError != null) setDialogState(() => nameError = null);
+                        if (nameError != null)
+                          setDialogState(() => nameError = null);
                       },
                     ),
                     const SizedBox(height: 16),
@@ -225,7 +239,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.calendar_today,
                       errorText: dobError,
                       onChanged: (_) {
-                        if (dobError != null) setDialogState(() => dobError = null);
+                        if (dobError != null)
+                          setDialogState(() => dobError = null);
                       },
                     ),
                   ],
@@ -237,37 +252,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Text(AppLocalizations.of(context)!.cancel),
                 ),
                 FilledButton(
-                  onPressed: saving ? null : () async {
-                    final nErr = _validateFullName(nameCtrl.text);
-                    final dErr = _validateDateOfBirth(dobCtrl.text);
-                    if (nErr != null || dErr != null) {
-                      setDialogState(() {
-                        nameError = nErr;
-                        dobError = dErr;
-                      });
-                      return;
-                    }
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final nErr = _validateFullName(nameCtrl.text);
+                          final dErr = _validateDateOfBirth(dobCtrl.text);
+                          if (nErr != null || dErr != null) {
+                            setDialogState(() {
+                              nameError = nErr;
+                              dobError = dErr;
+                            });
+                            return;
+                          }
 
-                    setDialogState(() {
-                      saving = true;
-                      nameError = null;
-                      dobError = null;
-                    });
-                    try {
-                      await ApiService.instance.updateMe(
-                        fullName: nameCtrl.text.trim(),
-                        dateOfBirth: dobCtrl.text.trim().isEmpty ? null : dobCtrl.text.trim(),
-                      );
-                      if (!ctx.mounted) return;
-                      ctx.pop();
-                      _loadUser();
-                    } catch (e) {
-                      setDialogState(() {
-                        saving = false;
-                        nameError = e.toString().replaceAll('Exception:', '').trim();
-                      });
-                    }
-                  },
+                          setDialogState(() {
+                            saving = true;
+                            nameError = null;
+                            dobError = null;
+                          });
+                          try {
+                            await ApiService.instance.updateMe(
+                              fullName: nameCtrl.text.trim(),
+                              dateOfBirth: dobCtrl.text.trim().isEmpty
+                                  ? null
+                                  : dobCtrl.text.trim(),
+                            );
+                            if (!ctx.mounted) return;
+                            ctx.pop();
+                            _loadUser();
+                          } catch (e) {
+                            setDialogState(() {
+                              saving = false;
+                              nameError = e
+                                  .toString()
+                                  .replaceAll('Exception:', '')
+                                  .trim();
+                            });
+                          }
+                        },
                   child: Text(saving ? 'Saving...' : 'Save'),
                 ),
               ],
@@ -291,7 +313,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text('Doctor Personal Details', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              title: Text('Doctor Personal Details',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -301,33 +325,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.person_outline,
                     errorText: nameError,
                     onChanged: (_) {
-                      if (nameError != null) setDialogState(() => nameError = null);
+                      if (nameError != null)
+                        setDialogState(() => nameError = null);
                     },
                   ),
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => ctx.pop(), child: Text(AppLocalizations.of(context)!.cancel)),
+                TextButton(
+                    onPressed: () => ctx.pop(),
+                    child: Text(AppLocalizations.of(context)!.cancel)),
                 FilledButton(
-                  onPressed: saving ? null : () async {
-                    final nErr = _validateFullName(nameCtrl.text);
-                    if (nErr != null) {
-                      setDialogState(() => nameError = nErr);
-                      return;
-                    }
-                    setDialogState(() => saving = true);
-                    try {
-                      await ApiService.instance.updateMe(fullName: nameCtrl.text.trim());
-                      if (!ctx.mounted) return;
-                      ctx.pop();
-                      _loadUser();
-                    } catch (e) {
-                      setDialogState(() {
-                        saving = false;
-                        nameError = e.toString().replaceAll('Exception:', '').trim();
-                      });
-                    }
-                  },
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final nErr = _validateFullName(nameCtrl.text);
+                          if (nErr != null) {
+                            setDialogState(() => nameError = nErr);
+                            return;
+                          }
+                          setDialogState(() => saving = true);
+                          try {
+                            await ApiService.instance
+                                .updateMe(fullName: nameCtrl.text.trim());
+                            if (!ctx.mounted) return;
+                            ctx.pop();
+                            _loadUser();
+                          } catch (e) {
+                            setDialogState(() {
+                              saving = false;
+                              nameError = e
+                                  .toString()
+                                  .replaceAll('Exception:', '')
+                                  .trim();
+                            });
+                          }
+                        },
                   child: Text(saving ? 'Saving...' : 'Save'),
                 ),
               ],
@@ -345,9 +378,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final specialtyCtrl = TextEditingController(text: doc.specialty ?? '');
     final qualCtrl = TextEditingController(text: doc.qualifications ?? '');
     final licenseCtrl = TextEditingController(text: doc.licenseNumber ?? '');
-    final expCtrl = TextEditingController(text: doc.yearsOfExperience?.toString() ?? '');
+    final expCtrl =
+        TextEditingController(text: doc.yearsOfExperience?.toString() ?? '');
     final hospitalCtrl = TextEditingController(text: doc.hospital ?? '');
-    final addressCtrl = TextEditingController(text: doc.professionalAddress ?? '');
+    final addressCtrl =
+        TextEditingController(text: doc.professionalAddress ?? '');
 
     bool saving = false;
     String? specialtyError;
@@ -362,7 +397,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text('Professional Information', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              title: Text('Professional Information',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface)),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -371,10 +408,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       initialValue: TextEditingValue(text: specialtyCtrl.text),
                       optionsBuilder: (textValue) {
                         if (textValue.text.isEmpty) return _commonSpecialties;
-                        return _commonSpecialties.where((s) => s.toLowerCase().contains(textValue.text.toLowerCase()));
+                        return _commonSpecialties.where((s) => s
+                            .toLowerCase()
+                            .contains(textValue.text.toLowerCase()));
                       },
                       onSelected: (selection) => specialtyCtrl.text = selection,
-                      fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+                      fieldViewBuilder:
+                          (context, controller, focusNode, onEditingComplete) {
                         return CustomTextField(
                           controller: controller,
                           label: 'Medical Specialty *',
@@ -382,7 +422,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           errorText: specialtyError,
                           onChanged: (val) {
                             specialtyCtrl.text = val;
-                            if (specialtyError != null) setDialogState(() => specialtyError = null);
+                            if (specialtyError != null)
+                              setDialogState(() => specialtyError = null);
                           },
                         );
                       },
@@ -394,7 +435,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.school_outlined,
                       errorText: qualError,
                       onChanged: (_) {
-                        if (qualError != null) setDialogState(() => qualError = null);
+                        if (qualError != null)
+                          setDialogState(() => qualError = null);
                       },
                     ),
                     const SizedBox(height: 14),
@@ -404,7 +446,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.verified_outlined,
                       errorText: licenseError,
                       onChanged: (_) {
-                        if (licenseError != null) setDialogState(() => licenseError = null);
+                        if (licenseError != null)
+                          setDialogState(() => licenseError = null);
                       },
                     ),
                     const SizedBox(height: 14),
@@ -415,7 +458,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       keyboardType: TextInputType.number,
                       errorText: expError,
                       onChanged: (_) {
-                        if (expError != null) setDialogState(() => expError = null);
+                        if (expError != null)
+                          setDialogState(() => expError = null);
                       },
                     ),
                     const SizedBox(height: 14),
@@ -434,58 +478,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => ctx.pop(), child: Text(AppLocalizations.of(context)!.cancel)),
+                TextButton(
+                    onPressed: () => ctx.pop(),
+                    child: Text(AppLocalizations.of(context)!.cancel)),
                 FilledButton(
-                  onPressed: saving ? null : () async {
-                    final spec = specialtyCtrl.text.trim();
-                    final qual = qualCtrl.text.trim();
-                    final lic = licenseCtrl.text.trim();
-                    final expStr = expCtrl.text.trim();
-                    final expVal = int.tryParse(expStr);
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final spec = specialtyCtrl.text.trim();
+                          final qual = qualCtrl.text.trim();
+                          final lic = licenseCtrl.text.trim();
+                          final expStr = expCtrl.text.trim();
+                          final expVal = int.tryParse(expStr);
 
-                    String? sErr;
-                    String? qErr;
-                    String? lErr;
-                    String? eErr;
+                          String? sErr;
+                          String? qErr;
+                          String? lErr;
+                          String? eErr;
 
-                    if (spec.isEmpty) sErr = 'Medical specialty is required.';
-                    if (qual.isEmpty) qErr = 'Qualifications are required.';
-                    if (lic.isEmpty) lErr = 'Medical license / registration number is required.';
-                    if (expStr.isEmpty || expVal == null || expVal < 0 || expVal > 70) {
-                      eErr = 'Please enter valid years of experience (0 - 70).';
-                    }
+                          if (spec.isEmpty)
+                            sErr = 'Medical specialty is required.';
+                          if (qual.isEmpty)
+                            qErr = 'Qualifications are required.';
+                          if (lic.isEmpty)
+                            lErr =
+                                'Medical license / registration number is required.';
+                          if (expStr.isEmpty ||
+                              expVal == null ||
+                              expVal < 0 ||
+                              expVal > 70) {
+                            eErr =
+                                'Please enter valid years of experience (0 - 70).';
+                          }
 
-                    if (sErr != null || qErr != null || lErr != null || eErr != null) {
-                      setDialogState(() {
-                        specialtyError = sErr;
-                        qualError = qErr;
-                        licenseError = lErr;
-                        expError = eErr;
-                      });
-                      return;
-                    }
+                          if (sErr != null ||
+                              qErr != null ||
+                              lErr != null ||
+                              eErr != null) {
+                            setDialogState(() {
+                              specialtyError = sErr;
+                              qualError = qErr;
+                              licenseError = lErr;
+                              expError = eErr;
+                            });
+                            return;
+                          }
 
-                    setDialogState(() => saving = true);
+                          setDialogState(() => saving = true);
 
-                    final newDocProfile = DoctorProfileModel(
-                      specialty: spec,
-                      qualifications: qual,
-                      licenseNumber: lic,
-                      yearsOfExperience: expVal,
-                      hospital: hospitalCtrl.text.trim().isEmpty ? null : hospitalCtrl.text.trim(),
-                      professionalAddress: addressCtrl.text.trim().isEmpty ? null : addressCtrl.text.trim(),
-                    );
+                          final newDocProfile = DoctorProfileModel(
+                            specialty: spec,
+                            qualifications: qual,
+                            licenseNumber: lic,
+                            yearsOfExperience: expVal,
+                            hospital: hospitalCtrl.text.trim().isEmpty
+                                ? null
+                                : hospitalCtrl.text.trim(),
+                            professionalAddress: addressCtrl.text.trim().isEmpty
+                                ? null
+                                : addressCtrl.text.trim(),
+                          );
 
-                    try {
-                      await StorageService.instance.saveDoctorProfile(_user!.id, newDocProfile);
-                      await ApiService.instance.updateMe(doctorProfile: newDocProfile);
-                      if (!ctx.mounted) return;
-                      ctx.pop();
-                      _loadUser();
-                    } catch (_) {
-                      setDialogState(() => saving = false);
-                    }
-                  },
+                          try {
+                            await StorageService.instance
+                                .saveDoctorProfile(_user!.id, newDocProfile);
+                            await ApiService.instance
+                                .updateMe(doctorProfile: newDocProfile);
+                            if (!ctx.mounted) return;
+                            ctx.pop();
+                            _loadUser();
+                          } catch (_) {
+                            setDialogState(() => saving = false);
+                          }
+                        },
                   child: Text(saving ? 'Saving...' : 'Save'),
                 ),
               ],
@@ -509,7 +574,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text('Caregiver Personal Details', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              title: Text('Caregiver Personal Details',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -519,33 +586,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.person_outline,
                     errorText: nameError,
                     onChanged: (_) {
-                      if (nameError != null) setDialogState(() => nameError = null);
+                      if (nameError != null)
+                        setDialogState(() => nameError = null);
                     },
                   ),
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => ctx.pop(), child: Text(AppLocalizations.of(context)!.cancel)),
+                TextButton(
+                    onPressed: () => ctx.pop(),
+                    child: Text(AppLocalizations.of(context)!.cancel)),
                 FilledButton(
-                  onPressed: saving ? null : () async {
-                    final nErr = _validateFullName(nameCtrl.text);
-                    if (nErr != null) {
-                      setDialogState(() => nameError = nErr);
-                      return;
-                    }
-                    setDialogState(() => saving = true);
-                    try {
-                      await ApiService.instance.updateMe(fullName: nameCtrl.text.trim());
-                      if (!ctx.mounted) return;
-                      ctx.pop();
-                      _loadUser();
-                    } catch (e) {
-                      setDialogState(() {
-                        saving = false;
-                        nameError = e.toString().replaceAll('Exception:', '').trim();
-                      });
-                    }
-                  },
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final nErr = _validateFullName(nameCtrl.text);
+                          if (nErr != null) {
+                            setDialogState(() => nameError = nErr);
+                            return;
+                          }
+                          setDialogState(() => saving = true);
+                          try {
+                            await ApiService.instance
+                                .updateMe(fullName: nameCtrl.text.trim());
+                            if (!ctx.mounted) return;
+                            ctx.pop();
+                            _loadUser();
+                          } catch (e) {
+                            setDialogState(() {
+                              saving = false;
+                              nameError = e
+                                  .toString()
+                                  .replaceAll('Exception:', '')
+                                  .trim();
+                            });
+                          }
+                        },
                   child: Text(saving ? 'Saving...' : 'Save'),
                 ),
               ],
@@ -562,7 +638,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final relCtrl = TextEditingController(text: cg.relationship ?? '');
     final roleCtrl = TextEditingController(text: cg.caregiverRole ?? '');
-    final patientCtrl = TextEditingController(text: cg.supportedPatientName ?? '');
+    final patientCtrl =
+        TextEditingController(text: cg.supportedPatientName ?? '');
     final orgCtrl = TextEditingController(text: cg.organization ?? '');
 
     bool saving = false;
@@ -575,24 +652,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text('Caregiver Information', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+              title: Text('Caregiver Information',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface)),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     DropdownButtonFormField<String>(
-                      initialValue: _commonRelationships.contains(relCtrl.text) ? relCtrl.text : null,
+                      initialValue: _commonRelationships.contains(relCtrl.text)
+                          ? relCtrl.text
+                          : null,
                       decoration: InputDecoration(
                         labelText: 'Relationship to Patient *',
-                        prefixIcon: Icon(Icons.people_outline, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                        prefixIcon: Icon(Icons.people_outline,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6)),
                         errorText: relError,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      items: _commonRelationships.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                      items: _commonRelationships
+                          .map(
+                              (r) => DropdownMenuItem(value: r, child: Text(r)))
+                          .toList(),
                       onChanged: (val) {
                         if (val != null) {
                           relCtrl.text = val;
-                          if (relError != null) setDialogState(() => relError = null);
+                          if (relError != null)
+                            setDialogState(() => relError = null);
                         }
                       },
                     ),
@@ -618,34 +708,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => ctx.pop(), child: Text(AppLocalizations.of(context)!.cancel)),
+                TextButton(
+                    onPressed: () => ctx.pop(),
+                    child: Text(AppLocalizations.of(context)!.cancel)),
                 FilledButton(
-                  onPressed: saving ? null : () async {
-                    final rel = relCtrl.text.trim();
-                    if (rel.isEmpty) {
-                      setDialogState(() => relError = 'Relationship to patient is required.');
-                      return;
-                    }
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          final rel = relCtrl.text.trim();
+                          if (rel.isEmpty) {
+                            setDialogState(() => relError =
+                                'Relationship to patient is required.');
+                            return;
+                          }
 
-                    setDialogState(() => saving = true);
+                          setDialogState(() => saving = true);
 
-                    final newCgProfile = CaregiverProfileModel(
-                      relationship: rel,
-                      caregiverRole: roleCtrl.text.trim().isEmpty ? null : roleCtrl.text.trim(),
-                      supportedPatientName: patientCtrl.text.trim().isEmpty ? null : patientCtrl.text.trim(),
-                      organization: orgCtrl.text.trim().isEmpty ? null : orgCtrl.text.trim(),
-                    );
+                          final newCgProfile = CaregiverProfileModel(
+                            relationship: rel,
+                            caregiverRole: roleCtrl.text.trim().isEmpty
+                                ? null
+                                : roleCtrl.text.trim(),
+                            supportedPatientName:
+                                patientCtrl.text.trim().isEmpty
+                                    ? null
+                                    : patientCtrl.text.trim(),
+                            organization: orgCtrl.text.trim().isEmpty
+                                ? null
+                                : orgCtrl.text.trim(),
+                          );
 
-                    try {
-                      await StorageService.instance.saveCaregiverProfile(_user!.id, newCgProfile);
-                      await ApiService.instance.updateMe(caregiverProfile: newCgProfile);
-                      if (!ctx.mounted) return;
-                      ctx.pop();
-                      _loadUser();
-                    } catch (_) {
-                      setDialogState(() => saving = false);
-                    }
-                  },
+                          try {
+                            await StorageService.instance
+                                .saveCaregiverProfile(_user!.id, newCgProfile);
+                            await ApiService.instance
+                                .updateMe(caregiverProfile: newCgProfile);
+                            if (!ctx.mounted) return;
+                            ctx.pop();
+                            _loadUser();
+                          } catch (_) {
+                            setDialogState(() => saving = false);
+                          }
+                        },
                   child: Text(saving ? 'Saving...' : 'Save'),
                 ),
               ],
@@ -668,12 +772,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: false,
-        title: Text(AppLocalizations.of(context)!.profile, style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.profile,
+            style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : _user == null
-              ? Center(child: Text(AppLocalizations.of(context)!.failedToLoadProfile, style: TextStyle(color: Colors.red)))
+              ? Center(
+                  child: Text(AppLocalizations.of(context)!.failedToLoadProfile,
+                      style: TextStyle(color: Colors.red)))
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -683,19 +790,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         radius: 52,
                         backgroundColor: AppColors.primary,
                         child: Text(
-                          _user!.fullName.split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase(),
-                          style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold),
+                          _user!.fullName
+                              .split(' ')
+                              .map((w) => w.isNotEmpty ? w[0] : '')
+                              .take(2)
+                              .join()
+                              .toUpperCase(),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                       SizedBox(height: 18),
                       Text(
                         _user!.fullName,
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 28, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 6),
                       Text(
                         _user!.email,
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 16),
+                        style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.70),
+                            fontSize: 16),
                       ),
                       SizedBox(height: 20),
 
@@ -714,9 +837,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 onTap: () => _updateRole(r['value'] as String),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: isActive ? AppColors.primary : Colors.transparent,
+                                    color: isActive
+                                        ? AppColors.primary
+                                        : Colors.transparent,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Column(
@@ -724,13 +850,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     children: [
                                       Icon(r['icon'] as IconData,
                                           size: 18,
-                                          color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
+                                          color: isActive
+                                              ? Colors.white
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.54)),
                                       SizedBox(height: 4),
                                       Text(r['label'] as String,
                                           style: TextStyle(
                                               fontSize: 11,
-                                              color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
-                                              fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
+                                              color: isActive
+                                                  ? Colors.white
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface
+                                                      .withValues(alpha: 0.54),
+                                              fontWeight: isActive
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal)),
                                     ],
                                   ),
                                 ),
@@ -739,47 +877,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           }).toList(),
                         ),
                       ),
-                      if (_savingRole) Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: Text(AppLocalizations.of(context)!.updatingRole, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 12)),
-                      ),
+                      if (_savingRole)
+                        Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text(
+                              AppLocalizations.of(context)!.updatingRole,
+                              style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.54),
+                                  fontSize: 12)),
+                        ),
                       SizedBox(height: 20),
 
                       // Role specific account header
-                      _sectionTitle(isDoctor ? 'Doctor Account' : isCaregiver ? 'Caregiver Account' : 'Account'),
+                      _sectionTitle(isDoctor
+                          ? 'Doctor Account'
+                          : isCaregiver
+                              ? 'Caregiver Account'
+                              : 'Account'),
                       SizedBox(height: 15),
 
                       // Role specific tiles
                       if (isPatient) ...[
                         ProfileTile(
                           icon: Icons.person_outline,
-                          title: AppLocalizations.of(context)!.personalInformation,
-                          subtitle: AppLocalizations.of(context)!.viewEditPersonalDetails,
+                          title:
+                              AppLocalizations.of(context)!.personalInformation,
+                          subtitle: AppLocalizations.of(context)!
+                              .viewEditPersonalDetails,
                           onTap: _showEditPatientPersonalInfoDialog,
                         ),
                         ProfileTile(
                           icon: Icons.medical_information_outlined,
                           title: AppLocalizations.of(context)!.medicalProfile,
-                          subtitle: AppLocalizations.of(context)!.bloodGroupAllergiesHistory,
+                          subtitle: AppLocalizations.of(context)!
+                              .bloodGroupAllergiesHistory,
                           onTap: () => context.push(Routes.medicalProfile),
                         ),
                         ProfileTile(
                           icon: Icons.emergency_outlined,
                           title: AppLocalizations.of(context)!.emergencyContact,
-                          subtitle: AppLocalizations.of(context)!.emergencyContactInfo,
+                          subtitle: AppLocalizations.of(context)!
+                              .emergencyContactInfo,
                           onTap: () => context.push(Routes.emergencyContact),
                         ),
                       ] else if (isDoctor) ...[
                         ProfileTile(
                           icon: Icons.person_outline,
-                          title: AppLocalizations.of(context)!.personalInformation,
-                          subtitle: 'View and edit your professional/personal details',
+                          title:
+                              AppLocalizations.of(context)!.personalInformation,
+                          subtitle:
+                              'View and edit your professional/personal details',
                           onTap: _showEditDoctorPersonalInfoDialog,
                         ),
                         ProfileTile(
                           icon: Icons.badge_outlined,
                           title: 'Professional Information',
-                          subtitle: 'Specialty, qualifications and registration details',
+                          subtitle:
+                              'Specialty, qualifications and registration details',
                           onTap: _showEditDoctorInfoDialog,
                         ),
                         const SizedBox(height: 12),
@@ -787,14 +944,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ] else if (isCaregiver) ...[
                         ProfileTile(
                           icon: Icons.person_outline,
-                          title: AppLocalizations.of(context)!.personalInformation,
-                          subtitle: AppLocalizations.of(context)!.viewEditPersonalDetails,
+                          title:
+                              AppLocalizations.of(context)!.personalInformation,
+                          subtitle: AppLocalizations.of(context)!
+                              .viewEditPersonalDetails,
                           onTap: _showEditCaregiverPersonalInfoDialog,
                         ),
                         ProfileTile(
                           icon: Icons.volunteer_activism_outlined,
                           title: 'Caregiver Information',
-                          subtitle: 'Caregiving role and supported patient information',
+                          subtitle:
+                              'Caregiving role and supported patient information',
                           onTap: _showEditCaregiverInfoDialog,
                         ),
                         const SizedBox(height: 12),
@@ -808,13 +968,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ValueListenableBuilder<ThemeMode>(
                         valueListenable: themeModeNotifier,
                         builder: (context, mode, _) {
-                          final isDark = mode == ThemeMode.dark || mode == ThemeMode.system;
+                          final isDark = mode == ThemeMode.dark ||
+                              mode == ThemeMode.system;
                           return ProfileTile(
-                            icon: isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                            icon: isDark
+                                ? Icons.dark_mode_outlined
+                                : Icons.light_mode_outlined,
                             title: AppLocalizations.of(context)!.themeMode,
-                            subtitle: isDark ? 'Dark Mode (OLED)' : 'Light Mode',
+                            subtitle:
+                                isDark ? 'Dark Mode (OLED)' : 'Light Mode',
                             onTap: () async {
-                              final next = isDark ? ThemeMode.light : ThemeMode.dark;
+                              final next =
+                                  isDark ? ThemeMode.light : ThemeMode.dark;
                               await StorageService.instance.setThemeMode(next);
                               themeModeNotifier.value = next;
                             },
@@ -824,7 +989,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ProfileTile(
                         icon: Icons.settings_outlined,
                         title: AppLocalizations.of(context)!.settings,
-                        subtitle: AppLocalizations.of(context)!.languageAndPreferences,
+                        subtitle: AppLocalizations.of(context)!
+                            .languageAndPreferences,
                         onTap: () => context.push(Routes.settings),
                       ),
 
@@ -835,12 +1001,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.redAccent,
-                            side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4), width: 1.5),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                            side: BorderSide(
+                                color: Colors.redAccent.withValues(alpha: 0.4),
+                                width: 1.5),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18)),
                           ),
                           onPressed: _logout,
                           icon: Icon(Icons.logout, color: Colors.redAccent),
-                          label: Text(AppLocalizations.of(context)!.logout, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                          label: Text(AppLocalizations.of(context)!.logout,
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.redAccent)),
                         ),
                       ),
                       SizedBox(height: 30),
@@ -852,7 +1025,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildDoctorSummaryCard() {
     final doc = _user?.doctorProfile;
-    final hasInfo = doc != null && (doc.specialty?.isNotEmpty == true || doc.qualifications?.isNotEmpty == true);
+    final hasInfo = doc != null &&
+        (doc.specialty?.isNotEmpty == true ||
+            doc.qualifications?.isNotEmpty == true);
 
     if (!hasInfo) {
       return Container(
@@ -870,7 +1045,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: Text(
                 'No professional information added yet. Tap Professional Information to complete your doctor profile.',
-                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)),
+                style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8)),
               ),
             ),
           ],
@@ -892,15 +1072,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Icon(Icons.local_hospital, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('Doctor Profile Summary', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text('Doctor Profile Summary',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
           const SizedBox(height: 10),
-          if (doc.specialty != null) Text('Specialty: ${doc.specialty}', style: TextStyle(fontSize: 13)),
-          if (doc.qualifications != null) Text('Qualifications: ${doc.qualifications}', style: TextStyle(fontSize: 13)),
-          if (doc.licenseNumber != null) Text('Registration No.: ${doc.licenseNumber}', style: TextStyle(fontSize: 13)),
-          if (doc.yearsOfExperience != null) Text('Experience: ${doc.yearsOfExperience} years', style: TextStyle(fontSize: 13)),
-          if (doc.hospital != null) Text('Hospital: ${doc.hospital}', style: TextStyle(fontSize: 13)),
+          if (doc.specialty != null)
+            Text('Specialty: ${doc.specialty}', style: TextStyle(fontSize: 13)),
+          if (doc.qualifications != null)
+            Text('Qualifications: ${doc.qualifications}',
+                style: TextStyle(fontSize: 13)),
+          if (doc.licenseNumber != null)
+            Text('Registration No.: ${doc.licenseNumber}',
+                style: TextStyle(fontSize: 13)),
+          if (doc.yearsOfExperience != null)
+            Text('Experience: ${doc.yearsOfExperience} years',
+                style: TextStyle(fontSize: 13)),
+          if (doc.hospital != null)
+            Text('Hospital: ${doc.hospital}', style: TextStyle(fontSize: 13)),
         ],
       ),
     );
@@ -926,7 +1115,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: Text(
                 'No caregiver information added yet. Tap Caregiver Information to complete your profile.',
-                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)),
+                style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8)),
               ),
             ),
           ],
@@ -948,14 +1142,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Icon(Icons.favorite, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('Caregiver Profile Summary', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text('Caregiver Profile Summary',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
           const SizedBox(height: 10),
-          if (cg.relationship != null) Text('Relationship to Patient: ${cg.relationship}', style: TextStyle(fontSize: 13)),
-          if (cg.caregiverRole != null) Text('Caregiving Role: ${cg.caregiverRole}', style: TextStyle(fontSize: 13)),
-          if (cg.supportedPatientName != null) Text('Supporting Patient: ${cg.supportedPatientName}', style: TextStyle(fontSize: 13)),
-          if (cg.organization != null) Text('Organization: ${cg.organization}', style: TextStyle(fontSize: 13)),
+          if (cg.relationship != null)
+            Text('Relationship to Patient: ${cg.relationship}',
+                style: TextStyle(fontSize: 13)),
+          if (cg.caregiverRole != null)
+            Text('Caregiving Role: ${cg.caregiverRole}',
+                style: TextStyle(fontSize: 13)),
+          if (cg.supportedPatientName != null)
+            Text('Supporting Patient: ${cg.supportedPatientName}',
+                style: TextStyle(fontSize: 13)),
+          if (cg.organization != null)
+            Text('Organization: ${cg.organization}',
+                style: TextStyle(fontSize: 13)),
         ],
       ),
     );
@@ -966,7 +1169,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       alignment: Alignment.centerLeft,
       child: Text(
         title,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.bold),
+        style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 22,
+            fontWeight: FontWeight.bold),
       ),
     );
   }

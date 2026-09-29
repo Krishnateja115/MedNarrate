@@ -23,10 +23,12 @@ class QuickQuestionChips extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: ActionChip(
-              label: Text(q, style: TextStyle(color: AppColors.primary, fontSize: 13)),
+              label: Text(q,
+                  style: TextStyle(color: AppColors.primary, fontSize: 13)),
               backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               side: BorderSide.none,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               onPressed: () => onSelect(q),
             ),
           );

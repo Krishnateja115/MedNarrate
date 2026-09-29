@@ -64,7 +64,8 @@ class _AppLockScreenState extends State<AppLockScreen> {
         if (result == BiometricResult.cancelled) {
           _error = 'Biometric authentication was cancelled.';
         } else if (result == BiometricResult.notConfigured) {
-          _error = 'Please set up fingerprint or Face ID in device settings first.';
+          _error =
+              'Please set up fingerprint or Face ID in device settings first.';
         } else if (result == BiometricResult.unsupported) {
           _error = 'Biometric authentication is not supported by this browser.';
         } else {
@@ -85,13 +86,14 @@ class _AppLockScreenState extends State<AppLockScreen> {
       _lockoutSeconds = 30;
       _error = 'Too many attempts. Please try again in 30 seconds.';
     });
-    
+
     _lockoutTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
       setState(() {
         if (_lockoutSeconds > 1) {
           _lockoutSeconds--;
-          _error = 'Too many attempts. Please try again in $_lockoutSeconds seconds.';
+          _error =
+              'Too many attempts. Please try again in $_lockoutSeconds seconds.';
         } else {
           _lockedOut = false;
           _failures = 0;
@@ -122,7 +124,8 @@ class _AppLockScreenState extends State<AppLockScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(AppLocalizations.of(context)!.appTitle,
+              Text(
+                AppLocalizations.of(context)!.appTitle,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 32,
@@ -171,12 +174,16 @@ class _AppLockScreenState extends State<AppLockScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 8,
-                  shadowColor: AppColors.primary.withValues(alpha: 0.5),
+                  shadowColor: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.5),
                 ),
                 child: _isAuthenticating
                     ? const SizedBox(
@@ -184,12 +191,14 @@ class _AppLockScreenState extends State<AppLockScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
                     : const Text(
                         'Unlock with Biometrics',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
                       ),
               ),
               const SizedBox(height: 32),
@@ -198,7 +207,8 @@ class _AppLockScreenState extends State<AppLockScreen> {
                 children: [
                   Text(
                     'Forgot? ',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                    style:
+                        TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                   ),
                   GestureDetector(
                     onTap: _logout,

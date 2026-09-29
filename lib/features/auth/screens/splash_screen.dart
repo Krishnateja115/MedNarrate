@@ -19,7 +19,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-
   late AnimationController _controller;
   late Animation<double> _fade;
   late Animation<double> _scale;
@@ -54,7 +53,8 @@ class _SplashScreenState extends State<SplashScreen>
         await ApiService.instance.getMe();
         if (!mounted) return;
 
-        final isBioEnabled = await BiometricService.instance.isBiometricEnabled();
+        final isBioEnabled =
+            await BiometricService.instance.isBiometricEnabled();
         if (!mounted) return;
         if (isBioEnabled) {
           context.go('/app-lock');
@@ -101,14 +101,17 @@ class _SplashScreenState extends State<SplashScreen>
               children: [
                 const Icon(Icons.cloud_off_outlined, size: 56),
                 const SizedBox(height: 16),
-                const Text('Unable to connect', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const Text('Unable to connect',
+                    style:
+                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
                 Text(_startupError!, textAlign: TextAlign.center),
                 const SizedBox(height: 22),
                 ElevatedButton.icon(
                   onPressed: () => setState(() {
                     _startupError = null;
-                    Timer(const Duration(milliseconds: 100), _checkAuthAndNavigate);
+                    Timer(const Duration(milliseconds: 100),
+                        _checkAuthAndNavigate);
                   }),
                   icon: const Icon(Icons.refresh),
                   label: const Text('Retry'),

@@ -66,7 +66,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final analysis = await ApiService.instance.getReportAnalysis(reportId);
       if (analysis.structuredLabValues.isEmpty) return 100;
       final total = analysis.structuredLabValues.length;
-      final abnormal = analysis.structuredLabValues.where((v) => v.flag != 'normal' && v.flag != 'not_classified').length;
+      final abnormal = analysis.structuredLabValues
+          .where((v) => v.flag != 'normal' && v.flag != 'not_classified')
+          .length;
       return (((total - abnormal) / total) * 100).round();
     } catch (_) {
       return null;
@@ -74,7 +76,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadData() async {
-    if (mounted) setState(() { _loading = true; _loadError = null; });
+    if (mounted)
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
     try {
       final user = await ApiService.instance.getMe();
       final reports = await ApiService.instance.listReports();
@@ -84,7 +90,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         reportedMeds = await ApiService.instance.getMedicationSchedules();
       } catch (_) {}
 
-      final completed = reports.where((r) => r.processingStatus == 'completed').toList();
+      final completed =
+          reports.where((r) => r.processingStatus == 'completed').toList();
       completed.sort((a, b) => b.reportDate.compareTo(a.reportDate));
 
       int? currentPeriodScore;
@@ -110,9 +117,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       int abnormal = 0;
       if (completed.isNotEmpty && currentPeriodScore != null) {
         try {
-          final analysis = await ApiService.instance.getReportAnalysis(completed.first.id);
+          final analysis =
+              await ApiService.instance.getReportAnalysis(completed.first.id);
           totalLab = analysis.structuredLabValues.length;
-          abnormal = analysis.structuredLabValues.where((v) => v.flag != 'normal' && v.flag != 'not_classified').length;
+          abnormal = analysis.structuredLabValues
+              .where((v) => v.flag != 'normal' && v.flag != 'not_classified')
+              .length;
         } catch (_) {}
       }
       final score = currentPeriodScore ?? 0;
@@ -170,9 +180,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.cloud_off_outlined, size: 48),
+                                  const Icon(Icons.cloud_off_outlined,
+                                      size: 48),
                                   const SizedBox(height: 16),
-                                  Text(_loadError!, textAlign: TextAlign.center),
+                                  Text(_loadError!,
+                                      textAlign: TextAlign.center),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
                                     onPressed: _loadData,
@@ -183,137 +195,149 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ),
                           )
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.all(22),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            DashboardHeader(name: _userName),
-                            const SizedBox(height: 30),
-                            HealthScoreCard(
-                              score: _healthScore,
-                              totalLabValues: _totalLabValues,
-                              abnormalCount: _abnormalCount,
-                            ),
-                            const SizedBox(height: 30),
-
-                            // Statistics
-                            Row(
+                        : SingleChildScrollView(
+                            padding: const EdgeInsets.all(22),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                DashboardStatisticsCard(
-                                  title: AppLocalizations.of(context)!.statReports,
-                                  value: _totalReports.toString(),
-                                  icon: Icons.description_outlined,
-                                  color: Colors.blue,
+                                DashboardHeader(name: _userName),
+                                const SizedBox(height: 30),
+                                HealthScoreCard(
+                                  score: _healthScore,
+                                  totalLabValues: _totalLabValues,
+                                  abnormalCount: _abnormalCount,
                                 ),
-                                const SizedBox(width: 12),
-                                DashboardStatisticsCard(
-                                  title: AppLocalizations.of(context)!.statReminders,
-                                  value: _activeReminders.toString(),
-                                  icon: Icons.medication_outlined,
-                                  color: Colors.orange,
-                                ),
-                                const SizedBox(width: 12),
-                                DashboardStatisticsCard(
-                                  title: AppLocalizations.of(context)!.statFavourites,
-                                  value: _favouriteReports.toString(),
-                                  icon: Icons.favorite_border,
-                                  color: Colors.red,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 35),
+                                const SizedBox(height: 30),
 
-                            // Quick Actions
-                            Text(
-                              AppLocalizations.of(context)!.quickActions,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            UploadCard(onTap: () async {
-                              await context.push(Routes.upload);
-                              _loadData();
-                            }),
-                            const SizedBox(height: 15),
-                            Row(
-                              children: [
-                                QuickActionCard(
-                                  icon: Icons.description_outlined,
-                                  title: AppLocalizations.of(context)!.allReports,
-                                  onTap: () async {
-                                    await context.push(Routes.reports);
+                                // Statistics
+                                Row(
+                                  children: [
+                                    DashboardStatisticsCard(
+                                      title: AppLocalizations.of(context)!
+                                          .statReports,
+                                      value: _totalReports.toString(),
+                                      icon: Icons.description_outlined,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    DashboardStatisticsCard(
+                                      title: AppLocalizations.of(context)!
+                                          .statReminders,
+                                      value: _activeReminders.toString(),
+                                      icon: Icons.medication_outlined,
+                                      color: Colors.orange,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    DashboardStatisticsCard(
+                                      title: AppLocalizations.of(context)!
+                                          .statFavourites,
+                                      value: _favouriteReports.toString(),
+                                      icon: Icons.favorite_border,
+                                      color: Colors.red,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 35),
+
+                                // Quick Actions
+                                Text(
+                                  AppLocalizations.of(context)!.quickActions,
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                UploadCard(onTap: () async {
+                                  await context.push(Routes.upload);
+                                  _loadData();
+                                }),
+                                const SizedBox(height: 15),
+                                Row(
+                                  children: [
+                                    QuickActionCard(
+                                      icon: Icons.description_outlined,
+                                      title: AppLocalizations.of(context)!
+                                          .allReports,
+                                      onTap: () async {
+                                        await context.push(Routes.reports);
+                                        _loadData();
+                                      },
+                                    ),
+                                    QuickActionCard(
+                                      icon: Icons.smart_toy_outlined,
+                                      title: AppLocalizations.of(context)!
+                                          .aiChatTab,
+                                      onTap: () => context.push(Routes.aiChat),
+                                    ),
+                                    QuickActionCard(
+                                      icon: Icons.bar_chart_rounded,
+                                      title: AppLocalizations.of(context)!
+                                          .insights,
+                                      onTap: () =>
+                                          context.push(Routes.insights),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 35),
+
+                                // Reminders Card (Supports reported + manual medications)
+                                MedicineReminderCard(
+                                  reminders: _remindersList,
+                                  reportedMedications: _reportedMedications,
+                                  onAddTap: () async {
+                                    await context.push(Routes.reminders,
+                                        extra: {'autoOpenAdd': true});
+                                    _loadData();
+                                  },
+                                  onConfirmTap: (med) async {
+                                    await context.push(Routes.reminders,
+                                        extra: {'prefillMed': med});
                                     _loadData();
                                   },
                                 ),
-                                QuickActionCard(
-                                  icon: Icons.smart_toy_outlined,
-                                  title: AppLocalizations.of(context)!.aiChatTab,
-                                  onTap: () => context.push(Routes.aiChat),
+                                const SizedBox(height: 35),
+
+                                // Recent Reports
+                                RecentReportsSection(
+                                  loading: _loading,
+                                  reports: _recentReports,
+                                  onViewAllTap: () async {
+                                    await context.push(Routes.reports);
+                                    _loadData();
+                                  },
+                                  onUploadTap: () async {
+                                    await context.push(Routes.upload);
+                                    _loadData();
+                                  },
+                                  onReportTap: (report) async {
+                                    await context.push(Routes.reportDetails,
+                                        extra: report.id);
+                                    _loadData();
+                                  },
                                 ),
-                                QuickActionCard(
-                                  icon: Icons.bar_chart_rounded,
-                                  title: AppLocalizations.of(context)!.insights,
-                                  onTap: () => context.push(Routes.insights),
+                                const SizedBox(height: 35),
+
+                                const HealthTipCard(),
+                                const SizedBox(height: 30),
+                                HealthProgressCard(
+                                  totalReportsCount: _totalReports,
+                                  completedReportsCount: _completedReportsCount,
+                                  currentScore: _currentPeriodScore,
+                                  previousScore: _previousPeriodScore,
+                                  hasPreviousPeriodData: _hasPreviousPeriodData,
+                                  onUploadTap: () async {
+                                    await context.push(Routes.upload);
+                                    _loadData();
+                                  },
                                 ),
+                                const SizedBox(height: 40),
                               ],
                             ),
-                            const SizedBox(height: 35),
-
-                            // Reminders Card (Supports reported + manual medications)
-                            MedicineReminderCard(
-                              reminders: _remindersList,
-                              reportedMedications: _reportedMedications,
-                              onAddTap: () async {
-                                await context.push(Routes.reminders, extra: {'autoOpenAdd': true});
-                                _loadData();
-                              },
-                              onConfirmTap: (med) async {
-                                await context.push(Routes.reminders, extra: {'prefillMed': med});
-                                _loadData();
-                              },
-                            ),
-                            const SizedBox(height: 35),
-
-                            // Recent Reports
-                            RecentReportsSection(
-                              loading: _loading,
-                              reports: _recentReports,
-                              onViewAllTap: () async {
-                                await context.push(Routes.reports);
-                                _loadData();
-                              },
-                              onUploadTap: () async {
-                                await context.push(Routes.upload);
-                                _loadData();
-                              },
-                              onReportTap: (report) async {
-                                await context.push(Routes.reportDetails, extra: report.id);
-                                _loadData();
-                              },
-                            ),
-                            const SizedBox(height: 35),
-
-                            const HealthTipCard(),
-                            const SizedBox(height: 30),
-                            HealthProgressCard(
-                              totalReportsCount: _totalReports,
-                              completedReportsCount: _completedReportsCount,
-                              currentScore: _currentPeriodScore,
-                              previousScore: _previousPeriodScore,
-                              hasPreviousPeriodData: _hasPreviousPeriodData,
-                              onUploadTap: () async {
-                                await context.push(Routes.upload);
-                                _loadData();
-                              },
-                            ),
-                            const SizedBox(height: 40),
-                          ],
-                        ),
-                      ),
+                          ),
               ),
             ),
           ],

@@ -22,21 +22,21 @@ class GlassmorphismCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cardColor = color ?? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+    final cardColor = color ?? theme.colorScheme.surface;
 
     return Padding(
       padding: margin ?? EdgeInsets.zero,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          filter: ImageFilter.blur(sigmaX: blur / 2, sigmaY: blur / 2),
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
               color: cardColor,
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                color: theme.colorScheme.outlineVariant,
                 width: 1,
               ),
             ),

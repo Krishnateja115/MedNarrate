@@ -42,7 +42,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() => _error = 'Please enter your email address.');
       return;
     }
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final result = await ApiService.instance.forgotPassword(email);
       if (mounted) {
@@ -53,9 +56,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         });
       }
     } on ApiException catch (e) {
-      if (mounted) setState(() { _error = e.message; _loading = false; });
+      if (mounted)
+        setState(() {
+          _error = e.message;
+          _loading = false;
+        });
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+      if (mounted)
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
     }
   }
 
@@ -70,9 +81,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() => _error = 'Password must be at least 8 characters.');
       return;
     }
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      await ApiService.instance.resetPassword(token: token, newPassword: newPass);
+      await ApiService.instance
+          .resetPassword(token: token, newPassword: newPass);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -82,9 +97,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
       context.go(Routes.login);
     } on ApiException catch (e) {
-      if (mounted) setState(() { _error = e.message; _loading = false; });
+      if (mounted)
+        setState(() {
+          _error = e.message;
+          _loading = false;
+        });
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+      if (mounted)
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
     }
   }
 
@@ -111,27 +134,39 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Icon(Icons.lock_reset, color: AppColors.primary, size: 48),
+                child:
+                    Icon(Icons.lock_reset, color: AppColors.primary, size: 48),
               ),
               SizedBox(height: 28),
               Text(
                 _step2 ? 'Set New Password' : 'Forgot Password?',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10),
               Text(
                 _step2
                     ? 'Enter the reset token and your new password below.'
                     : "Enter your email and we'll send you a reset token.",
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.60), fontSize: 15, height: 1.5),
+                style: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.60),
+                    fontSize: 15,
+                    height: 1.5),
               ),
               SizedBox(height: 32),
-
               if (!_step2) ...[
-              CustomTextField(
+                CustomTextField(
                   controller: _emailCtrl,
                   label: AppLocalizations.of(context)!.emailAddress,
                   icon: Icons.email_outlined,
@@ -145,11 +180,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     onPressed: _loading ? null : _requestReset,
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                     ),
                     child: _loading
-                        ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface, strokeWidth: 2))
-                        : Text(AppLocalizations.of(context)!.sendResetToken, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ? SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                strokeWidth: 2))
+                        : Text(AppLocalizations.of(context)!.sendResetToken,
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ] else ...[
@@ -160,20 +203,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     decoration: BoxDecoration(
                       color: Color(0xFF1C2128),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.tealAccent.shade400.withValues(alpha: 0.4)),
+                      border: Border.all(
+                          color: Colors.tealAccent.shade400
+                              .withValues(alpha: 0.4)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(children: [
-                          Icon(Icons.developer_mode, color: Colors.tealAccent.shade400, size: 16),
+                          Icon(Icons.developer_mode,
+                              color: Colors.tealAccent.shade400, size: 16),
                           SizedBox(width: 8),
-                          Text('Dev Mode — Reset Token:', style: TextStyle(color: Colors.tealAccent.shade400, fontSize: 12, fontWeight: FontWeight.bold)),
+                          Text('Dev Mode — Reset Token:',
+                              style: TextStyle(
+                                  color: Colors.tealAccent.shade400,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold)),
                         ]),
                         SizedBox(height: 8),
                         SelectableText(
                           _devToken!,
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70), fontSize: 12, fontFamily: 'monospace'),
+                          style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.70),
+                              fontSize: 12,
+                              fontFamily: 'monospace'),
                         ),
                       ],
                     ),
@@ -198,22 +254,38 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     onPressed: _loading ? null : _resetPassword,
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                     ),
                     child: _loading
-                        ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface, strokeWidth: 2))
-                        : Text(AppLocalizations.of(context)!.resetPassword, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ? SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                strokeWidth: 2))
+                        : Text(AppLocalizations.of(context)!.resetPassword,
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 SizedBox(height: 16),
                 Center(
                   child: TextButton(
-                    onPressed: () => setState(() { _step2 = false; _devToken = null; _error = null; }),
-                    child: Text(AppLocalizations.of(context)!.backToEmail, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54))),
+                    onPressed: () => setState(() {
+                      _step2 = false;
+                      _devToken = null;
+                      _error = null;
+                    }),
+                    child: Text(AppLocalizations.of(context)!.backToEmail,
+                        style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.54))),
                   ),
                 ),
               ],
-
               if (_error != null) ...[
                 SizedBox(height: 16),
                 Container(
@@ -221,12 +293,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                    border:
+                        Border.all(color: Colors.red.withValues(alpha: 0.3)),
                   ),
                   child: Row(children: [
                     Icon(Icons.error_outline, color: Colors.red, size: 18),
                     SizedBox(width: 10),
-                    Expanded(child: Text(_error!, style: TextStyle(color: Colors.red, fontSize: 13))),
+                    Expanded(
+                        child: Text(_error!,
+                            style: TextStyle(color: Colors.red, fontSize: 13))),
                   ]),
                 ),
               ],

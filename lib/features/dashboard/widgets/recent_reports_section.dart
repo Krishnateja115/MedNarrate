@@ -59,7 +59,10 @@ class RecentReportsSection extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -83,7 +86,8 @@ class RecentReportsSection extends StatelessWidget {
                 onTap: onViewAllTap,
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -134,7 +138,10 @@ class RecentReportsSection extends StatelessWidget {
                         width: 64,
                         height: 64,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.10),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.10),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -161,7 +168,8 @@ class RecentReportsSection extends StatelessWidget {
                       Text(
                         'Your recent medical reports will appear here once you add them.',
                         style: TextStyle(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.60),
                           fontSize: 13.5,
                           height: 1.4,
                         ),
@@ -221,7 +229,10 @@ class RecentReportsSection extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.10),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.10),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
@@ -273,7 +284,10 @@ class RecentReportsSection extends StatelessWidget {
                                         const SizedBox(width: 8),
                                       ],
                                       Text(
-                                        report.reportDate.toString().split(' ').first,
+                                        report.reportDate
+                                            .toString()
+                                            .split(' ')
+                                            .first,
                                         style: TextStyle(
                                           color: theme.colorScheme.onSurface
                                               .withValues(alpha: 0.45),
@@ -299,7 +313,8 @@ class RecentReportsSection extends StatelessWidget {
                       Divider(
                         height: 1,
                         thickness: 1,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.06),
                       ),
                   ],
                 );

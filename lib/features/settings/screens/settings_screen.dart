@@ -34,7 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _biometricEnabled = false;
   bool _loading = true;
   String _currentSound = 'default';
-  
+
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   final Map<String, String> _languages = {
@@ -53,7 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _loadSettings();
   }
-  
+
   @override
   void dispose() {
     _audioPlayer.dispose();
@@ -71,7 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bioStatus = await BiometricService.instance.checkAvailability();
     final bioEnab = await BiometricService.instance.isBiometricEnabled();
     final sound = await _storageService.getReminderSound();
-    
+
     if (mounted) {
       setState(() {
         _currentLang = lang;
@@ -109,21 +109,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _toggleBiometric(bool enabled) async {
     if (kIsWeb) {
-      Helpers.showError(context, 'Biometric App Lock requires a physical Android or iOS mobile device. It is not available in the web browser environment.');
+      Helpers.showError(context,
+          'Biometric App Lock requires a physical Android or iOS mobile device. It is not available in the web browser environment.');
       return;
     }
     if (!enabled) {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: Text(AppLocalizations.of(context)!.disableAppLock, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          content: Text(AppLocalizations.of(context)!.appLockReportsAccessible, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+          title: Text(AppLocalizations.of(context)!.disableAppLock,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+          content: Text(AppLocalizations.of(context)!.appLockReportsAccessible,
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7))),
           backgroundColor: Theme.of(context).cardColor,
           actions: [
-            TextButton(onPressed: () => context.pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
+            TextButton(
+                onPressed: () => context.pop(false),
+                child: Text(AppLocalizations.of(context)!.cancel)),
             TextButton(
               onPressed: () => context.pop(true),
-              child: Text(AppLocalizations.of(context)!.disable, style: TextStyle(color: Colors.red)),
+              child: Text(AppLocalizations.of(context)!.disable,
+                  style: TextStyle(color: Colors.red)),
             ),
           ],
         ),
@@ -131,11 +141,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (confirm != true) return;
     } else {
       if (_biometricStatus == BiometricAvailability.noPlatformAuthenticator) {
-        Helpers.showError(context, 'Biometric authentication is not available on this device.');
+        Helpers.showError(context,
+            'Biometric authentication is not available on this device.');
         return;
       }
       if (_biometricStatus == BiometricAvailability.notConfigured) {
-        Helpers.showError(context, 'Please set up fingerprint or Face ID in your device settings first.');
+        Helpers.showError(context,
+            'Please set up fingerprint or Face ID in your device settings first.');
         return;
       }
     }
@@ -146,22 +158,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (result == BiometricResult.success) {
       setState(() => _biometricEnabled = enabled);
       if (enabled) {
-        Helpers.showSuccess(context, 'Biometric App Lock enabled successfully.');
+        Helpers.showSuccess(
+            context, 'Biometric App Lock enabled successfully.');
       } else {
         Helpers.showSuccess(context, 'Biometric App Lock disabled.');
       }
     } else if (result == BiometricResult.cancelled) {
       Helpers.showError(context, 'Authentication cancelled.');
     } else if (result == BiometricResult.notConfigured) {
-      Helpers.showError(context, 'Please set up fingerprint or Face ID in your device settings first.');
+      Helpers.showError(context,
+          'Please set up fingerprint or Face ID in your device settings first.');
     } else {
-      Helpers.showError(context, 'Biometric authentication failed. Please try again.');
+      Helpers.showError(
+          context, 'Biometric authentication failed. Please try again.');
     }
   }
 
   Future<void> _changeBiometric() async {
     if (kIsWeb) {
-      Helpers.showError(context, 'Biometric management requires a physical Android or iOS mobile device.');
+      Helpers.showError(context,
+          'Biometric management requires a physical Android or iOS mobile device.');
       return;
     }
     if (!_biometricEnabled) return;
@@ -174,7 +190,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Helpers.showError(context, 'Biometric change cancelled.');
       return;
     } else if (authRes != BiometricResult.success) {
-      Helpers.showError(context, 'Authentication failed. Your biometric settings have not been changed.');
+      Helpers.showError(context,
+          'Authentication failed. Your biometric settings have not been changed.');
       return;
     }
 
@@ -189,7 +206,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(width: 10),
             Text(
               'Change Device Biometrics',
-              style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Theme.of(ctx).colorScheme.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -199,7 +219,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               'Current biometric verified successfully!\n\nTo add or update your fingerprint or Face ID, manage your biometrics in your mobile device settings:',
-              style: TextStyle(color: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.8), fontSize: 15),
+              style: TextStyle(
+                  color: Theme.of(ctx)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.8),
+                  fontSize: 15),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -208,16 +233,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: () async {
                   ctx.pop();
                   try {
-                    await AppSettings.openAppSettings(type: AppSettingsType.security);
+                    await AppSettings.openAppSettings(
+                        type: AppSettingsType.security);
                   } catch (_) {}
                 },
                 icon: const Icon(Icons.settings, size: 18),
-                label: const Text('Open Device Security Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text('Open Device Security Settings',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accentTeal,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
               ),
             ),
@@ -240,7 +268,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await _storageService.setPreferredLanguage(lang);
       localeModeNotifier.value = Locale(lang);
       if (mounted) setState(() => _currentLang = lang);
-      if (mounted) Helpers.showSuccess(context, AppLocalizations.of(context)!.languageUpdated);
+      if (mounted)
+        Helpers.showSuccess(
+            context, AppLocalizations.of(context)!.languageUpdated);
     } on ApiException catch (e) {
       if (mounted) Helpers.showError(context, e.message);
     } finally {
@@ -257,18 +287,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _changeMedicalUnits(String units) async {
     await _storageService.setMedicalUnits(units);
     if (mounted) setState(() => _currentUnits = units);
-    if (mounted) Helpers.showSuccess(context, AppLocalizations.of(context)!.medicalUnitsUpdated);
+    if (mounted)
+      Helpers.showSuccess(
+          context, AppLocalizations.of(context)!.medicalUnitsUpdated);
   }
 
   Future<void> _toggleNotifications(bool enabled) async {
     await _storageService.setNotificationsEnabled(enabled);
     if (!mounted) return;
     setState(() => _notificationsEnabled = enabled);
-    
+
     if (enabled) {
-      Helpers.showSuccess(context, AppLocalizations.of(context)!.notificationsEnabled);
+      Helpers.showSuccess(
+          context, AppLocalizations.of(context)!.notificationsEnabled);
     } else {
-      Helpers.showSuccess(context, AppLocalizations.of(context)!.notificationsDisabled);
+      Helpers.showSuccess(
+          context, AppLocalizations.of(context)!.notificationsDisabled);
     }
   }
 
@@ -278,7 +312,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _playSound(String sound) {
-    if (sound == 'default') return; // Cannot play system default easily via audioplayers without knowing URI
+    if (sound == 'default')
+      return; // Cannot play system default easily via audioplayers without knowing URI
     _audioPlayer.play(AssetSource('sounds/$sound.wav'));
   }
 
@@ -295,39 +330,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
-                  const SizedBox(height: 24),
-                  Text(AppLocalizations.of(context)!.reminderSound, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 24),
-                  ...sounds.entries.map((e) {
-                    final isSelected = _currentSound == e.key;
-                    return ListTile(
-                      title: Text(e.value),
-                      trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
-                      onTap: () {
-                        _playSound(e.key);
-                        _changeReminderSound(e.key);
-                        setSheetState(() {});
-                      },
-                    );
-                  }),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            );
-          }
-        );
+        return StatefulBuilder(builder: (context, setSheetState) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 24),
+                Text(AppLocalizations.of(context)!.reminderSound,
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 24),
+                ...sounds.entries.map((e) {
+                  final isSelected = _currentSound == e.key;
+                  return ListTile(
+                    title: Text(e.value),
+                    trailing: isSelected
+                        ? Icon(
+                            Icons.check,
+                            color: AppColors.primary,
+                          )
+                        : null,
+                    onTap: () {
+                      _playSound(e.key);
+                      _changeReminderSound(e.key);
+                      setSheetState(() {});
+                    },
+                  );
+                }),
+                const SizedBox(height: 24),
+              ],
+            ),
+          );
+        });
       },
     );
   }
@@ -335,19 +381,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _toggleProfessionalMode(bool enabled) async {
     await _storageService.setProfessionalMode(enabled);
     if (mounted) setState(() => _professionalMode = enabled);
-    if (mounted) Helpers.showSuccess(context, enabled ? 'Professional Mode enabled' : 'Professional Mode disabled');
+    if (mounted)
+      Helpers.showSuccess(context,
+          enabled ? 'Professional Mode enabled' : 'Professional Mode disabled');
   }
-
-
-
-
-
 
   void _showSoonSheet(String featureName, String description) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -356,18 +400,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Text(AppLocalizations.of(context)!.comingSoon, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+              child: Text(AppLocalizations.of(context)!.comingSoon,
+                  style: TextStyle(
+                      color: AppColors.primary, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 20),
-            Icon(Icons.construction_outlined, size: 48, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+            Icon(Icons.construction_outlined,
+                size: 48,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.4)),
             const SizedBox(height: 16),
-            Text(featureName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(featureName,
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text(description, textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+            Text(description,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6))),
             const SizedBox(height: 24),
           ],
         ),
@@ -379,26 +440,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.exportData, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-        content: Text(AppLocalizations.of(context)!.requestArchive, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+        title: Text(AppLocalizations.of(context)!.exportData,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        content: Text(AppLocalizations.of(context)!.requestArchive,
+            style: TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.7))),
         backgroundColor: Theme.of(context).cardColor,
         actions: [
-          TextButton(onPressed: () => context.pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
+          TextButton(
+              onPressed: () => context.pop(false),
+              child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
             onPressed: () => context.pop(true),
-            child: Text(AppLocalizations.of(context)!.export, style: TextStyle(color: AppColors.primary)),
+            child: Text(AppLocalizations.of(context)!.export,
+                style: TextStyle(color: AppColors.primary)),
           ),
         ],
       ),
     );
     if (confirm != true) return;
-    
+
     setState(() => _loading = true);
     // Simulate API call
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() => _loading = false);
-      Helpers.showSuccess(context, 'Your medical data archive has been requested and will be sent to your registered email shortly.');
+      Helpers.showSuccess(context,
+          'Your medical data archive has been requested and will be sent to your registered email shortly.');
     }
   }
 
@@ -414,7 +485,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(24),
           ),
           backgroundColor: theme.cardColor,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: Padding(
@@ -427,7 +499,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -449,9 +524,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.10),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Text(
@@ -470,7 +549,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     '© 2026 MedNarrate\nAll rights reserved.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.65),
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -494,7 +574,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 12),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -519,7 +600,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             Icon(
                               Icons.arrow_forward_ios_rounded,
                               size: 14,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.4),
                             ),
                           ],
                         ),
@@ -536,7 +618,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 12),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -561,7 +644,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             Icon(
                               Icons.arrow_forward_ios_rounded,
                               size: 14,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.4),
                             ),
                           ],
                         ),
@@ -590,7 +674,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         label: const Text('View Licenses'),
                         style: TextButton.styleFrom(
                           foregroundColor: AppColors.primary,
-                          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                          textStyle:
+                              const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
                       ElevatedButton(
@@ -599,7 +684,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -622,7 +708,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => const _HelpCenterSheet(),
     );
   }
@@ -636,7 +723,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Text(
             title,
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
               fontSize: 14,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2,
@@ -647,7 +737,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.05)),
+            border: Border.all(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.05)),
           ),
           child: Column(
             children: children,
@@ -679,7 +770,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text(
         title,
         style: TextStyle(
-          color: isDestructive ? Colors.red : Theme.of(context).colorScheme.onSurface,
+          color: isDestructive
+              ? Colors.red
+              : Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w600,
           fontSize: 16,
         ),
@@ -688,7 +781,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ? Text(
               subtitle,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.5),
                 fontSize: 13,
               ),
             )
@@ -696,7 +792,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       trailing: trailing ??
           Icon(
             Icons.arrow_forward_ios,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
             size: 16,
           ),
       onTap: onTap,
@@ -708,7 +805,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.settings, style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.settings,
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
@@ -720,12 +818,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSettingsGroup('ACCOUNT & PROFILE', [
                   _buildSettingsTile(
                     icon: Icons.person_outline,
-                    iconColor: Theme.of(context).colorScheme.primary,
+                    iconColor: AppColors.primary,
                     title: AppLocalizations.of(context)!.personalInformation,
                     subtitle: 'Update your basic profile details',
                     onTap: () => context.push(Routes.profile),
                   ),
-                  Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.shield_outlined,
                     iconColor: AppColors.accentTeal,
@@ -733,21 +837,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     subtitle: _biometricSubtitle,
                     trailing: Switch(
                       value: _biometricEnabled,
-                      onChanged: !kIsWeb && (_biometricStatus == BiometricAvailability.available || _biometricEnabled)
+                      onChanged: !kIsWeb &&
+                              (_biometricStatus ==
+                                      BiometricAvailability.available ||
+                                  _biometricEnabled)
                           ? _toggleBiometric
                           : null,
-                      activeThumbColor: Theme.of(context).colorScheme.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                     onTap: () {
                       if (kIsWeb) {
-                        Helpers.showError(context, 'Biometric App Lock is available when running on a mobile device (Android / iOS).');
-                      } else if (_biometricStatus == BiometricAvailability.available || _biometricEnabled) {
+                        Helpers.showError(context,
+                            'Biometric App Lock is available when running on a mobile device (Android / iOS).');
+                      } else if (_biometricStatus ==
+                              BiometricAvailability.available ||
+                          _biometricEnabled) {
                         _toggleBiometric(!_biometricEnabled);
                       }
                     },
                   ),
                   if (_biometricEnabled && !kIsWeb) ...[
-                    Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                    Divider(
+                        height: 1,
+                        indent: 64,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.1)),
                     _buildSettingsTile(
                       icon: Icons.fingerprint,
                       iconColor: AppColors.primary,
@@ -756,7 +872,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onTap: _changeBiometric,
                     ),
                   ],
-                  Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.download_outlined,
                     iconColor: AppColors.secondary,
@@ -765,7 +887,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onTap: _exportData,
                   ),
                 ]),
-
                 _buildSettingsGroup('APP PREFERENCES', [
                   _buildSettingsTile(
                     icon: Icons.dark_mode_outlined,
@@ -773,12 +894,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: 'Theme',
                     subtitle: _currentTheme == ThemeMode.system
                         ? 'System Default'
-                        : (_currentTheme == ThemeMode.light ? 'Light Mode' : 'Dark Mode'),
+                        : (_currentTheme == ThemeMode.light
+                            ? 'Light Mode'
+                            : 'Dark Mode'),
                     onTap: () {
                       showModalBottomSheet(
                         context: context,
-                        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                        backgroundColor:
+                            Theme.of(context).scaffoldBackgroundColor,
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(24))),
                         builder: (_) => _ThemePicker(
                           currentTheme: _currentTheme,
                           onSelect: (mode) {
@@ -789,20 +915,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       );
                     },
                   ),
-                  Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.medical_services_outlined,
                     iconColor: AppColors.primary,
                     title: AppLocalizations.of(context)!.professionalMode,
-                    subtitle: 'Show clinical summaries instead of patient-friendly ones',
+                    subtitle:
+                        'Show clinical summaries instead of patient-friendly ones',
                     trailing: Switch(
                       value: _professionalMode,
                       onChanged: _toggleProfessionalMode,
-                      activeThumbColor: Theme.of(context).colorScheme.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                     onTap: () => _toggleProfessionalMode(!_professionalMode),
                   ),
-                  Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.language,
                     iconColor: AppColors.accentGold,
@@ -811,8 +950,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onTap: () {
                       showModalBottomSheet(
                         context: context,
-                        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                        backgroundColor:
+                            Theme.of(context).scaffoldBackgroundColor,
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(24))),
                         builder: (_) => _LanguagePicker(
                           languages: _languages,
                           currentLang: _currentLang,
@@ -824,17 +966,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       );
                     },
                   ),
-                  Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.straighten,
                     iconColor: Theme.of(context).colorScheme.onSurface,
                     title: AppLocalizations.of(context)!.medicalUnits,
-                    subtitle: _currentUnits == 'metric' ? 'Metric (kg, cm, °C)' : 'Imperial (lbs, in, °F)',
+                    subtitle: _currentUnits == 'metric'
+                        ? 'Metric (kg, cm, °C)'
+                        : 'Imperial (lbs, in, °F)',
                     onTap: () {
                       showModalBottomSheet(
                         context: context,
-                        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                        backgroundColor:
+                            Theme.of(context).scaffoldBackgroundColor,
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(24))),
                         builder: (_) => _MeasurementPicker(
                           currentUnits: _currentUnits,
                           onSelect: (units) {
@@ -846,21 +999,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                 ]),
-
                 _buildSettingsGroup('NOTIFICATIONS', [
                   _buildSettingsTile(
                     icon: Icons.notifications_active_outlined,
                     iconColor: AppColors.primary,
                     title: 'Push Notifications',
-                    subtitle: AppLocalizations.of(context)!.notificationsSubtitle,
+                    subtitle:
+                        AppLocalizations.of(context)!.notificationsSubtitle,
                     trailing: Switch(
                       value: _notificationsEnabled,
                       onChanged: _toggleNotifications,
-                      activeThumbColor: Theme.of(context).colorScheme.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                     onTap: () => _toggleNotifications(!_notificationsEnabled),
                   ),
-                  Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.medication,
                     iconColor: AppColors.error,
@@ -868,16 +1027,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     subtitle: AppLocalizations.of(context)!.managePillReminders,
                     onTap: () => context.push(Routes.medications),
                   ),
-                  Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.alarm,
                     iconColor: AppColors.warning,
                     title: AppLocalizations.of(context)!.reminderSound,
-                    subtitle: _currentSound == 'default' ? 'System Default' : _currentSound.replaceAll('_', ' ').split(' ').map((w) => w[0].toUpperCase() + w.substring(1)).join(' '),
+                    subtitle: _currentSound == 'default'
+                        ? 'System Default'
+                        : _currentSound
+                            .replaceAll('_', ' ')
+                            .split(' ')
+                            .map((w) => w[0].toUpperCase() + w.substring(1))
+                            .join(' '),
                     onTap: _showSoundPicker,
                   ),
                 ]),
-
                 _buildSettingsGroup('INTEGRATIONS', [
                   _buildSettingsTile(
                     icon: Icons.health_and_safety_outlined,
@@ -885,33 +1055,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: AppLocalizations.of(context)!.healthAppSync,
                     subtitle: AppLocalizations.of(context)!.comingSoon,
                     trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.error.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text('SOON', style: TextStyle(color: AppColors.error, fontSize: 10, fontWeight: FontWeight.bold)),
+                      child: Text('SOON',
+                          style: TextStyle(
+                              color: AppColors.error,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold)),
                     ),
-                    onTap: () => _showSoonSheet('Health App Sync', 'Sync with Apple Health and Google Fit to automatically pull your vitals and activity data.'),
+                    onTap: () => _showSoonSheet('Health App Sync',
+                        'Sync with Apple Health and Google Fit to automatically pull your vitals and activity data.'),
                   ),
-                  Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.watch_outlined,
                     iconColor: Theme.of(context).colorScheme.onSurface,
                     title: AppLocalizations.of(context)!.connectedDevices,
                     subtitle: AppLocalizations.of(context)!.comingSoon,
                     trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text('SOON', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 10, fontWeight: FontWeight.bold)),
+                      child: Text('SOON',
+                          style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.5),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold)),
                     ),
-                    onTap: () => _showSoonSheet('Connected Devices', 'Connect your wearables, glucometers, and blood pressure monitors to track readings automatically.'),
+                    onTap: () => _showSoonSheet('Connected Devices',
+                        'Connect your wearables, glucometers, and blood pressure monitors to track readings automatically.'),
                   ),
                 ]),
-
                 _buildSettingsGroup('SUPPORT & ABOUT', [
                   _buildSettingsTile(
                     icon: Icons.help_outline,
@@ -919,7 +1112,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: AppLocalizations.of(context)!.helpCenter,
                     onTap: _showHelpCenter,
                   ),
-                  Divider(height: 1, indent: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.info_outline,
                     iconColor: AppColors.accentTeal,
@@ -928,7 +1127,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onTap: _showAbout,
                   ),
                 ]),
-
                 const SizedBox(height: 32),
               ],
             ),
@@ -954,7 +1152,11 @@ class _LanguagePicker extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(AppLocalizations.of(context)!.selectLanguage, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.selectLanguage,
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold)),
           SizedBox(height: 16),
           Expanded(
             child: ListView.builder(
@@ -963,8 +1165,12 @@ class _LanguagePicker extends StatelessWidget {
                 final key = languages.keys.elementAt(index);
                 final value = languages.values.elementAt(index);
                 return ListTile(
-                  title: Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                  trailing: key == currentLang ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+                  title: Text(value,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface)),
+                  trailing: key == currentLang
+                      ? Icon(Icons.check, color: AppColors.primary)
+                      : null,
                   onTap: () => onSelect(key),
                 );
               },
@@ -992,20 +1198,28 @@ class _ThemePicker extends StatelessWidget {
       {'label': 'Light Mode', 'value': ThemeMode.light},
       {'label': 'Dark Mode', 'value': ThemeMode.dark},
     ];
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(AppLocalizations.of(context)!.selectThemeMode, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.selectThemeMode,
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold)),
           SizedBox(height: 16),
           ...options.map((option) {
             final label = option['label'] as String;
             final value = option['value'] as ThemeMode;
             return ListTile(
-              title: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-              trailing: value == currentTheme ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              title: Text(label,
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface)),
+              trailing: value == currentTheme
+                  ? Icon(Icons.check, color: AppColors.primary)
+                  : null,
               onTap: () => onSelect(value),
             );
           }),
@@ -1030,20 +1244,28 @@ class _MeasurementPicker extends StatelessWidget {
       {'label': 'Metric (kg, cm, °C)', 'value': 'metric'},
       {'label': 'Imperial (lbs, in, °F)', 'value': 'imperial'},
     ];
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(AppLocalizations.of(context)!.selectMedicalUnits, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.selectMedicalUnits,
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold)),
           SizedBox(height: 16),
           ...options.map((option) {
             final label = option['label'] as String;
             final value = option['value'] as String;
             return ListTile(
-              title: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-              trailing: value == currentUnits ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
+              title: Text(label,
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface)),
+              trailing: value == currentUnits
+                  ? Icon(Icons.check, color: AppColors.primary)
+                  : null,
               onTap: () => onSelect(value),
             );
           }),
@@ -1075,7 +1297,8 @@ class _HelpCenterSheet extends StatelessWidget {
               ),
             ),
           ),
-          Text(AppLocalizations.of(context)!.helpCenter,
+          Text(
+            AppLocalizations.of(context)!.helpCenter,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -1121,7 +1344,8 @@ class _HelpCenterSheet extends StatelessWidget {
               label: Text(AppLocalizations.of(context)!.contactSupport),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
             ),
           ),
@@ -1134,14 +1358,20 @@ class _HelpCenterSheet extends StatelessWidget {
     return ExpansionTile(
       title: Text(
         question,
-        style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
+        style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface),
       ),
       childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           answer,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+          style: TextStyle(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.7)),
         ),
       ],
     );

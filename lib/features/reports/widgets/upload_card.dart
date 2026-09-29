@@ -31,7 +31,8 @@ class UploadCard extends StatelessWidget {
               size: 48,
             ),
             SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.uploadReport,
+            Text(
+              AppLocalizations.of(context)!.uploadReport,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 18,
@@ -43,7 +44,10 @@ class UploadCard extends StatelessWidget {
               "Tap here to upload a new medical report for analysis",
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.70),
                 fontSize: 14,
               ),
             ),

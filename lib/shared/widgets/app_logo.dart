@@ -15,12 +15,10 @@ class AppLogo extends StatelessWidget {
     return Container(
       height: size,
       width: size,
-
       decoration: BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.circular(size * .28),
       ),
-
       child: Icon(
         Icons.medical_services_rounded,
         size: size * .55,
