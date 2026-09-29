@@ -89,6 +89,16 @@ Future<bool> _isBackendHealthy() async {
 
 Future<String?> _resolveBackendPath() async {
   if (kIsWeb) return null;
+
+  final prefs = await SharedPreferences.getInstance();
+  final savedPath = prefs.getString('macos_backend_path');
+  if (savedPath != null &&
+      savedPath.isNotEmpty &&
+      savedPath != '/' &&
+      await Directory(savedPath).exists()) {
+    return savedPath;
+  }
+
   final defaultPath = '${Directory.current.path}/mednarrate-backend';
   if (await Directory(defaultPath).exists()) {
     return defaultPath;
