@@ -99,3 +99,6 @@ mednarrate-backend/data/kb_index/
 data/
 __pycache__/
 .env.bak
+
+# Local UI design references
+Mednarrate-UI Reference/
