@@ -139,20 +139,6 @@ async def test_chat_fallback_behavior(
     assert assistant_msg == "AI service is temporarily unavailable. Please try again."
 
 
-@pytest.mark.asyncio
-async def test_audit_atomicity(client: AsyncClient, db_session: AsyncSession):
-    """
-    Verify that an action and its audit log are in a single transaction.
-    If the business logic fails mid-way, the audit log should not be committed.
-    """
-    # This is a unit test concept; to test this purely through the API, we'd need
-    # to mock the db.commit() to throw an exception, but since we use async sessions
-    # in FastAPI Depends, it's easier to verify that the code uses `await db.commit()`
-    # exactly once at the end of the view instead of scattered around.
-
-    # We can check that a normal failure doesn't leave an orphaned success log.
-    pass
-
 
 @pytest.mark.asyncio
 async def test_error_leakage(client: AsyncClient):

@@ -6,7 +6,7 @@ class AppConfig {
   /// API_BASE_URL is always the backend origin (without /api/v1).
   static const String _rawApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: isLocalDevMode ? 'http://127.0.0.1:8000' : 'https://api.mednarrate.com', // TODO: replace with real deployed backend URL
+    defaultValue: isLocalDevMode ? 'http://127.0.0.1:8000' : '', 
   );
   
   static String get apiBaseUrl {
@@ -24,8 +24,13 @@ class AppConfig {
   static String get apiRoot => '$apiBaseUrl/api/v1';
 
   static String validateApiBaseUrl(String env, String url) {
-    if (env == 'production' && url.startsWith('http://')) {
-      throw StateError('Production environment MUST use HTTPS for apiBaseUrl.');
+    if (env == 'production') {
+      if (url.isEmpty) {
+        throw StateError('Production deployment requires a real backend URL. Pass --dart-define=API_BASE_URL=https://... at build time.');
+      }
+      if (url.startsWith('http://')) {
+        throw StateError('Production environment MUST use HTTPS for apiBaseUrl.');
+      }
     }
     return url;
   }

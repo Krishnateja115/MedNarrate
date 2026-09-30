@@ -1,13 +1,12 @@
-/* eslint-disable */
 // Use the same-origin API proxy by default. It keeps the HTTP-only session
 // cookies first-party, which is required for browser session restoration.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
 
 export class ApiError extends Error {
   public status: number;
-  public data: any;
+  public data: unknown;
 
-  constructor(status: number, message: string, data?: any) {
+  constructor(status: number, message: string, data?: unknown) {
     super(message);
     this.status = status;
     this.data = data;
@@ -23,11 +22,12 @@ function generateRequestId() {
 }
 
 interface FetchOptions extends RequestInit {
-  data?: any;
+  data?: unknown;
   params?: Record<string, string>;
   suppressAuthError?: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchApi<T = any>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const { data, params, headers, ...customConfig } = options;
 
@@ -62,7 +62,7 @@ export async function fetchApi<T = any>(endpoint: string, options: FetchOptions 
   let response: Response;
   try {
     response = await fetch(url, config);
-  } catch (error) {
+  } catch {
     // Network error
     throw new ApiError(0, 'Network error. Please check your connection.');
   }
