@@ -15,6 +15,7 @@ from app.models.job_execution import JobExecution, JobStatus
 from app.models.support import SupportTicket, TicketPriority, TicketStatus
 from app.models.system_setting import MaintenanceMode
 from app.models.user import User
+from app.models.llm_telemetry import LLMDiagnosticEvent
 from app.services.audit import log_admin_action
 
 router = APIRouter()
@@ -95,6 +96,9 @@ async def get_governance_overview(
         .all()
     )
 
+    active_incidents_count = (await db.execute(select(func.count(Incident.id)).where(Incident.status.in_(OPEN_INCIDENT_STATUSES)))).scalar() or 0
+    resolved_incidents_count = (await db.execute(select(func.count(Incident.id)).where(Incident.status == IncidentStatus.resolved))).scalar() or 0
+
     failed_jobs = (
         (
             await db.execute(
@@ -110,6 +114,12 @@ async def get_governance_overview(
         .scalars()
         .all()
     )
+
+    total_jobs_24h = (await db.execute(select(func.count(JobExecution.id)).where(JobExecution.started_at >= failed_jobs_since))).scalar() or 0
+    failed_jobs_count_24h = (await db.execute(select(func.count(JobExecution.id)).where(JobExecution.status == JobStatus.failed, JobExecution.started_at >= failed_jobs_since))).scalar() or 0
+    job_failure_rate = (failed_jobs_count_24h / total_jobs_24h) if total_jobs_24h > 0 else 0.0
+
+    unreviewed_ai_warnings = (await db.execute(select(func.count(LLMDiagnosticEvent.id)).where(LLMDiagnosticEvent.status != 'success'))).scalar() or 0
 
     pending_grants = (
         (
@@ -191,6 +201,14 @@ async def get_governance_overview(
         "active_incidents": [
             _serialize_incident(incident) for incident in open_incidents
         ],
+        "metrics": {
+            "incidents": {
+                "active": active_incidents_count,
+                "resolved": resolved_incidents_count,
+            },
+            "job_failure_rate": job_failure_rate,
+            "unreviewed_ai_warnings": unreviewed_ai_warnings,
+        },
         "pending_actions": {
             "critical_tickets": critical_tickets or 0,
             "failed_jobs_24h": [

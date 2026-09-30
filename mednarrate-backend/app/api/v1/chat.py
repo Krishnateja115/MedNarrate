@@ -5,6 +5,7 @@ from sqlalchemy.future import select
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.core.maintenance import check_maintenance
 from app.middleware.ownership import verify_chat_session_ownership
 from app.models.chat import ChatMessage, ChatRole, ChatSession
 from app.models.user import User
@@ -23,6 +24,7 @@ from app.services.prompts import (
 )
 from app.services.rag import retrieve_chunks
 from app.services.rag_safety import verify_response_against_source
+from app.services.feature_flags import evaluate_flag
 
 
 def local_classify_intent(query: str) -> str:
@@ -126,6 +128,7 @@ async def send_chat_message(
     req: ChatMessageCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    maintenance = Depends(check_maintenance("chat")),
 ):
     session = await verify_chat_session_ownership(id, str(current_user.id), db)
 
@@ -163,7 +166,9 @@ async def send_chat_message(
 
         # 5. Hallucination guard
         if context:
-            ai_response, _ = verify_response_against_source(ai_response, context)
+            use_guard = await evaluate_flag(db, "rag_hallucination_guard")
+            if use_guard:
+                ai_response, _ = verify_response_against_source(ai_response, context)
 
     # 6. Persist assistant message
     assistant_msg = ChatMessage(

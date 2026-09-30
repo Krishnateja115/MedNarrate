@@ -40,6 +40,7 @@ from app.services.text_extraction import (
     extract_text_from_file,
 )
 from app.services.validation import validate_and_ground_analysis
+from app.services.feature_flags import evaluate_flag
 
 logger = logging.getLogger(__name__)
 
@@ -298,16 +299,18 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
 
         # NEW LLM-based verification using MedGemma (Medical Verifier)
         # We verify the clinician_summary as it is the most critical medical output
-        verification_result = await verify_medical_facts(
-            clinician_summary, request_id=req_id
-        )
-        if not verification_result["is_valid"]:
-            # If the verifier flags dangerous errors, we append the correction warning
-            clinician_summary += f"\n\n[WARNING from Medical Verifier]: {verification_result['correction']}"
-            patient_summary += "\n\n[Note: This summary has been flagged by the automated verification system and requires doctor review.]"
-            logger.warning(
-                "[STAGE:VALIDATION:FAILED] Medical Verifier flagged output. (Correction text omitted for privacy)."
+        use_verifier = await evaluate_flag(db, "experimental_medical_verifier", user_id=str(report.user_id))
+        if use_verifier:
+            verification_result = await verify_medical_facts(
+                clinician_summary, request_id=req_id
             )
+            if not verification_result["is_valid"]:
+                # If the verifier flags dangerous errors, we append the correction warning
+                clinician_summary += f"\n\n[WARNING from Medical Verifier]: {verification_result['correction']}"
+                patient_summary += "\n\n[Note: This summary has been flagged by the automated verification system and requires doctor review.]"
+                logger.warning(
+                    "[STAGE:VALIDATION:FAILED] Medical Verifier flagged output. (Correction text omitted for privacy)."
+                )
 
         # Pre-generate translations safely
         try:

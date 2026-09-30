@@ -564,6 +564,11 @@ class ApiService {
     return List<Map<String, dynamic>>.from(jsonDecode(resp.body));
   }
 
+  Future<List<Map<String, dynamic>>> getAnnouncements({String audience = 'all', String language = 'en'}) async {
+    final resp = await _get('/admin/announcements/active/public?audience=$audience&language=$language');
+    return List<Map<String, dynamic>>.from(jsonDecode(resp.body)['active_announcements']);
+  }
+
   Future<void> toggleMedicationSchedule(String id) async {
     await _patch('/notifications/medication-schedules/$id/toggle');
   }

@@ -17,6 +17,7 @@ class StorageService {
   static const String _keyNotif = 'notifications_enabled';
   static const _keyProfessionalMode = 'professional_mode';
   static const _keyMedicalUnits = 'medical_units';
+  static const _keyDismissedAnnouncements = 'dismissed_announcements';
 
   // ── Tokens (shared_preferences) ──────────────────────────────────
 
@@ -159,6 +160,23 @@ class StorageService {
   Future<String> getReminderSound() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyReminderSound) ?? 'default';
+  }
+
+  // ── Announcements (shared_preferences) ──────────────────────────────────
+  
+  Future<void> dismissAnnouncement(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_keyDismissedAnnouncements) ?? [];
+    if (!list.contains(id)) {
+      list.add(id);
+      await prefs.setStringList(_keyDismissedAnnouncements, list);
+    }
+  }
+
+  Future<bool> isAnnouncementDismissed(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_keyDismissedAnnouncements) ?? [];
+    return list.contains(id);
   }
 
   // ── Role Profile Isolation Storage ──────────────────────────────────────

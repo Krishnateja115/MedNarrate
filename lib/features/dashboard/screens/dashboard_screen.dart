@@ -15,6 +15,7 @@ import '../widgets/quick_action_card.dart';
 import '../widgets/recent_reports_section.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/offline_banner.dart';
+import '../widgets/announcement_banner.dart';
 import 'package:go_router/go_router.dart';
 import '../../reports/widgets/upload_card.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
@@ -32,6 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _loading = true;
   String? _loadError;
   String _userName = 'User';
+  String _userRole = 'patient';
   List<ReportModel> _recentReports = [];
   int _totalReports = 0;
   int _favouriteReports = 0;
@@ -130,6 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) {
         setState(() {
           _userName = user.fullName.split(' ').first;
+          _userRole = user.role;
           _totalReports = reports.length;
           _completedReportsCount = completed.length;
           _favouriteReports = reports.where((r) => r.isFavourite).length;
@@ -165,6 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           children: [
             const OfflineBanner(),
+            if (!_loading && _loadError == null) AnnouncementBanner(role: _userRole),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadData,

@@ -19,6 +19,11 @@ type GovernanceOverview = {
   generated_at: string;
   services: Record<string, Service>;
   active_incidents: Array<{ id: string; title: string; severity: string; status: string; affected_service?: string | null }>;
+  metrics: {
+    incidents: { active: number; resolved: number };
+    job_failure_rate: number;
+    unreviewed_ai_warnings: number;
+  };
   pending_actions: {
     critical_tickets: number;
     failed_jobs_24h: Array<{ id: string; name: string; failure_category?: string | null }>;
@@ -80,6 +85,60 @@ export default function GovernancePage() {
             const Icon = meta.icon;
             return <Card key={key}><CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm">{meta.label}</CardTitle><Icon className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent>{service ? <><Badge className={statusClass(service.status)}>{service.status.replace('_', ' ')}</Badge>{service.latency_ms !== undefined && service.latency_ms !== null && <p className="mt-2 text-xs text-muted-foreground">{service.latency_ms} ms</p>}{service.error_summary && <p className="mt-2 text-xs text-muted-foreground">{service.error_summary}</p>}</> : <span className="text-sm text-muted-foreground">Unavailable</span>}</CardContent></Card>;
           })}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-base font-semibold">Key Metrics</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Incident Resolution</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? <Skeleton className="h-8 w-16" /> : `${data?.metrics.incidents.resolved} / ${data!.metrics.incidents.active + data!.metrics.incidents.resolved}`}
+              </div>
+              <p className="text-xs text-muted-foreground">Resolved / Total Incidents</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Job Failure Rate (24h)</CardTitle>
+              <HeartPulse className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? <Skeleton className="h-8 w-16" /> : `${(data!.metrics.job_failure_rate * 100).toFixed(1)}%`}
+              </div>
+              <p className="text-xs text-muted-foreground">Failed Jobs / Total Jobs</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">AI Analysis Warnings</CardTitle>
+              <Bot className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? <Skeleton className="h-8 w-16" /> : data?.metrics.unreviewed_ai_warnings}
+              </div>
+              <p className="text-xs text-muted-foreground">Unreviewed AI Telemetry Warnings</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Maintenance Scope</CardTitle>
+              <Wrench className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {isLoading ? <Skeleton className="h-8 w-16" /> : (data?.maintenance.is_enabled ? 'Active' : 'None')}
+              </div>
+              <p className="text-xs text-muted-foreground">{data?.maintenance.scope || 'No active maintenance'}</p>
+            </CardContent>
+          </Card>
         </div>
       </section>
 

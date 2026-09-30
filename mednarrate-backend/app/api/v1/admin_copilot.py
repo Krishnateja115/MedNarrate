@@ -31,12 +31,12 @@ class CopilotResponse(BaseModel):
 
 
 async def _grounded_reply(query: str, admin_ctx: AdminContext, db: AsyncSession) -> str:
-    """Answer only the small set of read-only operational queries we can ground."""
-    normalized = query.casefold()
+    """Answer permission-scoped operational questions using LLM tool calling."""
+    from app.core.config import settings
+    import httpx
+    import json
 
-    if any(
-        term in normalized for term in ("user", "account", "administrator", "admin")
-    ):
+    async def get_user_summary() -> str:
         total = (await db.execute(select(func.count(User.id)))).scalar_one()
         active = (
             await db.execute(
@@ -44,12 +44,9 @@ async def _grounded_reply(query: str, admin_ctx: AdminContext, db: AsyncSession)
             )
         ).scalar_one()
         suspended = total - active
-        return (
-            f"Current account data: {total} total accounts, {active} active accounts, "
-            f"and {suspended} suspended or disabled accounts."
-        )
+        return f"{total} total accounts, {active} active, {suspended} suspended."
 
-    if any(term in normalized for term in ("incident", "outage")):
+    async def get_incident_summary() -> str:
         incidents = (
             (
                 await db.execute(
@@ -71,17 +68,10 @@ async def _grounded_reply(query: str, admin_ctx: AdminContext, db: AsyncSession)
             .all()
         )
         if not incidents:
-            return "There are no active incidents in the incident register."
-        lines = [f"There are {len(incidents)} active incidents (showing up to 5):"]
-        lines.extend(
-            f"- {item.severity.value}: {item.title} ({item.status.value})"
-            for item in incidents
-        )
-        return "\n".join(lines)
+            return "No active incidents."
+        return "\n".join(f"- {item.severity.value}: {item.title} ({item.status.value})" for item in incidents)
 
-    if any(
-        term in normalized for term in ("audit", "security", "privileged", "change")
-    ):
+    async def get_audit_summary() -> str:
         events = (
             (
                 await db.execute(
@@ -94,27 +84,103 @@ async def _grounded_reply(query: str, admin_ctx: AdminContext, db: AsyncSession)
             .all()
         )
         if not events:
-            return "There are no administrative audit events recorded."
-        lines = ["Most recent administrative audit activity (up to 5 events):"]
-        lines.extend(
-            f"- {event.timestamp.isoformat()}: {event.action} ({event.result})"
-            for event in events
-        )
-        return "\n".join(lines)
+            return "No recent audit events."
+        return "\n".join(f"- {event.timestamp.isoformat()}: {event.action} ({event.result})" for event in events)
 
-    if any(term in normalized for term in ("health", "status", "service", "degraded")):
+    async def get_health_summary() -> str:
         health = await get_system_health(admin_ctx=admin_ctx, db=db)
         service_summary = ", ".join(
-            f"{name.replace('_', ' ')}: {details.get('status', 'unknown')}"
+            f"{name}: {details.get('status', 'unknown')}"
             for name, details in health["services"].items()
         )
-        return f"Overall platform status is {health['status']}. Services: {service_summary}."
+        return f"Overall: {health['status']}. Services: {service_summary}."
 
-    return (
-        "I can answer read-only questions about current account counts, system health, "
-        "active incidents, and recent administrative audit activity. I cannot run shell "
-        "commands, access raw clinical data, or answer outside those verified sources."
-    )
+    functions = {
+        "get_user_summary": get_user_summary,
+        "get_incident_summary": get_incident_summary,
+        "get_audit_summary": get_audit_summary,
+        "get_health_summary": get_health_summary,
+    }
+
+    tools_schema = [
+        {
+            "function_declarations": [
+                {"name": "get_user_summary", "description": "Get a summary of total, active, and suspended users."},
+                {"name": "get_incident_summary", "description": "Get a summary of currently active incidents."},
+                {"name": "get_audit_summary", "description": "Get a summary of recent administrative audit activity."},
+                {"name": "get_health_summary", "description": "Get a summary of current system health and service status."},
+            ]
+        }
+    ]
+
+    api_key = getattr(settings, "GEMINI_API_KEY", None)
+    if not api_key or api_key == "your_gemini_api_key_here":
+        # Fallback to old behavior if no API key
+        normalized = query.casefold()
+        if any(term in normalized for term in ("user", "account")):
+            return await get_user_summary()
+        if any(term in normalized for term in ("incident", "outage")):
+            return await get_incident_summary()
+        if any(term in normalized for term in ("audit", "security", "privileged")):
+            return await get_audit_summary()
+        if any(term in normalized for term in ("health", "status", "service")):
+            return await get_health_summary()
+        return "I can answer read-only questions about users, incidents, audits, and health."
+
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    payload = {
+        "contents": [{"parts": [{"text": query}]}],
+        "tools": tools_schema,
+        "systemInstruction": {
+            "parts": [{"text": "You are MedNarrate Admin Copilot. You can use tools to fetch system health, user counts, incidents, and audits. Answer concisely using the tool results."}]
+        }
+    }
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(url, json=payload, headers={"x-goog-api-key": api_key.strip()})
+        resp.raise_for_status()
+        data = resp.json()
+
+    candidates = data.get("candidates", [])
+    if not candidates:
+        return "I encountered an error trying to process your request."
+
+    parts = candidates[0].get("content", {}).get("parts", [])
+    
+    # Process function calls if any
+    tool_results = []
+    for part in parts:
+        if "functionCall" in part:
+            fc = part["functionCall"]
+            name = fc.get("name")
+            if name in functions:
+                result = await functions[name]()
+                tool_results.append({
+                    "functionResponse": {
+                        "name": name,
+                        "response": {"result": result}
+                    }
+                })
+
+    if not tool_results:
+        # Just text response
+        return "".join(p.get("text", "") for p in parts if "text" in p).strip()
+
+    # Second pass with tool results
+    payload["contents"].append(candidates[0].get("content"))
+    payload["contents"].append({"parts": tool_results})
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(url, json=payload, headers={"x-goog-api-key": api_key.strip()})
+        resp.raise_for_status()
+        data = resp.json()
+
+    candidates = data.get("candidates", [])
+    if not candidates:
+        return "I encountered an error after fetching the data."
+
+    parts = candidates[0].get("content", {}).get("parts", [])
+    return "".join(p.get("text", "") for p in parts if "text" in p).strip()
 
 
 @router.post("/chat", response_model=CopilotResponse)

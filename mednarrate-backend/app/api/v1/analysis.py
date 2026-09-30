@@ -8,6 +8,7 @@ from sqlalchemy.future import select
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.core.maintenance import check_maintenance
 from app.middleware.ownership import verify_report_ownership
 from app.models.analysis_translation import (
     AnalysisTranslation,
@@ -104,6 +105,7 @@ async def process_report(
     force: bool = Query(False),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    maintenance = Depends(check_maintenance("report_analysis")),
 ):
     report = await verify_report_ownership(id, str(current_user.id), db)
 
@@ -217,6 +219,7 @@ async def translate_analysis(
     req: TranslationRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    maintenance = Depends(check_maintenance("translation")),
 ):
     report = await verify_report_ownership(id, str(current_user.id), db)
 

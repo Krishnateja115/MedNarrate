@@ -192,9 +192,6 @@ export default function RagOpsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Knowledge Base & RAG</h1>
           <p className="text-muted-foreground">Manage index health and document lifecycles.</p>
         </div>
-        <Button disabled title="Document upload coming soon">
-          <Upload className="mr-2 h-4 w-4" /> Upload Document
-        </Button>
       </div>
 
       <Tabs defaultValue="status" className="space-y-4">
