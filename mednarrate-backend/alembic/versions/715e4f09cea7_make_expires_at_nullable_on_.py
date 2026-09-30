@@ -52,22 +52,5 @@ def downgrade() -> None:
         batch_op.drop_column("revoker_id")
         batch_op.drop_column("approved_at")
 
-    with op.batch_alter_table("system_settings", schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f("ix_system_settings_key"))
-
-    op.drop_table("system_settings")
-    with op.batch_alter_table("privacy_data_requests", schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f("ix_privacy_data_requests_user_id"))
-        batch_op.drop_index(batch_op.f("ix_privacy_data_requests_status"))
-
-    op.drop_table("privacy_data_requests")
-    op.drop_table("maintenance_mode")
-    with op.batch_alter_table("feature_flags", schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f("ix_feature_flags_name"))
-
-    op.drop_table("feature_flags")
-    with op.batch_alter_table("announcements", schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f("ix_announcements_status"))
-
-    op.drop_table("announcements")
+    # extraneous drops removed
     # ### end Alembic commands ###
