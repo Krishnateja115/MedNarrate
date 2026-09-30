@@ -128,11 +128,7 @@ async def update_feature_flag(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid flag ID format")
 
-    res = await db.execute(
-        select(FeatureFlag).where(FeatureFlag.name == flag_id)
-        if not flag_id.count("-") == 4
-        else select(FeatureFlag).where(FeatureFlag.id == f_uuid)
-    )
+    res = await db.execute(select(FeatureFlag).where(FeatureFlag.id == f_uuid))
     flag = res.scalar_one_or_none()
     if not flag:
         raise HTTPException(status_code=404, detail="Feature flag not found")

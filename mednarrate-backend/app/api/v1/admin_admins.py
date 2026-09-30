@@ -276,12 +276,13 @@ async def create_admin(
     db: AsyncSession = Depends(get_db),
 ):
     role_ids = _parse_role_ids(req.role_ids)
+    if not role_ids:
+        raise HTTPException(status_code=400, detail="At least one role must be assigned during admin creation.")
+        
     roles = (
         (
             await db.execute(select(AdminRole).where(AdminRole.id.in_(role_ids)))
         ).scalars().all()
-        if role_ids
-        else []
     )
     if len(roles) != len(role_ids):
         raise HTTPException(status_code=400, detail="One or more roles do not exist.")

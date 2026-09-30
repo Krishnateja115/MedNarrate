@@ -13,6 +13,7 @@ from app.core.pagination import build_pagination_response, clamp_limit, page_to_
 from app.models.notification_log import NotificationLog
 from app.models.push_token import PushToken
 from app.services.audit import log_admin_action
+from app.services.fcm_service import send_push_notification
 
 router = APIRouter()
 
@@ -36,13 +37,13 @@ async def dispatch_global_notification(
     if payload.audience == "specific_user" and payload.user_id:
         target_users.append(payload.user_id)
     elif payload.audience == "doctors":
-        users = (await db.execute(select(User.id).where(User.role == UserRole.DOCTOR))).scalars().all()
+        users = (await db.execute(select(User.id).where(User.role == UserRole.clinician))).scalars().all()
         target_users.extend(users)
     elif payload.audience == "patients":
-        users = (await db.execute(select(User.id).where(User.role == UserRole.PATIENT))).scalars().all()
+        users = (await db.execute(select(User.id).where(User.role == UserRole.patient))).scalars().all()
         target_users.extend(users)
     elif payload.audience == "caregivers":
-        users = (await db.execute(select(User.id).where(User.role == UserRole.CAREGIVER))).scalars().all()
+        users = (await db.execute(select(User.id).where(User.role == UserRole.caregiver))).scalars().all()
         target_users.extend(users)
     else:
         # All users
@@ -59,24 +60,38 @@ async def dispatch_global_notification(
     if not tokens:
         return {"status": "ok", "message": "No devices registered for target audience.", "dispatched_count": 0}
         
-    # 3. Simulate dispatch and log it
+    # 3. Dispatch and log it
     dispatched_count = 0
+    failed_count = 0
     for tk in tokens:
+        success = await send_push_notification(tk.token, payload.title, payload.body)
+        status = "sent" if success else "failed"
         nl = NotificationLog(
             id=uuid.uuid4(),
             user_id=tk.user_id,
             notification_type="admin_dispatch",
             title=payload.title,
             body=payload.body,
-            status="sent",
+            status=status,
+            error_message=None if success else "Failed to send to push service",
             sent_at=datetime.now(timezone.utc)
         )
         db.add(nl)
-        dispatched_count += 1
+        if success:
+            dispatched_count += 1
+        else:
+            failed_count += 1
         
     await log_admin_action(
         db, admin_ctx, "NOTIFICATION_DISPATCH", "system", "global", 
-        {"audience": payload.audience, "dispatched_count": dispatched_count}, request
+        {
+            "audience": payload.audience,
+            "target_users": len(target_users),
+            "target_devices": len(tokens),
+            "delivered": dispatched_count,
+            "failed": failed_count,
+            "skipped": 0,
+        }, request
     )
     
     await db.commit()
@@ -132,14 +147,25 @@ async def retry_notification(
         
     if log_entry.status == "sent":
         raise HTTPException(status_code=400, detail="Notification was already sent successfully")
+
+    # Find the push token for the user again
+    tk_stmt = select(PushToken).where(PushToken.user_id == log_entry.user_id).order_by(desc(PushToken.updated_at)).limit(1)
+    token = (await db.execute(tk_stmt)).scalars().first()
+    if not token:
+        raise HTTPException(status_code=400, detail="No registered device for user")
         
-    log_entry.status = "sent"
-    log_entry.error_message = None
+    success = await send_push_notification(token.token, log_entry.title, log_entry.body)
+    
+    log_entry.status = "sent" if success else "failed"
+    log_entry.error_message = None if success else "Failed to send to push service"
     log_entry.sent_at = datetime.now(timezone.utc)
     
     await log_admin_action(
-        db, admin_ctx, "NOTIFICATION_RETRY", "notification_log", str(log_id), {}, request
+        db, admin_ctx, "NOTIFICATION_RETRY", "notification_log", str(log_id), 
+        {"success": success}, request
     )
     
     await db.commit()
+    if not success:
+        raise HTTPException(status_code=500, detail="Retry failed.")
     return {"status": "ok", "message": "Notification retried successfully"}

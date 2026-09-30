@@ -25,6 +25,12 @@ interface AdminUser {
   active_sessions: number;
 }
 
+interface AdminRole {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export default function AdminManagementPage() {
   const queryClient = useQueryClient();
   const { user, can } = useAuth();
@@ -37,10 +43,16 @@ export default function AdminManagementPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newName, setNewName] = useState('');
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
   const { data: adminsData, isLoading } = useQuery<{ admins: AdminUser[] }>({
     queryKey: ['admin-users'],
     queryFn: () => fetchApi('/api/v1/admin/admins'),
+  });
+
+  const { data: rolesData } = useQuery<{ roles: AdminRole[] }>({
+    queryKey: ['admin-roles'],
+    queryFn: () => fetchApi('/api/v1/admin/roles'),
   });
 
   const createAdminMutation = useMutation({
@@ -52,6 +64,7 @@ export default function AdminManagementPage() {
       setNewEmail('');
       setNewPassword('');
       setNewName('');
+      setSelectedRoles([]);
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     },
     onError: (err: any) => {
@@ -93,11 +106,15 @@ export default function AdminManagementPage() {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmail || !newPassword) return;
+    if (selectedRoles.length === 0) {
+      setErrorMsg('Please select at least one role.');
+      return;
+    }
     createAdminMutation.mutate({
       email: newEmail,
       password: newPassword,
       full_name: newName || newEmail,
-      role_ids: [],
+      role_ids: selectedRoles,
     });
   };
 
@@ -186,6 +203,26 @@ export default function AdminManagementPage() {
                   className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm"
                   placeholder="••••••••••••"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Assign Roles</label>
+                <div className="space-y-2 border rounded-md p-3 max-h-48 overflow-y-auto dark:border-slate-700">
+                  {rolesData?.roles?.map(role => (
+                    <label key={role.id} className="flex items-center space-x-2">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedRoles.includes(role.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedRoles([...selectedRoles, role.id]);
+                          else setSelectedRoles(selectedRoles.filter(id => id !== role.id));
+                        }}
+                        className="rounded border-slate-300"
+                      />
+                      <span className="text-sm">{role.name}</span>
+                    </label>
+                  ))}
+                  {!rolesData?.roles && <div className="text-xs text-slate-500">Loading roles...</div>}
+                </div>
               </div>
               <Button type="submit" disabled={createAdminMutation.isPending}>
                 {createAdminMutation.isPending ? 'Provisioning...' : 'Provision Admin'}
