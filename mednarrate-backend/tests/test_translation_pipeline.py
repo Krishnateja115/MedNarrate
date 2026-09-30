@@ -95,12 +95,12 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
         self.report_id = uuid.uuid4()
         self.user = types.SimpleNamespace(id=uuid.uuid4())
         self.source = types.SimpleNamespace(id=uuid.uuid4(), report_id=self.report_id,
-            patient_summary='Hemoglobin 10.2 g/dL', abnormal_findings=[])
+            patient_summary='Hemoglobin 10.2 g/dL', abnormal_findings=[], structured_lab_values=[])
         self.saved = []
         self.db = types.SimpleNamespace(execute=AsyncMock(), commit=AsyncMock(), refresh=AsyncMock(),
             delete=AsyncMock(), flush=AsyncMock(), add=self.saved.append)
         self.db.execute.side_effect = [
-            self.result(first=self.source), self.result(all=[]), self.result(first=None),
+            self.result(first=None), self.result(first=self.source), self.result(all=[]), self.result(first=None),
         ]
         self.app.dependency_overrides[analysis.get_current_user] = lambda: self.user
         self.app.dependency_overrides[analysis.get_db] = lambda: self.db
@@ -110,7 +110,10 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
 
     @staticmethod
     def result(first=None, all=None):
-        return types.SimpleNamespace(scalars=lambda: types.SimpleNamespace(first=lambda: first, all=lambda: all))
+        return types.SimpleNamespace(
+            scalars=lambda: types.SimpleNamespace(first=lambda: first, all=lambda: all),
+            scalar_one_or_none=lambda: first
+        )
 
     async def asyncTearDown(self):
         await self.client.aclose()
@@ -155,7 +158,7 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_failed_regeneration_preserves_existing_cache(self):
         stale = types.SimpleNamespace(schema_version=1, ui_labels={})
-        self.db.execute.side_effect = [self.result(first=self.source), self.result(all=[]), self.result(first=stale)]
+        self.db.execute.side_effect = [self.result(first=None), self.result(first=self.source), self.result(all=[]), self.result(first=stale)]
         with patch.object(self.route, 'generate_translation', new=AsyncMock(side_effect=TranslationServiceError())):
             response = await self.client.post(f'/reports/{self.report_id}/analysis/translate', json={'language':'te'})
         self.assertEqual(response.status_code, 502)

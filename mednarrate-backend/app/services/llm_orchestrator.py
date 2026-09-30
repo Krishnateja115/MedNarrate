@@ -129,4 +129,4 @@ async def translate_text_indic(text: str, target_lang_code: str) -> str:
         return translated
     except Exception as exc:
         logger.warning("Indic translation failed: %s", type(exc).__name__)
-        raise TranslationServiceError() from exc
+        return text

@@ -301,7 +301,7 @@ class DevGeminiProvider(LLMProvider):
         # Accepted finish reasons: STOP is normal; RECITATION / OTHER / MAX_TOKENS are non-error.
         # SAFETY / PROHIBITED_CONTENT mean the content was blocked (not retryable).
         _BLOCKED_FINISH_REASONS = {"SAFETY", "PROHIBITED_CONTENT"}
-        _ACCEPTABLE_FINISH_REASONS = {"STOP", "RECITATION", "OTHER", "MAX_TOKENS"}
+        _ACCEPTABLE_FINISH_REASONS = {"STOP", "RECITATION", "OTHER"}
 
         import asyncio
         max_retries = 3

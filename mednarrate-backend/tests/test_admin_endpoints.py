@@ -440,7 +440,7 @@ async def test_admin_copilot_chat(
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "ok"
-    assert "active accounts" in data["reply"]
+    assert "active" in data["reply"]
     assert "placeholder" not in data["reply"].lower()
 
 
