@@ -46,12 +46,13 @@ class LLMProvider(abc.ABC):
         request_id: str | None = None,
         system_instruction: str | None = None,
         thinking_level: str = "LOW",
+        config: dict | None = None,
     ) -> dict:
         """Executes LLM text generation and returns structured metadata response."""
         pass
 
     @abc.abstractmethod
-    async def health_check(self) -> dict:
+    async def health_check(self, config: dict | None = None) -> dict:
         """Evaluates health state: configured, authenticated, reachable, model_available."""
         pass
 
@@ -66,11 +67,12 @@ class VertexAIProvider(LLMProvider):
     def location(self) -> str:
         return getattr(settings, "VERTEX_LOCATION", "us-central1")
 
-    @property
-    def model_name(self) -> str:
+    def get_model_name(self, config: dict | None) -> str:
+        if config and config.get("primary_provider") == "vertex_ai" and config.get("model_name"):
+            return config["model_name"]
         return getattr(settings, "VERTEX_MODEL", "gemini-3.8-flash")
 
-    async def health_check(self) -> dict:
+    async def health_check(self, config: dict | None = None) -> dict:
         has_project = bool(self.project and self.project.strip())
         has_auth = False
         auth_method = "none"
@@ -83,13 +85,14 @@ class VertexAIProvider(LLMProvider):
         except Exception:
             has_auth = False
 
+        model_name = self.get_model_name(config)
         return {
             "provider": "vertex_ai",
             "configured": has_project or has_auth,
             "authenticated": has_auth,
             "auth_method": auth_method,
             "reachable": has_auth,
-            "model": self.model_name,
+            "model": model_name,
             "location": self.location,
             "model_available": has_auth,
         }
@@ -101,12 +104,13 @@ class VertexAIProvider(LLMProvider):
         request_id: str | None = None,
         system_instruction: str | None = None,
         thinking_level: str = "LOW",
+        config: dict | None = None,
     ) -> dict:
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
 
         # Check Application Default Credentials / Auth
-        health = await self.health_check()
+        health = await self.health_check(config)
         if not health["authenticated"]:
             raise LLMConfigurationError(
                 "Vertex AI authentication unavailable. Application Default Credentials (ADC) "
@@ -116,10 +120,10 @@ class VertexAIProvider(LLMProvider):
         try:
             import google.generativeai as genai  # Lazy import — avoids deprecation warnings at startup
 
-            if settings.GEMINI_API_KEY and _is_valid_dev_gemini_key(
-                settings.GEMINI_API_KEY
-            ):
-                genai.configure(api_key=settings.GEMINI_API_KEY.strip())
+            # Try to get gemini key if Vertex logic needs it (usually it doesn't, but preserving old logic just in case)
+            gemini_key = config.get("api_key") if config else getattr(settings, "GEMINI_API_KEY", None)
+            if gemini_key and _is_valid_dev_gemini_key(gemini_key):
+                genai.configure(api_key=gemini_key.strip())
 
             # Use basic GenerationConfig. Gemini 3 ignores temperature/topP/topK and throws errors for penalties.
             generation_config = genai.types.GenerationConfig(
@@ -127,8 +131,9 @@ class VertexAIProvider(LLMProvider):
                 **({"response_mime_type": "application/json"} if _translation_request.get() else {}),
             )
 
+            model_name = self.get_model_name(config)
             model = genai.GenerativeModel(
-                model_name=self.model_name, system_instruction=system_instruction
+                model_name=model_name, system_instruction=system_instruction
             )
             response = await model.generate_content_async(
                 prompt, generation_config=generation_config
@@ -137,11 +142,11 @@ class VertexAIProvider(LLMProvider):
 
             if response and response.text:
                 logger.info(
-                    f"[LLM:VERTEX_AI:SUCCESS] req_id={req_id} latency={latency_ms}ms model={self.model_name}"
+                    f"[LLM:VERTEX_AI:SUCCESS] req_id={req_id} latency={latency_ms}ms model={model_name}"
                 )
                 return {
                     "provider": "vertex_ai",
-                    "model": self.model_name,
+                    "model": model_name,
                     "request_success": True,
                     "response_received": True,
                     "error_category": None,
@@ -167,14 +172,16 @@ class OllamaProvider(LLMProvider):
         url = getattr(settings, "OLLAMA_URL", None) or "http://localhost:11434"
         return url.rstrip("/")
 
-    @property
-    def model_name(self) -> str:
+    def get_model_name(self, config: dict | None) -> str:
+        if config and config.get("primary_provider") == "ollama" and config.get("model_name"):
+            return config["model_name"]
         return getattr(settings, "OLLAMA_MODEL", "llama3:8b")
 
-    async def health_check(self) -> dict:
+    async def health_check(self, config: dict | None = None) -> dict:
         configured = bool(settings.OLLAMA_URL and settings.OLLAMA_URL.strip())
         reachable = False
         model_available = False
+        model_name = self.get_model_name(config)
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.get(f"{self.base_url}/api/tags")
@@ -182,7 +189,7 @@ class OllamaProvider(LLMProvider):
                     reachable = True
                     models = [m.get("name", "") for m in resp.json().get("models", [])]
                     model_available = (
-                        any(self.model_name in m for m in models) or len(models) > 0
+                        any(model_name in m for m in models) or len(models) > 0
                     )
         except Exception:
             reachable = False
@@ -193,7 +200,7 @@ class OllamaProvider(LLMProvider):
             "authenticated": True,  # Local no-auth
             "auth_method": "local_endpoint",
             "reachable": reachable,
-            "model": self.model_name,
+            "model": model_name,
             "location": "local",
             "model_available": model_available,
         }
@@ -205,17 +212,19 @@ class OllamaProvider(LLMProvider):
         request_id: str | None = None,
         system_instruction: str | None = None,
         thinking_level: str = "LOW",
+        config: dict | None = None,
     ) -> dict:
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
         url = f"{self.base_url}/api/generate"
 
         try:
+            model_name = self.get_model_name(config)
             async with httpx.AsyncClient(timeout=timeout if _translation_request.get() else min(timeout, 30.0)) as client:
                 resp = await client.post(
                     url,
                     json={
-                        "model": self.model_name,
+                        "model": model_name,
                         "prompt": prompt,
                         "stream": False,
                         **({"format": "json", "options": {"num_predict": settings.TRANSLATION_MAX_OUTPUT_TOKENS}} if _translation_request.get() else {}),
@@ -227,11 +236,11 @@ class OllamaProvider(LLMProvider):
 
                 if "response" in res_data and res_data["response"]:
                     logger.info(
-                        f"[LLM:OLLAMA:SUCCESS] req_id={req_id} latency={latency_ms}ms model={self.model_name}"
+                        f"[LLM:OLLAMA:SUCCESS] req_id={req_id} latency={latency_ms}ms model={model_name}"
                     )
                     return {
                         "provider": "ollama",
-                        "model": self.model_name,
+                        "model": model_name,
                         "request_success": True,
                         "response_received": True,
                         "error_category": None,
@@ -252,12 +261,14 @@ class OllamaProvider(LLMProvider):
 
 # Development-Only Direct Gemini Provider
 class DevGeminiProvider(LLMProvider):
-    @property
-    def api_key(self) -> str | None:
+    def get_api_key(self, config: dict | None) -> str | None:
+        if config and config.get("api_key"):
+            return config["api_key"]
         return getattr(settings, "GEMINI_API_KEY", None)
 
-    @property
-    def model_name(self) -> str:
+    def get_model_name(self, config: dict | None) -> str:
+        if config and config.get("primary_provider") in ["gemini", "dev_gemini"] and config.get("model_name"):
+            return config["model_name"]
         return getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash")
 
     def _check_production_restriction(self):
@@ -266,15 +277,17 @@ class DevGeminiProvider(LLMProvider):
                 "Direct DevGeminiProvider usage is strictly prohibited in production environment."
             )
 
-    async def health_check(self) -> dict:
-        valid_key = _is_valid_dev_gemini_key(self.api_key)
+    async def health_check(self, config: dict | None = None) -> dict:
+        api_key = self.get_api_key(config)
+        valid_key = _is_valid_dev_gemini_key(api_key)
+        model_name = self.get_model_name(config)
         return {
             "provider": "dev_gemini",
             "configured": valid_key,
             "authenticated": valid_key,
             "auth_method": "direct_api_key",
             "reachable": valid_key,
-            "model": self.model_name,
+            "model": model_name,
             "location": "cloud_development",
             "model_available": valid_key,
         }
@@ -286,17 +299,21 @@ class DevGeminiProvider(LLMProvider):
         request_id: str | None = None,
         system_instruction: str | None = None,
         thinking_level: str = "LOW",
+        config: dict | None = None,
     ) -> dict:
         self._check_production_restriction()
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
+        
+        api_key = self.get_api_key(config)
+        model_name = self.get_model_name(config)
 
-        if not _is_valid_dev_gemini_key(self.api_key):
+        if not _is_valid_dev_gemini_key(api_key):
             raise LLMConfigurationError(
                 "Gemini API key is not configured or is invalid."
             )
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
 
         # Accepted finish reasons: STOP is normal; RECITATION / OTHER / MAX_TOKENS are non-error.
         # SAFETY / PROHIBITED_CONTENT mean the content was blocked (not retryable).
@@ -316,9 +333,9 @@ class DevGeminiProvider(LLMProvider):
                 }
 
                 # Gemini 2.5 uses a budget; Gemini 3 uses a thinking level.
-                if self.model_name.startswith("gemini-3"):
+                if model_name.startswith("gemini-3"):
                     payload["generationConfig"]["thinkingConfig"] = {"thinkingLevel": thinking_level}
-                elif self.model_name.startswith("gemini-2.5-flash"):
+                elif model_name.startswith("gemini-2.5-flash"):
                     payload["generationConfig"]["thinkingConfig"] = {"thinkingBudget": 0}
 
                 if system_instruction:
@@ -327,7 +344,7 @@ class DevGeminiProvider(LLMProvider):
                     }
 
                 async with httpx.AsyncClient(timeout=timeout) as client:
-                    resp = await client.post(url, json=payload, headers={"x-goog-api-key": self.api_key.strip()})
+                    resp = await client.post(url, json=payload, headers={"x-goog-api-key": api_key.strip()})
 
                 # 503 overload: retry with exponential backoff before raising
                 if resp.status_code == 503:
@@ -341,7 +358,7 @@ class DevGeminiProvider(LLMProvider):
                         continue
                     else:
                         raise LLMConnectionError(
-                            f"Gemini API model '{self.model_name}' is currently overloaded (503). "
+                            f"Gemini API model '{model_name}' is currently overloaded (503). "
                             "Please try again in a few minutes."
                         )
 
@@ -353,7 +370,9 @@ class DevGeminiProvider(LLMProvider):
                 candidate = candidates[0] if candidates else {}
                 finish_reason = candidate.get("finishReason", "STOP")
                 if finish_reason in _BLOCKED_FINISH_REASONS:
-                    raise LLMConnectionError(f"Gemini response was blocked by safety filter (finishReason={finish_reason}).")
+                    err = LLMConnectionError(f"Gemini response was blocked by safety filter (finishReason={finish_reason}).")
+                    setattr(err, "is_safety_block", True)
+                    raise err
                 if finish_reason not in _ACCEPTABLE_FINISH_REASONS:
                     raise LLMConnectionError(f"Gemini response was incomplete or truncated (finishReason={finish_reason}).")
 
@@ -365,11 +384,11 @@ class DevGeminiProvider(LLMProvider):
 
                 if content:
                     logger.info(
-                        f"[LLM:DEV_GEMINI:SUCCESS] req_id={req_id} latency={latency_ms}ms model={self.model_name} finish={finish_reason}"
+                        f"[LLM:DEV_GEMINI:SUCCESS] req_id={req_id} latency={latency_ms}ms model={model_name} finish={finish_reason}"
                     )
                     return {
                         "provider": "dev_gemini",
-                        "model": self.model_name,
+                        "model": model_name,
                         "request_success": True,
                         "response_received": True,
                         "error_category": None,
@@ -408,7 +427,7 @@ class DevGeminiProvider(LLMProvider):
 
 # Standalone Fallback Provider for Development & Offline Execution
 class FallbackAIProvider(LLMProvider):
-    async def health_check(self) -> dict:
+    async def health_check(self, config: dict | None = None) -> dict:
         return {
             "provider": "fallback",
             "configured": True,
@@ -427,6 +446,7 @@ class FallbackAIProvider(LLMProvider):
         request_id: str | None = None,
         system_instruction: str | None = None,
         thinking_level: str = "LOW",
+        config: dict | None = None,
     ) -> dict:
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
@@ -730,6 +750,34 @@ class FallbackAIProvider(LLMProvider):
         }
 
 
+async def get_resolved_ai_config() -> dict:
+    from app.core.database import AsyncSessionLocal
+    from app.models.system_setting import SystemSetting
+    from sqlalchemy import select
+
+    settings_records = {}
+    try:
+        async with AsyncSessionLocal() as session:
+            stmt = select(SystemSetting).where(SystemSetting.category == "ai_config")
+            res = await session.execute(stmt)
+            settings_records = {s.key: s.value for s in res.scalars().all()}
+    except Exception as e:
+        logger.error(f"Failed to fetch DB config: {e}")
+
+    primary_provider = settings_records.get("ai_primary_provider", getattr(settings, "PRIMARY_LLM_PROVIDER", "gemini"))
+    model_name = settings_records.get("ai_model_name", getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash"))
+    fallback_provider = settings_records.get("ai_fallback_provider", "ollama")
+    api_key = settings_records.get("ai_api_key", getattr(settings, "GEMINI_API_KEY", None))
+    enable_fallback = getattr(settings, "ENABLE_LLM_FALLBACK", True)
+
+    return {
+        "primary_provider": primary_provider,
+        "model_name": model_name,
+        "fallback_provider": fallback_provider,
+        "api_key": api_key,
+        "enable_fallback": enable_fallback,
+    }
+
 # Client Dispatcher
 class LLMClient:
     def __init__(self):
@@ -769,11 +817,8 @@ class LLMClient:
         thinking_level: str = "LOW",
     ) -> dict:
         req_id = request_id or str(uuid.uuid4())
-        provider_setting = (
-            (getattr(settings, "PRIMARY_LLM_PROVIDER", "gemini") or "auto")
-            .lower()
-            .strip()
-        )
+        config = await get_resolved_ai_config()
+        provider_setting = config.get("primary_provider", "gemini").lower().strip()
 
         from app.core.database import AsyncSessionLocal
         from app.models.llm_telemetry import LLMDiagnosticEvent
@@ -803,192 +848,96 @@ class LLMClient:
             except Exception as e:
                 logger.error(f"Failed to log LLM telemetry: {e}")
 
-        # Explicit Provider Selection
-        if provider_setting in [
-            "vertex_ai",
-            "ollama",
-            "dev_gemini",
-            "gemini",
-            "fallback",
-        ]:
-            if provider_setting == "fallback" and not getattr(
-                settings, "ENABLE_LLM_FALLBACK", True
-            ):
-                raise LLMConfigurationError(
-                    "LLM provider is not configured or is invalid, and the local fallback is disabled."
-                )
-            provider = self.get_provider(provider_setting)
-            try:
-                res = await provider.generate(
-                    prompt,
-                    timeout=timeout,
-                    request_id=req_id,
-                    system_instruction=system_instruction,
-                    thinking_level=thinking_level,
-                )
-                await _log_event(
-                    res.get("provider", provider_setting),
-                    res.get("model", "unknown"),
-                    "success",
-                    res.get("latency_ms", 0.0),
-                    fallback=False,
-                )
-                return res
-            except Exception as e:
-                if getattr(settings, "ENABLE_LLM_FALLBACK", True):
-                    logger.warning(
-                        f"[LLM:{provider_setting.upper()}:FAILED] {e}. Falling back to FallbackAIProvider."
-                    )
-                    res = await self.providers["fallback"].generate(
-                        prompt,
-                        timeout=timeout,
-                        request_id=req_id,
-                        system_instruction=system_instruction,
-                        thinking_level=thinking_level,
-                    )
-                    await _log_event(
-                        "fallback",
-                        res.get("model", "mednarrate-fallback-v1"),
-                        "success",
-                        res.get("latency_ms", 0.0),
-                        fallback=True,
-                    )
-                    return res
-                await _log_event(
-                    provider_setting,
-                    "unknown",
-                    "error",
-                    0.0,
-                    error_category=type(e).__name__,
-                    fallback=False,
-                )
-                raise
-
-        # "auto" Mode Deterministic Order: Vertex AI -> Ollama -> Dev Gemini -> Fallback
-        # 1. Try Vertex AI
-        v_provider = self.providers["vertex_ai"]
-        v_health = await v_provider.health_check()
-        if v_health["configured"] and v_health["authenticated"]:
-            try:
-                res = await v_provider.generate(
-                    prompt,
-                    timeout=timeout,
-                    request_id=req_id,
-                    system_instruction=system_instruction,
-                    thinking_level=thinking_level,
-                )
-                await _log_event(
-                    res.get("provider", "vertex_ai"),
-                    res.get("model", "unknown"),
-                    "success",
-                    res.get("latency_ms", 0.0),
-                    fallback=False,
-                )
-                return res
-            except Exception as e:
-                logger.warning(
-                    f"[LLM:AUTO:VERTEX_FAILED] Vertex AI failed in auto mode: {e}"
-                )
-                await _log_event(
-                    "vertex_ai",
-                    "unknown",
-                    "error",
-                    0.0,
-                    error_category=type(e).__name__,
-                    fallback=False,
-                )
-
-        # 2. Try Ollama
-        o_provider = self.providers["ollama"]
-        o_health = await o_provider.health_check()
-        if o_health["reachable"]:
-            try:
-                res = await o_provider.generate(
-                    prompt,
-                    timeout=timeout,
-                    request_id=req_id,
-                    system_instruction=system_instruction,
-                    thinking_level=thinking_level,
-                )
-                await _log_event(
-                    res.get("provider", "ollama"),
-                    res.get("model", "unknown"),
-                    "success",
-                    res.get("latency_ms", 0.0),
-                    fallback=False,
-                )
-                return res
-            except Exception as e:
-                logger.warning(
-                    f"[LLM:AUTO:OLLAMA_FAILED] Ollama failed in auto mode: {e}"
-                )
-                await _log_event(
-                    "ollama",
-                    "unknown",
-                    "error",
-                    0.0,
-                    error_category=type(e).__name__,
-                    fallback=False,
-                )
-
-        # 3. Try Dev Gemini if key present
-        g_provider = self.providers["dev_gemini"]
-        g_health = await g_provider.health_check()
-        if g_health["configured"]:
-            try:
-                res = await g_provider.generate(
-                    prompt,
-                    timeout=timeout,
-                    request_id=req_id,
-                    system_instruction=system_instruction,
-                    thinking_level=thinking_level,
-                )
-                await _log_event(
-                    res.get("provider", "dev_gemini"),
-                    res.get("model", "unknown"),
-                    "success",
-                    res.get("latency_ms", 0.0),
-                    fallback=False,
-                )
-                return res
-            except Exception as e:
-                logger.warning(
-                    f"[LLM:AUTO:DEV_GEMINI_FAILED] Dev Gemini failed in auto mode: {e}"
-                )
-                await _log_event(
-                    "dev_gemini",
-                    "unknown",
-                    "error",
-                    0.0,
-                    error_category=type(e).__name__,
-                    fallback=False,
-                )
-
-        # 4. Fallback Provider if enabled
-        if getattr(settings, "ENABLE_LLM_FALLBACK", True):
-            f_provider = self.providers["fallback"]
-            res = await f_provider.generate(
+        # Deterministic Provider Chain
+        primary_name = provider_setting
+        fallback_name = config.get("fallback_provider", "ollama").lower().strip()
+        enable_fallback = config.get("enable_fallback", True)
+        
+        # 1. Primary Provider
+        primary_provider = self.get_provider(primary_name)
+        try:
+            res = await primary_provider.generate(
                 prompt,
                 timeout=timeout,
                 request_id=req_id,
                 system_instruction=system_instruction,
                 thinking_level=thinking_level,
+                config=config,
             )
             await _log_event(
-                "fallback",
-                res.get("model", "mednarrate-fallback-v1"),
+                res.get("provider", primary_name),
+                res.get("model", "unknown"),
                 "success",
                 res.get("latency_ms", 0.0),
-                fallback=True,
+                fallback=False,
             )
             return res
+        except Exception as e:
+            is_safety_block = getattr(e, "is_safety_block", False)
+            if is_safety_block:
+                logger.error(f"[LLM:{primary_name.upper()}:SAFETY_BLOCK] Request rejected. Not falling back.")
+                await _log_event(primary_name, "unknown", "error", 0.0, error_category="SAFETY_BLOCK", fallback=False)
+                raise
+            
+            error_cat = type(e).__name__
+            logger.warning(f"[LLM:{primary_name.upper()}:FAILED] {e}. error={error_cat}")
+            await _log_event(primary_name, "unknown", "error", 0.0, error_category=error_cat, fallback=False)
+            
+            if not enable_fallback:
+                raise
 
-        err = LLMConfigurationError(
-            "LLM provider is not configured or is invalid. Configure VERTEX_PROJECT_ID, "
-            "OLLAMA_URL, or GEMINI_API_KEY and try again."
-        )
-        err.failure_category = "LLM_NOT_CONFIGURED"
-        raise err
+        # 2. Configured Fallback Provider
+        if fallback_name != "none" and fallback_name != primary_name:
+            fallback_provider = self.get_provider(fallback_name)
+            try:
+                res = await fallback_provider.generate(
+                    prompt,
+                    timeout=timeout,
+                    request_id=req_id,
+                    system_instruction=system_instruction,
+                    thinking_level=thinking_level,
+                    config=config,
+                )
+                await _log_event(
+                    res.get("provider", fallback_name),
+                    res.get("model", "unknown"),
+                    "success",
+                    res.get("latency_ms", 0.0),
+                    fallback=True,
+                )
+                return res
+            except Exception as e:
+                is_safety_block = getattr(e, "is_safety_block", False)
+                if is_safety_block:
+                    logger.error(f"[LLM:{fallback_name.upper()}:SAFETY_BLOCK] Request rejected.")
+                    await _log_event(fallback_name, "unknown", "error", 0.0, error_category="SAFETY_BLOCK", fallback=True)
+                    raise
+                
+                error_cat = type(e).__name__
+                logger.warning(f"[LLM:{fallback_name.upper()}:FAILED] {e}. error={error_cat}")
+                await _log_event(fallback_name, "unknown", "error", 0.0, error_category=error_cat, fallback=True)
+
+        # 3. Safe Internal Fallback (Last Resort)
+        safe_fallback = self.providers["fallback"]
+        try:
+            res = await safe_fallback.generate(
+                prompt,
+                timeout=timeout,
+                request_id=req_id,
+                system_instruction=system_instruction,
+                thinking_level=thinking_level,
+                config=config,
+            )
+            await _log_event("fallback", res.get("model", "mednarrate-fallback-v1"), "success", res.get("latency_ms", 0.0), fallback=True)
+            return res
+        except Exception as e:
+            logger.error(f"[LLM:INTERNAL_FALLBACK:FAILED] {e}")
+            await _log_event("fallback", "mednarrate-fallback-v1", "error", 0.0, error_category=type(e).__name__, fallback=True)
+            err = LLMConfigurationError(
+                "All LLM providers failed, including the internal safe fallback."
+            )
+            err.failure_category = "ALL_PROVIDERS_FAILED"
+            raise err
 
     async def generate(
         self,

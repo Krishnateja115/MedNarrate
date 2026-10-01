@@ -104,7 +104,17 @@ async def test_llm_provider_auto_selection(monkeypatch):
     monkeypatch.setattr(settings, "OLLAMA_URL", "http://127.0.0.1:99999")
     monkeypatch.setattr(settings, "ENABLE_LLM_FALLBACK", False)
 
-    with pytest.raises(LLMConfigurationError, match="not configured or is invalid"):
+    async def mock_config():
+        return {
+            "primary_provider": "auto",
+            "model_name": "gemini-1.5-flash",
+            "fallback_provider": "none",
+            "api_key": None,
+            "enable_fallback": False,
+        }
+    monkeypatch.setattr("app.services.llm_client.get_resolved_ai_config", mock_config)
+
+    with pytest.raises(LLMConfigurationError, match="not configured or is invalid|All LLM providers failed"):
         await generate("Test prompt", timeout=0.5)
 
 

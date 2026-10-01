@@ -40,6 +40,10 @@ interface AlertsResponse {
   unread_count: number;
 }
 
+interface HealthResponse {
+  status: 'healthy' | 'degraded' | 'down' | 'unknown';
+}
+
 interface BreakGlassSummaryResponse {
   status: 'ok' | 'attention';
   active_count: number;
@@ -109,6 +113,19 @@ export function Topbar() {
     retry: false, // Don't retry 401s — that would re-trigger auth:unauthorized
   });
 
+  const {
+    data: healthData,
+    isError: healthError,
+    isLoading: healthLoading,
+  } = useQuery<HealthResponse>({
+    queryKey: ['topbar-health'],
+    queryFn: () => fetchApi('/api/v1/admin/health'),
+    enabled: isAuthenticated && !authLoading,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: false,
+  });
+
   // ── Break-glass count query ─────────────────────────────────────────────────
   // Only fetch the non-sensitive global count. Full grants stay on Security.
   const {
@@ -129,13 +146,16 @@ export function Topbar() {
   const hasCriticalAlerts = alerts.some((alert) => alert.severity === 'critical' && !alert.acknowledged);
   const hasOperationalAlerts = alerts.some((alert) => !alert.acknowledged);
   const alertsForbidden = (alertsQueryError as ApiError | null)?.status === 403;
+  const isSystemDegraded = healthData?.status === 'degraded' || healthData?.status === 'down' || healthError;
   const systemStatus = alertsError
     ? 'Status unavailable'
     : hasCriticalAlerts
       ? 'Critical attention'
       : hasOperationalAlerts
         ? 'Attention required'
-        : 'Systems operational';
+        : isSystemDegraded
+          ? 'System Degraded'
+          : 'Systems operational';
 
   // ── Search debounce ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -312,25 +332,25 @@ export function Topbar() {
           </button>
         )}
 
-        {/* Lightweight system status derived from the shared alerts query. */}
+        {/* Lightweight system status derived from the shared alerts query and system health. */}
         {!isBreakGlassActive && isAuthenticated && !authLoading && (
           <div className={`hidden md:flex items-center px-3 py-1 rounded-full text-xs font-semibold border gap-1.5
-            ${alertsError
+            ${(alertsError || healthError)
               ? 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700'
               : hasCriticalAlerts
                 ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800'
-                : hasOperationalAlerts
+                : hasOperationalAlerts || isSystemDegraded
                   ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800'
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800'
             }`}>
-            {alertsLoading ? (
+            {(alertsLoading || healthLoading) ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : hasCriticalAlerts || hasOperationalAlerts || alertsError ? (
+            ) : hasCriticalAlerts || hasOperationalAlerts || alertsError || isSystemDegraded ? (
               <AlertTriangle className="w-3.5 h-3.5" />
             ) : (
               <CheckCircle2 className="w-3.5 h-3.5" />
             )}
-            {alertsLoading ? 'Checking systems' : systemStatus}
+            {(alertsLoading || healthLoading) ? 'Checking systems' : systemStatus}
           </div>
         )}
 

@@ -180,15 +180,30 @@ async def test_ai_credential(
     Tests the currently configured AI provider credential without returning or exposing it.
     Returns: {reachable, authenticated, model_available, request_successful}
     """
-    from app.core.config import settings as cfg
-    from app.services.llm_client import llm_client_instance
+    from app.services.llm_client import llm_client_instance, get_resolved_ai_config
 
-    provider_name = (
-        (getattr(cfg, "PRIMARY_LLM_PROVIDER", "auto") or "auto").lower().strip()
-    )
     try:
+        config = await get_resolved_ai_config()
+        provider_name = config.get("primary_provider", "auto").lower().strip()
         provider = llm_client_instance.get_provider(provider_name)
-        health = await provider.health_check()
+        health = await provider.health_check(config=config)
+
+        # Perform a real bounded provider request
+        request_successful = False
+        error_summary = None
+        if health.get("reachable", False):
+            try:
+                await provider.generate("Test connection", timeout=5.0, config=config)
+                request_successful = True
+            except Exception as e:
+                request_successful = False
+                error_summary = str(e)
+        else:
+            error_summary = "Provider not reachable based on health check."
+
+        health["request_successful"] = request_successful
+        if error_summary:
+            health["error_summary"] = error_summary
 
         await log_admin_action(
             db=db,
@@ -211,12 +226,12 @@ async def test_ai_credential(
             "provider": provider_name,
             "reachable": health.get("reachable", False),
             "configured": health.get("configured", False),
-            "request_successful": health.get("request_successful", False),
+            "request_successful": request_successful,
             "error_summary": health.get("error_summary", None)
-            if not health.get("request_successful")
+            if not request_successful
             else None,
         }
-    except Exception:
+    except Exception as exc:
         await log_admin_action(
             db=db,
             actor_admin_id=admin_ctx.user_id,
@@ -226,13 +241,13 @@ async def test_ai_credential(
             permission_used="ai_config:manage",
             result="failure",
             request=request,
-            metadata={"provider": provider_name},
+            metadata={"provider": "unknown", "error": str(exc)},
         )
         await db.commit()
         return {
-            "provider": provider_name,
+            "provider": "unknown",
             "reachable": False,
             "configured": False,
             "request_successful": False,
-            "error_summary": "Provider check failed",
+            "error_summary": "Provider check failed or exception occurred.",
         }

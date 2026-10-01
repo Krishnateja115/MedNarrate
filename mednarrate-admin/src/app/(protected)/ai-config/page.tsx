@@ -118,8 +118,7 @@ export default function AIConfigPage() {
                     className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm"
                   >
                     <option value="gemini">Google Gemini</option>
-                    <option value="openai">OpenAI GPT-4o</option>
-                    <option value="anthropic">Anthropic Claude 3.5</option>
+                    <option value="vertex_ai">Google Vertex AI</option>
                     <option value="ollama">Local Ollama (Offline)</option>
                   </select>
                 </div>
@@ -167,7 +166,7 @@ export default function AIConfigPage() {
                     className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm"
                   >
                     <option value="ollama">Local Ollama Engine</option>
-                    <option value="rule_based">Rule-Based Extraction Engine</option>
+                    <option value="fallback">Local Safe Fallback</option>
                     <option value="none">None (Fail fast)</option>
                   </select>
                 </div>
@@ -182,7 +181,7 @@ export default function AIConfigPage() {
                 <Key className="w-5 h-5 text-amber-500" /> Provider Secret Key (Masked)
               </CardTitle>
               <CardDescription>
-                API keys are encrypted and NEVER exposed plain-text in GET responses.
+                API keys are securely stored and NEVER exposed plain-text in GET responses.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
