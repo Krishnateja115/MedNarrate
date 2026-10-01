@@ -148,6 +148,168 @@ async def get_test_trend(
     return points[-limit:]
 
 
+@router.get("/compare", response_model=ReportComparisonResult)
+async def compare_reports_multiple(
+    report_ids: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    ids = [uuid.UUID(r_id.strip()) for r_id in report_ids.split(",") if r_id.strip()]
+    if len(ids) < 2 or len(ids) > 5:
+        raise HTTPException(
+            status_code=400, detail="Must provide between 2 and 5 report IDs"
+        )
+
+    # Verify ownership and fetch reports
+    stmt = (
+        select(Report)
+        .where(Report.id.in_(ids), Report.user_id == current_user.id)
+        .order_by(Report.report_date)
+    )
+    reports = (await db.execute(stmt)).scalars().all()
+
+    if len(reports) != len(ids):
+        raise HTTPException(
+            status_code=404, detail="One or more reports not found or unauthorized"
+        )
+
+    reports_sorted = sorted(reports, key=lambda r: r.report_date)
+
+    # Fetch analyses
+    stmt_analyses = select(ReportAnalysis).where(
+        ReportAnalysis.report_id.in_([r.id for r in reports_sorted])
+    )
+    analyses = (await db.execute(stmt_analyses)).scalars().all()
+    analysis_by_report_id = {str(a.report_id): a for a in analyses}
+
+    # Build comparison object
+    param_map = {}
+
+    for report in reports_sorted:
+        analysis = analysis_by_report_id.get(str(report.id))
+        if not analysis:
+            continue
+
+        for lab in analysis.structured_lab_values:
+            norm_name = normalize_parameter_name(lab["test_name"])
+            unit = lab.get("unit", "").strip()
+
+            # Key by parameter AND unit to avoid comparing apples to oranges
+            key = f"{norm_name}|{unit}"
+
+            if key not in param_map:
+                param_map[key] = {
+                    "parameter": norm_name,
+                    "unit": unit,
+                    "reference_range": f"{lab.get('ref_low', '')}-{lab.get('ref_high', '')}",
+                    "values": [],
+                }
+
+            # Check if this report already has a value for this param
+            existing = [
+                v for v in param_map[key]["values"] if v["report_id"] == str(report.id)
+            ]
+            if not existing:
+                param_map[key]["values"].append(
+                    {
+                        "report_id": str(report.id),
+                        "date": report.report_date.isoformat(),
+                        "value": lab["value"],
+                        "status": lab.get("flag", "not_classified"),
+                    }
+                )
+
+    # Filter to parameters present in at least 2 reports and compute trends
+    comparisons = []
+    diffed_findings = []
+
+    for key, data in param_map.items():
+        if len(data["values"]) >= 2:
+            values = data["values"]
+            # Sort by date
+            values.sort(key=lambda x: x["date"])
+
+            # Compute changes
+            for i in range(1, len(values)):
+                values[i]["change_from_previous"] = round(
+                    values[i]["value"] - values[i - 1]["value"], 2
+                )
+
+            first_val = values[0]["value"]
+            last_val = values[-1]["value"]
+            first_status = values[0]["status"]
+            last_status = values[-1]["status"]
+
+            trend = "stable"
+
+            # Trend logic relative to status bounds
+            pct_change = abs((last_val - first_val) / first_val) if first_val else 0
+            if pct_change <= 0.05:
+                trend = "stable"
+            else:
+                if first_status != "normal" and last_status == "normal":
+                    trend = "improving"
+                elif first_status == "normal" and last_status != "normal":
+                    trend = "worsening"
+                elif last_status == "high":
+                    if last_val > first_val:
+                        trend = "worsening"
+                    else:
+                        trend = "improving"
+                elif last_status == "low":
+                    if last_val < first_val:
+                        trend = "worsening"
+                    else:
+                        trend = "improving"
+                else:
+                    # e.g., both normal but fluctuated > 5%
+                    trend = "stable"
+
+            lab_value_points = [LabValuePoint(**v) for v in values]
+
+            param_name = data["parameter"]
+            diffed_findings.append(
+                {
+                    "parameter": param_name,
+                    "first_value": first_val,
+                    "last_value": last_val,
+                    "first_status": first_status,
+                    "last_status": last_status,
+                    "trend": trend,
+                }
+            )
+
+            comparisons.append(
+                ParameterComparison(
+                    parameter=param_name,
+                    unit=data["unit"],
+                    reference_range=data["reference_range"],
+                    values=lab_value_points,
+                    trend=trend,
+                )
+            )
+
+    import json
+
+    diffed_json = json.dumps(diffed_findings, indent=2)
+    prompt = TREND_NARRATIVE_PROMPT.format(diffed_findings_json=diffed_json)
+
+    ai_summary = "Not enough data to compare."
+    if diffed_findings:
+        try:
+            ai_summary = await generate(prompt)
+        except Exception:
+            ai_summary = "Comparison summary temporarily unavailable."
+
+    return ReportComparisonResult(
+        report_ids=[str(r.id) for r in reports_sorted],
+        comparisons=comparisons,
+        ai_summary=ai_summary,
+    )
+
+
+
+
 @router.get("/{id}", response_model=ReportOut)
 async def get_report(
     id: str,
@@ -370,166 +532,6 @@ async def compare_previous(
         previous_report_id=prev_report.id,
         compared_findings=diffed_findings,
         narrative_summary=summary,
-    )
-
-
-@router.get("/compare", response_model=ReportComparisonResult)
-async def compare_reports_multiple(
-    report_ids: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    ids = [r_id.strip() for r_id in report_ids.split(",") if r_id.strip()]
-    if len(ids) < 2 or len(ids) > 5:
-        raise HTTPException(
-            status_code=400, detail="Must provide between 2 and 5 report IDs"
-        )
-
-    # Verify ownership and fetch reports
-    stmt = (
-        select(Report)
-        .where(Report.id.in_(ids), Report.user_id == current_user.id)
-        .order_by(Report.report_date)
-    )
-    reports = (await db.execute(stmt)).scalars().all()
-
-    if len(reports) != len(ids):
-        raise HTTPException(
-            status_code=404, detail="One or more reports not found or unauthorized"
-        )
-
-    reports_sorted = sorted(reports, key=lambda r: r.report_date)
-
-    # Fetch analyses
-    stmt_analyses = select(ReportAnalysis).where(
-        ReportAnalysis.report_id.in_([r.id for r in reports_sorted])
-    )
-    analyses = (await db.execute(stmt_analyses)).scalars().all()
-    analysis_by_report_id = {str(a.report_id): a for a in analyses}
-
-    # Build comparison object
-    param_map = {}
-
-    for report in reports_sorted:
-        analysis = analysis_by_report_id.get(str(report.id))
-        if not analysis:
-            continue
-
-        for lab in analysis.structured_lab_values:
-            norm_name = normalize_parameter_name(lab["test_name"])
-            unit = lab.get("unit", "").strip()
-
-            # Key by parameter AND unit to avoid comparing apples to oranges
-            key = f"{norm_name}|{unit}"
-
-            if key not in param_map:
-                param_map[key] = {
-                    "parameter": norm_name,
-                    "unit": unit,
-                    "reference_range": f"{lab.get('ref_low', '')}-{lab.get('ref_high', '')}",
-                    "values": [],
-                }
-
-            # Check if this report already has a value for this param
-            existing = [
-                v for v in param_map[key]["values"] if v["report_id"] == str(report.id)
-            ]
-            if not existing:
-                param_map[key]["values"].append(
-                    {
-                        "report_id": str(report.id),
-                        "date": report.report_date.isoformat(),
-                        "value": lab["value"],
-                        "status": lab.get("flag", "not_classified"),
-                    }
-                )
-
-    # Filter to parameters present in at least 2 reports and compute trends
-    comparisons = []
-    diffed_findings = []
-
-    for key, data in param_map.items():
-        if len(data["values"]) >= 2:
-            values = data["values"]
-            # Sort by date
-            values.sort(key=lambda x: x["date"])
-
-            # Compute changes
-            for i in range(1, len(values)):
-                values[i]["change_from_previous"] = round(
-                    values[i]["value"] - values[i - 1]["value"], 2
-                )
-
-            first_val = values[0]["value"]
-            last_val = values[-1]["value"]
-            first_status = values[0]["status"]
-            last_status = values[-1]["status"]
-
-            trend = "stable"
-
-            # Trend logic relative to status bounds
-            pct_change = abs((last_val - first_val) / first_val) if first_val else 0
-            if pct_change <= 0.05:
-                trend = "stable"
-            else:
-                if first_status != "normal" and last_status == "normal":
-                    trend = "improving"
-                elif first_status == "normal" and last_status != "normal":
-                    trend = "worsening"
-                elif last_status == "high":
-                    if last_val > first_val:
-                        trend = "worsening"
-                    else:
-                        trend = "improving"
-                elif last_status == "low":
-                    if last_val < first_val:
-                        trend = "worsening"
-                    else:
-                        trend = "improving"
-                else:
-                    # e.g., both normal but fluctuated > 5%
-                    trend = "stable"
-
-            lab_value_points = [LabValuePoint(**v) for v in values]
-
-            param_name = data["parameter"]
-            diffed_findings.append(
-                {
-                    "parameter": param_name,
-                    "first_value": first_val,
-                    "last_value": last_val,
-                    "first_status": first_status,
-                    "last_status": last_status,
-                    "trend": trend,
-                }
-            )
-
-            comparisons.append(
-                ParameterComparison(
-                    parameter=param_name,
-                    unit=data["unit"],
-                    reference_range=data["reference_range"],
-                    values=lab_value_points,
-                    trend=trend,
-                )
-            )
-
-    import json
-
-    diffed_json = json.dumps(diffed_findings, indent=2)
-    prompt = TREND_NARRATIVE_PROMPT.format(diffed_findings_json=diffed_json)
-
-    ai_summary = "Not enough data to compare."
-    if diffed_findings:
-        try:
-            ai_summary = await generate(prompt)
-        except Exception:
-            ai_summary = "Comparison summary temporarily unavailable."
-
-    return ReportComparisonResult(
-        report_ids=[str(r.id) for r in reports_sorted],
-        comparisons=comparisons,
-        ai_summary=ai_summary,
     )
 
 

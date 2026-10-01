@@ -7,27 +7,47 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://mednarrate_user:password@db:5432/mednarrate
-      - ENVIRONMENT=production
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-mednarrate_user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-mednarrate}}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - JWT_SECRET=${JWT_SECRET:-please_change_this_secret_in_production}
+    command: bash -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   db:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg15
     environment:
-      - POSTGRES_USER=mednarrate_user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=mednarrate
+      - POSTGRES_USER=${POSTGRES_USER:-mednarrate_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-mednarrate}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mednarrate_user} -d ${POSTGRES_DB:-mednarrate}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

@@ -67,3 +67,32 @@ async def test_ai_config_does_not_leak_key(
     assert data["api_key_status"]["is_set"] is True
     assert "masked_key" not in data["api_key_status"]
     assert "sk-" not in str(data)
+
+@pytest.mark.asyncio
+async def test_ai_config_key_is_encrypted_in_db(
+    client: AsyncClient, ai_config_admin: User, db_session: AsyncSession
+):
+    token = create_access_token(subject=str(ai_config_admin.id))
+    secret_key = "sk-super-secret-db-key-98765"
+
+    put_resp = await client.put(
+        "/api/v1/admin/ai-config",
+        json={"api_key": secret_key},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert put_resp.status_code == 200
+
+    from app.models.system_setting import SystemSetting
+    stmt = select(SystemSetting).where(SystemSetting.key == "ai_api_key")
+    res = await db_session.execute(stmt)
+    setting = res.scalar_one_or_none()
+
+    assert setting is not None
+    # Verify the plaintext key is NOT stored in the DB
+    assert setting.value != secret_key
+    assert secret_key not in setting.value
+
+    # Verify we can decrypt it back
+    from app.core.encryption import decrypt_value
+    decrypted = decrypt_value(setting.value)
+    assert decrypted == secret_key

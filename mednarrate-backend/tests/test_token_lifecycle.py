@@ -45,39 +45,34 @@ def make_invalid_token() -> str:
     )
 
 
-@pytest_asyncio.fixture
-async def client():
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as c:
-        yield c
+
 
 
 @pytest_asyncio.fixture
-async def test_user_and_token():
+async def test_user_and_token(db_session):
     """Creates a real user in the DB and returns (user_id, valid_access_token, valid_refresh_token)."""
-    async with AsyncSessionLocal() as db:
-        email = f"lifecycle_{uuid.uuid4().hex[:8]}@test.dev"
-        user = User(
-            email=email,
-            hashed_password=hash_password("Test@1234"),
-            full_name="Lifecycle Test User",
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
+    db = db_session
+    email = f"lifecycle_{uuid.uuid4().hex[:8]}@test.dev"
+    user = User(
+        email=email,
+        hashed_password=hash_password("Test@1234"),
+        full_name="Lifecycle Test User",
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
 
-        access_token = create_access_token(subject=str(user.id))
-        refresh_str = create_refresh_token()
-        rt = RefreshToken(
-            user_id=user.id,
-            token_hash=hash_token(refresh_str),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=7),
-        )
-        db.add(rt)
-        await db.commit()
+    access_token = create_access_token(subject=str(user.id))
+    refresh_str = create_refresh_token()
+    rt = RefreshToken(
+        user_id=user.id,
+        token_hash=hash_token(refresh_str),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+    )
+    db.add(rt)
+    await db.commit()
 
-        yield str(user.id), access_token, refresh_str
+    yield str(user.id), access_token, refresh_str
 
 
 # ─────────────────────────── Token Tests ─────────────────────────────────────

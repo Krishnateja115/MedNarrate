@@ -140,8 +140,10 @@ async def update_ai_configuration(
         changes["fallback_provider"] = payload.fallback_provider
 
     if payload.api_key is not None and payload.api_key.strip():
+        from app.core.encryption import encrypt_value
+        encrypted_key = encrypt_value(payload.api_key.strip())
         await _upsert_setting(
-            "ai_api_key", payload.api_key.strip(), True, "AI Provider API Key"
+            "ai_api_key", encrypted_key, True, "AI Provider API Key"
         )
         changes["api_key"] = "[UPDATED_SENSITIVE]"
 

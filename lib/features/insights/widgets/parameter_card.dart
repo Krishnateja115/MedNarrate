@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
@@ -25,13 +26,13 @@ class ParameterCard extends StatelessWidget {
     Color trendColor;
     IconData trendIcon;
     if (comparison.trend == 'improving') {
-      trendColor = Colors.green;
+      trendColor = AppColors.success;
       trendIcon = Icons.trending_up;
     } else if (comparison.trend == 'worsening') {
-      trendColor = Colors.red;
+      trendColor = AppColors.error;
       trendIcon = Icons.trending_down;
     } else {
-      trendColor = Colors.amber;
+      trendColor = AppColors.warning;
       trendIcon = Icons.remove;
     }
 
@@ -223,13 +224,13 @@ class ParameterCard extends StatelessWidget {
               ? [
                   HorizontalLine(
                     y: refMax,
-                    color: Colors.green.withValues(alpha: 0.3),
+                    color: AppColors.success.withValues(alpha: 0.3),
                     strokeWidth: 2,
                     dashArray: [5, 5],
                   ),
                   HorizontalLine(
                     y: refMin,
-                    color: Colors.green.withValues(alpha: 0.3),
+                    color: AppColors.success.withValues(alpha: 0.3),
                     strokeWidth: 2,
                     dashArray: [5, 5],
                   ),
@@ -247,11 +248,11 @@ class ParameterCard extends StatelessWidget {
               show: true,
               getDotPainter: (spot, percent, barData, index) {
                 final status = values[index].status;
-                Color dotColor = Colors.green;
+                Color dotColor = AppColors.success;
                 if (status == 'low' || status == 'high' || status == 'critical') {
-                  dotColor = Colors.red;
+                  dotColor = AppColors.error;
                 } else if (status == 'borderline') {
-                  dotColor = Colors.amber;
+                  dotColor = AppColors.warning;
                 }
                 return FlDotCirclePainter(
                   radius: 5,
