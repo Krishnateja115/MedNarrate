@@ -39,8 +39,7 @@ class User(Base):
     mfa_secret: Mapped[str | None] = mapped_column(String, nullable=True)
     mfa_recovery_codes: Mapped[str | None] = mapped_column(String, nullable=True)
     session_version: Mapped[int] = mapped_column(Integer, default=1, server_default='1', nullable=False)
-    last_mfa_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    last_mfa_jti: Mapped[str | None] = mapped_column(String, nullable=True)
+    last_totp_counter: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     support_tickets = relationship(
         "SupportTicket", back_populates="user", foreign_keys="[SupportTicket.user_id]"

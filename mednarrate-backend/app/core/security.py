@@ -106,6 +106,50 @@ def decode_mfa_enrollment_token(token: str) -> dict:
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
+async def verify_totp_and_prevent_replay(user, code: str, secret: str, db: AsyncSession) -> bool:
+    import pyotp
+    totp = pyotp.TOTP(secret)
+    # PyOTP uses valid_window to check current and nearby timesteps.
+    # We want to identify EXACTLY which counter matched, to prevent replay.
+    current_counter = int(datetime.now().timestamp() / totp.interval)
+
+    # valid_window=1 means checking current, current-1, current+1
+    matched_counter = None
+    for offset in (0, -1, 1):
+        test_counter = current_counter + offset
+        if secrets.compare_digest(totp.generate_otp(test_counter), code):
+            matched_counter = test_counter
+            break
+
+    if matched_counter is None:
+        return False
+
+    if user.last_totp_counter is not None and matched_counter <= user.last_totp_counter:
+        # Replay detected or old code used
+        return False
+
+    # Update counter
+    user.last_totp_counter = matched_counter
+    db.add(user)
+    return True
+
+async def consume_mfa_challenge(jti: str, user_id, db: AsyncSession) -> bool:
+    from app.models.mfa_challenge import MFAChallenge
+    from sqlalchemy.exc import IntegrityError
+    try:
+        challenge = MFAChallenge(
+            jti=jti,
+            user_id=user_id,
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=5),
+            used_at=datetime.now(timezone.utc)
+        )
+        db.add(challenge)
+        await db.flush() # Will raise IntegrityError if jti already exists (already consumed)
+        return True
+    except IntegrityError:
+        await db.rollback()
+        return False
+
 
 def decode_access_token(token: str) -> dict:
     try:
@@ -173,7 +217,7 @@ async def get_current_user(
             detail="Account is inactive",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     token_session_version = payload.get("session_version")
     if token_session_version is None or token_session_version != user.session_version:
         raise HTTPException(
@@ -181,5 +225,24 @@ async def get_current_user(
             detail="Session has been invalidated or is missing version claim",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
+
     return user
+
+
+async def revoke_all_user_sessions(user, db: AsyncSession, increment_session_version: bool = True):
+    """
+    Centrally revokes all refresh tokens for a user and optionally increments session_version
+    to instantly invalidate active access tokens.
+    """
+    from sqlalchemy import update
+    from app.models.refresh_token import RefreshToken
+
+    if increment_session_version:
+        user.session_version += 1
+        db.add(user)
+
+    await db.execute(
+        update(RefreshToken)
+        .where(RefreshToken.user_id == user.id)
+        .values(revoked=True)
+    )

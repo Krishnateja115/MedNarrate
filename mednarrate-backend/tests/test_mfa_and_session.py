@@ -102,3 +102,110 @@ async def test_session_invalidation_on_logout(client: AsyncClient, db_session: A
     response = await client.get("/api/v1/users/me", headers=headers)
     assert response.status_code == 401
     assert "Session has been invalidated" in response.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_mfa_enablement_invalidates_pre_mfa_sessions(client: AsyncClient, db_session: AsyncSession):
+    user = User(email="pre_mfa@example.com", hashed_password=hash_password("SuperSecret1!"), full_name="Pre MFA Admin", role=UserRole.admin, is_active=True)
+    db_session.add(user)
+    await db_session.commit()
+
+    # Login and get pre-MFA access token
+    res = await client.post("/api/v1/auth/login", data={"username": "pre_mfa@example.com", "password": "SuperSecret1!"})
+    assert res.status_code == 200
+    pre_mfa_access = res.json()["access_token"]
+
+    # Setup MFA
+    headers = {"Authorization": f"Bearer {pre_mfa_access}"}
+    setup_res = await client.post("/api/v1/mfa/setup", headers=headers)
+    assert setup_res.status_code == 200
+    setup_data = setup_res.json()
+
+    enrollment_token = setup_data["enrollment_token"]
+    secret = setup_data["secret"]
+    code = pyotp.TOTP(secret).now()
+
+    verify_res = await client.post("/api/v1/mfa/verify-setup", json={"enrollment_token": enrollment_token, "code": code}, headers=headers)
+    assert verify_res.status_code == 200
+
+    # Try to use pre-MFA token again, should be invalid due to session_version increment
+    me_res = await client.get("/api/v1/users/me", headers=headers)
+    assert me_res.status_code == 401
+
+@pytest.mark.asyncio
+async def test_totp_replay_is_rejected(client: AsyncClient, db_session: AsyncSession):
+    user = User(email="totp_replay@example.com", hashed_password=hash_password("SuperSecret1!"), full_name="Replay Admin", role=UserRole.admin, is_active=True)
+    import pyotp
+    secret = pyotp.random_base32()
+    from app.core.encryption import encrypt_value
+    user.mfa_enabled = True
+    user.mfa_secret = encrypt_value(secret)
+    db_session.add(user)
+    await db_session.commit()
+
+    # Login to get mfa token
+    res = await client.post("/api/v1/auth/login", data={"username": "totp_replay@example.com", "password": "SuperSecret1!"})
+    mfa_token = res.json()["mfa_token"]
+
+    # Verify first time
+    code = pyotp.TOTP(secret).now()
+    verify_res = await client.post("/api/v1/auth/mfa-verify", json={"mfa_token": mfa_token, "code": code})
+    assert verify_res.status_code == 200
+
+    # Try to verify with same code and same/new mfa challenge, it should fail
+    # Need new mfa token for second attempt
+    res2 = await client.post("/api/v1/auth/login", data={"username": "totp_replay@example.com", "password": "SuperSecret1!"})
+    mfa_token2 = res2.json()["mfa_token"]
+    verify_res2 = await client.post("/api/v1/auth/mfa-verify", json={"mfa_token": mfa_token2, "code": code})
+    assert verify_res2.status_code == 400
+    assert "Invalid or reused OTP" in verify_res2.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_mfa_challenge_replay_is_rejected(client: AsyncClient, db_session: AsyncSession):
+    user = User(email="challenge_replay@example.com", hashed_password=hash_password("SuperSecret1!"), full_name="Challenge Replay Admin", role=UserRole.admin, is_active=True)
+    import pyotp
+    secret = pyotp.random_base32()
+    from app.core.encryption import encrypt_value
+    user.mfa_enabled = True
+    user.mfa_secret = encrypt_value(secret)
+    db_session.add(user)
+    await db_session.commit()
+
+    # Login to get mfa token
+    res = await client.post("/api/v1/auth/login", data={"username": "challenge_replay@example.com", "password": "SuperSecret1!"})
+    mfa_token = res.json()["mfa_token"]
+
+    import datetime
+    code1 = pyotp.TOTP(secret).generate_otp(pyotp.TOTP(secret).timecode(datetime.datetime.now()) - 1) # use previous window code to avoid reuse logic on current window
+    verify_res = await client.post("/api/v1/auth/mfa-verify", json={"mfa_token": mfa_token, "code": code1})
+    assert verify_res.status_code == 200
+
+    # Replay same challenge token with next code
+    code2 = pyotp.TOTP(secret).now()
+    verify_res2 = await client.post("/api/v1/auth/mfa-verify", json={"mfa_token": mfa_token, "code": code2})
+    assert verify_res2.status_code == 401
+    assert "MFA challenge already used" in verify_res2.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_refresh_token_reuse_invalidates_access_token(client: AsyncClient, db_session: AsyncSession):
+    user = User(email="refresh_reuse@example.com", hashed_password=hash_password("SuperSecret1!"), full_name="Refresh Reuse", role=UserRole.admin, is_active=True)
+    db_session.add(user)
+    await db_session.commit()
+
+    res = await client.post("/api/v1/auth/login", data={"username": "refresh_reuse@example.com", "password": "SuperSecret1!"})
+    access_token_1 = res.json()["access_token"]
+    refresh_token = res.json()["refresh_token"]
+
+    # Use refresh token once
+    refresh_res = await client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    assert refresh_res.status_code == 200
+
+    # The access_token_1 should still be valid technically (if session_version wasn't bumped)
+    assert (await client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {access_token_1}"})).status_code == 200
+
+    # REUSE the refresh token (simulate theft)
+    refresh_res2 = await client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    assert refresh_res2.status_code == 401
+    assert "reuse detected" in refresh_res2.json()["detail"]
+
+    # Now, access_token_1 MUST be invalid because session_version was bumped
+    assert (await client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {access_token_1}"})).status_code == 401

@@ -91,6 +91,9 @@ async def verify_mfa_setup(
     current_user.mfa_recovery_codes = hashed_codes
     current_user.mfa_enabled = True
 
+    from app.core.security import revoke_all_user_sessions
+    await revoke_all_user_sessions(current_user, db, increment_session_version=True)
+
     await log_admin_action(
         db=db,
         action="MFA_ENABLED",
@@ -129,10 +132,10 @@ async def disable_mfa(
         raise HTTPException(status_code=400, detail="Invalid password")
 
     # Verify TOTP
+    from app.core.security import verify_totp_and_prevent_replay, revoke_all_user_sessions
     secret = decrypt_value(current_user.mfa_secret)
-    totp = pyotp.TOTP(secret)
-    if not totp.verify(payload.code, valid_window=1):
-        raise HTTPException(status_code=400, detail="Invalid OTP code")
+    if not await verify_totp_and_prevent_replay(current_user, payload.code, secret, db):
+        raise HTTPException(status_code=400, detail="Invalid or reused OTP code")
 
     # Disable MFA and clear secrets
     current_user.mfa_enabled = False
@@ -140,7 +143,7 @@ async def disable_mfa(
     current_user.mfa_recovery_codes = None
 
     # Invalidate existing sessions
-    current_user.session_version += 1
+    await revoke_all_user_sessions(current_user, db, increment_session_version=True)
 
     await log_admin_action(
         db=db,
@@ -150,6 +153,9 @@ async def disable_mfa(
         resource_id=str(current_user.id),
         request=request
     )
+    db.add(current_user)
+    await db.commit()
+    return {"message": "MFA has been successfully disabled"}
 class MFARegenerateRequest(BaseModel):
     password: str
     code: str
@@ -171,10 +177,10 @@ async def regenerate_recovery_codes(
     if not verify_password(payload.password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid password")
 
+    from app.core.security import verify_totp_and_prevent_replay
     secret = decrypt_value(current_user.mfa_secret)
-    totp = pyotp.TOTP(secret)
-    if not totp.verify(payload.code, valid_window=1):
-        raise HTTPException(status_code=400, detail="Invalid OTP code")
+    if not await verify_totp_and_prevent_replay(current_user, payload.code, secret, db):
+        raise HTTPException(status_code=400, detail="Invalid or reused OTP code")
 
     raw_codes = [secrets.token_urlsafe(8) for _ in range(8)]
     hashed_codes = ",".join([hashlib.sha256(c.encode()).hexdigest() for c in raw_codes])
@@ -220,13 +226,18 @@ async def super_admin_reset_mfa(
     if not target_user:
         raise HTTPException(status_code=404, detail="Target user not found")
 
+    if target_user.role != UserRole.admin:
+        raise HTTPException(status_code=400, detail="Target user must be an admin")
+
     if not target_user.mfa_enabled:
         raise HTTPException(status_code=400, detail="MFA is not enabled for this user")
+
+    from app.core.security import revoke_all_user_sessions
 
     target_user.mfa_enabled = False
     target_user.mfa_secret = None
     target_user.mfa_recovery_codes = None
-    target_user.session_version += 1
+    await revoke_all_user_sessions(target_user, db, increment_session_version=True)
 
     db.add(target_user)
 

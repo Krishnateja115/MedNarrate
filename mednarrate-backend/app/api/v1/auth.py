@@ -194,7 +194,7 @@ async def mfa_verify(
     except (ValueError, TypeError):
         raise HTTPException(status_code=401, detail="Invalid token subject")
 
-    stmt = select(User).where(User.id == user_uuid)
+    stmt = select(User).where(User.id == user_uuid).with_for_update()
     result = await db.execute(stmt)
     user = result.scalars().first()
 
@@ -204,23 +204,14 @@ async def mfa_verify(
     if not user.mfa_enabled or not user.mfa_secret:
         raise HTTPException(status_code=400, detail="MFA not enabled for user")
 
-    if user.last_mfa_jti and user.last_mfa_jti == jti:
+    from app.core.security import consume_mfa_challenge, verify_totp_and_prevent_replay
+
+    if not await consume_mfa_challenge(jti, user.id, db):
         raise HTTPException(status_code=401, detail="MFA challenge already used")
 
     secret = decrypt_value(user.mfa_secret)
-    totp = pyotp.TOTP(secret)
 
-    # TOTP Replay protection: don't accept same time step
-    # pyotp valid_window=1 allows current and previous time steps
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    if user.last_mfa_time:
-        # A standard TOTP step is 30 seconds. If they reuse within 30s, we should block if they used the EXACT same code.
-        # But for simplicity, we can just strictly track if time elapsed > 30s? No, pyotp handles time steps.
-        # Actually pyotp totp.verify doesn't return the timestep, so we can't easily store the last used timestep.
-        # Wait, pyotp `totp.verify` has `valid_window`.
-        # To prevent replay, we can just say "if time since last_mfa_time < 30s, reject!" But wait, what if they legitimately log in twice?
-        pass
-    if not totp.verify(payload.code, valid_window=1):
+    if not await verify_totp_and_prevent_replay(user, payload.code, secret, db):
         if user.role == UserRole.admin:
             await log_admin_action(
                 db=db,
@@ -231,16 +222,9 @@ async def mfa_verify(
                 request=request
             )
             await db.commit()
-        raise HTTPException(status_code=400, detail="Invalid OTP")
-
-    # Check simple TOTP replay: If last_mfa_time is too recent (within same 30s window), we reject it
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    if user.last_mfa_time and (now - user.last_mfa_time).total_seconds() < 30:
-        raise HTTPException(status_code=400, detail="OTP already used")
+        raise HTTPException(status_code=400, detail="Invalid or reused OTP code")
 
     # Valid OTP! Issue tokens.
-    user.last_mfa_jti = jti
-    user.last_mfa_time = now
     db.add(user)
 
     access_token = create_access_token(subject=user.id, session_version=user.session_version)
@@ -310,7 +294,7 @@ async def mfa_recover(
     except (ValueError, TypeError):
         raise HTTPException(status_code=401, detail="Invalid token subject")
 
-    stmt = select(User).where(User.id == user_uuid)
+    stmt = select(User).where(User.id == user_uuid).with_for_update()
     result = await db.execute(stmt)
     user = result.scalars().first()
 
@@ -320,14 +304,24 @@ async def mfa_recover(
     if not user.mfa_enabled or not user.mfa_recovery_codes:
         raise HTTPException(status_code=400, detail="MFA or recovery codes not enabled for user")
 
-    if user.last_mfa_jti and user.last_mfa_jti == jti:
+    from app.core.security import consume_mfa_challenge
+    if not await consume_mfa_challenge(jti, user.id, db):
         raise HTTPException(status_code=401, detail="MFA challenge already used")
 
     # Check recovery code
+    import secrets
     provided_hash = hashlib.sha256(payload.recovery_code.encode()).hexdigest()
 
     current_codes = user.mfa_recovery_codes.split(",")
-    if provided_hash not in current_codes:
+
+    matched = False
+    for code in current_codes:
+        if secrets.compare_digest(code, provided_hash):
+            current_codes.remove(code)
+            matched = True
+            break
+
+    if not matched:
         if user.role == UserRole.admin:
             await log_admin_action(
                 db=db,
@@ -341,11 +335,7 @@ async def mfa_recover(
         raise HTTPException(status_code=400, detail="Invalid recovery code")
 
     # Valid recovery code! Remove it.
-    current_codes.remove(provided_hash)
     user.mfa_recovery_codes = ",".join(current_codes)
-
-    user.last_mfa_jti = jti
-    user.last_mfa_time = datetime.now(timezone.utc).replace(tzinfo=None)
     db.add(user)
 
     access_token = create_access_token(subject=user.id, session_version=user.session_version)
@@ -425,15 +415,14 @@ async def refresh_token(
 
     if db_refresh_token.revoked:
         # Token reuse detection: possible token theft!
-        # Revoke all tokens for this user.
-        from sqlalchemy import update
+        # Revoke all tokens and bump session_version for this user.
+        from app.core.security import revoke_all_user_sessions
 
-        await db.execute(
-            update(RefreshToken)
-            .where(RefreshToken.user_id == db_refresh_token.user_id)
-            .values(revoked=True)
-        )
-        await db.commit()
+        user = await db.get(User, db_refresh_token.user_id)
+        if user:
+            await revoke_all_user_sessions(user, db, increment_session_version=True)
+            await db.commit()
+
         raise HTTPException(
             status_code=401, detail="Token reuse detected. All sessions revoked."
         )
