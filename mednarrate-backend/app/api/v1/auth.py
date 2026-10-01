@@ -542,15 +542,9 @@ async def logout(
                 await db.delete(push_token_record)
 
         if user and all_devices:
-            user.session_version += 1
-            db.add(user)
-
-            from sqlalchemy import update
-            await db.execute(
-                update(RefreshToken)
-                .where(RefreshToken.user_id == user.id)
-                .values(revoked=True)
-            )
+            from app.core.security import revoke_all_user_sessions
+            
+            await revoke_all_user_sessions(user, db, increment_session_version=True)
 
         await db.commit()
 

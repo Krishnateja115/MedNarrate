@@ -111,18 +111,9 @@ async def reset_password(
     user.hashed_password = hash_password(req.new_password)
     db_token.used = True
     
-    # Revoke all existing refresh sessions for this user upon password reset
-    from sqlalchemy import update
-    from app.models.refresh_token import RefreshToken
-    await db.execute(
-        update(RefreshToken)
-        .where(RefreshToken.user_id == user.id)
-        .values(revoked=True)
-    )
-    
-    # Increment session_version to invalidate all existing access tokens immediately
-    user.session_version += 1
-    db.add(user)
+    # Revoke all existing sessions for this user upon password reset
+    from app.core.security import revoke_all_user_sessions
+    await revoke_all_user_sessions(user, db, increment_session_version=True)
     
     await db.commit()
 

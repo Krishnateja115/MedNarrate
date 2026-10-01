@@ -25,57 +25,16 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Uuid(), nullable=False),
     sa.Column('expires_at', sa.DateTime(), nullable=False),
     sa.Column('used_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('jti')
     )
     with op.batch_alter_table('mfa_challenges', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_mfa_challenges_user_id'), ['user_id'], unique=False)
 
-    op.drop_table('_alembic_tmp_users')
-    with op.batch_alter_table('help_article_versions', schema=None) as batch_op:
-        batch_op.alter_column('id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.Uuid(),
-               existing_nullable=False)
-        batch_op.alter_column('article_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.Uuid(),
-               existing_nullable=False)
-        batch_op.alter_column('created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.Uuid(),
-               existing_nullable=False)
-
-    with op.batch_alter_table('help_articles', schema=None) as batch_op:
-        batch_op.alter_column('id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.Uuid(),
-               existing_nullable=False)
-        batch_op.alter_column('created_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.Uuid(),
-               existing_nullable=False)
-        batch_op.alter_column('updated_by',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.Uuid(),
-               existing_nullable=True)
-
-    with op.batch_alter_table('job_executions', schema=None) as batch_op:
-        batch_op.alter_column('id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.Uuid(),
-               existing_nullable=False)
-
-    with op.batch_alter_table('support_ticket_help_articles', schema=None) as batch_op:
-        batch_op.alter_column('article_id',
-               existing_type=sa.VARCHAR(length=36),
-               type_=sa.UUID(),
-               existing_nullable=False)
-
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.add_column(sa.Column('last_totp_counter', sa.Integer(), nullable=True))
         batch_op.drop_column('last_mfa_time')
         batch_op.drop_column('last_mfa_jti')
-
     # ### end Alembic commands ###
 
 
@@ -86,60 +45,6 @@ def downgrade() -> None:
         batch_op.add_column(sa.Column('last_mfa_time', sa.DATETIME(), nullable=True))
         batch_op.drop_column('last_totp_counter')
 
-    with op.batch_alter_table('support_ticket_help_articles', schema=None) as batch_op:
-        batch_op.alter_column('article_id',
-               existing_type=sa.UUID(),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-
-    with op.batch_alter_table('job_executions', schema=None) as batch_op:
-        batch_op.alter_column('id',
-               existing_type=sa.Uuid(),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-
-    with op.batch_alter_table('help_articles', schema=None) as batch_op:
-        batch_op.alter_column('updated_by',
-               existing_type=sa.Uuid(),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=True)
-        batch_op.alter_column('created_by',
-               existing_type=sa.Uuid(),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-        batch_op.alter_column('id',
-               existing_type=sa.Uuid(),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-
-    with op.batch_alter_table('help_article_versions', schema=None) as batch_op:
-        batch_op.alter_column('created_by',
-               existing_type=sa.Uuid(),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-        batch_op.alter_column('article_id',
-               existing_type=sa.Uuid(),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-        batch_op.alter_column('id',
-               existing_type=sa.Uuid(),
-               type_=sa.VARCHAR(length=36),
-               existing_nullable=False)
-
-    op.create_table('_alembic_tmp_users',
-    sa.Column('id', sa.NUMERIC(), nullable=False),
-    sa.Column('email', sa.VARCHAR(), nullable=False),
-    sa.Column('hashed_password', sa.VARCHAR(), nullable=False),
-    sa.Column('full_name', sa.VARCHAR(), nullable=False),
-    sa.Column('role', sa.VARCHAR(length=9), nullable=False),
-    sa.Column('preferred_language', sa.VARCHAR(), nullable=False),
-    sa.Column('date_of_birth', sa.VARCHAR(), nullable=True),
-    sa.Column('gender', sa.VARCHAR(), nullable=True),
-    sa.Column('is_active', sa.BOOLEAN(), nullable=False),
-    sa.Column('created_at', sa.DATETIME(), server_default=sa.text('(now())'), nullable=False),
-    sa.Column('updated_at', sa.DATETIME(), server_default=sa.text('(now())'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
     with op.batch_alter_table('mfa_challenges', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_mfa_challenges_user_id'))
 

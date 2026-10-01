@@ -126,14 +126,14 @@ def upgrade() -> None:
     if article_count == 0:
         help_articles = sa.table(
             "help_articles",
-            sa.column("id", sa.UUID),
+            sa.column("id", sa.String),
             sa.column("title", sa.String),
             sa.column("slug", sa.String),
             sa.column("category", sa.String),
             sa.column("summary", sa.Text),
             sa.column("content", sa.Text),
             sa.column("status", sa.Enum("draft", "published", "archived", name="articlestatus")),
-            sa.column("created_by", sa.UUID),
+            sa.column("created_by", sa.String),
             sa.column("created_at", sa.DateTime),
             sa.column("updated_at", sa.DateTime),
             sa.column("published_at", sa.DateTime),

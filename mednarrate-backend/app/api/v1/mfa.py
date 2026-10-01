@@ -131,29 +131,35 @@ async def disable_mfa(
     if not verify_password(payload.password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid password")
 
+    # Lock user for MFA operations
+    stmt = select(User).where(User.id == current_user.id).with_for_update()
+    locked_user = (await db.execute(stmt)).scalars().first()
+    if not locked_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     # Verify TOTP
     from app.core.security import verify_totp_and_prevent_replay, revoke_all_user_sessions
-    secret = decrypt_value(current_user.mfa_secret)
-    if not await verify_totp_and_prevent_replay(current_user, payload.code, secret, db):
+    secret = decrypt_value(locked_user.mfa_secret)
+    if not await verify_totp_and_prevent_replay(locked_user, payload.code, secret, db):
         raise HTTPException(status_code=400, detail="Invalid or reused OTP code")
 
     # Disable MFA and clear secrets
-    current_user.mfa_enabled = False
-    current_user.mfa_secret = None
-    current_user.mfa_recovery_codes = None
+    locked_user.mfa_enabled = False
+    locked_user.mfa_secret = None
+    locked_user.mfa_recovery_codes = None
 
     # Invalidate existing sessions
-    await revoke_all_user_sessions(current_user, db, increment_session_version=True)
+    await revoke_all_user_sessions(locked_user, db, increment_session_version=True)
 
     await log_admin_action(
         db=db,
         action="MFA_DISABLED",
-        actor_admin_id=current_user.id,
+        actor_admin_id=locked_user.id,
         resource_type="User",
-        resource_id=str(current_user.id),
+        resource_id=str(locked_user.id),
         request=request
     )
-    db.add(current_user)
+    db.add(locked_user)
     await db.commit()
     return {"message": "MFA has been successfully disabled"}
 class MFARegenerateRequest(BaseModel):
@@ -177,23 +183,28 @@ async def regenerate_recovery_codes(
     if not verify_password(payload.password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid password")
 
+    stmt = select(User).where(User.id == current_user.id).with_for_update()
+    locked_user = (await db.execute(stmt)).scalars().first()
+    if not locked_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     from app.core.security import verify_totp_and_prevent_replay
-    secret = decrypt_value(current_user.mfa_secret)
-    if not await verify_totp_and_prevent_replay(current_user, payload.code, secret, db):
+    secret = decrypt_value(locked_user.mfa_secret)
+    if not await verify_totp_and_prevent_replay(locked_user, payload.code, secret, db):
         raise HTTPException(status_code=400, detail="Invalid or reused OTP code")
 
     raw_codes = [secrets.token_urlsafe(8) for _ in range(8)]
     hashed_codes = ",".join([hashlib.sha256(c.encode()).hexdigest() for c in raw_codes])
 
-    current_user.mfa_recovery_codes = hashed_codes
-    db.add(current_user)
+    locked_user.mfa_recovery_codes = hashed_codes
+    db.add(locked_user)
 
     await log_admin_action(
         db=db,
         action="MFA_RECOVERY_CODES_REGENERATED",
-        actor_admin_id=current_user.id,
+        actor_admin_id=locked_user.id,
         resource_type="User",
-        resource_id=str(current_user.id),
+        resource_id=str(locked_user.id),
         request=request
     )
     await db.commit()
