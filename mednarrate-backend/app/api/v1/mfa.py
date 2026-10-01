@@ -237,6 +237,12 @@ async def super_admin_reset_mfa(
     if not target_user:
         raise HTTPException(status_code=404, detail="Target user not found")
 
+    if target_user.id == current_user.id:
+        raise HTTPException(
+            status_code=400,
+            detail="Super-admins cannot use emergency reset on their own account",
+        )
+
     if target_user.role != UserRole.admin:
         raise HTTPException(status_code=400, detail="Target user must be an admin")
 

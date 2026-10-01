@@ -209,3 +209,44 @@ async def test_refresh_token_reuse_invalidates_access_token(client: AsyncClient,
 
     # Now, access_token_1 MUST be invalid because session_version was bumped
     assert (await client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {access_token_1}"})).status_code == 401
+
+@pytest.mark.asyncio
+async def test_super_admin_cannot_self_reset_mfa(client: AsyncClient, db_session: AsyncSession):
+    from app.models.admin import AdminRole, AdminRoleAssignment
+    from sqlalchemy.future import select
+    
+    user = User(
+        email="super_self_reset@example.com",
+        hashed_password=hash_password("SuperSecret1!"),
+        full_name="Super Admin Self Reset",
+        role=UserRole.admin,
+        is_active=True
+    )
+    import pyotp
+    secret = pyotp.random_base32()
+    from app.core.encryption import encrypt_value
+    user.mfa_enabled = True
+    user.mfa_secret = encrypt_value(secret)
+    db_session.add(user)
+    await db_session.flush()
+
+    super_admin_role = (await db_session.execute(select(AdminRole).where(AdminRole.name == "Super Admin"))).scalars().first()
+    if not super_admin_role:
+        super_admin_role = AdminRole(name="Super Admin", description="super")
+        db_session.add(super_admin_role)
+        await db_session.flush()
+    db_session.add(AdminRoleAssignment(user_id=user.id, role_id=super_admin_role.id))
+    await db_session.commit()
+
+    res = await client.post("/api/v1/auth/login", data={"username": "super_self_reset@example.com", "password": "SuperSecret1!"})
+    mfa_token = res.json()["mfa_token"]
+
+    code = pyotp.TOTP(secret).now()
+    verify_res = await client.post("/api/v1/auth/mfa-verify", json={"mfa_token": mfa_token, "code": code})
+    access_token = verify_res.json()["access_token"]
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    
+    reset_res = await client.post(f"/api/v1/mfa/reset/{user.id}", headers=headers)
+    assert reset_res.status_code == 400
+    assert "cannot use emergency reset on their own account" in reset_res.json()["detail"]
