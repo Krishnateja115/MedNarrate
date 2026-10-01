@@ -3,19 +3,34 @@ import pytest
 from app.core.config import Settings
 from app.core.logging_helpers import redact_secrets
 
+def production_settings(**overrides):
+    values = {
+        "ENVIRONMENT": "production",
+        "JWT_SECRET": "a_very_secure_test_secret_12345!@#",
+        "DATABASE_URL": "postgresql://user:pass@localhost/db",
+        "CORS_ORIGINS": ["https://app.mednarrate.test"],
+    }
+    values.update(overrides)
+    return Settings(_env_file=None, **values)
+
 def test_production_rejects_missing_jwt_secret():
     # If JWT_SECRET is missing or empty in production
-    settings = Settings(ENVIRONMENT="production", JWT_SECRET="", DATABASE_URL="postgresql://user:pass@localhost/db")
+    settings = production_settings(JWT_SECRET="")
     with pytest.raises(ValueError, match="JWT_SECRET must be configured with a strong, non-default value"):
         settings.validate_production_security()
 
 def test_production_rejects_placeholder_jwt_secret():
-    settings = Settings(ENVIRONMENT="production", JWT_SECRET="changeme", DATABASE_URL="postgresql://user:pass@localhost/db")
+    settings = production_settings(JWT_SECRET="changeme")
     with pytest.raises(ValueError, match="JWT_SECRET must be configured with a strong, non-default value"):
         settings.validate_production_security()
         
-    settings = Settings(ENVIRONMENT="production", JWT_SECRET="please_change_this_secret_in_production", DATABASE_URL="postgresql://user:pass@localhost/db")
+    settings = production_settings(JWT_SECRET="please_change_this_secret_in_production")
     with pytest.raises(ValueError, match="JWT_SECRET must be configured with a strong, non-default value"):
+        settings.validate_production_security()
+
+def test_production_rejects_wildcard_cors():
+    settings = production_settings(CORS_ORIGINS=["*"])
+    with pytest.raises(ValueError, match="Wildcard CORS origins"):
         settings.validate_production_security()
 
 def test_development_startup_remains_supported():
