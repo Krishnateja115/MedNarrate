@@ -32,7 +32,7 @@ async def test_llm_provider_gemini_missing_key(monkeypatch):
 @pytest.mark.asyncio
 async def test_llm_provider_gemini_valid_mocked(monkeypatch):
     monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "gemini")
-    monkeypatch.setattr(settings, "GEMINI_API_KEY", "valid_test_key_12345")
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "valid_mock_key_98765")
 
     with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
         mock_resp = MagicMock()

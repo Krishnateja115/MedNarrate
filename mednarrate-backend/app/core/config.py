@@ -75,13 +75,20 @@ class Settings(BaseSettings):
         return self.GEMINI_MODEL
 
     def validate_production_security(self):
-        """Enforces that loose CORS boundaries are blocked in production."""
+        """Enforces that loose CORS boundaries and default secrets are blocked in production."""
         if (self.ENVIRONMENT or "").lower() == "production":
             if "*" in self.CORS_ORIGINS:
                 raise ValueError(
                     "Wildcard CORS origins ('*') are prohibited in production environments. "
                     "Please configure CORS_ORIGINS to an explicit list of allowed origins."
                 )
+            jwt = self.JWT_SECRET or ""
+            jwt_lower = jwt.lower().strip()
+            unsafe_substrings = ["changeme", "secret", "default", "test", "mednarrate", "your-", "placeholder", "please_change"]
+            if not jwt or len(jwt) < 16 or any(s in jwt_lower for s in unsafe_substrings):
+                raise ValueError("JWT_SECRET must be configured with a strong, non-default value for production.")
+            if self.DATABASE_URL.startswith("sqlite"):
+                raise ValueError("SQLite databases are not supported in production. Please configure a PostgreSQL DATABASE_URL.")
 
     # Storage Configuration
     STORAGE_BACKEND: str = "local"

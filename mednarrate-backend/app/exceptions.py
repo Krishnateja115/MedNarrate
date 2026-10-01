@@ -79,8 +79,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
             headers=getattr(exc, "headers", None) or {},
         )
     
+    from app.core.logging_helpers import redact_secrets
     request_id = getattr(request.state, "request_id", None) or request.headers.get("x-request-id", "unknown")
-    logger.error(f"Unhandled exception on {request.method} {request.url.path} (request_id={request_id}): {type(exc).__name__}: {exc}", exc_info=True)
+    exc_str = redact_secrets(f"{type(exc).__name__}: {exc}")
+    logger.error(f"Unhandled exception on {request.method} {request.url.path} (request_id={request_id}): {exc_str}", exc_info=True)
     
     return JSONResponse(
         status_code=500,

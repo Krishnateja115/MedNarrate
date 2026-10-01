@@ -23,6 +23,9 @@ def decrypt_value(encrypted_value: str) -> str:
     try:
         f = get_fernet()
         return f.decrypt(encrypted_value.encode()).decode()
-    except Exception:
+    except Exception as e:
         # Fallback for unencrypted legacy keys during migration
+        # Fernet tokens start with "gAAAAA". If it looks encrypted but fails, fail safely.
+        if encrypted_value.startswith("gAAAAA"):
+            raise ValueError("Failed to decrypt sensitive value. Invalid key or corrupted data.") from e
         return encrypted_value
