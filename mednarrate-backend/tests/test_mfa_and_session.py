@@ -35,13 +35,14 @@ async def test_mfa_enrollment_and_login_flow(client: AsyncClient, db_session: As
     assert response.status_code == 200
     setup_data = response.json()
     secret = setup_data["secret"]
+    enrollment_token = setup_data["enrollment_token"]
 
     # 4. Verify MFA setup
     totp = pyotp.TOTP(secret)
     code = totp.now()
     response = await client.post(
         "/api/v1/mfa/verify-setup",
-        json={"secret": secret, "code": code},
+        json={"enrollment_token": enrollment_token, "code": code},
         headers=headers
     )
     assert response.status_code == 200
@@ -93,8 +94,8 @@ async def test_session_invalidation_on_logout(client: AsyncClient, db_session: A
     response = await client.get("/api/v1/users/me", headers=headers)
     assert response.status_code == 200
 
-    # 4. Logout (invalidates session_version)
-    response = await client.post("/api/v1/auth/logout", headers=headers)
+    # 4. Logout (invalidates session_version if all_devices is true)
+    response = await client.post("/api/v1/auth/logout?all_devices=true", headers=headers)
     assert response.status_code == 204
 
     # 5. Request with same access token is rejected

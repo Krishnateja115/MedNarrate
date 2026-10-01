@@ -1,5 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_models.dart';
@@ -45,23 +46,30 @@ class StorageService {
   }
 
   Future<void> saveTokens(String access, String refresh) async {
+    if (kIsWeb) {
+      throw UnsupportedError('Secure token persistence is not supported on Flutter Web in this release. Use HttpOnly cookies instead.');
+    }
     await _secureStorage.write(key: _keyAccess, value: access);
     await _secureStorage.write(key: _keyRefresh, value: refresh);
   }
 
   Future<String?> getAccessToken() async {
+    if (kIsWeb) return null;
     await _migrateTokensIfNeeded();
     return _secureStorage.read(key: _keyAccess);
   }
   
   Future<String?> getRefreshToken() async {
+    if (kIsWeb) return null;
     await _migrateTokensIfNeeded();
     return _secureStorage.read(key: _keyRefresh);
   }
 
   Future<void> clearTokens() async {
-    await _secureStorage.delete(key: _keyAccess);
-    await _secureStorage.delete(key: _keyRefresh);
+    if (!kIsWeb) {
+      await _secureStorage.delete(key: _keyAccess);
+      await _secureStorage.delete(key: _keyRefresh);
+    }
     // Also clear from prefs just in case
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyAccess);

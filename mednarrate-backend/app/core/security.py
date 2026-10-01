@@ -70,20 +70,38 @@ def create_refresh_token() -> str:
     return secrets.token_urlsafe(48)
 
 def create_mfa_challenge_token(user_id: str) -> str:
+    import uuid
     expire = datetime.now(timezone.utc) + timedelta(minutes=5)
-    to_encode = {"exp": expire, "sub": str(user_id), "type": "mfa_challenge"}
+    to_encode = {"exp": expire, "sub": str(user_id), "type": "mfa_challenge", "jti": str(uuid.uuid4())}
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
-def decode_mfa_challenge_token(token: str) -> str:
+def decode_mfa_challenge_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
         if payload.get("type") != "mfa_challenge":
             raise HTTPException(status_code=401, detail="Invalid token type")
-        return payload.get("sub")
+        return payload
+
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="MFA challenge expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid MFA token")
+
+def create_mfa_enrollment_token(user_id: str, secret: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=10)
+    to_encode = {"exp": expire, "sub": str(user_id), "type": "mfa_enrollment", "secret": secret}
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+
+def decode_mfa_enrollment_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        if payload.get("type") != "mfa_enrollment":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="MFA enrollment expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid MFA enrollment token")
 
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
@@ -157,10 +175,10 @@ async def get_current_user(
         )
     
     token_session_version = payload.get("session_version")
-    if token_session_version is not None and token_session_version != user.session_version:
+    if token_session_version is None or token_session_version != user.session_version:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session has been invalidated",
+            detail="Session has been invalidated or is missing version claim",
             headers={"WWW-Authenticate": "Bearer"},
         )
         

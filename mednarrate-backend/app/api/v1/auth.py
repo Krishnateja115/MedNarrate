@@ -2,7 +2,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -21,7 +21,7 @@ from app.core.security import (
 )
 from app.models.refresh_token import RefreshToken
 from app.models.user import User, UserRole
-from app.schemas.auth import RefreshRequest, SignupRequest, Token, MFAChallengeResponse, MFAVerifyRequest
+from app.schemas.auth import RefreshRequest, SignupRequest, Token, MFAChallengeResponse, MFAVerifyRequest, MFARecoverRequest
 from app.schemas.user import UserOut
 from app.services.audit import log_admin_action
 
@@ -106,7 +106,7 @@ async def login(
     if user.mfa_enabled:
         from app.core.security import create_mfa_challenge_token
         mfa_token = create_mfa_challenge_token(str(user.id))
-        
+
         # If admin needs MFA, log the challenge event
         if user.role == UserRole.admin:
             await log_admin_action(
@@ -118,13 +118,13 @@ async def login(
                 request=request,
             )
             await db.commit()
-            
+
         return {
             "mfa_required": True,
             "mfa_token": mfa_token,
             "message": "MFA challenge required"
         }
-        
+
     access_token = create_access_token(subject=user.id, session_version=user.session_version)
     refresh_token_str = create_refresh_token()
 
@@ -184,25 +184,42 @@ async def mfa_verify(
     import pyotp
     from app.core.encryption import decrypt_value
     import uuid
-    
-    user_id_str = decode_mfa_challenge_token(payload.mfa_token)
+
+    payload_dict = decode_mfa_challenge_token(payload.mfa_token)
+    user_id_str = payload_dict.get("sub")
+    jti = payload_dict.get("jti")
+
     try:
         user_uuid = uuid.UUID(user_id_str)
-    except ValueError:
+    except (ValueError, TypeError):
         raise HTTPException(status_code=401, detail="Invalid token subject")
-        
+
     stmt = select(User).where(User.id == user_uuid)
     result = await db.execute(stmt)
     user = result.scalars().first()
-    
+
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User not found or inactive")
-        
+
     if not user.mfa_enabled or not user.mfa_secret:
         raise HTTPException(status_code=400, detail="MFA not enabled for user")
-        
+
+    if user.last_mfa_jti and user.last_mfa_jti == jti:
+        raise HTTPException(status_code=401, detail="MFA challenge already used")
+
     secret = decrypt_value(user.mfa_secret)
     totp = pyotp.TOTP(secret)
+
+    # TOTP Replay protection: don't accept same time step
+    # pyotp valid_window=1 allows current and previous time steps
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if user.last_mfa_time:
+        # A standard TOTP step is 30 seconds. If they reuse within 30s, we should block if they used the EXACT same code.
+        # But for simplicity, we can just strictly track if time elapsed > 30s? No, pyotp handles time steps.
+        # Actually pyotp totp.verify doesn't return the timestep, so we can't easily store the last used timestep.
+        # Wait, pyotp `totp.verify` has `valid_window`.
+        # To prevent replay, we can just say "if time since last_mfa_time < 30s, reject!" But wait, what if they legitimately log in twice?
+        pass
     if not totp.verify(payload.code, valid_window=1):
         if user.role == UserRole.admin:
             await log_admin_action(
@@ -215,8 +232,17 @@ async def mfa_verify(
             )
             await db.commit()
         raise HTTPException(status_code=400, detail="Invalid OTP")
-        
+
+    # Check simple TOTP replay: If last_mfa_time is too recent (within same 30s window), we reject it
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if user.last_mfa_time and (now - user.last_mfa_time).total_seconds() < 30:
+        raise HTTPException(status_code=400, detail="OTP already used")
+
     # Valid OTP! Issue tokens.
+    user.last_mfa_jti = jti
+    user.last_mfa_time = now
+    db.add(user)
+
     access_token = create_access_token(subject=user.id, session_version=user.session_version)
     refresh_token_str = create_refresh_token()
 
@@ -226,11 +252,116 @@ async def mfa_verify(
         user_id=user.id, token_hash=hash_token(refresh_token_str), expires_at=expires_at
     )
     db.add(db_refresh_token)
-    
+
     if user.role == UserRole.admin:
         await log_admin_action(
             db=db,
             action="ADMIN_LOGIN_SUCCESS",
+            actor_admin_id=user.id,
+            resource_type="User",
+            resource_id=str(user.id),
+            request=request,
+        )
+    await db.commit()
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=(settings.ENVIRONMENT == "production"),
+        samesite="strict",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token_str,
+        httponly=True,
+        secure=(settings.ENVIRONMENT == "production"),
+        samesite="strict",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    )
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token_str,
+        "token_type": "bearer",
+    }
+
+
+@router.post("/mfa-recover", response_model=Token)
+@limiter.limit("5/minute")
+async def mfa_recover(
+    request: Request,
+    response: Response,
+    payload: MFARecoverRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    from app.core.security import decode_mfa_challenge_token
+    import uuid
+    import hashlib
+
+    payload_dict = decode_mfa_challenge_token(payload.mfa_token)
+    user_id_str = payload_dict.get("sub")
+    jti = payload_dict.get("jti")
+
+    try:
+        user_uuid = uuid.UUID(user_id_str)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=401, detail="Invalid token subject")
+
+    stmt = select(User).where(User.id == user_uuid)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="User not found or inactive")
+
+    if not user.mfa_enabled or not user.mfa_recovery_codes:
+        raise HTTPException(status_code=400, detail="MFA or recovery codes not enabled for user")
+
+    if user.last_mfa_jti and user.last_mfa_jti == jti:
+        raise HTTPException(status_code=401, detail="MFA challenge already used")
+
+    # Check recovery code
+    provided_hash = hashlib.sha256(payload.recovery_code.encode()).hexdigest()
+
+    current_codes = user.mfa_recovery_codes.split(",")
+    if provided_hash not in current_codes:
+        if user.role == UserRole.admin:
+            await log_admin_action(
+                db=db,
+                action="ADMIN_LOGIN_MFA_RECOVERY_FAILED",
+                actor_admin_id=user.id,
+                resource_type="User",
+                resource_id=str(user.id),
+                request=request
+            )
+            await db.commit()
+        raise HTTPException(status_code=400, detail="Invalid recovery code")
+
+    # Valid recovery code! Remove it.
+    current_codes.remove(provided_hash)
+    user.mfa_recovery_codes = ",".join(current_codes)
+
+    user.last_mfa_jti = jti
+    user.last_mfa_time = datetime.now(timezone.utc).replace(tzinfo=None)
+    db.add(user)
+
+    access_token = create_access_token(subject=user.id, session_version=user.session_version)
+    refresh_token_str = create_refresh_token()
+
+    expires_at = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
+    db_refresh_token = RefreshToken(
+        user_id=user.id, token_hash=hash_token(refresh_token_str), expires_at=expires_at
+    )
+    db.add(db_refresh_token)
+
+    if user.role == UserRole.admin:
+        await log_admin_action(
+            db=db,
+            action="ADMIN_LOGIN_MFA_RECOVERY_SUCCESS",
             actor_admin_id=user.id,
             resource_type="User",
             resource_id=str(user.id),
@@ -369,6 +500,7 @@ async def refresh_token(
 async def logout(
     request: Request,
     response: Response,
+    all_devices: bool = Query(False, description="If true, logs out of all devices by invalidating the global session version"),
     refresh_req: Optional[RefreshRequest] = None,
     db: AsyncSession = Depends(get_db),
 ):
@@ -400,7 +532,7 @@ async def logout(
         if user and user.role == UserRole.admin:
             await log_admin_action(
                 db=db,
-                action="ADMIN_LOGOUT",
+                action="ADMIN_LOGOUT" if not all_devices else "ADMIN_LOGOUT_ALL",
                 actor_admin_id=user.id,
                 resource_type="User",
                 resource_id=str(user.id),
@@ -420,9 +552,16 @@ async def logout(
             if push_token_record:
                 await db.delete(push_token_record)
 
-        if user:
+        if user and all_devices:
             user.session_version += 1
             db.add(user)
+
+            from sqlalchemy import update
+            await db.execute(
+                update(RefreshToken)
+                .where(RefreshToken.user_id == user.id)
+                .values(revoked=True)
+            )
 
         await db.commit()
 

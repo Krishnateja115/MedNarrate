@@ -45,6 +45,10 @@ class MFAVerifyRequest(BaseModel):
     mfa_token: str
     code: str
 
+class MFARecoverRequest(BaseModel):
+    mfa_token: str
+    recovery_code: str
+
 class RefreshRequest(BaseModel):
     refresh_token: str
     device_token: str | None = None
