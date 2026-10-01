@@ -55,11 +55,11 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(pwd_bytes, hashed.encode("utf-8"))
 
 
-def create_access_token(subject: str) -> str:
+def create_access_token(subject: str, session_version: int = 1) -> str:
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    to_encode = {"exp": expire, "sub": str(subject)}
+    to_encode = {"exp": expire, "sub": str(subject), "session_version": session_version}
     encoded_jwt = jwt.encode(
         to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
     )
@@ -69,6 +69,21 @@ def create_access_token(subject: str) -> str:
 def create_refresh_token() -> str:
     return secrets.token_urlsafe(48)
 
+def create_mfa_challenge_token(user_id: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=5)
+    to_encode = {"exp": expire, "sub": str(user_id), "type": "mfa_challenge"}
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+
+def decode_mfa_challenge_token(token: str) -> str:
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        if payload.get("type") != "mfa_challenge":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        return payload.get("sub")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="MFA challenge expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid MFA token")
 
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
@@ -140,4 +155,13 @@ async def get_current_user(
             detail="Account is inactive",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    token_session_version = payload.get("session_version")
+    if token_session_version is not None and token_session_version != user.session_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session has been invalidated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
     return user

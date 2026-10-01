@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, String
+from sqlalchemy import Boolean, DateTime, Enum, String, Integer
 from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,6 +35,10 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    mfa_secret: Mapped[str | None] = mapped_column(String, nullable=True)
+    mfa_recovery_codes: Mapped[str | None] = mapped_column(String, nullable=True)
+    session_version: Mapped[int] = mapped_column(Integer, default=1, server_default='1', nullable=False)
 
     support_tickets = relationship(
         "SupportTicket", back_populates="user", foreign_keys="[SupportTicket.user_id]"

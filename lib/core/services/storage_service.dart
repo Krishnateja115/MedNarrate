@@ -1,9 +1,10 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_models.dart';
 
-/// StorageService — persists auth tokens and preferences in shared_preferences.
+/// StorageService — persists auth tokens in secure storage and preferences in shared_preferences.
 class StorageService {
   StorageService._();
   static final StorageService instance = StorageService._();
@@ -19,25 +20,49 @@ class StorageService {
   static const _keyMedicalUnits = 'medical_units';
   static const _keyDismissedAnnouncements = 'dismissed_announcements';
 
-  // ── Tokens (shared_preferences) ──────────────────────────────────
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+
+  // ── Tokens (flutter_secure_storage with migration) ─────────────────────────
+
+  Future<void> _migrateTokensIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final oldAccess = prefs.getString(_keyAccess);
+    final oldRefresh = prefs.getString(_keyRefresh);
+    
+    if (oldAccess != null || oldRefresh != null) {
+      if (oldAccess != null) {
+        await _secureStorage.write(key: _keyAccess, value: oldAccess);
+      }
+      if (oldRefresh != null) {
+        await _secureStorage.write(key: _keyRefresh, value: oldRefresh);
+      }
+      await prefs.remove(_keyAccess);
+      await prefs.remove(_keyRefresh);
+    }
+  }
 
   Future<void> saveTokens(String access, String refresh) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyAccess, access);
-    await prefs.setString(_keyRefresh, refresh);
+    await _secureStorage.write(key: _keyAccess, value: access);
+    await _secureStorage.write(key: _keyRefresh, value: refresh);
   }
 
   Future<String?> getAccessToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyAccess);
+    await _migrateTokensIfNeeded();
+    return _secureStorage.read(key: _keyAccess);
   }
   
   Future<String?> getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyRefresh);
+    await _migrateTokensIfNeeded();
+    return _secureStorage.read(key: _keyRefresh);
   }
 
   Future<void> clearTokens() async {
+    await _secureStorage.delete(key: _keyAccess);
+    await _secureStorage.delete(key: _keyRefresh);
+    // Also clear from prefs just in case
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyAccess);
     await prefs.remove(_keyRefresh);

@@ -11,6 +11,7 @@ from .reminders import router as reminders_router
 from .reports import router as reports_router
 from .support import router as support_router
 from .users import router as users_router
+from .mfa import router as mfa_router
 
 router = APIRouter()
 router.include_router(auth_router, prefix="/auth", tags=["auth"])
@@ -26,3 +27,4 @@ router.include_router(health_router, prefix="/health", tags=["health"])
 router.include_router(reminders_router, prefix="/reminders", tags=["reminders"])
 router.include_router(support_router, prefix="/support", tags=["support"])
 router.include_router(admin_router, prefix="/admin", tags=["admin"])
+router.include_router(mfa_router, prefix="/mfa", tags=["mfa"])

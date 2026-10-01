@@ -21,7 +21,7 @@ from app.core.security import (
 )
 from app.models.refresh_token import RefreshToken
 from app.models.user import User, UserRole
-from app.schemas.auth import RefreshRequest, SignupRequest, Token
+from app.schemas.auth import RefreshRequest, SignupRequest, Token, MFAChallengeResponse, MFAVerifyRequest
 from app.schemas.user import UserOut
 from app.services.audit import log_admin_action
 
@@ -54,7 +54,8 @@ async def signup(
     return new_user
 
 
-@router.post("/login", response_model=Token)
+from typing import Union
+@router.post("/login", response_model=Union[Token, MFAChallengeResponse])
 @limiter.limit("5/minute")
 async def login(
     request: Request,
@@ -66,8 +67,14 @@ async def login(
     result = await db.execute(stmt)
     user = result.scalars().first()
 
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        if user and user.role == UserRole.admin:
+    # Prevent timing attack account enumeration
+    if not user:
+        # Dummy bcrypt hash with typical work factor
+        verify_password(form_data.password, "$2b$12$NqO1D9TfUoVp2lX2Q9yU2uD0Z3m6E7QxO.B8G.Y3yK1V9j6U6oP8.")
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+
+    if not verify_password(form_data.password, user.hashed_password):
+        if user.role == UserRole.admin:
             await log_admin_action(
                 db=db,
                 action="FAILED_ADMIN_LOGIN",
@@ -96,7 +103,29 @@ async def login(
             await db.commit()
         raise HTTPException(status_code=403, detail="Account is inactive")
 
-    access_token = create_access_token(subject=user.id)
+    if user.mfa_enabled:
+        from app.core.security import create_mfa_challenge_token
+        mfa_token = create_mfa_challenge_token(str(user.id))
+        
+        # If admin needs MFA, log the challenge event
+        if user.role == UserRole.admin:
+            await log_admin_action(
+                db=db,
+                action="ADMIN_LOGIN_MFA_CHALLENGE",
+                actor_admin_id=user.id,
+                resource_type="User",
+                resource_id=str(user.id),
+                request=request,
+            )
+            await db.commit()
+            
+        return {
+            "mfa_required": True,
+            "mfa_token": mfa_token,
+            "message": "MFA challenge required"
+        }
+        
+    access_token = create_access_token(subject=user.id, session_version=user.session_version)
     refresh_token_str = create_refresh_token()
 
     expires_at = datetime.utcnow() + timedelta(
@@ -107,6 +136,97 @@ async def login(
         user_id=user.id, token_hash=hash_token(refresh_token_str), expires_at=expires_at
     )
     db.add(db_refresh_token)
+    if user.role == UserRole.admin:
+        await log_admin_action(
+            db=db,
+            action="ADMIN_LOGIN_SUCCESS",
+            actor_admin_id=user.id,
+            resource_type="User",
+            resource_id=str(user.id),
+            request=request,
+        )
+    await db.commit()
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=(settings.ENVIRONMENT == "production"),
+        samesite="strict",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token_str,
+        httponly=True,
+        secure=(settings.ENVIRONMENT == "production"),
+        samesite="strict",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    )
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token_str,
+        "token_type": "bearer",
+    }
+
+
+@router.post("/mfa-verify", response_model=Token)
+@limiter.limit("5/minute")
+async def mfa_verify(
+    request: Request,
+    response: Response,
+    payload: MFAVerifyRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    from app.core.security import decode_mfa_challenge_token
+    import pyotp
+    from app.core.encryption import decrypt_value
+    import uuid
+    
+    user_id_str = decode_mfa_challenge_token(payload.mfa_token)
+    try:
+        user_uuid = uuid.UUID(user_id_str)
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid token subject")
+        
+    stmt = select(User).where(User.id == user_uuid)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+    
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="User not found or inactive")
+        
+    if not user.mfa_enabled or not user.mfa_secret:
+        raise HTTPException(status_code=400, detail="MFA not enabled for user")
+        
+    secret = decrypt_value(user.mfa_secret)
+    totp = pyotp.TOTP(secret)
+    if not totp.verify(payload.code, valid_window=1):
+        if user.role == UserRole.admin:
+            await log_admin_action(
+                db=db,
+                action="ADMIN_LOGIN_MFA_FAILED",
+                actor_admin_id=user.id,
+                resource_type="User",
+                resource_id=str(user.id),
+                request=request
+            )
+            await db.commit()
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+        
+    # Valid OTP! Issue tokens.
+    access_token = create_access_token(subject=user.id, session_version=user.session_version)
+    refresh_token_str = create_refresh_token()
+
+    expires_at = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
+    db_refresh_token = RefreshToken(
+        user_id=user.id, token_hash=hash_token(refresh_token_str), expires_at=expires_at
+    )
+    db.add(db_refresh_token)
+    
     if user.role == UserRole.admin:
         await log_admin_action(
             db=db,
@@ -204,7 +324,7 @@ async def refresh_token(
     # Revoke the current token
     db_refresh_token.revoked = True
 
-    access_token = create_access_token(subject=db_refresh_token.user_id)
+    access_token = create_access_token(subject=db_refresh_token.user_id, session_version=refresh_user.session_version)
     new_refresh_token_str = create_refresh_token()
 
     expires_at = datetime.utcnow() + timedelta(
@@ -299,6 +419,10 @@ async def logout(
             push_token_record = pt_result.scalars().first()
             if push_token_record:
                 await db.delete(push_token_record)
+
+        if user:
+            user.session_version += 1
+            db.add(user)
 
         await db.commit()
 

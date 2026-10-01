@@ -23,9 +23,17 @@ class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
 
+from pydantic import BaseModel, EmailStr, field_validator
+from app.schemas.auth import validate_password_policy
+
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return validate_password_policy(v)
 
 
 class ForgotPasswordResponse(BaseModel):
@@ -102,6 +110,20 @@ async def reset_password(
 
     user.hashed_password = hash_password(req.new_password)
     db_token.used = True
+    
+    # Revoke all existing refresh sessions for this user upon password reset
+    from sqlalchemy import update
+    from app.models.refresh_token import RefreshToken
+    await db.execute(
+        update(RefreshToken)
+        .where(RefreshToken.user_id == user.id)
+        .values(revoked=True)
+    )
+    
+    # Increment session_version to invalidate all existing access tokens immediately
+    user.session_version += 1
+    db.add(user)
+    
     await db.commit()
 
     return {
