@@ -1,4 +1,5 @@
 import re
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -314,15 +315,20 @@ async def attach_help_article(
     admin_ctx: AdminContext = Depends(require_permission("support.manage")),
     db: AsyncSession = Depends(get_db),
 ):
+    try:
+        parsed_article_id = uuid.UUID(article_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid article ID")
+
     ticket = await db.get(SupportTicket, ticket_id)
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
-    article = await db.get(HelpArticle, article_id)
+    article = await db.get(HelpArticle, parsed_article_id)
     if not article or article.status != ArticleStatus.published:
         raise HTTPException(status_code=404, detail="Published article not found")
     link = await db.get(
         SupportTicketHelpArticle,
-        {"ticket_id": ticket_id, "article_id": article_id},
+        {"ticket_id": ticket_id, "article_id": parsed_article_id},
     )
     if link:
         return {"status": "ok", "attached": False}
@@ -330,7 +336,7 @@ async def attach_help_article(
     db.add(
         SupportTicketHelpArticle(
             ticket_id=ticket_id,
-            article_id=article_id,
+            article_id=parsed_article_id,
             attached_by=str(admin_ctx.user.id),
         )
     )
@@ -361,9 +367,14 @@ async def detach_help_article(
     admin_ctx: AdminContext = Depends(require_permission("support.manage")),
     db: AsyncSession = Depends(get_db),
 ):
+    try:
+        parsed_article_id = uuid.UUID(article_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid article ID")
+
     link = await db.get(
         SupportTicketHelpArticle,
-        {"ticket_id": ticket_id, "article_id": article_id},
+        {"ticket_id": ticket_id, "article_id": parsed_article_id},
     )
     if not link:
         raise HTTPException(status_code=404, detail="Article link not found")

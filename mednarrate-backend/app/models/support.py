@@ -3,7 +3,8 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.core.database import Base
 
@@ -146,8 +147,8 @@ class SupportTicketHelpArticle(Base):
         ForeignKey("support_tickets.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    article_id = Column(
-        String(36),
+    article_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("help_articles.id", ondelete="CASCADE"),
         primary_key=True,
     )

@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+import uuid
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,13 +62,17 @@ async def seed_help_center_if_empty(db: AsyncSession) -> int:
     if article_count:
         return 0
 
-    published_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    # System-seeded articles use the zero-UUID sentinel (same as the Alembic migration seed)
+    # 00000000-0000-0000-0000-000000000000 — no real user row exists for this.
+    system_uuid = uuid.UUID(int=0)
+
+    published_at = datetime.utcnow()
     for starter in STARTER_HELP_ARTICLES:
         db.add(
             HelpArticle(
                 **starter,
                 status=ArticleStatus.published,
-                created_by="system",
+                created_by=system_uuid,
                 published_at=published_at,
             )
         )

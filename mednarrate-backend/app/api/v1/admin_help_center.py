@@ -85,7 +85,8 @@ class HelpArticleUpdate(BaseModel):
 
 def _serialize_article(article: HelpArticle, author: Optional[User] = None) -> dict:
     return {
-        "id": article.id,
+        # id and created_by are now uuid.UUID objects — convert to str for JSON
+        "id": str(article.id),
         "title": article.title,
         "slug": article.slug,
         "category": article.category,
@@ -93,11 +94,32 @@ def _serialize_article(article: HelpArticle, author: Optional[User] = None) -> d
         "content": article.content,
         "status": article.status,
         "author": author.full_name if author else "MedNarrate",
-        "author_id": article.created_by,
+        "author_id": str(article.created_by) if article.created_by else None,
         "created_at": article.created_at,
         "updated_at": article.updated_at,
         "published_at": article.published_at,
     }
+
+
+def _normalize_author_id(raw: object) -> Optional[uuid.UUID]:
+    """Safely coerce asyncpg UUID, python uuid.UUID, or UUID string to uuid.UUID.
+    Returns None for any value that cannot be interpreted as a valid UUID,
+    including the all-zeros system sentinel."""
+    if raw is None:
+        return None
+    # Already a python uuid.UUID (e.g. when ORM uses UUID(as_uuid=True))
+    if isinstance(raw, uuid.UUID):
+        uid = raw
+    else:
+        # Could be asyncpg.pgproto.pgproto.UUID or a str — both support str()
+        try:
+            uid = uuid.UUID(str(raw))
+        except (TypeError, ValueError, AttributeError):
+            return None
+    # Ignore the system/sentinel zero UUID — no user row exists for it
+    if uid == uuid.UUID(int=0):
+        return None
+    return uid
 
 
 async def _load_authors(
@@ -105,10 +127,9 @@ async def _load_authors(
 ) -> dict[str, User]:
     author_ids: list[uuid.UUID] = []
     for article in articles:
-        try:
-            author_ids.append(uuid.UUID(article.created_by))
-        except (TypeError, ValueError):
-            continue
+        uid = _normalize_author_id(article.created_by)
+        if uid is not None:
+            author_ids.append(uid)
     if not author_ids:
         return {}
     authors = (
@@ -149,7 +170,7 @@ async def list_articles(
         "status": "ok",
         "categories": list(HELP_ARTICLE_CATEGORIES),
         "articles": [
-            _serialize_article(article, authors.get(article.created_by))
+            _serialize_article(article, authors.get(str(article.created_by)))
             for article in articles
         ],
     }
@@ -167,10 +188,10 @@ async def create_article(
     if exists:
         raise HTTPException(status_code=409, detail="Slug already exists")
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = datetime.utcnow()
     article = HelpArticle(
         **payload.model_dump(),
-        created_by=str(admin_ctx.user.id),
+        created_by=admin_ctx.user.id,
         published_at=now if payload.status == ArticleStatus.published else None,
     )
     db.add(article)
@@ -180,7 +201,7 @@ async def create_article(
         action="HELP_ARTICLE_CREATE",
         actor_admin_id=admin_ctx.user.id,
         resource_type="HelpArticle",
-        resource_id=article.id,
+        resource_id=str(article.id),
         permission_used="help_center.manage",
         metadata={"slug": article.slug, "status": article.status.value},
     )
@@ -197,13 +218,17 @@ async def list_article_versions(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    if not await db.get(HelpArticle, article_id):
+    try:
+        article_uuid = uuid.UUID(article_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=404, detail="Article not found")
+    if not await db.get(HelpArticle, article_uuid):
         raise HTTPException(status_code=404, detail="Article not found")
     versions = (
         (
             await db.execute(
                 select(HelpArticleVersion)
-                .where(HelpArticleVersion.article_id == article_id)
+                .where(HelpArticleVersion.article_id == article_uuid)
                 .order_by(HelpArticleVersion.version.desc())
             )
         )
@@ -238,13 +263,17 @@ async def get_article(
     ),
     db: AsyncSession = Depends(get_db),
 ):
-    article = await db.get(HelpArticle, article_id)
+    try:
+        article_uuid = uuid.UUID(article_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=404, detail="Article not found")
+    article = await db.get(HelpArticle, article_uuid)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     authors = await _load_authors([article], db)
     return {
         "status": "ok",
-        "article": _serialize_article(article, authors.get(article.created_by)),
+        "article": _serialize_article(article, authors.get(str(article.created_by))),
     }
 
 
@@ -255,7 +284,11 @@ async def update_article(
     admin_ctx: AdminContext = Depends(require_permission("help_center.manage")),
     db: AsyncSession = Depends(get_db),
 ):
-    article = await db.get(HelpArticle, article_id)
+    try:
+        article_uuid = uuid.UUID(article_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=404, detail="Article not found")
+    article = await db.get(HelpArticle, article_uuid)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
 
@@ -288,7 +321,7 @@ async def update_article(
             summary=article.summary,
             content=article.content,
             status=article.status,
-            created_by=str(admin_ctx.user.id),
+            created_by=admin_ctx.user.id,
         )
     )
 
@@ -300,17 +333,17 @@ async def update_article(
             changes["status"] == ArticleStatus.published
             and previous_status != ArticleStatus.published
         ):
-            article.published_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            article.published_at = datetime.utcnow()
         elif changes["status"] != ArticleStatus.published:
             article.published_at = None
-    article.updated_by = str(admin_ctx.user.id)
+    article.updated_by = admin_ctx.user.id
 
     await log_admin_action(
         db=db,
         action="HELP_ARTICLE_UPDATE",
         actor_admin_id=admin_ctx.user.id,
         resource_type="HelpArticle",
-        resource_id=article.id,
+        resource_id=str(article.id),
         permission_used="help_center.manage",
         metadata={"fields": sorted(changes.keys())},
     )

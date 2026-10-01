@@ -186,7 +186,7 @@ async def test_ticket_suggestions_and_article_linkage_are_content_grounded(
         summary="How to investigate report processing that appears stuck.",
         content="Keep the report ID and ask support to inspect report processing diagnostics.",
         status=ArticleStatus.published,
-        created_by=str(manager.id),
+        created_by=manager.id,
     )
     unrelated = HelpArticle(
         title="Notification settings",
@@ -195,7 +195,7 @@ async def test_ticket_suggestions_and_article_linkage_are_content_grounded(
         summary="How to review notification permissions on a device.",
         content="Check device notification settings when reminders are not delivered.",
         status=ArticleStatus.published,
-        created_by=str(manager.id),
+        created_by=manager.id,
     )
     ticket = SupportTicket(
         user_id=str(customer.id),
@@ -213,7 +213,7 @@ async def test_ticket_suggestions_and_article_linkage_are_content_grounded(
     )
     assert suggestion_response.status_code == 200
     suggestions = suggestion_response.json()["suggestions"]
-    assert suggestions[0]["id"] == article.id
+    assert suggestions[0]["id"] == str(article.id)
     assert "Matches:" in suggestions[0]["reason"]
 
     attach_response = await client.post(
@@ -225,7 +225,7 @@ async def test_ticket_suggestions_and_article_linkage_are_content_grounded(
         f"/api/v1/admin/support/{ticket.id}", headers=headers
     )
     assert ticket_response.status_code == 200
-    assert ticket_response.json()["attached_articles"][0]["id"] == article.id
+    assert ticket_response.json()["attached_articles"][0]["id"] == str(article.id)
 
 
 @pytest.mark.asyncio
