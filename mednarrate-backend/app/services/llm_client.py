@@ -126,8 +126,12 @@ class VertexAIProvider(LLMProvider):
                 genai.configure(api_key=gemini_key.strip())
 
             # Use basic GenerationConfig. Gemini 3 ignores temperature/topP/topK and throws errors for penalties.
+            max_toks = config.get("max_tokens", settings.MAX_OUTPUT_TOKENS) if config else settings.MAX_OUTPUT_TOKENS
+            temp = config.get("temperature", 0.2) if config else 0.2
+
             generation_config = genai.types.GenerationConfig(
-                max_output_tokens=(settings.TRANSLATION_MAX_OUTPUT_TOKENS if _translation_request.get() else settings.MAX_OUTPUT_TOKENS),
+                max_output_tokens=(settings.TRANSLATION_MAX_OUTPUT_TOKENS if _translation_request.get() else max_toks),
+                temperature=temp,
                 **({"response_mime_type": "application/json"} if _translation_request.get() else {}),
             )
 
@@ -227,7 +231,11 @@ class OllamaProvider(LLMProvider):
                         "model": model_name,
                         "prompt": prompt,
                         "stream": False,
-                        **({"format": "json", "options": {"num_predict": settings.TRANSLATION_MAX_OUTPUT_TOKENS}} if _translation_request.get() else {}),
+                        "options": {
+                            "num_predict": settings.TRANSLATION_MAX_OUTPUT_TOKENS if _translation_request.get() else (config.get("max_tokens", 2048) if config else 2048),
+                            "temperature": config.get("temperature", 0.2) if config else 0.2
+                        },
+                        **({"format": "json"} if _translation_request.get() else {}),
                     },
                 )
                 resp.raise_for_status()
@@ -304,7 +312,7 @@ class DevGeminiProvider(LLMProvider):
         self._check_production_restriction()
         req_id = request_id or str(uuid.uuid4())
         start_time = time.time()
-        
+
         api_key = self.get_api_key(config)
         model_name = self.get_model_name(config)
 
@@ -327,7 +335,8 @@ class DevGeminiProvider(LLMProvider):
                 payload = {
                     "contents": [{"parts": [{"text": prompt}]}],
                     "generationConfig": {
-                        "maxOutputTokens": (settings.TRANSLATION_MAX_OUTPUT_TOKENS if _translation_request.get() else settings.MAX_OUTPUT_TOKENS),
+                        "maxOutputTokens": (settings.TRANSLATION_MAX_OUTPUT_TOKENS if _translation_request.get() else (config.get("max_tokens", settings.MAX_OUTPUT_TOKENS) if config else settings.MAX_OUTPUT_TOKENS)),
+                        "temperature": config.get("temperature", 0.2) if config else 0.2,
                         **({"responseMimeType": "application/json"} if _translation_request.get() else {}),
                     },
                 }
@@ -767,8 +776,23 @@ async def get_resolved_ai_config() -> dict:
     primary_provider = settings_records.get("ai_primary_provider", getattr(settings, "PRIMARY_LLM_PROVIDER", "gemini"))
     model_name = settings_records.get("ai_model_name", getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash"))
     fallback_provider = settings_records.get("ai_fallback_provider", "ollama")
-    api_key = settings_records.get("ai_api_key", getattr(settings, "GEMINI_API_KEY", None))
+    raw_api_key = settings_records.get("ai_api_key", getattr(settings, "GEMINI_API_KEY", None))
+    if raw_api_key:
+        from app.core.encryption import decrypt_value
+        api_key = decrypt_value(raw_api_key)
+    else:
+        api_key = None
     enable_fallback = getattr(settings, "ENABLE_LLM_FALLBACK", True)
+
+    try:
+        temperature = float(settings_records.get("ai_temperature", "0.2"))
+    except ValueError:
+        temperature = 0.2
+
+    try:
+        max_tokens = int(settings_records.get("ai_max_tokens", "2048"))
+    except ValueError:
+        max_tokens = 2048
 
     return {
         "primary_provider": primary_provider,
@@ -776,6 +800,8 @@ async def get_resolved_ai_config() -> dict:
         "fallback_provider": fallback_provider,
         "api_key": api_key,
         "enable_fallback": enable_fallback,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
     }
 
 # Client Dispatcher
@@ -793,7 +819,6 @@ class LLMClient:
             (
                 provider_name
                 or getattr(settings, "PRIMARY_LLM_PROVIDER", "gemini")
-                or "auto"
             )
             .lower()
             .strip()
@@ -806,7 +831,8 @@ class LLMClient:
             return self.providers["vertex_ai"]
         elif name == "fallback":
             return self.providers["fallback"]
-        return self.providers["vertex_ai"]
+
+        raise LLMConfigurationError(f"Unknown LLM Provider: {name}")
 
     async def generate_with_metadata(
         self,
@@ -852,39 +878,75 @@ class LLMClient:
         primary_name = provider_setting
         fallback_name = config.get("fallback_provider", "ollama").lower().strip()
         enable_fallback = config.get("enable_fallback", True)
-        
-        # 1. Primary Provider
-        primary_provider = self.get_provider(primary_name)
-        try:
-            res = await primary_provider.generate(
-                prompt,
-                timeout=timeout,
-                request_id=req_id,
-                system_instruction=system_instruction,
-                thinking_level=thinking_level,
-                config=config,
-            )
-            await _log_event(
-                res.get("provider", primary_name),
-                res.get("model", "unknown"),
-                "success",
-                res.get("latency_ms", 0.0),
-                fallback=False,
-            )
-            return res
-        except Exception as e:
-            is_safety_block = getattr(e, "is_safety_block", False)
-            if is_safety_block:
-                logger.error(f"[LLM:{primary_name.upper()}:SAFETY_BLOCK] Request rejected. Not falling back.")
-                await _log_event(primary_name, "unknown", "error", 0.0, error_category="SAFETY_BLOCK", fallback=False)
-                raise
-            
-            error_cat = type(e).__name__
-            logger.warning(f"[LLM:{primary_name.upper()}:FAILED] {e}. error={error_cat}")
-            await _log_event(primary_name, "unknown", "error", 0.0, error_category=error_cat, fallback=False)
-            
-            if not enable_fallback:
-                raise
+
+        # Legacy Auto Handling
+        if primary_name == "auto":
+            # "auto" mode tries Vertex AI -> Ollama -> Dev Gemini
+            providers_to_try = ["vertex_ai", "ollama", "dev_gemini"]
+            last_err = None
+            for p_name in providers_to_try:
+                try:
+                    p = self.get_provider(p_name)
+                    res = await p.generate(
+                        prompt,
+                        timeout=timeout,
+                        request_id=req_id,
+                        system_instruction=system_instruction,
+                        thinking_level=thinking_level,
+                        config=config,
+                    )
+                    await _log_event(
+                        res.get("provider", p_name),
+                        res.get("model", "unknown"),
+                        "success",
+                        res.get("latency_ms", 0.0),
+                        fallback=False,
+                    )
+                    return res
+                except Exception as e:
+                    last_err = e
+                    error_cat = type(e).__name__
+                    logger.warning(f"[LLM:AUTO:{p_name.upper()}_FAILED] {e}")
+                    await _log_event(p_name, "unknown", "error", 0.0, error_category=error_cat, fallback=False)
+
+            # If auto failed, we proceed to fallback logic below as if primary failed
+            if not enable_fallback or fallback_name == "none":
+                err = LLMConfigurationError("LLM provider is not configured or is invalid in auto mode.")
+                err.failure_category = "LLM_NOT_CONFIGURED"
+                raise err
+        else:
+            # 1. Primary Provider
+            try:
+                primary_provider = self.get_provider(primary_name)
+                res = await primary_provider.generate(
+                    prompt,
+                    timeout=timeout,
+                    request_id=req_id,
+                    system_instruction=system_instruction,
+                    thinking_level=thinking_level,
+                    config=config,
+                )
+                await _log_event(
+                    res.get("provider", primary_name),
+                    res.get("model", "unknown"),
+                    "success",
+                    res.get("latency_ms", 0.0),
+                    fallback=False,
+                )
+                return res
+            except Exception as e:
+                is_safety_block = getattr(e, "is_safety_block", False)
+                if is_safety_block:
+                    logger.error(f"[LLM:{primary_name.upper()}:SAFETY_BLOCK] Request rejected. Not falling back.")
+                    await _log_event(primary_name, "unknown", "error", 0.0, error_category="SAFETY_BLOCK", fallback=False)
+                    raise
+
+                error_cat = type(e).__name__
+                logger.warning(f"[LLM:{primary_name.upper()}:FAILED] {e}. error={error_cat}")
+                await _log_event(primary_name, "unknown", "error", 0.0, error_category=error_cat, fallback=False)
+
+                if not enable_fallback or fallback_name == "none":
+                    raise e
 
         # 2. Configured Fallback Provider
         if fallback_name != "none" and fallback_name != primary_name:
@@ -912,32 +974,34 @@ class LLMClient:
                     logger.error(f"[LLM:{fallback_name.upper()}:SAFETY_BLOCK] Request rejected.")
                     await _log_event(fallback_name, "unknown", "error", 0.0, error_category="SAFETY_BLOCK", fallback=True)
                     raise
-                
+
                 error_cat = type(e).__name__
                 logger.warning(f"[LLM:{fallback_name.upper()}:FAILED] {e}. error={error_cat}")
                 await _log_event(fallback_name, "unknown", "error", 0.0, error_category=error_cat, fallback=True)
 
         # 3. Safe Internal Fallback (Last Resort)
-        safe_fallback = self.providers["fallback"]
-        try:
-            res = await safe_fallback.generate(
-                prompt,
-                timeout=timeout,
-                request_id=req_id,
-                system_instruction=system_instruction,
-                thinking_level=thinking_level,
-                config=config,
-            )
-            await _log_event("fallback", res.get("model", "mednarrate-fallback-v1"), "success", res.get("latency_ms", 0.0), fallback=True)
-            return res
-        except Exception as e:
-            logger.error(f"[LLM:INTERNAL_FALLBACK:FAILED] {e}")
-            await _log_event("fallback", "mednarrate-fallback-v1", "error", 0.0, error_category=type(e).__name__, fallback=True)
-            err = LLMConfigurationError(
-                "All LLM providers failed, including the internal safe fallback."
-            )
-            err.failure_category = "ALL_PROVIDERS_FAILED"
-            raise err
+        if enable_fallback and fallback_name != "none":
+            safe_fallback = self.providers["fallback"]
+            try:
+                res = await safe_fallback.generate(
+                    prompt,
+                    timeout=timeout,
+                    request_id=req_id,
+                    system_instruction=system_instruction,
+                    thinking_level=thinking_level,
+                    config=config,
+                )
+                await _log_event("fallback", res.get("model", "mednarrate-fallback-v1"), "success", res.get("latency_ms", 0.0), fallback=True)
+                return res
+            except Exception as e:
+                logger.error(f"[LLM:INTERNAL_FALLBACK:FAILED] {e}")
+                await _log_event("fallback", "mednarrate-fallback-v1", "error", 0.0, error_category=type(e).__name__, fallback=True)
+
+        err = LLMConfigurationError(
+            "All LLM providers failed, including the internal safe fallback."
+        )
+        err.failure_category = "ALL_PROVIDERS_FAILED"
+        raise err
 
     async def generate(
         self,

@@ -149,9 +149,21 @@ app.include_router(api_v1_router, prefix="/api/v1")
 
 @app.get("/health")
 async def health():
+    from app.core.database import AsyncSessionLocal
+    from sqlalchemy import text
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        db_status = "up"
+    except Exception:
+        db_status = "down"
+
+    status = "ok" if db_status == "up" else "degraded"
+
     return {
         "service": "mednarrate",
-        "status": "ok",
+        "status": status,
+        "db": db_status,
         "version": os.environ.get("MEDNARRATE_VERSION", "1.0.0"),
         "commit": os.environ.get("MEDNARRATE_COMMIT", "unknown"),
     }

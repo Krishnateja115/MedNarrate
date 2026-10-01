@@ -86,3 +86,12 @@ async def test_health_check_returns_all_services(
                 assert "password" not in details["details"]
     finally:
         llm_client_instance.get_provider = original_get_provider
+
+@pytest.mark.asyncio
+async def test_root_health_check_db(client: AsyncClient):
+    """Test that the /health root endpoint checks the database and returns ok."""
+    resp = await client.get("/health")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ok"
+    assert data["db"] == "up"

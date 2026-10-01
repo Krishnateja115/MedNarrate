@@ -46,7 +46,7 @@ class ApiService {
         Uri.parse('$_baseUrl$path'),
         headers: await _authHeaders(),
       ).timeout(_timeout);
-      return _handleResponse(resp, () => _get(path, allowRefresh: false), allowRefresh: allowRefresh);
+      return await _handleResponse(resp, () => _get(path, allowRefresh: false), allowRefresh: allowRefresh);
     } catch (error) {
       throw _networkException(error);
     }
@@ -60,7 +60,7 @@ class ApiService {
         headers: headers,
         body: isJson ? jsonEncode(body) : body,
       ).timeout(requestTimeout ?? _timeout);
-      return _handleResponse(resp, () => _post(path, body: body, isJson: isJson, allowRefresh: false, requestTimeout: requestTimeout), allowRefresh: allowRefresh);
+      return await _handleResponse(resp, () => _post(path, body: body, isJson: isJson, allowRefresh: false, requestTimeout: requestTimeout), allowRefresh: allowRefresh);
     } catch (error) {
       throw _networkException(error);
     }
@@ -74,7 +74,7 @@ class ApiService {
         headers: headers,
         body: jsonEncode(body),
       ).timeout(_timeout);
-      return _handleResponse(resp, () => _patch(path, body: body, allowRefresh: false), allowRefresh: allowRefresh);
+      return await _handleResponse(resp, () => _patch(path, body: body, allowRefresh: false), allowRefresh: allowRefresh);
     } catch (error) {
       throw _networkException(error);
     }
@@ -86,7 +86,7 @@ class ApiService {
         Uri.parse('$_baseUrl$path'),
         headers: await _authHeaders(),
       ).timeout(_timeout);
-      return _handleResponse(resp, () => _delete(path, allowRefresh: false), allowRefresh: allowRefresh);
+      return await _handleResponse(resp, () => _delete(path, allowRefresh: false), allowRefresh: allowRefresh);
     } catch (error) {
       throw _networkException(error);
     }

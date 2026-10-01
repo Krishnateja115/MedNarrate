@@ -40,6 +40,11 @@ jobs:
           cache: "pip"
           cache-dependency-path: mednarrate-backend/requirements.txt
 
+      - name: Install OCR system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr poppler-utils
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -67,7 +72,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.22.x"
+          flutter-version: "3.47.x"
           channel: "stable"
 
       - name: Get Flutter dependencies
@@ -77,7 +82,7 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Run Flutter tests
-        run: flutter test test/medication_card_test.dart test/biometric_service_test.dart test/insights_screen_test.dart test/offline_banner_test.dart --reporter expanded
+        run: flutter test --reporter expanded
 
   # ─── Docker build check ──────────────────────────────────────────────────
   docker:

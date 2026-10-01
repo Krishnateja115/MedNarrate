@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import 'insights_controller.dart';
 import '../widgets/parameter_card.dart';
 import '../../../shared/widgets/glassmorphism_card.dart';
-import 'package:mednarrate/l10n/app_localizations.dart';
 
 class InsightsScreen extends StatefulWidget {
   const InsightsScreen({super.key});
@@ -322,7 +323,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                         width: 4,
                         height: 24,
                         decoration: BoxDecoration(
-                          color: isPositiveTrend ? Colors.green : Colors.red,
+                          color: isPositiveTrend ? AppColors.success : AppColors.error,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
