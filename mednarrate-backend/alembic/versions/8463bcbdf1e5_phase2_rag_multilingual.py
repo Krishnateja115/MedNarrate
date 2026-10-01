@@ -30,7 +30,7 @@ def upgrade() -> None:
         sa.Column("chunk_index", sa.Integer(), nullable=False),
         sa.Column("chunk_text", sa.Text(), nullable=False),
         sa.Column(
-            "embedding_json", pgvector.sqlalchemy.vector.VECTOR(dim=768), nullable=True
+            "embedding_json", pgvector.sqlalchemy.Vector(dim=768), nullable=True
         ),
         sa.Column(
             "created_at",
@@ -113,7 +113,7 @@ def downgrade() -> None:
         sa.Column("content_hash", sa.VARCHAR(), autoincrement=False, nullable=False),
         sa.Column(
             "embedding",
-            pgvector.sqlalchemy.vector.VECTOR(dim=768),
+            pgvector.sqlalchemy.Vector(dim=768),
             autoincrement=False,
             nullable=True,
         ),

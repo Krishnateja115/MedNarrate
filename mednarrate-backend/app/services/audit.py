@@ -90,7 +90,7 @@ async def log_admin_action(
         user_agent=user_agent,
         metadata_payload=safe_metadata,
         sensitive_access_flag=sensitive_access_flag,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.utcnow(),
     )
 
     db.add(audit_entry)

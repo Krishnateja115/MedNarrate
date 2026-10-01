@@ -44,8 +44,8 @@ def upgrade() -> None:
     if "help_article_versions" not in table_names:
         op.create_table(
             "help_article_versions",
-            sa.Column("id", sa.String(length=36), nullable=False),
-            sa.Column("article_id", sa.String(length=36), nullable=False),
+            sa.Column("id", sa.UUID(), nullable=False),
+            sa.Column("article_id", sa.UUID(), nullable=False),
             sa.Column("version", sa.Integer(), nullable=False),
             sa.Column("title", sa.String(length=255), nullable=False),
             sa.Column("slug", sa.String(length=255), nullable=False),
@@ -53,7 +53,7 @@ def upgrade() -> None:
             sa.Column("summary", sa.Text(), nullable=False),
             sa.Column("content", sa.Text(), nullable=False),
             sa.Column("status", sa.String(length=9), nullable=False),
-            sa.Column("created_by", sa.String(length=36), nullable=False),
+            sa.Column("created_by", sa.UUID(), nullable=False),
             sa.Column("created_at", sa.DateTime(), nullable=False),
             sa.ForeignKeyConstraint(
                 ["article_id"], ["help_articles.id"], ondelete="CASCADE"
@@ -66,9 +66,9 @@ def upgrade() -> None:
     if "support_ticket_help_articles" not in table_names:
         op.create_table(
             "support_ticket_help_articles",
-            sa.Column("ticket_id", sa.String(length=36), nullable=False),
-            sa.Column("article_id", sa.String(length=36), nullable=False),
-            sa.Column("attached_by", sa.String(length=36), nullable=False),
+            sa.Column("ticket_id", sa.UUID(), nullable=False),
+            sa.Column("article_id", sa.UUID(), nullable=False),
+            sa.Column("attached_by", sa.UUID(), nullable=False),
             sa.Column("attached_at", sa.DateTime(), nullable=False),
             sa.ForeignKeyConstraint(
                 ["article_id"], ["help_articles.id"], ondelete="CASCADE"
@@ -116,7 +116,7 @@ def upgrade() -> None:
                     "id": permission_id,
                     "name": name,
                     "description": description,
-                    "created_at": "2026-09-26 00:00:00",
+                    "created_at": datetime(2026, 9, 26, 0, 0, 0),
                 },
             )
 
@@ -126,14 +126,14 @@ def upgrade() -> None:
     if article_count == 0:
         help_articles = sa.table(
             "help_articles",
-            sa.column("id", sa.String),
+            sa.column("id", sa.UUID),
             sa.column("title", sa.String),
             sa.column("slug", sa.String),
             sa.column("category", sa.String),
             sa.column("summary", sa.Text),
             sa.column("content", sa.Text),
-            sa.column("status", sa.String),
-            sa.column("created_by", sa.String),
+            sa.column("status", sa.Enum("draft", "published", "archived", name="articlestatus")),
+            sa.column("created_by", sa.UUID),
             sa.column("created_at", sa.DateTime),
             sa.column("updated_at", sa.DateTime),
             sa.column("published_at", sa.DateTime),
@@ -150,7 +150,7 @@ def upgrade() -> None:
                     "summary": "What the processing state means and what to include when asking support for help.",
                     "content": "MedNarrate processes an uploaded report before its analysis is available. Keep the report ID shown in the app and refresh after a short wait. If processing does not finish, open a support ticket with the report ID. Do not paste private medical text into the ticket.",
                     "status": "published",
-                    "created_by": "system",
+                    "created_by": "00000000-0000-0000-0000-000000000000",
                     "created_at": published_at,
                     "updated_at": published_at,
                     "published_at": published_at,
@@ -163,7 +163,7 @@ def upgrade() -> None:
                     "summary": "How to review extracted findings without treating them as a diagnosis.",
                     "content": "MedNarrate can extract text and generate plain-language summaries from supported reports. Check important values against the original report. The analysis does not replace the source report or advice from a qualified clinician.",
                     "status": "published",
-                    "created_by": "system",
+                    "created_by": "00000000-0000-0000-0000-000000000000",
                     "created_at": published_at,
                     "updated_at": published_at,
                     "published_at": published_at,
@@ -176,7 +176,7 @@ def upgrade() -> None:
                     "summary": "How to ask focused questions and check AI-generated answers.",
                     "content": "Ask focused questions about information available in your MedNarrate report. AI responses can be incomplete or incorrect, so verify important details against the original report and consult a clinician before making medical decisions.",
                     "status": "published",
-                    "created_by": "system",
+                    "created_by": "00000000-0000-0000-0000-000000000000",
                     "created_at": published_at,
                     "updated_at": published_at,
                     "published_at": published_at,
@@ -189,7 +189,7 @@ def upgrade() -> None:
                     "summary": "Check schedules and notification settings when a reminder is missing.",
                     "content": "Medication reminders use schedules saved in MedNarrate and notification settings on your device. Confirm that the schedule and active state are correct, then check app and device notification permissions.",
                     "status": "published",
-                    "created_by": "system",
+                    "created_by": "00000000-0000-0000-0000-000000000000",
                     "created_at": published_at,
                     "updated_at": published_at,
                     "published_at": published_at,
@@ -202,7 +202,7 @@ def upgrade() -> None:
                     "summary": "Share useful identifiers without including unnecessary medical details.",
                     "content": "Share the report ID, ticket ID, or request ID shown by MedNarrate. Avoid copying full report text, passwords, access tokens, or sensitive medical information into a support ticket.",
                     "status": "published",
-                    "created_by": "system",
+                    "created_by": "00000000-0000-0000-0000-000000000000",
                     "created_at": published_at,
                     "updated_at": published_at,
                     "published_at": published_at,

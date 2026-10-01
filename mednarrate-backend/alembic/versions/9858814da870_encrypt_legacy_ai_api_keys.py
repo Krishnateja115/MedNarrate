@@ -22,6 +22,9 @@ from app.core.encryption import encrypt_value, get_fernet
 
 def upgrade() -> None:
     conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    if "system_settings" not in inspector.get_table_names():
+        return
     res = conn.execute(sa.text("SELECT id, value FROM system_settings WHERE key = 'ai_api_key'"))
     for row in res:
         id, value = row

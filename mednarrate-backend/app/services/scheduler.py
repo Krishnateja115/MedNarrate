@@ -68,7 +68,6 @@ async def check_medication_reminders():
             # Log successful execution
             duration = time.time() - start_time
             exec_record = JobExecution(
-                id=str(uuid.uuid4()),
                 job_name="check_medication_reminders",
                 status=JobStatus.completed,
                 started_at=now,
@@ -81,13 +80,12 @@ async def check_medication_reminders():
         duration = time.time() - start_time
         async with AsyncSessionLocal() as session:
             exec_record = JobExecution(
-                id=str(uuid.uuid4()),
                 job_name="check_medication_reminders",
                 status=JobStatus.failed,
                 started_at=now,
                 finished_at=datetime.now(timezone.utc),
                 duration_seconds=duration,
-                error_message=str(e),
+                error_details=str(e),
             )
             session.add(exec_record)
             await session.commit()

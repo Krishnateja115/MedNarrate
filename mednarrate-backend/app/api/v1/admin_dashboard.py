@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import AdminContext, require_permission
 from app.core.database import get_db
-from app.models.incidents import Incident, IncidentStatus
+from app.models.incidents import Incident, IncidentStatus, IncidentSeverity
 from app.models.job_execution import JobExecution, JobStatus
 from app.models.report import ProcessingStatus, Report
 from app.models.report_analysis import ReportAnalysis
@@ -22,11 +22,10 @@ async def get_dashboard_summary(
     admin_ctx: AdminContext = Depends(require_permission("dashboard.view")),
     db: AsyncSession = Depends(get_db),
 ):
-    time_window_start = datetime.now(timezone.utc) - timedelta(days=days)
+    now_utc = datetime.utcnow()
+    time_window_start = now_utc - timedelta(days=days)
 
-    today_start = datetime.combine(datetime.now(timezone.utc).date(), time.min).replace(
-        tzinfo=timezone.utc
-    )
+    today_start = datetime.combine(now_utc.date(), time.min)
     this_week_start = today_start - timedelta(days=today_start.weekday())
     this_month_start = today_start.replace(day=1)
 
@@ -177,7 +176,7 @@ async def get_dashboard_summary(
                 IncidentStatus.identified,
             ]
         ),
-        Incident.severity.in_(["SEV-1", "SEV-2"]),
+        Incident.severity.in_([IncidentSeverity.sev1, IncidentSeverity.sev2]),
     )
     critical_incidents = (await db.execute(critical_incidents_stmt)).scalar() or 0
 
@@ -305,7 +304,7 @@ async def get_dashboard_alerts(
     feed = []
 
     # 1. Fetch recently failed jobs
-    yesterday = datetime.now(timezone.utc) - timedelta(hours=24)
+    yesterday = datetime.utcnow() - timedelta(hours=24)
     failed_jobs_stmt = (
         select(JobExecution)
         .where(
@@ -323,9 +322,9 @@ async def get_dashboard_alerts(
                 "id": f"job-{job.id}",
                 "type": "job_failure",
                 "title": f"Job Failed: {job.job_name}",
-                "description": job.error_message or "Unknown error",
+                "description": job.error_details or "Unknown error",
                 "severity": "medium",
-                "timestamp": job.started_at.isoformat(),
+                "timestamp": job.started_at.isoformat() if job.started_at else "",
             }
         )
 
@@ -353,8 +352,8 @@ async def get_dashboard_alerts(
                 "type": "incident",
                 "title": inc.title,
                 "description": f"Severity: {inc.severity} - Status: {inc.status.value}",
-                "severity": "high" if inc.severity in ["SEV-1", "SEV-2"] else "medium",
-                "timestamp": inc.created_at.isoformat(),
+                "severity": "high" if inc.severity in [IncidentSeverity.sev1, IncidentSeverity.sev2] else "medium",
+                "timestamp": inc.created_at.isoformat() if inc.created_at else "",
             }
         )
 

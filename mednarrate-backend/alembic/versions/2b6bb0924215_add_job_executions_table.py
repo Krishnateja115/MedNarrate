@@ -22,7 +22,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.create_table(
         "job_executions",
-        sa.Column("id", sa.String(length=36), nullable=False),
+        sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("job_name", sa.String(length=100), nullable=False),
         sa.Column(
             "status",

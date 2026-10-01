@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from app.core.database import AsyncSessionLocal, init_db
 from app.core.security import hash_password
-from app.models.user import User
+from app.models.user import User, UserRole
 
 async def create_admin():
     await init_db()
@@ -17,7 +17,7 @@ async def create_admin():
             hashed_password=hashed_password,
             full_name="System Admin",
             is_active=True,
-            role="admin"
+            role=UserRole.admin
         )
         session.add(admin)
         await session.commit()

@@ -99,7 +99,7 @@ async def login(
     access_token = create_access_token(subject=user.id)
     refresh_token_str = create_refresh_token()
 
-    expires_at = datetime.now(timezone.utc) + timedelta(
+    expires_at = datetime.utcnow() + timedelta(
         days=settings.REFRESH_TOKEN_EXPIRE_DAYS
     )
 
@@ -188,10 +188,11 @@ async def refresh_token(
         )
 
     expires_at = db_refresh_token.expires_at
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    # Always compare using naive UTC times
+    if expires_at.tzinfo is not None:
+        expires_at = expires_at.replace(tzinfo=None)
 
-    if expires_at < datetime.now(timezone.utc):
+    if expires_at < datetime.utcnow():
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
     refresh_user = await db.get(User, db_refresh_token.user_id)
@@ -206,7 +207,7 @@ async def refresh_token(
     access_token = create_access_token(subject=db_refresh_token.user_id)
     new_refresh_token_str = create_refresh_token()
 
-    expires_at = datetime.now(timezone.utc) + timedelta(
+    expires_at = datetime.utcnow() + timedelta(
         days=settings.REFRESH_TOKEN_EXPIRE_DAYS
     )
 

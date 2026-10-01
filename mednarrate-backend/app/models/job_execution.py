@@ -17,7 +17,8 @@ class JobStatus(str, enum.Enum):
 class JobExecution(Base):
     __tablename__ = "job_executions"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    from sqlalchemy import Uuid
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     job_name = Column(String(100), nullable=False, index=True)
     status = Column(SQLEnum(JobStatus), nullable=False, default=JobStatus.running)
     started_at = Column(

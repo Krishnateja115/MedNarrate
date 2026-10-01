@@ -8,10 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.admin_auth import AdminContext, get_admin_context
 from app.core.database import get_db
 from app.models.admin import AdminAuditLog
-from app.models.incidents import Incident
+from app.models.incidents import Incident, IncidentStatus
 from app.models.llm_telemetry import LLMDiagnosticEvent
-from app.models.report import Report
-from app.models.support import SupportTicket
+from app.models.report import Report, ProcessingStatus
+from app.models.support import SupportTicket, TicketStatus, TicketPriority
 
 router = APIRouter()
 
@@ -26,12 +26,12 @@ async def get_admin_alerts(
     db: AsyncSession = Depends(get_db),
 ):
     alerts: List[Dict[str, Any]] = []
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     twenty_four_hours_ago = now - timedelta(hours=24)
 
     # 1. Critical Active Incidents
     inc_stmt = select(Incident).where(
-        Incident.status.in_(["open", "investigating", "identified"])
+        Incident.status.in_([IncidentStatus.open, IncidentStatus.investigating, IncidentStatus.identified])
     )
     incidents = (await db.execute(inc_stmt)).scalars().all()
     for inc in incidents:
@@ -61,7 +61,7 @@ async def get_admin_alerts(
         await db.execute(
             select(func.count(Report.id)).where(
                 Report.uploaded_at >= twenty_four_hours_ago,
-                Report.processing_status.in_(["failed", "error"]),
+                Report.processing_status == ProcessingStatus.failed,
             )
         )
     ).scalar_one_or_none() or 0
@@ -84,8 +84,8 @@ async def get_admin_alerts(
     urgent_tkt_cnt = (
         await db.execute(
             select(func.count(SupportTicket.id)).where(
-                SupportTicket.status == "open",
-                SupportTicket.priority.in_(["p1", "p2", "urgent", "high"]),
+                SupportTicket.status.not_in([TicketStatus.resolved, TicketStatus.closed]),
+                SupportTicket.priority.in_([TicketPriority.p1, TicketPriority.p2]),
             )
         )
     ).scalar_one_or_none() or 0
