@@ -71,12 +71,13 @@ async def test_analytics_avoids_fabricated_data(
             processed_at=uploaded_at + timedelta(seconds=120),
         )
     )
+    unique_error = f"test_timeout_{uuid.uuid4().hex[:8]}"
     db_session.add(
         LLMDiagnosticEvent(
             provider="test-provider",
             model_name="test-model",
             status="error",
-            error_category="timeout",
+            error_category=unique_error,
             latency_ms=250.0,
         )
     )
@@ -93,7 +94,7 @@ async def test_analytics_avoids_fabricated_data(
     data = resp.json()
     assert data["status"] == "ok"
     assert data["reports"]["avg_processing_time_sec"] is not None
-    assert data["ai"]["failure_categories"] == {"timeout": 1}
+    assert data["ai"]["failure_categories"].get(unique_error) == 1
 
     # Verify we aren't getting the hardcoded 85.0% or 4.2s anymore when there's no data
     if data["reports"]["total_uploads"] == 0:
