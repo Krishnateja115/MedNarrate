@@ -136,10 +136,13 @@ async def _grounded_reply(query: str, admin_ctx: AdminContext, db: AsyncSession)
         }
     }
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.post(url, json=payload, headers={"x-goog-api-key": api_key.strip()})
-        resp.raise_for_status()
-        data = resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(url, json=payload, headers={"x-goog-api-key": api_key.strip()})
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as e:
+        return f"I encountered an error trying to process your request. Service might be unavailable."
 
     candidates = data.get("candidates", [])
     if not candidates:
@@ -170,10 +173,13 @@ async def _grounded_reply(query: str, admin_ctx: AdminContext, db: AsyncSession)
     payload["contents"].append(candidates[0].get("content"))
     payload["contents"].append({"parts": tool_results})
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.post(url, json=payload, headers={"x-goog-api-key": api_key.strip()})
-        resp.raise_for_status()
-        data = resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(url, json=payload, headers={"x-goog-api-key": api_key.strip()})
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as e:
+        return f"I encountered an error trying to process your request. Service might be unavailable."
 
     candidates = data.get("candidates", [])
     if not candidates:

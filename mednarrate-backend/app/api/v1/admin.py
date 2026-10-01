@@ -75,19 +75,26 @@ async def get_admin_me(admin_ctx: AdminContext = Depends(get_admin_context)):
 @router.get("/kb-stats")
 async def get_kb_stats(
     request: Request,
-    admin_ctx: AdminContext = Depends(require_permission("knowledge_base.view")),
+    admin_ctx: AdminContext = Depends(require_permission("rag.view")),
     db: AsyncSession = Depends(get_db),
 ):
+    from sqlalchemy import select, func
+    from app.models.knowledge_document import KnowledgeDocument
+    from app.models.rag_chunk import RagChunk
+
     await log_admin_action(
         db=db,
         action="VIEW_KB_STATS",
         actor_admin_id=admin_ctx.user.id,
-        permission_used="knowledge_base.view",
+        permission_used="rag.view",
         request=request,
     )
+    
+    total_docs = (await db.execute(select(func.count(KnowledgeDocument.id)))).scalar() or 0
+    total_chunks = (await db.execute(select(func.count(RagChunk.id)))).scalar() or 0
+    
     await db.commit()
-    # Mock KB stats for now
-    return {"status": "ok", "total_documents": 5, "total_chunks": 42}
+    return {"status": "ok", "total_documents": total_docs, "total_chunks": total_chunks}
 
 
 @router.get("/llm-status")

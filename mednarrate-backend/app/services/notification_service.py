@@ -51,7 +51,7 @@ async def send_push_notification(
             response = messaging.send(message)
             logger.info(f"Successfully sent message: {response}")
         else:
-            logger.info(f"[MOCK FCM - No App] Sent to {token}: {title} - {body}")
+            raise RuntimeError("FCM Provider not configured. Cannot send notification.")
     except Exception as e:
         status = "failed"
         error_message = str(e)

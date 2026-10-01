@@ -41,10 +41,10 @@ async def support_admin(db_session: AsyncSession):
     role = AdminRole(name=f"Support Agent_{uuid.uuid4()}")
     db_session.add(role)
 
-    stmt = select(AdminPermission).where(AdminPermission.name == "knowledge_base.view")
+    stmt = select(AdminPermission).where(AdminPermission.name == "rag.view")
     perm = (await db_session.execute(stmt)).scalars().first()
     if not perm:
-        perm = AdminPermission(name="knowledge_base.view")
+        perm = AdminPermission(name="rag.view")
         db_session.add(perm)
 
     await db_session.flush()
