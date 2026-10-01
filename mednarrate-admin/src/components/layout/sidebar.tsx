@@ -45,7 +45,7 @@ const NAV_GROUPS = [
       { name: 'Admin Copilot', href: '/admin-copilot', icon: Bot, permissions: ['dashboard.view'] },
       { name: 'AI Operations', href: '/ai-ops', icon: Bot, permissions: ['ai.view', 'ai.manage'] },
       { name: 'Chat Operations', href: '/chat-ops', icon: MessageSquare, permissions: ['chat.view'] },
-      { name: 'RAG Knowledge Ops', href: '/rag-ops', icon: Database, permissions: ['knowledge_base.view'] },
+      { name: 'RAG Knowledge Ops', href: '/rag-ops', icon: Database, permissions: ['rag.view'] },
       { name: 'Automation Jobs', href: '/automation-ops', icon: Clock, permissions: ['automation.view'] },
       { name: 'Help Center', href: '/help-center', icon: BookOpen, permissions: ['help_center.view', 'help_center.manage', 'support.manage'] },
     ]

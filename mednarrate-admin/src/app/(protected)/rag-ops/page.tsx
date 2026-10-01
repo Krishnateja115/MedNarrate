@@ -81,7 +81,7 @@ export default function RagOpsPage() {
   const { data: statusData, isLoading: statusLoading, error: statusError } = useQuery<RagStatusResponse>({
     queryKey: ['rag_status'],
     queryFn: () => fetchApi('/api/v1/admin/rag-ops/status'),
-    enabled: can('knowledge_base.view'),
+    enabled: can('rag.view'),
   });
 
   const { data: docsData, isLoading: docsLoading, error: docsError } = useQuery<DocsResponse>({
@@ -93,7 +93,7 @@ export default function RagOpsPage() {
       if (statusFilter !== 'all') params.set('status', statusFilter);
       return fetchApi(`/api/v1/admin/rag-ops/documents?${params.toString()}`);
     },
-    enabled: can('knowledge_base.view'),
+    enabled: can('rag.view'),
   });
 
   const updateStatusMutation = useMutation({
@@ -161,7 +161,7 @@ export default function RagOpsPage() {
               updateStatusMutation.mutate({ id: row.original.id, status: val });
             }
           }}
-          disabled={updatingId === row.original.id || !can('knowledge_base.manage')}
+          disabled={updatingId === row.original.id || !can('rag.manage')}
         >
           <SelectTrigger className="w-[130px] h-8 text-xs">
             <SelectValue />
@@ -178,7 +178,7 @@ export default function RagOpsPage() {
     },
   ];
 
-  if (!can('knowledge_base.view')) {
+  if (!can('rag.view')) {
     return <Forbidden />;
   }
 

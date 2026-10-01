@@ -50,7 +50,7 @@ export default function AdminManagementPage() {
     queryFn: () => fetchApi('/api/v1/admin/admins'),
   });
 
-  const { data: rolesData } = useQuery<{ roles: AdminRole[] }>({
+  const { data: rolesData } = useQuery<AdminRole[]>({
     queryKey: ['admin-roles'],
     queryFn: () => fetchApi('/api/v1/admin/roles'),
   });
@@ -207,7 +207,7 @@ export default function AdminManagementPage() {
               <div>
                 <label className="block text-sm font-medium mb-1">Assign Roles</label>
                 <div className="space-y-2 border rounded-md p-3 max-h-48 overflow-y-auto dark:border-slate-700">
-                  {rolesData?.roles?.map(role => (
+                  {rolesData?.map(role => (
                     <label key={role.id} className="flex items-center space-x-2">
                       <input 
                         type="checkbox" 
@@ -221,7 +221,7 @@ export default function AdminManagementPage() {
                       <span className="text-sm">{role.name}</span>
                     </label>
                   ))}
-                  {!rolesData?.roles && <div className="text-xs text-slate-500">Loading roles...</div>}
+                  {!rolesData && <div className="text-xs text-slate-500">Loading roles...</div>}
                 </div>
               </div>
               <Button type="submit" disabled={createAdminMutation.isPending}>

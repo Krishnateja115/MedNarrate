@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
+import { toast } from '@/components/ui/toast';
 
 interface NotificationLog {
   id: string;
@@ -80,8 +81,16 @@ export default function AutomationOpsPage() {
       if (!res.ok) throw new Error('Failed to retry');
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      if (data.status === 'failed') {
+        toast.add({ title: 'Retry attempt failed. Device unreachable.', type: 'error' });
+      } else {
+        toast.add({ title: 'Notification retried successfully.', type: 'success' });
+      }
       queryClient.invalidateQueries({ queryKey: ['automation_notifications'] });
+    },
+    onError: (err: any) => {
+      toast.add({ title: err.message || 'Failed to trigger retry.', type: 'error' });
     }
   });
 
