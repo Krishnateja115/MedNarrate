@@ -89,3 +89,9 @@ An explicit transaction failure regression test (`test_phase4_privacy_atomicity.
 
 - Git State: The local branch accurately reflects the Phase 4D hardening changes.
 - Alembic: The local state has been cleaned of duplicate autogenerate artifacts. There is exactly one Phase 4 schema migration: `cebe80380c15` (Add requested duration hours to break glass). Alembic upgrade/downgrade cleanly executes over a disposable schema.
+
+## Q. Phase 4E: Repository Hygiene & Orphan File Cleanup
+
+- **Orphan File Cleanup**: Implemented the `OrphanFile` model to track physical storage deletion failures during the user hard-delete process. When `delete_file(fp)` raises an exception, the system now safely logs an `OrphanFile` record to the database for subsequent operational cleanup. Migration `ce57d53d74af` was generated.
+- **Break-Glass Enforcement & Resource Allowlist**: A centralized `verify_breakglass_access` function was introduced in `app/api/v1/admin_users.py`. This ensures that access to `medical_profile`, `doctor_profile`, and `caregiver_profile` is strictly guarded by an active `SensitiveAccessGrant` via a rigorous resource type allowlist.
+- **Data Initialization Issues Resolved**: All testing anomalies, including `MFAChallenge.jti` unique constraints and deprecated arguments in `MedicationSchedule` or `ChatSafetyEvent`, were removed, yielding robust integration tests.

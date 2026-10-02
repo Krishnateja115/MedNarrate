@@ -41,7 +41,7 @@ async def log_admin_action(
     user_agent = request.headers.get("user-agent")
 
     audit_log = AdminAuditLog(
-        actor_admin_id=admin_ctx.user.id,
+        actor_admin_id=admin_ctx.user_id,
         action=action,
         resource_type=resource_type,
         resource_id=resource_id,
@@ -176,7 +176,7 @@ async def suspend_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.id == admin_ctx.user.id:
+    if user.id == admin_ctx.user_id:
         raise HTTPException(status_code=400, detail="Cannot suspend yourself")
 
     from app.models.admin import AdminRole, AdminRoleAssignment
@@ -282,7 +282,7 @@ async def change_role(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.id == admin_ctx.user.id:
+    if user.id == admin_ctx.user_id:
         raise HTTPException(status_code=400, detail="Cannot change your own role")
 
     old_role = user.role
@@ -404,6 +404,23 @@ from app.models.doctor_profile import DoctorProfile
 from app.models.caregiver_profile import CaregiverProfile
 from app.models.admin import SensitiveAccessGrant
 
+async def verify_breakglass_access(admin_ctx: AdminContext, user_id: uuid.UUID, resource_type: str, db: AsyncSession):
+    allowed_sensitive_types = {"medical_profile", "doctor_profile", "caregiver_profile"}
+    if resource_type not in allowed_sensitive_types:
+        raise HTTPException(status_code=400, detail="Invalid sensitive resource type")
+        
+    if "super_admin" not in admin_ctx.permissions:
+        stmt_bg = select(SensitiveAccessGrant).where(
+            SensitiveAccessGrant.admin_id == admin_ctx.user_id,
+            SensitiveAccessGrant.resource_type == resource_type,
+            SensitiveAccessGrant.resource_id == str(user_id),
+            SensitiveAccessGrant.expires_at > datetime.utcnow()
+        )
+        bg = (await db.execute(stmt_bg)).scalars().first()
+        if not bg:
+            raise HTTPException(status_code=403, detail=f"Active break-glass grant required to view {resource_type}")
+
+
 @router.get("/{user_id}/medical_profile")
 async def get_medical_profile(
     request: Request,
@@ -411,17 +428,7 @@ async def get_medical_profile(
     admin_ctx: AdminContext = Depends(require_permission("users.view")),
     db: AsyncSession = Depends(get_db),
 ):
-    # Verify break-glass access or explicit permission
-    if "super_admin" not in admin_ctx.permissions:
-        stmt_bg = select(SensitiveAccessGrant).where(
-            SensitiveAccessGrant.admin_id == admin_ctx.user.id,
-            SensitiveAccessGrant.resource_type == "medical_profile",
-            SensitiveAccessGrant.resource_id == str(user_id),
-            SensitiveAccessGrant.expires_at > datetime.utcnow()
-        )
-        bg = (await db.execute(stmt_bg)).scalars().first()
-        if not bg:
-            raise HTTPException(status_code=403, detail="Active break-glass grant required to view PHI")
+    await verify_breakglass_access(admin_ctx, user_id, "medical_profile", db)
 
     stmt = select(MedicalProfile).where(MedicalProfile.user_id == user_id)
     prof = (await db.execute(stmt)).scalars().first()
@@ -448,12 +455,19 @@ async def get_medical_profile(
 
 @router.get("/{user_id}/doctor_profile")
 async def get_doctor_profile(
+    request: Request,
     user_id: uuid.UUID,
     admin_ctx: AdminContext = Depends(require_permission("users.view")),
     db: AsyncSession = Depends(get_db),
 ):
+    await verify_breakglass_access(admin_ctx, user_id, "doctor_profile", db)
+
     stmt = select(DoctorProfile).where(DoctorProfile.user_id == user_id)
     prof = (await db.execute(stmt)).scalars().first()
+
+    await log_admin_action(
+        db, admin_ctx, "PHI_ACCESSED", "doctor_profile", str(user_id), {}, request
+    )
 
     if not prof:
         return {"status": "ok", "profile": None}
@@ -475,12 +489,19 @@ async def get_doctor_profile(
 
 @router.get("/{user_id}/caregiver_profile")
 async def get_caregiver_profile(
+    request: Request,
     user_id: uuid.UUID,
     admin_ctx: AdminContext = Depends(require_permission("users.view")),
     db: AsyncSession = Depends(get_db),
 ):
+    await verify_breakglass_access(admin_ctx, user_id, "caregiver_profile", db)
+
     stmt = select(CaregiverProfile).where(CaregiverProfile.user_id == user_id)
     prof = (await db.execute(stmt)).scalars().first()
+
+    await log_admin_action(
+        db, admin_ctx, "PHI_ACCESSED", "caregiver_profile", str(user_id), {}, request
+    )
 
     if not prof:
         return {"status": "ok", "profile": None}
@@ -828,6 +849,8 @@ async def hard_delete_user(
             except Exception as e:
                 # Log the orphan but continue DB deletion so account doesn't stay active
                 print(f"Failed to delete file {fp}: {e}")
+                from app.models.orphan_file import OrphanFile
+                db.add(OrphanFile(file_path=fp, reason=f"Hard delete failure: {e}"))
 
     await log_admin_action(
         db, admin_ctx, "USER_HARD_DELETE", "User", str(user_id),

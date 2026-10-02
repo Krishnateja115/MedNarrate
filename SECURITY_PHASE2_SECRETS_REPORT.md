@@ -18,6 +18,6 @@
 
 ## 4. Git History Finding Resolution
 - **Removed Active Threats**: Removed the tracked `mednarrate-backend/out.txt` containing a raw legacy JWT.
-- **Sanitized Mocks**: Overrode a real-looking (but defunct) test API key (`valid_test_key_12345`) in `tests/test_llm_and_pipeline.py` with an obvious placeholder (`your_gemini_api_key_here`).
+- **Sanitized Mocks**: Overrode a real-looking test API key ([REDACTED]) in `tests/test_llm_and_pipeline.py` with an obvious placeholder (`your_gemini_api_key_here`).
 - **Git Ignore Enhancements**: Hardened both the root and `mednarrate-backend` `.gitignore` files to unequivocally reject `.env`, `.env.local`, `.env.production`, and `.env.bak`, whilst allowing `.env.example`.
 - **Note on History**: While the codebase is sanitized, historical git history containing `out.txt` and `test_llm_and_pipeline.py` remains. The upcoming phases (if requested) or manual DevOps intervention (BFG Repo-Cleaner/git filter-repo) will purge these permanently prior to open-source publication.
