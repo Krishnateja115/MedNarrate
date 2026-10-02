@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.v1 import router as api_v1_router
 from app.core.config import settings
@@ -19,7 +20,7 @@ from app.exceptions import setup_exception_handlers
 from app.services.model_registry import get_ner_pipeline
 from app.services.scheduler import start_scheduler, stop_scheduler
 
-limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
+limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules, default_limits=["100/minute"])
 logger = logging.getLogger(__name__)
 
 
@@ -55,6 +56,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 setup_exception_handlers(app)
 
 app.add_middleware(CorrelationIdMiddleware)
+app.add_middleware(SlowAPIMiddleware)
 
 cors_origins = set(settings.CORS_ORIGINS)
 if "*" in cors_origins:

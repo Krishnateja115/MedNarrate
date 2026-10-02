@@ -59,7 +59,7 @@ def create_access_token(subject: str, session_version: int = 1) -> str:
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    to_encode = {"exp": expire, "sub": str(subject), "session_version": session_version}
+    to_encode = {"exp": expire, "sub": str(subject), "session_version": session_version, "type": "access"}
     encoded_jwt = jwt.encode(
         to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
     )
@@ -156,6 +156,8 @@ def decode_access_token(token: str) -> dict:
         decoded_token = jwt.decode(
             token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
         )
+        if decoded_token.get("type") not in (None, "access"):
+            raise HTTPException(status_code=401, detail="Invalid token type")
         return decoded_token
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
