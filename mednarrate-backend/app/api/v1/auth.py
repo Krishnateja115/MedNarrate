@@ -73,7 +73,21 @@ async def login(
         verify_password(form_data.password, "$2b$12$NqO1D9TfUoVp2lX2Q9yU2uD0Z3m6E7QxO.B8G.Y3yK1V9j6U6oP8.")
         raise HTTPException(status_code=401, detail="Incorrect email or password")
 
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    
+    # Check if locked out
+    if user.locked_until and user.locked_until > now:
+        raise HTTPException(status_code=401, detail="Account is temporarily locked due to multiple failed login attempts")
+        
+    if user.locked_until and user.locked_until <= now:
+        user.failed_login_attempts = 0
+        user.locked_until = None
+
     if not verify_password(form_data.password, user.hashed_password):
+        user.failed_login_attempts += 1
+        if user.failed_login_attempts >= 5:
+            user.locked_until = now + timedelta(minutes=15)
+            
         if user.role == UserRole.admin:
             await log_admin_action(
                 db=db,
@@ -82,11 +96,17 @@ async def login(
                 resource_type="User",
                 resource_id=str(user.id),
                 result="failure",
-                reason="Incorrect password",
+                reason="Incorrect password or locked out",
                 request=request,
             )
-            await db.commit()
+            
+        db.add(user)
+        await db.commit()
         raise HTTPException(status_code=401, detail="Incorrect email or password")
+        
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    db.add(user)
 
     if not user.is_active:
         if user.role == UserRole.admin:

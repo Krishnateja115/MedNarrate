@@ -1,0 +1,138 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.9, pytest-8.4.2, pluggy-1.5.0 -- /opt/anaconda3/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend
+configfile: pytest.ini
+plugins: asyncio-1.4.0, anyio-4.10.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=session, asyncio_default_test_loop_scope=session
+collecting ... collected 1 item
+
+tests/test_auth.py::test_account_lockout ERROR                           [100%]
+
+==================================== ERRORS ====================================
+____________________ ERROR at setup of test_account_lockout ____________________
+file /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/tests/test_auth.py, line 122
+  @pytest.mark.asyncio
+  async def test_account_lockout(client: AsyncClient, db_session, test_user):
+      # Attempt 5 incorrect logins
+      for i in range(5):
+          response = await client.post("/api/v1/auth/login", data={"username": test_user.email, "password": "wrongpassword"})
+          assert response.status_code == 401
+
+      # 6th attempt should be locked out (even if password is correct)
+      response = await client.post("/api/v1/auth/login", data={"username": test_user.email, "password": "testpassword"})
+      assert response.status_code == 401
+      assert "locked" in response.json()["detail"]
+
+      # Reset locked_until to past
+      from datetime import datetime, timedelta, timezone
+      from sqlalchemy.future import select
+      from app.models.user import User
+      now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+      # get user and set locked_until
+      user = (await db_session.execute(select(User).where(User.email == test_user.email))).scalar_one()
+      user.locked_until = now - timedelta(minutes=1)
+      db_session.add(user)
+      await db_session.commit()
+
+      # Now login should succeed
+      response = await client.post("/api/v1/auth/login", data={"username": test_user.email, "password": "testpassword"})
+      assert response.status_code == 200
+      assert "access_token" in response.json()
+E       fixture 'test_user' not found
+>       available fixtures: _asyncio_loop_factory, _class_scoped_runner, _function_scoped_runner, _module_scoped_runner, _package_scoped_runner, _session_scoped_runner, admin_token_and_user, anyio_backend, anyio_backend_name, anyio_backend_options, bystander_user, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, db_session, doctest_namespace, event_loop, event_loop_policy, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, setup_db, target_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, token_headers, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/tests/test_auth.py:122
+=============================== warnings summary ===============================
+app/core/config.py:4
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/core/config.py:4: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Settings(BaseSettings):
+
+app/api/v1/admin_ai_config.py:25
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:25: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    primary_provider: Optional[str] = Field(None, example="gemini")
+
+app/api/v1/admin_ai_config.py:26
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:26: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    model_name: Optional[str] = Field(None, example="gemini-1.5-pro")
+
+app/api/v1/admin_ai_config.py:29
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_ai_config.py:29: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    fallback_provider: Optional[str] = Field(None, example="ollama")
+
+app/api/v1/admin_announcements.py:21
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:21: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    audience: str = Field(
+
+app/api/v1/admin_announcements.py:24
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:24: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    language: str = Field(default="en", example="en")
+
+app/api/v1/admin_announcements.py:27
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_announcements.py:27: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    status: str = Field(
+
+app/api/v1/admin_breakglass.py:37
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:37: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    resource_type: str = Field(..., example="medical_report")
+
+app/api/v1/admin_breakglass.py:38
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:38: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    resource_id: str = Field(
+
+app/api/v1/admin_breakglass.py:43
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_breakglass.py:43: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    reason: str = Field(
+
+app/api/v1/admin_feature_flags.py:19
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_feature_flags.py:19: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    name: str = Field(..., min_length=2, example="enable_ocr_v2")
+
+app/api/v1/admin_feature_flags.py:23
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_feature_flags.py:23: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    target_environment: str = Field(default="all", example="production")
+
+app/api/v1/admin_settings.py:28
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:28: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    scope: str = Field(
+
+app/api/v1/admin_settings.py:31
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:31: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    reason: Optional[str] = Field(None, example="Scheduled database maintenance")
+
+app/api/v1/admin_settings.py:32
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/api/v1/admin_settings.py:32: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    message: Optional[str] = Field(
+
+app/services/rag.py:8
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/services/rag.py:8: FutureWarning: 
+  
+  All support for the `google.generativeai` package has ended. It will no longer be receiving 
+  updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  See README for more details:
+  
+  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  
+    import google.generativeai as genai
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+app/schemas/notification.py:19
+  /Users/harsha/Downloads/Sem 5/NLP/Case Study/MedNarrate-main/mednarrate-backend/app/schemas/notification.py:19: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class MedicationScheduleOut(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_auth.py::test_account_lockout
+======================== 22 warnings, 1 error in 0.05s =========================

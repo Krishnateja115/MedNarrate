@@ -40,6 +40,8 @@ class User(Base):
     mfa_recovery_codes: Mapped[str | None] = mapped_column(String, nullable=True)
     session_version: Mapped[int] = mapped_column(Integer, default=1, server_default='1', nullable=False)
     last_totp_counter: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0, server_default='0', nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     support_tickets = relationship(
         "SupportTicket",
