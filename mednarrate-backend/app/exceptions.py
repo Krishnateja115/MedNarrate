@@ -94,7 +94,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 async def integrity_exception_handler(request: Request, exc: IntegrityError):
-    print("INTEGRITY ERROR DETAILS:", str(exc))
+    logger.error(f"INTEGRITY ERROR DETAILS: {exc}")
     return JSONResponse(
         status_code=409,
         content={"detail": "Database integrity error, possibly a duplicate entry", "code": "integrity_error"}
