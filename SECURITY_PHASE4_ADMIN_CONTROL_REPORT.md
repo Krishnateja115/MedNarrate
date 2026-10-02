@@ -22,7 +22,7 @@ Before implementing hard deletion, we audited all relationships referencing `use
 | `refresh_tokens` | `user_id` | False | CASCADE | User-owned | No | DELETE | Authentication/Session material. |
 | `password_reset_tokens`| `user_id` | False | CASCADE | User-owned | No | DELETE | Authentication/Session material. |
 | `mfa_challenges` | `user_id` | False | CASCADE | User-owned | No | DELETE | Authentication/Session material. |
-| `privacy_consents` | `user_id` | False | CASCADE | User-owned | Yes (Consent) | DELETE | Consent record for this user. |
+| `privacy_data_requests` | `user_id` | False | CASCADE | User-owned | Yes | DELETE | Data deletion/export requests for this user. |
 | `support_tickets` | `user_id` | False | CASCADE | User-owned | Yes | DELETE | Support communications from this user. |
 | `admin_role_assignments`| `user_id` | False | CASCADE | User-owned (Admin)| No | DELETE | Privilege assignment for this admin. |
 | `sensitive_access_grants`| `admin_id` | False | CASCADE | User-owned (Admin)| No | DELETE | Break-glass grants belonging to this admin. |
@@ -36,11 +36,12 @@ Before implementing hard deletion, we audited all relationships referencing `use
 | `system_settings` | `updated_by` | True | SET NULL | Shared (Ops) | No | RETAIN | Config history. |
 | `feature_flags` | `updated_by` | True | SET NULL | Shared (Ops) | No | RETAIN | Config history. |
 | `announcements` | `created_by` | True | SET NULL | Shared (Ops) | No | RETAIN | Operational broadcast history. |
-| `privacy_audit_logs`| `user_id`/`admin_id`| True | SET NULL | Shared/Audit | No | RETAIN | Legal audit record of consent changes; user identifier is lost but action history remains. |
 
-### Physical Uploaded Files
+### Physical Uploaded Files & Orphan Lifecycle
 - Uploaded file paths are stored in `reports.file_path` as `/uploads/{user_id}/{uuid}.{ext}`.
-- Deletion mechanism requires passing `reports.file_path.replace("/uploads/", "")` to `delete_file` before deleting the database rows.
+- Deletion mechanism attempts `delete_file` before deleting the database rows.
+- If physical deletion fails (e.g., storage downtime), an `OrphanFile` record is synchronously inserted (Status: `pending`, with a sanitized `last_error_code`).
+- A background/admin process routinely retries `pending` orphans via `app.services.orphan_cleanup.retry_pending_orphan_files`, incrementing `retry_count` and transitioning successfully deleted files to `resolved`. Raw storage exceptions are never stored.
 
 ## Architecture
 The system relies largely on database-level `CASCADE` for user-owned records. Destructive operation implementations will:

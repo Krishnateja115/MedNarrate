@@ -183,6 +183,14 @@ async def require_active_step_up(
     return admin_ctx
 
 
+ALLOWED_SENSITIVE_RESOURCE_TYPES = {
+    "medical_report",
+    "medical_profile",
+    "doctor_profile",
+    "caregiver_profile",
+    "chat_session"
+}
+
 async def validate_access_grant(
     admin_ctx: AdminContext, resource_type: str, resource_id: str, db: AsyncSession
 ) -> SensitiveAccessGrant:
@@ -190,13 +198,14 @@ async def validate_access_grant(
     Validates that the admin has an active, unexpired, scope-matching break-glass grant.
     Auto-expires grants lazily. Raises 403 on any violation.
 
-    Enforces ALL 5 conditions:
-      1. grant exists for this admin
-      2. grant status == 'active'
-      3. grant.expires_at > now (server-side expiry)
-      4. grant.resource_type matches
-      5. grant.resource_id matches (or resource_id == '*' wildcard)
+    A super-admin must NOT silently bypass break-glass for sensitive PHI.
     """
+    if resource_type not in ALLOWED_SENSITIVE_RESOURCE_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown sensitive resource type: {resource_type}",
+        )
+
     now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     stmt = (
@@ -208,7 +217,6 @@ async def validate_access_grant(
             SensitiveAccessGrant.expires_at > now,
         )
         .where(
-            # Support exact resource_id match or wildcard grant for resource type
             (SensitiveAccessGrant.resource_id == resource_id)
             | (SensitiveAccessGrant.resource_id == "*")
         )
@@ -218,10 +226,10 @@ async def validate_access_grant(
     grant = result.scalars().first()
 
     if not grant:
-        # Check if there's an expired grant to give better error message
         expired_stmt = select(SensitiveAccessGrant).where(
             SensitiveAccessGrant.admin_id == admin_ctx.user_id,
             SensitiveAccessGrant.resource_type == resource_type,
+            (SensitiveAccessGrant.resource_id == resource_id) | (SensitiveAccessGrant.resource_id == "*")
         )
         expired_grant = (await db.execute(expired_stmt)).scalars().first()
 
@@ -235,9 +243,10 @@ async def validate_access_grant(
                 expired_grant.status in ("expired", "revoked")
                 or expired_grant.expires_at <= now
             ):
-                # Lazily mark as expired if not already
                 if expired_grant.status == "active":
                     expired_grant.status = "expired"
+                    db.add(expired_grant)
+                    await db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Sensitive access grant has {expired_grant.status}. Request new access.",

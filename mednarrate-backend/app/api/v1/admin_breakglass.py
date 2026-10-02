@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.admin_auth import AdminContext, require_any_permission, require_permission, require_active_step_up
+from app.core.admin_auth import AdminContext, require_any_permission, require_permission, require_active_step_up, ALLOWED_SENSITIVE_RESOURCE_TYPES
 from app.core.database import get_db
 from app.models.admin import SensitiveAccessGrant
 from app.models.user import User
@@ -120,6 +120,9 @@ async def request_break_glass_access(
     Status starts as 'requested' — a different admin must approve it.
     Super Admins can self-approve through the approve endpoint explicitly.
     """
+    if req.resource_type not in ALLOWED_SENSITIVE_RESOURCE_TYPES:
+        raise HTTPException(status_code=400, detail=f"Invalid resource type: {req.resource_type}")
+
     if req.resource_id == "*":
         if not admin_ctx.is_super_admin:
             raise HTTPException(status_code=403, detail="Super-admin required for wildcard resource_id")

@@ -20,37 +20,12 @@ from app.models.admin import AdminAuditLog
 from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
 from app.models.user import User, UserRole
+from app.services.audit import log_admin_action
 
 router = APIRouter()
 
-
 class ChangeRoleRequest(BaseModel):
     role: UserRole
-
-
-async def log_admin_action(
-    db: AsyncSession,
-    admin_ctx: AdminContext,
-    action: str,
-    resource_type: str,
-    resource_id: str,
-    metadata_payload: dict,
-    request: Request,
-):
-    ip_address = request.client.host if request.client else None
-    user_agent = request.headers.get("user-agent")
-
-    audit_log = AdminAuditLog(
-        actor_admin_id=admin_ctx.user_id,
-        action=action,
-        resource_type=resource_type,
-        resource_id=resource_id,
-        metadata_payload=metadata_payload,
-        ip_address=ip_address,
-        user_agent=user_agent,
-    )
-    db.add(audit_log)
-    await db.commit()
 
 
 @router.get("")
@@ -203,13 +178,13 @@ async def suspend_user(
     await revoke_all_user_sessions(user, db, increment_session_version=True)
 
     await log_admin_action(
-        db,
-        admin_ctx,
-        "USER_SUSPEND",
-        "user",
-        str(user.id),
-        {},
-        request,
+        db=db,
+        action="USER_SUSPEND",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="user",
+        resource_id=str(user.id),
+        metadata={},
+        request=request
     )
     await db.commit()
     return {"status": "ok", "message": f"User {user.email} suspended"}
@@ -228,13 +203,13 @@ async def activate_user(
 
     user.is_active = True
     await log_admin_action(
-        db,
-        admin_ctx,
-        "USER_ACTIVATE",
-        "user",
-        str(user.id),
-        {},
-        request,
+        db=db,
+        action="USER_ACTIVATE",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="user",
+        resource_id=str(user.id),
+        metadata={},
+        request=request
     )
     await db.commit()
     return {"status": "ok", "message": f"User {user.email} activated"}
@@ -255,13 +230,13 @@ async def force_logout(
     await revoke_all_user_sessions(user, db, increment_session_version=True)
 
     await log_admin_action(
-        db,
-        admin_ctx,
-        "USER_FORCE_LOGOUT",
-        "user",
-        str(user.id),
-        {"action": "all_sessions_revoked"},
-        request,
+        db=db,
+        action="USER_FORCE_LOGOUT",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="user",
+        resource_id=str(user.id),
+        metadata={"action": "all_sessions_revoked"},
+        request=request
     )
     await db.commit()
 
@@ -320,14 +295,15 @@ async def change_role(
     await revoke_all_user_sessions(user, db, increment_session_version=True)
 
     await log_admin_action(
-        db,
-        admin_ctx,
-        "USER_ROLE_CHANGE",
-        "user",
-        str(user.id),
-        {"old_role": old_role.value, "new_role": payload.role.value},
-        request,
+        db=db,
+        action="USER_ROLE_CHANGE",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="user",
+        resource_id=str(user.id),
+        metadata={"old_role": old_role.value, "new_role": payload.role.value},
+        request=request
     )
+    await db.commit()
 
     await db.commit()
     return {
@@ -371,13 +347,13 @@ async def reset_password(
     db.add(pr_token)
 
     await log_admin_action(
-        db,
-        admin_ctx,
-        "USER_PASSWORD_RESET_GENERATED",
-        "user",
-        str(user.id),
-        {},
-        request,
+        db=db,
+        action="USER_PASSWORD_RESET_GENERATED",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="user",
+        resource_id=str(user.id),
+        metadata={},
+        request=request
     )
     await db.commit()
 
@@ -404,22 +380,7 @@ from app.models.doctor_profile import DoctorProfile
 from app.models.caregiver_profile import CaregiverProfile
 from app.models.admin import SensitiveAccessGrant
 
-async def verify_breakglass_access(admin_ctx: AdminContext, user_id: uuid.UUID, resource_type: str, db: AsyncSession):
-    allowed_sensitive_types = {"medical_profile", "doctor_profile", "caregiver_profile"}
-    if resource_type not in allowed_sensitive_types:
-        raise HTTPException(status_code=400, detail="Invalid sensitive resource type")
-        
-    if "super_admin" not in admin_ctx.permissions:
-        stmt_bg = select(SensitiveAccessGrant).where(
-            SensitiveAccessGrant.admin_id == admin_ctx.user_id,
-            SensitiveAccessGrant.resource_type == resource_type,
-            SensitiveAccessGrant.resource_id == str(user_id),
-            SensitiveAccessGrant.expires_at > datetime.utcnow()
-        )
-        bg = (await db.execute(stmt_bg)).scalars().first()
-        if not bg:
-            raise HTTPException(status_code=403, detail=f"Active break-glass grant required to view {resource_type}")
-
+from app.core.admin_auth import validate_access_grant
 
 @router.get("/{user_id}/medical_profile")
 async def get_medical_profile(
@@ -428,14 +389,21 @@ async def get_medical_profile(
     admin_ctx: AdminContext = Depends(require_permission("users.view")),
     db: AsyncSession = Depends(get_db),
 ):
-    await verify_breakglass_access(admin_ctx, user_id, "medical_profile", db)
+    await validate_access_grant(admin_ctx, "medical_profile", str(user_id), db)
 
     stmt = select(MedicalProfile).where(MedicalProfile.user_id == user_id)
     prof = (await db.execute(stmt)).scalars().first()
 
     await log_admin_action(
-        db, admin_ctx, "PHI_ACCESSED", "medical_profile", str(user_id), {}, request
+        db=db,
+        action="PHI_ACCESSED",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="medical_profile",
+        resource_id=str(user_id),
+        metadata={},
+        request=request
     )
+    await db.commit()
 
     if not prof:
         return {"status": "ok", "profile": None}
@@ -460,14 +428,21 @@ async def get_doctor_profile(
     admin_ctx: AdminContext = Depends(require_permission("users.view")),
     db: AsyncSession = Depends(get_db),
 ):
-    await verify_breakglass_access(admin_ctx, user_id, "doctor_profile", db)
+    await validate_access_grant(admin_ctx, "doctor_profile", str(user_id), db)
 
     stmt = select(DoctorProfile).where(DoctorProfile.user_id == user_id)
     prof = (await db.execute(stmt)).scalars().first()
 
     await log_admin_action(
-        db, admin_ctx, "PHI_ACCESSED", "doctor_profile", str(user_id), {}, request
+        db=db,
+        action="PHI_ACCESSED",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="doctor_profile",
+        resource_id=str(user_id),
+        metadata={},
+        request=request
     )
+    await db.commit()
 
     if not prof:
         return {"status": "ok", "profile": None}
@@ -494,14 +469,21 @@ async def get_caregiver_profile(
     admin_ctx: AdminContext = Depends(require_permission("users.view")),
     db: AsyncSession = Depends(get_db),
 ):
-    await verify_breakglass_access(admin_ctx, user_id, "caregiver_profile", db)
+    await validate_access_grant(admin_ctx, "caregiver_profile", str(user_id), db)
 
     stmt = select(CaregiverProfile).where(CaregiverProfile.user_id == user_id)
     prof = (await db.execute(stmt)).scalars().first()
 
     await log_admin_action(
-        db, admin_ctx, "PHI_ACCESSED", "caregiver_profile", str(user_id), {}, request
+        db=db,
+        action="PHI_ACCESSED",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="caregiver_profile",
+        resource_id=str(user_id),
+        metadata={},
+        request=request
     )
+    await db.commit()
 
     if not prof:
         return {"status": "ok", "profile": None}
@@ -571,7 +553,13 @@ async def verify_doctor_profile(
         user.role = UserRole.clinician
 
     await log_admin_action(
-        db, admin_ctx, "DOCTOR_VERIFIED", "user", str(user_id), {"specialty": prof.specialty}, request
+        db=db,
+        action="DOCTOR_VERIFIED",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="user",
+        resource_id=str(user_id),
+        metadata={"specialty": prof.specialty},
+        request=request
     )
     await db.commit()
     return {"status": "ok", "message": "Doctor profile verified and user role updated"}
@@ -593,8 +581,15 @@ async def verify_caregiver_profile(
         user.role = UserRole.caregiver
 
     await log_admin_action(
-        db, admin_ctx, "CAREGIVER_VERIFIED", "user", str(user_id), {"relationship": prof.relationship}, request
+        db=db,
+        action="CAREGIVER_VERIFIED",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="user",
+        resource_id=str(user_id),
+        metadata={"relationship": prof.relationship},
+        request=request
     )
+    await db.commit()
     await db.commit()
     return {"status": "ok", "message": "Caregiver profile verified and user role updated"}
 
@@ -846,21 +841,28 @@ async def hard_delete_user(
         if fp and fp.startswith(f"/uploads/{target_user.id}/") and ".." not in fp:
             try:
                 await delete_file(fp)
-            except Exception as e:
-                # Log the orphan but continue DB deletion so account doesn't stay active
-                print(f"Failed to delete file {fp}: {e}")
+            except PermissionError:
                 from app.models.orphan_file import OrphanFile
-                db.add(OrphanFile(file_path=fp, reason=f"Hard delete failure: {e}"))
+                db.add(OrphanFile(file_path=fp, last_error_code="permission_error"))
+            except FileNotFoundError:
+                pass
+            except Exception:
+                from app.models.orphan_file import OrphanFile
+                db.add(OrphanFile(file_path=fp, last_error_code="unknown"))
 
     await log_admin_action(
-        db, admin_ctx, "USER_HARD_DELETE", "User", str(user_id),
-        {
+        db=db,
+        action="USER_HARD_DELETE",
+        actor_admin_id=admin_ctx.user_id,
+        resource_type="User",
+        resource_id=str(user_id),
+        metadata={
             "reason": payload.reason,
             "former_role": former_role,
             "reports_deleted": len(reports),
             "actor_admin_id": str(admin_ctx.user_id)
         },
-        request
+        request=request
     )
 
     try:
