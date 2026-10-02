@@ -662,7 +662,7 @@ async def get_admin_support_tickets(
 
     stmt = (
         select(SupportTicket)
-        .where(SupportTicket.assigned_admin_id == str(admin_uuid))
+        .where(SupportTicket.assigned_admin_id == admin_uuid)
         .order_by(desc(SupportTicket.created_at))
     )
     tickets = (await db.execute(stmt)).scalars().all()

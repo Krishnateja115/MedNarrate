@@ -69,11 +69,11 @@ async def full_admin_user(db_session: AsyncSession):
 
     # 3. P1 and P2 Support Tickets
     db_session.add(SupportTicket(
-        user_id=str(user.id), title="Cannot login", description="Help", category=TicketCategory.login,
+        user_id=user.id, title="Cannot login", description="Help", category=TicketCategory.login,
         priority=TicketPriority.p1, status=TicketStatus.new
     ))
     db_session.add(SupportTicket(
-        user_id=str(user.id), title="Slow UI", description="Help", category=TicketCategory.performance,
+        user_id=user.id, title="Slow UI", description="Help", category=TicketCategory.performance,
         priority=TicketPriority.p2, status=TicketStatus.investigating
     ))
 

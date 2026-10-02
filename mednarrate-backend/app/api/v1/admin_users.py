@@ -868,8 +868,6 @@ async def hard_delete_user(
     try:
         await db.commit()
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         await db.rollback()
         raise
     return {"status": "ok", "message": "User hard deleted"}

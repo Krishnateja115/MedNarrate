@@ -104,32 +104,35 @@ async def update_privacy_request_status(
             status_code=400, detail=f"Invalid status. Must be one of {valid_statuses}"
         )
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    p_req.status = payload.status
-    if payload.admin_notes is not None:
-        p_req.admin_notes = payload.admin_notes
-    p_req.reviewed_at = now
-    p_req.reviewed_by_id = admin_ctx.user_id
+    try:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        p_req.status = payload.status
+        if payload.admin_notes is not None:
+            p_req.admin_notes = payload.admin_notes
+        p_req.reviewed_at = now
+        p_req.reviewed_by_id = admin_ctx.user_id
 
-    if payload.status in ["completed", "rejected"]:
-        p_req.completed_at = now
+        if payload.status in ["completed", "rejected"]:
+            p_req.completed_at = now
 
+        await log_admin_action(
+            db=db,
+            actor_admin_id=admin_ctx.user_id,
+            action="privacy_request_status_update",
+            resource_type="privacy_request",
+            resource_id=str(p_req.id),
+            permission_used="privacy:manage",
+            result="success",
+            reason=f"Status updated to {payload.status}",
+            request=request,
+            metadata={"new_status": payload.status, "admin_notes": payload.admin_notes},
+            sensitive_access_flag=True,
+        )
 
-    await log_admin_action(
-        db=db,
-        actor_admin_id=admin_ctx.user_id,
-        action="privacy_request_status_update",
-        resource_type="privacy_request",
-        resource_id=str(p_req.id),
-        permission_used="privacy:manage",
-        result="success",
-        reason=f"Status updated to {payload.status}",
-        request=request,
-        metadata={"new_status": payload.status, "admin_notes": payload.admin_notes},
-        sensitive_access_flag=True,
-    )
-
-    await db.commit()
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
 
     return {
         "message": "Privacy request status updated successfully",
