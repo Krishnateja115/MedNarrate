@@ -1,3 +1,4 @@
+import pytest
 from httpx import AsyncClient
 
 
@@ -17,13 +18,13 @@ async def test_signup_success(client: AsyncClient):
 
 
 async def test_signup_duplicate_email(client: AsyncClient):
+    await client.post(
+        "/api/v1/auth/signup",
+        json={"email": "test_dup@example.com", "password": "StrongP@ssword1", "full_name": "Test User"},
+    )
     response = await client.post(
         "/api/v1/auth/signup",
-        json={
-            "email": "test@example.com",
-            "password": "StrongP@ssword1",
-            "full_name": "Test User",
-        },
+        json={"email": "test_dup@example.com", "password": "StrongP@ssword1", "full_name": "Test User"},
     )
     assert response.status_code == 409
 
@@ -31,19 +32,19 @@ async def test_signup_duplicate_email(client: AsyncClient):
 async def test_signup_weak_password(client: AsyncClient):
     response = await client.post(
         "/api/v1/auth/signup",
-        json={
-            "email": "weak@example.com",
-            "password": "weak",
-            "full_name": "Test User",
-        },
+        json={"email": "weak@example.com", "password": "weak", "full_name": "Test User"},
     )
     assert response.status_code == 422
 
 
 async def test_login_success(client: AsyncClient):
+    await client.post(
+        "/api/v1/auth/signup",
+        json={"email": "test_login@example.com", "password": "StrongP@ssword1", "full_name": "Test User"},
+    )
     response = await client.post(
         "/api/v1/auth/login",
-        data={"username": "test@example.com", "password": "StrongP@ssword1"},
+        data={"username": "test_login@example.com", "password": "StrongP@ssword1"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -52,17 +53,25 @@ async def test_login_success(client: AsyncClient):
 
 
 async def test_login_wrong_password(client: AsyncClient):
+    await client.post(
+        "/api/v1/auth/signup",
+        json={"email": "test_login_wrong@example.com", "password": "StrongP@ssword1", "full_name": "Test User"},
+    )
     response = await client.post(
         "/api/v1/auth/login",
-        data={"username": "test@example.com", "password": "WrongStrongP@ssword1"},
+        data={"username": "test_login_wrong@example.com", "password": "WrongStrongP@ssword1"},
     )
     assert response.status_code == 401
 
 
 async def test_refresh_token(client: AsyncClient):
+    await client.post(
+        "/api/v1/auth/signup",
+        json={"email": "test_refresh@example.com", "password": "StrongP@ssword1", "full_name": "Test User"},
+    )
     login_resp = await client.post(
         "/api/v1/auth/login",
-        data={"username": "test@example.com", "password": "StrongP@ssword1"},
+        data={"username": "test_refresh@example.com", "password": "StrongP@ssword1"},
     )
     refresh_token = login_resp.json()["refresh_token"]
 
@@ -84,9 +93,13 @@ async def test_refresh_token(client: AsyncClient):
 
 
 async def test_logout(client: AsyncClient):
+    await client.post(
+        "/api/v1/auth/signup",
+        json={"email": "test_logout@example.com", "password": "StrongP@ssword1", "full_name": "Test User"},
+    )
     login_resp = await client.post(
         "/api/v1/auth/login",
-        data={"username": "test@example.com", "password": "StrongP@ssword1"},
+        data={"username": "test_logout@example.com", "password": "StrongP@ssword1"},
     )
     refresh_token = login_resp.json()["refresh_token"]
 

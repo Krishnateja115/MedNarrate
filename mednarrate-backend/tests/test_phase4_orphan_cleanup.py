@@ -48,7 +48,7 @@ async def test_retry_pending_orphan_files(db_session: AsyncSession):
     with patch("app.services.orphan_cleanup.delete_file", side_effect=mock_delete_file):
         count = await retry_pending_orphan_files(db_session)
         
-    assert count >= 3
+    assert count == 3
     
     # Verify o1 (successful delete)
     await db_session.refresh(o1)
