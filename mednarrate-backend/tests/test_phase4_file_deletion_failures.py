@@ -16,7 +16,7 @@ async def test_file_deletion_failures(client: AsyncClient, db_session: AsyncSess
     # 1. Unrelated user's file (skipped)
     r1 = Report(
         user_id=target_user.id,
-        file_path=f"/uploads/{bystander_user.id}/report.pdf",
+        file_path=f"{bystander_user.id}/report.pdf",
         title="Traversal Report",
         report_type="blood",
         report_date=date.today(),
@@ -27,7 +27,7 @@ async def test_file_deletion_failures(client: AsyncClient, db_session: AsyncSess
     # 2. Malformed path (skipped)
     r2 = Report(
         user_id=target_user.id,
-        file_path=f"/uploads/{target_user.id}/../../../etc/passwd",
+        file_path=f"{target_user.id}/../../../etc/passwd",
         title="Etc Passwd",
         report_type="blood",
         report_date=date.today(),
@@ -38,7 +38,7 @@ async def test_file_deletion_failures(client: AsyncClient, db_session: AsyncSess
     # 3. Valid file that will fail (orphan created)
     r3 = Report(
         user_id=target_user.id,
-        file_path=f"/uploads/{target_user.id}/will_fail.pdf",
+        file_path=f"{target_user.id}/will_fail.pdf",
         title="Will Fail",
         report_type="blood",
         report_date=date.today(),
@@ -49,7 +49,7 @@ async def test_file_deletion_failures(client: AsyncClient, db_session: AsyncSess
     # 4. Valid file that will succeed (no orphan)
     r4 = Report(
         user_id=target_user.id,
-        file_path=f"/uploads/{target_user.id}/will_succeed.pdf",
+        file_path=f"{target_user.id}/will_succeed.pdf",
         title="Will Succeed",
         report_type="blood",
         report_date=date.today(),
@@ -66,7 +66,7 @@ async def test_file_deletion_failures(client: AsyncClient, db_session: AsyncSess
     from unittest.mock import patch
 
     async def mock_delete_file(fp):
-        if fp == f"/uploads/{target_user.id}/will_fail.pdf":
+        if fp == f"{target_user.id}/will_fail.pdf":
             raise Exception("Storage error")
         return None
 
@@ -78,7 +78,9 @@ async def test_file_deletion_failures(client: AsyncClient, db_session: AsyncSess
         )
 
     assert resp.status_code == 200
-    assert (await db_session.execute(select(User).where(User.id == target_user.id))).scalar() is None
+    deleted_user = (await db_session.execute(select(User).where(User.id == target_user.id))).scalar()
+    assert deleted_user.full_name == "[DELETED]"
+    assert deleted_user.is_active is False
 
     # Verify OrphanFile records
     orphans = (await db_session.execute(
@@ -89,7 +91,7 @@ async def test_file_deletion_failures(client: AsyncClient, db_session: AsyncSess
     assert len(orphans) == 1
 
     orphan = orphans[0]
-    assert orphan.file_path == f"/uploads/{target_user.id}/will_fail.pdf"
+    assert orphan.file_path == f"{target_user.id}/will_fail.pdf"
     assert orphan.status == "pending"
     # Sanitized error category, raw exception is not stored
     assert orphan.last_error_code == "unknown"

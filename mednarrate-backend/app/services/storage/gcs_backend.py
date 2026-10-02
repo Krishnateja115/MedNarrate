@@ -44,9 +44,8 @@ class GCSBackend(StorageBackend):
 
             await asyncio.to_thread(_upload)
 
-            # If the bucket isn't public, you'd generate a signed URL here.
-            # Assuming public for this implementation or returning the public URL structure.
-            return f"https://storage.googleapis.com/{self.bucket_name}/{filename}"
+            # The application expects a provider-independent object key in the database
+            return filename
         except Exception as e:
             raise HTTPException(
                 status_code=500, detail=f"Failed to upload to GCS: {str(e)}"

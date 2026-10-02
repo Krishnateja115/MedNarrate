@@ -15,7 +15,7 @@ async def retry_pending_orphan_files(db: AsyncSession, limit: int = 100):
         orphan.retry_count += 1
         orphan.last_attempt_at = datetime.now(timezone.utc).replace(tzinfo=None)
         
-        if ".." in orphan.file_path or not orphan.file_path.startswith("/uploads/"):
+        if ".." in orphan.file_path or orphan.file_path.startswith("/"):
             orphan.status = "failed"
             orphan.last_error_code = "invalid_path"
             continue

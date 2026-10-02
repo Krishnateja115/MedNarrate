@@ -835,20 +835,8 @@ async def hard_delete_user(
 
     former_role = target_user.role.value if target_user.role else "unknown"
 
-    await db.delete(target_user)
-
-    for fp in file_paths:
-        if fp and fp.startswith(f"/uploads/{target_user.id}/") and ".." not in fp:
-            try:
-                await delete_file(fp)
-            except PermissionError:
-                from app.models.orphan_file import OrphanFile
-                db.add(OrphanFile(file_path=fp, last_error_code="permission_error"))
-            except FileNotFoundError:
-                pass
-            except Exception:
-                from app.models.orphan_file import OrphanFile
-                db.add(OrphanFile(file_path=fp, last_error_code="unknown"))
+    from app.services.user_deletion import anonymize_and_delete_user_data
+    await anonymize_and_delete_user_data(target_user, db)
 
     await log_admin_action(
         db=db,

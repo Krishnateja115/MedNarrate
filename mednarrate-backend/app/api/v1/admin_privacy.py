@@ -114,6 +114,13 @@ async def update_privacy_request_status(
 
         if payload.status in ["completed", "rejected"]:
             p_req.completed_at = now
+            if payload.status == "completed" and p_req.request_type == "deletion":
+                from app.services.user_deletion import anonymize_and_delete_user_data
+                from app.models.user import User
+                user_res = await db.execute(select(User).where(User.id == p_req.user_id))
+                target_user = user_res.scalar_one_or_none()
+                if target_user:
+                    await anonymize_and_delete_user_data(target_user, db)
 
         await log_admin_action(
             db=db,

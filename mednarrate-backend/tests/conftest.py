@@ -116,7 +116,7 @@ async def target_user(db_session: AsyncSession):
     
     r = Report(
         user_id=u.id,
-        file_path=f"/uploads/{u.id}/report.pdf",
+        file_path=f"{u.id}/report.pdf",
         title="Target Report",
         hospital="Test Hospital",
         report_date=date(2023, 1, 1),
@@ -143,7 +143,7 @@ async def bystander_user(db_session: AsyncSession):
     
     r = Report(
         user_id=u.id,
-        file_path=f"/uploads/{u.id}/report.pdf",
+        file_path=f"{u.id}/report.pdf",
         title="Bystander Report",
         hospital="Test Hospital",
         report_date=date(2023, 1, 1),

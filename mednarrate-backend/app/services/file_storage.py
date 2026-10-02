@@ -67,9 +67,5 @@ async def save_upload_file(user_id: uuid.UUID, upload_file: UploadFile) -> str:
 
 async def delete_file(file_path: str):
     storage = get_storage_backend()
-    # file_path in DB might be the URL or relative path.
-    # For storage backend, we need the relative object key which might just be the file_path itself if local.
-    # In a full implementation, you'd extract the key. For now, pass file_path directly.
-    # Since GCS/S3 needs just the key, and local needs the filename.
-    # The unique_filename we passed was {user_id}/{uuid}_{name}, let's just assume the backend handles it.
-    await storage.delete_file(file_path.replace("/uploads/", ""))
+    # The object key is stored directly in file_path
+    await storage.delete_file(file_path)

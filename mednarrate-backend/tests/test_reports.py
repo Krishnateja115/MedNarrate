@@ -112,7 +112,7 @@ async def test_delete_removes_file(client: AsyncClient, auth_headers):
     report = list_resp.json()[0]
     file_path = report["file_path"]
 
-    local_path = file_path.lstrip("/")
+    local_path = os.path.join(settings.UPLOAD_DIR, file_path.lstrip("/"))
     assert os.path.exists(local_path)
 
     del_resp = await client.delete(f"/api/v1/reports/{report_id}", headers=auth_headers)

@@ -12,7 +12,7 @@ async def test_retry_pending_orphan_files(db_session: AsyncSession):
     # Setup test file
     test_user_id = str(uuid.uuid4())
     test_filename = "test_orphan.pdf"
-    file_path = f"/uploads/{test_user_id}/{test_filename}"
+    file_path = f"{test_user_id}/{test_filename}"
     
     # Actually create the physical file so we can delete it
     base_dir = os.getenv("STORAGE_ROOT", "storage")
@@ -26,7 +26,7 @@ async def test_retry_pending_orphan_files(db_session: AsyncSession):
     o1 = OrphanFile(file_path=file_path, status="pending")
     
     # 2. Create a pending orphan for a non-existent file
-    o2 = OrphanFile(file_path="/uploads/non_existent/file.pdf", status="pending")
+    o2 = OrphanFile(file_path="non_existent/file.pdf", status="pending")
     
     # 3. Create a pending orphan for an invalid path
     o3 = OrphanFile(file_path="/etc/passwd", status="pending")
@@ -40,7 +40,7 @@ async def test_retry_pending_orphan_files(db_session: AsyncSession):
     async def mock_delete_file(fp):
         if fp == "/etc/passwd":
             raise PermissionError("Access denied")
-        if fp == "/uploads/non_existent/file.pdf":
+        if fp == "non_existent/file.pdf":
             raise FileNotFoundError("Not found")
         # For the valid file, it succeeds
         return None

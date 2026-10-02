@@ -137,7 +137,9 @@ async def test_extensive_hard_delete(client: AsyncClient, db_session: AsyncSessi
     assert resp.status_code == 200, resp.text
 
     # Verify Target Direct
-    assert (await db_session.execute(select(User).where(User.id == target_user.id))).scalar() is None
+    deleted_user = (await db_session.execute(select(User).where(User.id == target_user.id))).scalar()
+    assert deleted_user.full_name == "[DELETED]"
+    assert deleted_user.is_active is False
     assert (await db_session.execute(select(Report).where(Report.user_id == target_user.id))).scalar() is None
     assert (await db_session.execute(select(ChatSession).where(ChatSession.user_id == target_user.id))).scalar() is None
     assert (await db_session.execute(select(SupportTicket).where(SupportTicket.user_id == target_user.id))).scalar() is None
@@ -166,7 +168,7 @@ async def test_extensive_hard_delete(client: AsyncClient, db_session: AsyncSessi
     t_audit = (await db_session.execute(select(AdminAuditLog).where(AdminAuditLog.id == tr_audit.id))).scalar()
     assert t_audit is not None
     await db_session.refresh(t_audit)
-    assert t_audit.actor_admin_id is None # SET NULL
+    assert t_audit.actor_admin_id == target_user.id # Retained due to anonymization instead of deletion
 
     # Verify Unrelated Unchanged
     assert (await db_session.execute(select(User).where(User.id == unrelated_user.id))).scalar() is not None

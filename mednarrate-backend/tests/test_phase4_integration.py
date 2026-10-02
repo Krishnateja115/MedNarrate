@@ -27,9 +27,12 @@ async def test_hard_delete_cleans_everything(client: AsyncClient, db_session: As
     resp = await client.request("DELETE", f"/api/v1/admin/users/{target_user.id}", headers=headers, json={"reason": "test", "confirmation": f"DELETE {target_user.id}"})
     assert resp.status_code == 200
 
-    # Assert target is gone
+    # Assert target is anonymized
     target_check = await db_session.execute(select(User).where(User.id == target_user.id))
-    assert target_check.scalars().first() is None
+    target_user_ref = target_check.scalars().first()
+    assert target_user_ref is not None
+    assert target_user_ref.full_name == "[DELETED]"
+    assert target_user_ref.is_active is False
 
     target_report_check = await db_session.execute(select(Report).where(Report.user_id == target_user.id))
     assert len(target_report_check.scalars().all()) == 0

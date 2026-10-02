@@ -26,7 +26,7 @@ def test_resolve_physical_path_relative_and_traversal(tmp_path, monkeypatch):
     sample_file.write_bytes(b"%PDF-1.4 text payload inside sample file")
 
     # POSIX slash relative path
-    resolved_posix = resolve_physical_path("/uploads/user_123/report.pdf")
+    resolved_posix = resolve_physical_path("user_123/report.pdf")
     assert os.path.exists(resolved_posix)
     assert resolved_posix == str(sample_file)
 
@@ -129,7 +129,7 @@ def test_fictional_report_end_to_end(tmp_path, monkeypatch):
     doc.close()
 
     # 1. Path Resolution
-    resolved = resolve_physical_path(f"/uploads/{report_filename}")
+    resolved = resolve_physical_path(f"{report_filename}")
     assert os.path.exists(resolved)
 
     # 2. Text Extraction & Diagnostics

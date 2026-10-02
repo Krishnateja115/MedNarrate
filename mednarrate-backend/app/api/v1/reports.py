@@ -332,8 +332,8 @@ async def download_report(
 
     storage = get_storage_backend()
 
-    # Extract the storage key from the saved path (e.g. remove /uploads/ prefix for local)
-    file_key = report.file_path.replace("/uploads/", "")
+    # The DB now stores the provider-independent object key directly
+    file_key = report.file_path
 
     if not await storage.file_exists(file_key):
         raise HTTPException(status_code=404, detail="File not found in storage.")
