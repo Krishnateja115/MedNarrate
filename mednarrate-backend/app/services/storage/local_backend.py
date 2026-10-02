@@ -62,7 +62,12 @@ class LocalStorageBackend(StorageBackend):
             )
 
     async def delete_file(self, filename: str) -> bool:
-        filepath = os.path.join(self.upload_dir, filename)
+        # Prevent directory traversal
+        abs_upload_dir = os.path.abspath(self.upload_dir)
+        filepath = os.path.abspath(os.path.join(abs_upload_dir, filename))
+        if not filepath.startswith(abs_upload_dir):
+            raise HTTPException(status_code=400, detail="Invalid file path")
+
         if os.path.exists(filepath):
             try:
                 os.remove(filepath)

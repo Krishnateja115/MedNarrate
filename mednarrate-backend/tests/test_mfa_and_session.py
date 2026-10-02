@@ -214,7 +214,7 @@ async def test_refresh_token_reuse_invalidates_access_token(client: AsyncClient,
 async def test_super_admin_cannot_self_reset_mfa(client: AsyncClient, db_session: AsyncSession):
     from app.models.admin import AdminRole, AdminRoleAssignment
     from sqlalchemy.future import select
-    
+
     user = User(
         email="super_self_reset@example.com",
         hashed_password=hash_password("SuperSecret1!"),
@@ -246,7 +246,7 @@ async def test_super_admin_cannot_self_reset_mfa(client: AsyncClient, db_session
     access_token = verify_res.json()["access_token"]
 
     headers = {"Authorization": f"Bearer {access_token}"}
-    
+
     reset_res = await client.post(f"/api/v1/mfa/reset/{user.id}", headers=headers)
     assert reset_res.status_code == 400
     assert "cannot use emergency reset on their own account" in reset_res.json()["detail"]

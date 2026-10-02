@@ -171,6 +171,86 @@ async def login(
         "token_type": "bearer",
     }
 
+from pydantic import BaseModel
+from typing import Optional
+
+class StepUpRequest(BaseModel):
+    password: str
+    code: Optional[str] = None
+
+class StepUpResponse(BaseModel):
+    step_up_token: str
+
+@router.post("/step-up", response_model=StepUpResponse)
+@limiter.limit("5/minute")
+async def step_up_auth(
+    request: Request,
+    payload: StepUpRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.core.security import verify_password, create_step_up_token
+    from app.core.encryption import decrypt_value
+
+    if not verify_password(payload.password, current_user.hashed_password):
+        if current_user.role == UserRole.admin:
+            await log_admin_action(
+                db=db,
+                action="ADMIN_STEP_UP_FAILED",
+                actor_admin_id=current_user.id,
+                resource_type="User",
+                resource_id=str(current_user.id),
+                request=request
+            )
+            await db.commit()
+        raise HTTPException(status_code=400, detail="Invalid password")
+
+    if current_user.role == UserRole.admin and not (current_user.mfa_enabled and current_user.mfa_secret):
+        raise HTTPException(status_code=403, detail="MFA enrollment required for step-up authentication")
+
+    if current_user.mfa_enabled and current_user.mfa_secret:
+        if not payload.code:
+            raise HTTPException(status_code=400, detail="MFA code required for step-up authentication")
+
+        from app.core.security import verify_totp_and_prevent_replay
+
+        # Lock user for MFA operation
+        stmt = select(User).where(User.id == current_user.id).with_for_update()
+        locked_user = (await db.execute(stmt)).scalars().first()
+
+        secret = decrypt_value(locked_user.mfa_secret)
+        if not await verify_totp_and_prevent_replay(locked_user, payload.code, secret, db):
+            if current_user.role == UserRole.admin:
+                await log_admin_action(
+                    db=db,
+                    action="ADMIN_STEP_UP_FAILED",
+                    actor_admin_id=current_user.id,
+                    resource_type="User",
+                    resource_id=str(current_user.id),
+                    request=request
+                )
+                await db.commit()
+            raise HTTPException(status_code=400, detail="Invalid or reused OTP code")
+
+        db.add(locked_user)
+        # Flush the counter update
+        await db.flush()
+
+    step_up_token = create_step_up_token(user_id=str(current_user.id), session_version=current_user.session_version)
+
+    if current_user.role == UserRole.admin:
+        await log_admin_action(
+            db=db,
+            action="ADMIN_STEP_UP_SUCCESS",
+            actor_admin_id=current_user.id,
+            resource_type="User",
+            resource_id=str(current_user.id),
+            request=request
+        )
+    await db.commit()
+
+    return {"step_up_token": step_up_token}
+
 
 @router.post("/mfa-verify", response_model=Token)
 @limiter.limit("5/minute")
@@ -543,7 +623,7 @@ async def logout(
 
         if user and all_devices:
             from app.core.security import revoke_all_user_sessions
-            
+
             await revoke_all_user_sessions(user, db, increment_session_version=True)
 
         await db.commit()

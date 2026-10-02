@@ -49,7 +49,7 @@ async def export_reports_csv(
 ):
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Parse dates if provided
     start_dt = None
     end_dt = None
@@ -71,24 +71,24 @@ async def export_reports_csv(
             stmt = stmt.where(SupportTicket.created_at >= start_dt)
         if end_dt:
             stmt = stmt.where(SupportTicket.created_at <= end_dt)
-            
+
         tickets = (await db.execute(stmt)).scalars().all()
         writer.writerow(["Ticket ID", "Subject", "Status", "Priority", "User ID", "Created At"])
         for t in tickets:
             writer.writerow([str(t.id), t.subject, t.status.value if t.status else "", t.priority.value if t.priority else "", str(t.user_id), t.created_at.isoformat() if t.created_at else ""])
-            
+
     elif domain == "users":
         stmt = select(User).order_by(desc(User.created_at))
         if start_dt:
             stmt = stmt.where(User.created_at >= start_dt)
         if end_dt:
             stmt = stmt.where(User.created_at <= end_dt)
-            
+
         users = (await db.execute(stmt)).scalars().all()
         writer.writerow(["User ID", "Email", "Full Name", "Role", "Is Active", "Created At"])
         for u in users:
             writer.writerow([str(u.id), u.email, u.full_name, u.role.value if u.role else "", u.is_active, u.created_at.isoformat() if u.created_at else ""])
-            
+
     elif domain == "ai_failures":
         from app.models.report_analysis import ReportAnalysis
         stmt = select(ReportAnalysis).where(ReportAnalysis.status == "failed").order_by(desc(ReportAnalysis.created_at))
@@ -96,7 +96,7 @@ async def export_reports_csv(
             stmt = stmt.where(ReportAnalysis.created_at >= start_dt)
         if end_dt:
             stmt = stmt.where(ReportAnalysis.created_at <= end_dt)
-            
+
         analyses = (await db.execute(stmt)).scalars().all()
         writer.writerow(["Analysis ID", "Report ID", "Error Message", "Error Reason", "Failure Category", "LLM Provider", "Created At"])
         for a in analyses:
@@ -105,10 +105,10 @@ async def export_reports_csv(
         raise HTTPException(status_code=400, detail="Invalid export domain")
 
     output.seek(0)
-    
+
     return StreamingResponse(
-        iter([output.getvalue()]), 
-        media_type="text/csv", 
+        iter([output.getvalue()]),
+        media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=export_{domain}.csv"}
     )
 

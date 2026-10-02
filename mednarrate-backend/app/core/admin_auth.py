@@ -35,6 +35,11 @@ PERMISSION_COMPATIBILITY = {
     "announcements:manage": {"announcements:manage", "announcements.manage"},
     "ai_config:read": {"ai_config:read", "ai.view"},
     "ai_config:manage": {"ai_config:manage", "ai.manage"},
+    "users.delete": {"users.delete"},
+    "users.force_logout": {"users.force_logout"},
+    "users.change_role": {"users.change_role"},
+    "users.reset_password": {"users.reset_password"},
+    "break_glass.approve": {"break_glass.approve", "approve_sensitive_access", "breakglass.manage"},
 }
 
 
@@ -155,6 +160,27 @@ def require_all_permissions(permissions: List[str]) -> Callable:
         return admin_ctx
 
     return _require_all
+
+
+from fastapi import Header
+def require_step_up(x_step_up_token: str = Header(..., description="Step-up JWT token")) -> dict:
+    from app.core.security import decode_step_up_token
+    try:
+        return decode_step_up_token(x_step_up_token)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid step-up token")
+
+async def require_active_step_up(
+    admin_ctx: AdminContext = Depends(get_admin_context),
+    step_up_payload: dict = Depends(require_step_up)
+) -> AdminContext:
+    if str(admin_ctx.user_id) != step_up_payload.get("sub"):
+        raise HTTPException(status_code=401, detail="Step-up token does not match current user")
+    if admin_ctx.user.session_version != step_up_payload.get("session_version"):
+        raise HTTPException(status_code=401, detail="Step-up token session version is invalid")
+    return admin_ctx
 
 
 async def validate_access_grant(

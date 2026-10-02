@@ -32,20 +32,20 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 64) -> List[str]
     # Very rough estimate: 4 chars per token
     char_chunk_size = chunk_size * 4
     char_overlap = overlap * 4
-    
+
     # Try to identify headers (all caps followed by colon)
     header_pattern = re.compile(r'^([A-Z\s]+):', re.MULTILINE)
-    
+
     chunks = []
     lines = text.split('\n')
     current_chunk = ""
     current_header = ""
-    
+
     for line in lines:
         header_match = header_pattern.match(line)
         if header_match:
             current_header = line
-            
+
         if len(current_chunk) + len(line) > char_chunk_size and current_chunk:
             chunks.append(current_chunk.strip())
             # Start new chunk with overlap and current header if any
@@ -53,10 +53,10 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 64) -> List[str]
             current_chunk = current_header + "\n" + overlap_text + "\n" + line if current_header else overlap_text + "\n" + line
         else:
             current_chunk += line + "\n"
-            
+
     if current_chunk:
         chunks.append(current_chunk.strip())
-        
+
     return chunks
 
 import uuid
@@ -72,7 +72,7 @@ async def process_report_for_rag(report_id: uuid.UUID, report_text: str, db: Asy
     from app.services.privacy import deidentify_prompt_text
     clean_text = deidentify_prompt_text(report_text)
     chunks = chunk_text(clean_text)
-    
+
     # Generate embeddings using Gemini if available
     for i, chunk in enumerate(chunks):
         embedding = None
@@ -87,7 +87,7 @@ async def process_report_for_rag(report_id: uuid.UUID, report_text: str, db: Asy
                 embedding = result['embedding']
             except Exception as e:
                 logger.error(f"Embedding failed: {e}")
-                
+
         # Use simple list for JSON column if Postgres pgvector is not fully compatible or if we fallback
         db_chunk = RagChunk(
             report_id=report_id,
@@ -96,7 +96,7 @@ async def process_report_for_rag(report_id: uuid.UUID, report_text: str, db: Asy
             embedding_json=embedding
         )
         db.add(db_chunk)
-        
+
     await db.commit()
 
 async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, top_k: int = 5) -> str:
@@ -104,14 +104,14 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
     stmt = select(RagChunk).where(RagChunk.report_id == report_id).order_by(RagChunk.chunk_index)
     result = await db.execute(stmt)
     chunks = result.scalars().all()
-    
+
     if not chunks:
         return ""
-        
+
     # 2. Check if we have embeddings
     has_embeddings = all(c.embedding_json for c in chunks)
     top_chunks = []
-    
+
     if has_embeddings and settings.GEMINI_API_KEY:
         try:
             # Get query embedding
@@ -122,7 +122,7 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
                 task_type="retrieval_query"
             )
             q_emb = q_res['embedding']
-            
+
             if settings.DATABASE_URL.startswith("postgresql"):
                 stmt_vector = select(RagChunk).where(RagChunk.report_id == report_id).order_by(RagChunk.embedding_json.cosine_distance(q_emb)).limit(top_k)
                 result_vector = await db.execute(stmt_vector)
@@ -136,14 +136,14 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
                     if norm_a == 0 or norm_b == 0:
                         return 0.0
                     return np.dot(a, b) / (norm_a * norm_b)
-                    
+
                 scored_chunks = [(c, cosine_sim(q_emb, c.embedding_json)) for c in chunks if c.embedding_json]
                 scored_chunks.sort(key=lambda x: x[1], reverse=True)
                 top_chunks = [c[0] for c in scored_chunks[:top_k]]
         except Exception as e:
             logger.error(f"Semantic search failed, falling back to BM25: {e}")
             has_embeddings = False
-            
+
     if not has_embeddings or not top_chunks:
         # BM25 Fallback
         from rank_bm25 import BM25Okapi
@@ -151,20 +151,20 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
         bm25 = BM25Okapi(tokenized_corpus)
         tokenized_query = query.lower().split(" ")
         top_chunks = bm25.get_top_n(tokenized_query, chunks, n=top_k)
-        
+
     # 3. Context assembly
     context_parts = []
     total_chars = 0
     # Sort top chunks by original index to maintain chronological sense
     top_chunks.sort(key=lambda x: x.chunk_index)
-    
+
     for c in top_chunks:
         part = f"[Chunk {c.chunk_index + 1}/{len(chunks)}]: {c.chunk_text}"
         if total_chars + len(part) > 16000: # ~4000 tokens
             break
         context_parts.append(part)
         total_chars += len(part)
-        
+
     return "\n\n".join(context_parts)
 
 async def retrieve_kb_context(query: str, top_k: int = 3) -> str:
@@ -190,9 +190,9 @@ class RagService:
         to confirm it's actually alive and can return results within a reasonable timeout.
         """
         import asyncio
-        
+
         timeout_seconds = 15.0  # Increased to 15s to allow for local model loading
-        
+
         try:
             # We use retrieve_kb_context which queries the chroma db or fallback.
             # Just do a fast test query.

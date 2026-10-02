@@ -32,7 +32,7 @@ async def full_admin_user(db_session: AsyncSession):
 
     perms = ["dashboard.view", "system.health.view", "incidents.view", "reports.diagnostics.view"]
     from sqlalchemy import select
-    
+
     for p_name in perms:
         stmt = select(AdminPermission).where(AdminPermission.name == p_name)
         perm = (await db_session.execute(stmt)).scalars().first()
@@ -43,7 +43,7 @@ async def full_admin_user(db_session: AsyncSession):
         db_session.add(AdminRolePermission(role_id=role.id, permission_id=perm.id))
 
     db_session.add(AdminRoleAssignment(user_id=user.id, role_id=role.id))
-    
+
     # 1. Failed reports
     now = datetime.utcnow()
     db_session.add(Report(
@@ -56,7 +56,7 @@ async def full_admin_user(db_session: AsyncSession):
         file_type=FileType.pdf, report_type=ReportType.other,
         processing_status=ProcessingStatus.completed, uploaded_at=now, report_date=now.date()
     ))
-    
+
     # 2. SEV-1 and SEV-2 Incidents
     db_session.add(Incident(
         title="DB Down", severity=IncidentSeverity.sev1, status=IncidentStatus.open,
@@ -66,7 +66,7 @@ async def full_admin_user(db_session: AsyncSession):
         title="High Latency", severity=IncidentSeverity.sev2, status=IncidentStatus.investigating,
         affected_service="api", created_at=now
     ))
-    
+
     # 3. P1 and P2 Support Tickets
     db_session.add(SupportTicket(
         user_id=str(user.id), title="Cannot login", description="Help", category=TicketCategory.login,
@@ -76,20 +76,20 @@ async def full_admin_user(db_session: AsyncSession):
         user_id=str(user.id), title="Slow UI", description="Help", category=TicketCategory.performance,
         priority=TicketPriority.p2, status=TicketStatus.investigating
     ))
-    
+
     # 4. LLM Diagnostic Error
     db_session.add(LLMDiagnosticEvent(
         provider="gemini", model_name="gemini-pro",
         status="error", error_category="timeout", latency_ms=5000.0,
         timestamp=now
     ))
-    
+
     # 5. Admin Audit Security Event
     db_session.add(AdminAuditLog(
         actor_admin_id=user.id, action="FAILED_ADMIN_LOGIN", result="failure",
         reason="bad password", timestamp=now
     ))
-    
+
     await db_session.commit()
     return {"user": user, "token": create_access_token(str(user.id))}
 
@@ -100,7 +100,7 @@ async def test_postgres_enum_parity_dashboard_summary(client: AsyncClient, full_
     response = await client.get("/api/v1/admin/dashboard/summary", headers=headers)
     assert response.status_code == 200
     data = response.json()
-    
+
     # Verify accurate reporting of inserted data
     assert data["reports"]["reports_failed"] >= 1
     assert data["reports"]["reports_completed"] >= 1
@@ -117,10 +117,10 @@ async def test_postgres_enum_parity_dashboard_alerts(client: AsyncClient, full_a
     response = await client.get("/api/v1/admin/alerts", headers=headers)
     assert response.status_code == 200
     data = response.json()
-    
+
     alerts = data.get("alerts", [])
     assert len(alerts) > 0
-    
+
     categories = [a["category"] for a in alerts]
     assert "incident" in categories
     assert "report" in categories

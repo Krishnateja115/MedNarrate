@@ -97,9 +97,7 @@ async def update_system_setting(
         if payload.description:
             setting.description = payload.description
         setting.updated_by_id = admin_ctx.user_id
-
-    await db.commit()
-
+    
     await log_admin_action(
         db=db,
         actor_admin_id=admin_ctx.user_id,
@@ -116,6 +114,8 @@ async def update_system_setting(
             "is_sensitive": payload.is_sensitive,
         },
     )
+
+    await db.commit()
 
     return {"message": f"Setting '{payload.key}' updated successfully"}
 
@@ -163,8 +163,6 @@ async def set_maintenance_mode(
         enabled_by_id=admin_ctx.user_id,
         enabled_at=now,
     )
-    db.add(m)
-    await db.commit()
 
     action_name = (
         "maintenance_mode_enable" if payload.is_enabled else "maintenance_mode_disable"
@@ -185,6 +183,9 @@ async def set_maintenance_mode(
             "message": payload.message,
         },
     )
+
+    db.add(m)
+    await db.commit()
 
     return {
         "message": f"Maintenance mode {'enabled' if payload.is_enabled else 'disabled'} successfully",

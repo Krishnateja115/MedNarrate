@@ -149,7 +149,7 @@ async def _grounded_reply(query: str, admin_ctx: AdminContext, db: AsyncSession)
         return "I encountered an error trying to process your request."
 
     parts = candidates[0].get("content", {}).get("parts", [])
-    
+
     # Process function calls if any
     tool_results = []
     for part in parts:

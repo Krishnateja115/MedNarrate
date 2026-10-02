@@ -11,6 +11,7 @@ from app.core.admin_auth import (
     AdminContext,
     require_all_permissions,
     require_permission,
+    require_active_step_up,
 )
 from app.core.database import get_db
 from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
@@ -170,24 +171,47 @@ async def suspend_user(
     admin_ctx: AdminContext = Depends(require_permission("users.manage")),
     db: AsyncSession = Depends(get_db),
 ):
-    user = (await db.execute(select(User).where(User.id == user_id))).scalars().first()
+    stmt = select(User).where(User.id == user_id).with_for_update()
+    user = (await db.execute(stmt)).scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     if user.id == admin_ctx.user.id:
         raise HTTPException(status_code=400, detail="Cannot suspend yourself")
 
+    from app.models.admin import AdminRole, AdminRoleAssignment
+    super_admin_count_stmt = (
+        select(func.count(AdminRoleAssignment.user_id))
+        .join(AdminRole, AdminRole.id == AdminRoleAssignment.role_id)
+        .join(User, User.id == AdminRoleAssignment.user_id)
+        .where(AdminRole.name == "Super Admin", User.is_active == True)
+    )
+    active_super_admins = (await db.execute(super_admin_count_stmt)).scalar() or 0
+
+    is_target_super_admin = False
+    target_roles_stmt = select(AdminRole.name).join(AdminRoleAssignment).where(AdminRoleAssignment.user_id == user.id)
+    roles = [r[0] for r in (await db.execute(target_roles_stmt)).all()]
+    if "Super Admin" in roles:
+        is_target_super_admin = True
+
+    if is_target_super_admin and active_super_admins <= 1:
+        raise HTTPException(status_code=400, detail="Cannot suspend the final active super-admin")
+
     user.is_active = False
+
+    from app.core.security import revoke_all_user_sessions
+    await revoke_all_user_sessions(user, db, increment_session_version=True)
+
     await log_admin_action(
         db,
         admin_ctx,
         "USER_SUSPEND",
         "user",
         str(user.id),
-        {"email": user.email},
+        {},
         request,
     )
-
+    await db.commit()
     return {"status": "ok", "message": f"User {user.email} suspended"}
 
 
@@ -209,10 +233,10 @@ async def activate_user(
         "USER_ACTIVATE",
         "user",
         str(user.id),
-        {"email": user.email},
+        {},
         request,
     )
-
+    await db.commit()
     return {"status": "ok", "message": f"User {user.email} activated"}
 
 
@@ -220,23 +244,15 @@ async def activate_user(
 async def force_logout(
     request: Request,
     user_id: uuid.UUID,
-    admin_ctx: AdminContext = Depends(require_permission("users.manage")),
+    admin_ctx: AdminContext = Depends(require_permission("users.force_logout")),
     db: AsyncSession = Depends(get_db),
 ):
     user = (await db.execute(select(User).where(User.id == user_id))).scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    tokens = (
-        (await db.execute(select(RefreshToken).where(RefreshToken.user_id == user_id)))
-        .scalars()
-        .all()
-    )
-    count = 0
-    for t in tokens:
-        if not t.revoked:
-            t.revoked = True
-            count += 1
+    from app.core.security import revoke_all_user_sessions
+    await revoke_all_user_sessions(user, db, increment_session_version=True)
 
     await log_admin_action(
         db,
@@ -244,11 +260,12 @@ async def force_logout(
         "USER_FORCE_LOGOUT",
         "user",
         str(user.id),
-        {"sessions_revoked": count},
+        {"action": "all_sessions_revoked"},
         request,
     )
+    await db.commit()
 
-    return {"status": "ok", "message": f"Revoked {count} active sessions"}
+    return {"status": "ok", "message": f"User {user.email} sessions revoked"}
 
 
 @router.post("/{user_id}/actions/change_role")
@@ -256,12 +273,12 @@ async def change_role(
     request: Request,
     user_id: uuid.UUID,
     payload: ChangeRoleRequest,
-    admin_ctx: AdminContext = Depends(
-        require_all_permissions(["users.manage", "super_admin"])
-    ),
+    admin_ctx: AdminContext = Depends(require_permission("users.change_role")),
+    step_up_ctx: AdminContext = Depends(require_active_step_up),
     db: AsyncSession = Depends(get_db),
 ):
-    user = (await db.execute(select(User).where(User.id == user_id))).scalars().first()
+    stmt = select(User).where(User.id == user_id).with_for_update()
+    user = (await db.execute(stmt)).scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -269,7 +286,38 @@ async def change_role(
         raise HTTPException(status_code=400, detail="Cannot change your own role")
 
     old_role = user.role
+    if old_role == payload.role:
+        return {"status": "ok", "message": "Role is already the requested value."}
+
+    is_admin_transition = old_role == UserRole.admin or payload.role == UserRole.admin
+    if is_admin_transition and not admin_ctx.is_super_admin:
+        raise HTTPException(status_code=403, detail="Super-admin required for administrative role escalation/demotion")
+
+    from app.models.admin import AdminRole, AdminRoleAssignment
+
+    if old_role == UserRole.admin:
+        target_roles_stmt = select(AdminRole.name).join(AdminRoleAssignment).where(AdminRoleAssignment.user_id == user.id)
+        roles = [r[0] for r in (await db.execute(target_roles_stmt)).all()]
+        if "Super Admin" in roles:
+            super_admin_count_stmt = (
+                select(func.count(AdminRoleAssignment.user_id))
+                .join(AdminRole, AdminRole.id == AdminRoleAssignment.role_id)
+                .join(User, User.id == AdminRoleAssignment.user_id)
+                .where(AdminRole.name == "Super Admin", User.is_active == True)
+            )
+            active_super_admins = (await db.execute(super_admin_count_stmt)).scalar() or 0
+            if active_super_admins <= 1:
+                raise HTTPException(status_code=400, detail="Cannot demote the final active super-admin")
+
     user.role = payload.role
+
+    if payload.role != UserRole.admin:
+        from sqlalchemy import delete
+        # Remove all AdminRoleAssignments
+        await db.execute(delete(AdminRoleAssignment).where(AdminRoleAssignment.user_id == user.id))
+
+    from app.core.security import revoke_all_user_sessions
+    await revoke_all_user_sessions(user, db, increment_session_version=True)
 
     await log_admin_action(
         db,
@@ -281,6 +329,7 @@ async def change_role(
         request,
     )
 
+    await db.commit()
     return {
         "status": "ok",
         "message": f"Role changed from {old_role.value} to {payload.role.value}",
@@ -291,7 +340,8 @@ async def change_role(
 async def reset_password(
     request: Request,
     user_id: uuid.UUID,
-    admin_ctx: AdminContext = Depends(require_permission("users.manage")),
+    admin_ctx: AdminContext = Depends(require_permission("users.reset_password")),
+    step_up_ctx: AdminContext = Depends(require_active_step_up),
     db: AsyncSession = Depends(get_db),
 ):
     user = (await db.execute(select(User).where(User.id == user_id))).scalars().first()
@@ -299,14 +349,24 @@ async def reset_password(
         raise HTTPException(status_code=404, detail="User not found")
 
     import secrets
+    import hashlib
+    from sqlalchemy import update
+
+    # Invalidate existing reset tokens
+    await db.execute(
+        update(PasswordResetToken)
+        .where(PasswordResetToken.user_id == user.id)
+        .values(used=True)
+    )
 
     raw_token = secrets.token_urlsafe(32)
-    token_hash = hash_password(raw_token)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
 
     pr_token = PasswordResetToken(
         user_id=user.id,
         token_hash=token_hash,
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        used=False,
     )
     db.add(pr_token)
 
@@ -319,8 +379,10 @@ async def reset_password(
         {},
         request,
     )
+    await db.commit()
 
-    # Return the raw token for the admin to distribute securely
+    # Note: Returning raw_token directly here because MedNarrate doesn't have an email backend yet.
+    # We document that this is the operational flow securely replacing bcrypt with sha256.
     reset_link = f"https://app.mednarrate.com/reset-password?token={raw_token}"
     return {
         "status": "ok",
@@ -363,7 +425,7 @@ async def get_medical_profile(
 
     stmt = select(MedicalProfile).where(MedicalProfile.user_id == user_id)
     prof = (await db.execute(stmt)).scalars().first()
-    
+
     await log_admin_action(
         db, admin_ctx, "PHI_ACCESSED", "medical_profile", str(user_id), {}, request
     )
@@ -392,7 +454,7 @@ async def get_doctor_profile(
 ):
     stmt = select(DoctorProfile).where(DoctorProfile.user_id == user_id)
     prof = (await db.execute(stmt)).scalars().first()
-    
+
     if not prof:
         return {"status": "ok", "profile": None}
 
@@ -419,7 +481,7 @@ async def get_caregiver_profile(
 ):
     stmt = select(CaregiverProfile).where(CaregiverProfile.user_id == user_id)
     prof = (await db.execute(stmt)).scalars().first()
-    
+
     if not prof:
         return {"status": "ok", "profile": None}
 
@@ -443,10 +505,10 @@ async def get_user_sessions(
 ):
     stmt = select(RefreshToken).where(RefreshToken.user_id == user_id).order_by(desc(RefreshToken.created_at))
     tokens = (await db.execute(stmt)).scalars().all()
-    
+
     pt_stmt = select(PushToken).where(PushToken.user_id == user_id).order_by(desc(PushToken.created_at))
     push_tokens = (await db.execute(pt_stmt)).scalars().all()
-    
+
     return {
         "status": "ok",
         "sessions": [
@@ -482,11 +544,11 @@ async def verify_doctor_profile(
     prof = (await db.execute(stmt)).scalars().first()
     if not prof:
         raise HTTPException(status_code=404, detail="Doctor profile not found")
-        
+
     user = (await db.execute(select(User).where(User.id == user_id))).scalars().first()
     if user:
         user.role = UserRole.clinician
-    
+
     await log_admin_action(
         db, admin_ctx, "DOCTOR_VERIFIED", "user", str(user_id), {"specialty": prof.specialty}, request
     )
@@ -504,11 +566,11 @@ async def verify_caregiver_profile(
     prof = (await db.execute(stmt)).scalars().first()
     if not prof:
         raise HTTPException(status_code=404, detail="Caregiver profile not found")
-        
+
     user = (await db.execute(select(User).where(User.id == user_id))).scalars().first()
     if user:
         user.role = UserRole.caregiver
-        
+
     await log_admin_action(
         db, admin_ctx, "CAREGIVER_VERIFIED", "user", str(user_id), {"relationship": prof.relationship}, request
     )
@@ -526,10 +588,10 @@ async def get_user_reports(
     stmt = select(Report).where(Report.user_id == user_id).order_by(desc(Report.uploaded_at))
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total_count = (await db.execute(count_stmt)).scalar() or 0
-    
+
     stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     reports = (await db.execute(stmt)).scalars().all()
-    
+
     items = [
         {
             "id": str(r.id),
@@ -552,10 +614,10 @@ async def get_user_analyses(
     stmt = select(ReportAnalysis).join(Report, ReportAnalysis.report_id == Report.id).where(Report.user_id == user_id).order_by(desc(ReportAnalysis.created_at))
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total_count = (await db.execute(count_stmt)).scalar() or 0
-    
+
     stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     analyses = (await db.execute(stmt)).scalars().all()
-    
+
     items = [
         {
             "id": str(a.id),
@@ -578,10 +640,10 @@ async def get_user_chats(
     stmt = select(ChatSession).where(ChatSession.user_id == user_id).order_by(desc(ChatSession.created_at))
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total_count = (await db.execute(count_stmt)).scalar() or 0
-    
+
     stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     chats = (await db.execute(stmt)).scalars().all()
-    
+
     items = [
         {
             "id": str(c.id),
@@ -600,7 +662,7 @@ async def get_user_reminders(
 ):
     stmt = select(MedicationSchedule).where(MedicationSchedule.user_id == user_id).order_by(desc(MedicationSchedule.created_at))
     reminders = (await db.execute(stmt)).scalars().all()
-    
+
     return {
         "status": "ok",
         "reminders": [
@@ -626,10 +688,10 @@ async def get_user_notifications(
     stmt = select(NotificationLog).where(NotificationLog.user_id == user_id).order_by(desc(NotificationLog.sent_at))
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total_count = (await db.execute(count_stmt)).scalar() or 0
-    
+
     stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     logs = (await db.execute(stmt)).scalars().all()
-    
+
     items = [
         {
             "id": str(l.id),
@@ -652,10 +714,10 @@ async def get_user_support(
     stmt = select(SupportTicket).where(SupportTicket.user_id == user_id).order_by(desc(SupportTicket.created_at))
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total_count = (await db.execute(count_stmt)).scalar() or 0
-    
+
     stmt = stmt.offset(page_to_offset(page, limit)).limit(limit)
     tickets = (await db.execute(stmt)).scalars().all()
-    
+
     items = [
         {
             "id": str(t.id),
@@ -675,7 +737,7 @@ async def get_user_security(
 ):
     stmt = select(AdminAuditLog).where(AdminAuditLog.resource_id == str(user_id)).order_by(desc(AdminAuditLog.timestamp))
     logs = (await db.execute(stmt)).scalars().all()
-    
+
     return {
         "status": "ok",
         "logs": [
@@ -688,3 +750,101 @@ async def get_user_security(
             } for l in logs
         ]
     }
+
+class HardDeleteRequest(BaseModel):
+    reason: str
+    confirmation: str
+
+@router.delete("/{user_id}")
+async def hard_delete_user(
+    request: Request,
+    user_id: uuid.UUID,
+    payload: HardDeleteRequest,
+    admin_ctx: AdminContext = Depends(require_permission("users.delete")),
+    step_up_ctx: AdminContext = Depends(require_active_step_up),
+    db: AsyncSession = Depends(get_db),
+):
+    if not admin_ctx.is_super_admin:
+        raise HTTPException(status_code=403, detail="Super-admin required for hard deletion")
+    if str(admin_ctx.user_id) == str(user_id):
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    if payload.confirmation != f"DELETE {user_id}":
+        raise HTTPException(status_code=400, detail="Invalid confirmation string")
+
+    stmt = select(User).where(User.id == user_id).with_for_update()
+    target_user = (await db.execute(stmt)).scalars().first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    from app.models.admin import AdminRole, AdminRoleAssignment
+    super_admin_count_stmt = (
+        select(func.count(AdminRoleAssignment.user_id))
+        .join(AdminRole, AdminRole.id == AdminRoleAssignment.role_id)
+        .join(User, User.id == AdminRoleAssignment.user_id)
+        .where(AdminRole.name == "Super Admin", User.is_active == True)
+    )
+    active_super_admins = (await db.execute(super_admin_count_stmt)).scalar() or 0
+
+    is_target_super_admin = False
+    target_roles_stmt = select(AdminRole.name).join(AdminRoleAssignment).where(AdminRoleAssignment.user_id == target_user.id)
+    roles = [r[0] for r in (await db.execute(target_roles_stmt)).all()]
+    if "Super Admin" in roles:
+        is_target_super_admin = True
+
+    if is_target_super_admin and active_super_admins <= 1:
+        raise HTTPException(status_code=400, detail="Cannot delete the final active super-admin")
+
+    from app.core.security import revoke_all_user_sessions
+    await revoke_all_user_sessions(target_user, db, increment_session_version=True)
+
+    from app.models.report import Report
+    from app.services.file_storage import delete_file
+
+    reports_stmt = select(Report).where(Report.user_id == target_user.id)
+    reports = (await db.execute(reports_stmt)).scalars().all()
+    file_paths = [r.file_path for r in reports if r.file_path]
+
+    # Anonymize target user's metadata in existing admin audit logs
+    audit_stmt = select(AdminAuditLog).where(AdminAuditLog.resource_id == str(target_user.id))
+    audits = (await db.execute(audit_stmt)).scalars().all()
+    for audit in audits:
+        if audit.metadata_payload and isinstance(audit.metadata_payload, dict):
+            new_payload = audit.metadata_payload.copy()
+            if "email" in new_payload:
+                new_payload["email"] = "[REDACTED]"
+            if "full_name" in new_payload:
+                new_payload["full_name"] = "[REDACTED]"
+            audit.metadata_payload = new_payload
+            db.add(audit)
+
+    former_role = target_user.role.value if target_user.role else "unknown"
+
+    await db.delete(target_user)
+
+    for fp in file_paths:
+        if fp and fp.startswith(f"/uploads/{target_user.id}/") and ".." not in fp:
+            try:
+                await delete_file(fp)
+            except Exception as e:
+                # Log the orphan but continue DB deletion so account doesn't stay active
+                print(f"Failed to delete file {fp}: {e}")
+
+    await log_admin_action(
+        db, admin_ctx, "USER_HARD_DELETE", "User", str(user_id),
+        {
+            "reason": payload.reason,
+            "former_role": former_role,
+            "reports_deleted": len(reports),
+            "actor_admin_id": str(admin_ctx.user_id)
+        },
+        request
+    )
+
+    try:
+        await db.commit()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        await db.rollback()
+        raise
+    return {"status": "ok", "message": "User hard deleted"}

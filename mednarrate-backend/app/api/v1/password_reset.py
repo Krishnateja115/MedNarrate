@@ -110,11 +110,11 @@ async def reset_password(
 
     user.hashed_password = hash_password(req.new_password)
     db_token.used = True
-    
+
     # Revoke all existing sessions for this user upon password reset
     from app.core.security import revoke_all_user_sessions
     await revoke_all_user_sessions(user, db, increment_session_version=True)
-    
+
     await db.commit()
 
     return {

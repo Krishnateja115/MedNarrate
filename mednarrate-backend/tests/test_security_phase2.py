@@ -23,7 +23,7 @@ def test_production_rejects_placeholder_jwt_secret():
     settings = production_settings(JWT_SECRET="changeme")
     with pytest.raises(ValueError, match="JWT_SECRET must be configured with a strong, non-default value"):
         settings.validate_production_security()
-        
+
     settings = production_settings(JWT_SECRET="please_change_this_secret_in_production")
     with pytest.raises(ValueError, match="JWT_SECRET must be configured with a strong, non-default value"):
         settings.validate_production_security()
@@ -44,7 +44,7 @@ def test_logs_redact_credential_values():
     redacted = redact_secrets(log_msg)
     assert "user123:mypassword" not in redacted
     assert "[REDACTED_CREDENTIALS]" in redacted
-    
+
     log_msg2 = "Loaded GEMINI_API_KEY: AIzaSyDr2UxVnv_U85AbhhY8XSHSIavUW0DC-sY"
     redacted2 = redact_secrets(log_msg2)
     assert "AIzaSyDr2UxVnv_U85AbhhY8XSHSIavUW0DC-sY" not in redacted2
@@ -60,9 +60,9 @@ async def test_admin_ai_config_never_returns_decrypted_api_key(client, token_hea
     async def override_get_admin_context():
         mock_user = User(id=uuid.uuid4())
         return AdminContext(user=mock_user, permissions=["ai_config:read", "ai_config:manage"])
-    
+
     app.dependency_overrides[get_admin_context] = override_get_admin_context
-    
+
     try:
         response = await client.get("/api/v1/admin/ai-config", headers=token_headers)
         assert response.status_code == 200

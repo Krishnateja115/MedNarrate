@@ -114,7 +114,6 @@ async def update_privacy_request_status(
     if payload.status in ["completed", "rejected"]:
         p_req.completed_at = now
 
-    await db.commit()
 
     await log_admin_action(
         db=db,
@@ -129,6 +128,8 @@ async def update_privacy_request_status(
         metadata={"new_status": payload.status, "admin_notes": payload.admin_notes},
         sensitive_access_flag=True,
     )
+
+    await db.commit()
 
     return {
         "message": "Privacy request status updated successfully",

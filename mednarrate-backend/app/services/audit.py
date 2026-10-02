@@ -79,6 +79,7 @@ async def log_admin_action(
 
     audit_entry = AdminAuditLog(
         actor_admin_id=actor_admin_id,
+        actor_subject_id=str(actor_admin_id) if actor_admin_id else None,
         action=action,
         resource_type=resource_type,
         resource_id=resource_id,
@@ -90,7 +91,7 @@ async def log_admin_action(
         user_agent=user_agent,
         metadata_payload=safe_metadata,
         sensitive_access_flag=sensitive_access_flag,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc).replace(tzinfo=None),
     )
 
     db.add(audit_entry)

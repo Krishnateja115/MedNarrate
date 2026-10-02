@@ -18,7 +18,7 @@ from app.services.text_extraction import (
 
 def test_resolve_physical_path_relative_and_traversal(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
-    
+
     # Create sample file inside tmp_path
     user_dir = tmp_path / "user_123"
     user_dir.mkdir()
@@ -45,14 +45,14 @@ def test_resolve_physical_path_relative_and_traversal(tmp_path, monkeypatch):
 
 def test_resolve_physical_path_nonexistent(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
-    
+
     with pytest.raises(ExtractionFileNotFoundError) as exc_info:
         resolve_physical_path("nonexistent_folder/missing.pdf")
     assert exc_info.value.failure_category == "FILE_NOT_FOUND"
 
 def test_zero_byte_file_extraction(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
-    
+
     empty_file = tmp_path / "zero_bytes.pdf"
     empty_file.write_bytes(b"")
 
@@ -62,7 +62,7 @@ def test_zero_byte_file_extraction(tmp_path, monkeypatch):
 
 def test_corrupt_pdf_extraction(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
-    
+
     corrupt_file = tmp_path / "corrupt.pdf"
     corrupt_file.write_bytes(b"%PDF-1.4 INVALID CORRUPT HEADER DATA NOT A REAL PDF")
 
@@ -72,7 +72,7 @@ def test_corrupt_pdf_extraction(tmp_path, monkeypatch):
 
 def test_valid_text_pdf_extraction(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
-    
+
     pdf_path = tmp_path / "valid_lab_report.pdf"
     doc = fitz.open()
     page = doc.new_page()
@@ -81,7 +81,7 @@ def test_valid_text_pdf_extraction(tmp_path, monkeypatch):
     doc.close()
 
     text, diagnostics = extract_text_with_diagnostics(str(pdf_path), "pdf")
-    
+
     assert "Hemoglobin: 14.2 g/dL" in text
     assert diagnostics["extraction_method"] == "pymupdf"
     assert diagnostics["ocr_attempted"] is False
@@ -91,7 +91,7 @@ def test_valid_text_pdf_extraction(tmp_path, monkeypatch):
 
 def test_scanned_pdf_ocr_unavailable(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
-    
+
     # Create PDF page with image-like non-text content
     pdf_path = tmp_path / "scanned_document.pdf"
     doc = fitz.open()
@@ -108,10 +108,10 @@ def test_scanned_pdf_ocr_unavailable(tmp_path, monkeypatch):
 
 def test_fictional_report_end_to_end(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
-    
+
     report_filename = "MedNarrate_Fictional_Medical_Report_1.pdf"
     pdf_path = tmp_path / report_filename
-    
+
     doc = fitz.open()
     page = doc.new_page()
     medical_content = (

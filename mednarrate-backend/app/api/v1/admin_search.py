@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import String, cast, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.admin_auth import AdminContext, get_admin_context
+from app.core.admin_auth import AdminContext, get_admin_context, require_any_permission
 from app.core.database import get_db
 from app.models.admin import AdminAuditLog
 from app.models.incidents import Incident
@@ -24,7 +24,7 @@ async def global_admin_search(
         description="Search term across users, reports, tickets, incidents, audit logs",
     ),
     limit: int = Query(20, ge=1, le=50),
-    admin_ctx: AdminContext = Depends(get_admin_context),
+    admin_ctx: AdminContext = Depends(require_any_permission(["dashboard.view", "users.view", "reports.view", "support.view", "incidents.view", "audit_logs.read"])),
     db: AsyncSession = Depends(get_db),
 ):
     query_str = q.strip()

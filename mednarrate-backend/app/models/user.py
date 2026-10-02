@@ -42,5 +42,9 @@ class User(Base):
     last_totp_counter: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     support_tickets = relationship(
-        "SupportTicket", back_populates="user", foreign_keys="[SupportTicket.user_id]"
+        "SupportTicket",
+        back_populates="user",
+        foreign_keys="[SupportTicket.user_id]",
+        cascade="all, delete-orphan",
+        passive_deletes=True
     )

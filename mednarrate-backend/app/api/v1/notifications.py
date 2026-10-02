@@ -25,7 +25,7 @@ async def register_token(
     )
     result = await db.execute(stmt)
     existing_token = result.scalars().first()
-    
+
     if existing_token:
         existing_token.platform = req.platform
     else:
@@ -35,7 +35,7 @@ async def register_token(
             platform=req.platform
         )
         db.add(new_token)
-        
+
     await db.commit()
     return GenericResponse(success=True, message="Device registered")
 
@@ -51,12 +51,12 @@ async def unregister_token(
     )
     result = await db.execute(stmt)
     existing_token = result.scalars().first()
-    
+
     if existing_token:
         await db.delete(existing_token)
         await db.commit()
         return GenericResponse(success=True, message="Device unregistered")
-        
+
     return GenericResponse(success=True, message="Token not found")
 
 @router.get("/medication-schedules", response_model=List[MedicationScheduleOut])
@@ -81,13 +81,13 @@ async def toggle_medication_schedule(
     )
     result = await db.execute(stmt)
     schedule = result.scalars().first()
-    
+
     if not schedule:
         raise HTTPException(status_code=404, detail="Schedule not found")
-        
+
     schedule.is_active = not schedule.is_active
     await db.commit()
-    
+
     status = "activated" if schedule.is_active else "deactivated"
     return GenericResponse(success=True, message=f"Schedule {status}")
 

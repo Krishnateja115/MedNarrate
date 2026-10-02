@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.admin_auth import AdminContext, require_any_permission, require_permission
+from app.core.admin_auth import AdminContext, require_any_permission, require_permission, require_active_step_up
 from app.core.database import get_db
 from app.models.admin import SensitiveAccessGrant
 from app.models.user import User
@@ -120,13 +120,18 @@ async def request_break_glass_access(
     Status starts as 'requested' — a different admin must approve it.
     Super Admins can self-approve through the approve endpoint explicitly.
     """
+    if req.resource_id == "*":
+        if not admin_ctx.is_super_admin:
+            raise HTTPException(status_code=403, detail="Super-admin required for wildcard resource_id")
+
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     grant = SensitiveAccessGrant(
         id=uuid.uuid4(),
         admin_id=admin_ctx.user_id,
         resource_type=req.resource_type,
         resource_id=req.resource_id,
-        reason=f"{req.reason} (Requested duration: {req.expires_in_hours} hours)",
+        reason=req.reason,
+        requested_duration_hours=req.expires_in_hours,
         created_at=now,
         expires_at=None,
         status="requested",  # Always starts as REQUESTED — never auto-active
@@ -173,7 +178,8 @@ async def approve_break_glass_grant(
     payload: BreakGlassApprovalPayload,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    admin_ctx: AdminContext = Depends(require_permission("approve_sensitive_access")),
+    admin_ctx: AdminContext = Depends(require_permission("break_glass.approve")),
+    step_up_ctx: AdminContext = Depends(require_active_step_up),
 ):
     """
     Approve a break-glass request from another admin.
@@ -186,7 +192,7 @@ async def approve_break_glass_grant(
         raise HTTPException(status_code=400, detail="Invalid grant ID format")
 
     res = await db.execute(
-        select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == g_uuid)
+        select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == g_uuid).with_for_update()
     )
     grant = res.scalar_one_or_none()
     if not grant:
@@ -209,7 +215,10 @@ async def approve_break_glass_grant(
     grant.status = "active"
     grant.approved_by_id = admin_ctx.user_id
     grant.approved_at = now
-    grant.expires_at = now + timedelta(hours=DEFAULT_GRANT_EXPIRY_HOURS)
+
+    duration = grant.requested_duration_hours or DEFAULT_GRANT_EXPIRY_HOURS
+    duration = min(duration, 72)
+    grant.expires_at = now + timedelta(hours=duration)
 
     # Audit within same transaction
     await log_admin_action(
@@ -347,7 +356,7 @@ async def revoke_break_glass_grant(
         raise HTTPException(status_code=400, detail="Invalid grant ID format")
 
     res = await db.execute(
-        select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == g_uuid)
+        select(SensitiveAccessGrant).where(SensitiveAccessGrant.id == g_uuid).with_for_update()
     )
     grant = res.scalar_one_or_none()
     if not grant:

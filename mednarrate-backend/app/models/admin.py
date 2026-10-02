@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, Integer
 from sqlalchemy import Uuid as UUID
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -96,6 +96,7 @@ class AdminAuditLog(Base):
         index=True,
         nullable=True,
     )
+    actor_subject_id: Mapped[str | None] = mapped_column(String, index=True, nullable=True)
     action: Mapped[str] = mapped_column(String, nullable=False, index=True)
     resource_type: Mapped[str | None] = mapped_column(String, nullable=True)
     resource_id: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -127,6 +128,7 @@ class SensitiveAccessGrant(Base):
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    requested_duration_hours: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Approval fields — populated when an approver acts on a REQUESTED grant
     approved_by_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
