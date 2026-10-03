@@ -1,11 +1,23 @@
-import json
-import urllib.request
-req = urllib.request.Request(
-    'http://127.0.0.1:8000/api/v1/reports/4b5da880-0a1a-44ad-b9c2-cb1f1d768dc1/analysis/translate',
-    data=json.dumps({"target_language":"hi"}).encode('utf-8'),
-    headers={'Content-Type': 'application/json'}
-)
-resp = urllib.request.urlopen(req)
-data = json.loads(resp.read().decode('utf-8'))
-print("label_not_provided:", data.get('ui_labels', {}).get('label_not_provided'))
-print("label_cat_cbc:", data.get('ui_labels', {}).get('label_cat_cbc'))
+import asyncio
+import httpx
+
+async def main():
+    async with httpx.AsyncClient() as client:
+        # FastAPI OAuth2PasswordRequestForm expects form data, username and password
+        resp = await client.post("http://127.0.0.1:8000/api/v1/auth/login", data={"username": "test@mednarrate.com", "password": "password123"})
+        if resp.status_code != 200:
+            print("Login failed:", resp.text)
+            return
+        token = resp.json()["access_token"]
+        
+        # Now request translation
+        resp = await client.post(
+            "http://127.0.0.1:8000/api/v1/reports/b3ff5701-ec48-4f1a-8ee9-5f937f249f89/analysis/translate",
+            json={"language": "ta"},
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            timeout=120.0
+        )
+        print("Status:", resp.status_code)
+        print("Body:", resp.text)
+
+asyncio.run(main())

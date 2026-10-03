@@ -82,8 +82,8 @@ async def test_language(lang, lang_name):
         clinical_summary="Patient presents with hypertension. BP 150/95.",
         clinician_summary="Patient presents with hypertension. BP 150/95.",
         summary_metrics="BP: 150/95",
-        abnormal_findings_json="[]",
-        medications_json="[]",
+        abnormal_findings_json=json.dumps(ABNORMAL_FINDINGS),
+        medications_json=json.dumps(MEDICATIONS),
         unique_parameters_json="[]",
         labels_json="{}"
     )

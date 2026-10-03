@@ -370,7 +370,9 @@ async def translate_analysis(
         )
     except (ValueError, TypeError, KeyError) as exc:
         # Do not log the model response or medical data.
-        logger.warning("Translation validation failed language=%s error_type=%s error=%s", lang, type(exc).__name__, str(exc))
+        abnormal_len = len(parsed.get("abnormal_findings") or []) if 'parsed' in locals() and isinstance(parsed, dict) else -1
+        med_len = len(parsed.get("medications") or []) if 'parsed' in locals() and isinstance(parsed, dict) else -1
+        logger.warning(f"Translation validation failed language={lang} error_type={type(exc).__name__} error={str(exc)} src_find_len={len(abnormal_findings_source)} out_find_len={abnormal_len} src_med_len={len(meds_list)} out_med_len={med_len}")
         raise TranslationServiceError(
             "The translation could not be verified. Please try again."
         ) from exc
