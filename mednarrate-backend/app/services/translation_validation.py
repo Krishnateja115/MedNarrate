@@ -24,8 +24,14 @@ def parse_translation(text: str) -> dict:
         match = re.search(r"(\{[\s\S]*\})", raw)
         if match:
             raw = match.group(1)
-    
-    parsed = json.loads(raw)
+    raw = raw.strip()
+    try:
+        parsed, _ = json.JSONDecoder().raw_decode(raw)
+    except json.JSONDecodeError as e:
+        with open("json_err_dump.txt", "w", encoding="utf-8") as f:
+            f.write(raw)
+        raise e
+        
     if not isinstance(parsed, dict):
         raise ValueError("Translation must be a JSON object")
     return parsed
