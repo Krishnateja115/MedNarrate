@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "MedNarrate"
     ENVIRONMENT: str = "development"
+    # Centralized API rate limiting (see app/core/rate_limit.py). Disable only in tests.
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_DEFAULT: str = "100/minute"
+    RATE_LIMIT_SENSITIVE: str = "5/minute"
+    RATE_LIMIT_REFRESH: str = "30/minute"
     FIREBASE_SERVICE_ACCOUNT_JSON: str | None = None
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_MB: int = 25
@@ -55,6 +60,7 @@ class Settings(BaseSettings):
 
     # Development-Only Gemini Provider
     GEMINI_API_KEY: str | None = None
+    EMBEDDING_PROVIDER: str | None = None  # defaults to PRIMARY_LLM_PROVIDER
     GEMINI_MODEL: str = "gemini-3.8-flash"
 
     # Privacy & Data Governance Boundary

@@ -185,7 +185,7 @@ async def update_incident(
         from datetime import datetime, timezone
 
         if payload.status == IncidentStatus.resolved:
-            incident.resolved_at = datetime.now(timezone.utc)
+            incident.resolved_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     if payload.severity and incident.severity != payload.severity:
         incident.severity = payload.severity

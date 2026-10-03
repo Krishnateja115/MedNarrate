@@ -63,11 +63,11 @@ async def log_admin_action(
     request_id = None
 
     if request:
-        ip_address = request.client.host if request.client else None
-        # Forwarded for header
-        forwarded = request.headers.get("x-forwarded-for")
-        if forwarded:
-            ip_address = forwarded.split(",")[0].strip()
+        # Use request.state.client_ip which is resolved by the TrustedProxy middleware.
+        # This avoids blindly trusting X-Forwarded-For in the audit log.
+        ip_address = getattr(request.state, "client_ip", None)
+        if ip_address is None and request.client:
+            ip_address = request.client.host
 
         user_agent = request.headers.get("user-agent")
         # Support common request ID patterns if middleware injects them

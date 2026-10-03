@@ -2,42 +2,32 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, security-hardening]
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # ─── Backend: Python / FastAPI ───────────────────────────────────────────
+  # ─── Backend: unit/integration tests on SQLite ───────────────────────────
   backend:
-    name: Backend Tests (Python)
+    name: Backend Tests (SQLite)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: mednarrate-backend
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: mednarrate
-          POSTGRES_PASSWORD: mednarrate_pass
-          POSTGRES_DB: mednarrate_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U mednarrate"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
+          cache: pip
           cache-dependency-path: mednarrate-backend/requirements.txt
 
       - name: Install OCR system dependencies
@@ -46,79 +36,204 @@ jobs:
           sudo apt-get install -y tesseract-ocr poppler-utils
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip check
 
-      - name: Run tests (SQLite in-memory)
+      - name: Run full test suite
         env:
           DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           JWT_SECRET: "ci-test-secret-key-32-chars-min!!"
           GEMINI_API_KEY: ""
-          UPLOAD_DIR: "uploads"
-          ALGORITHM: "HS256"
-          ACCESS_TOKEN_EXPIRE_MINUTES: "30"
-          REFRESH_TOKEN_EXPIRE_DAYS: "7"
           ENVIRONMENT: "test"
+        run: PYTHONPATH=. pytest -q --tb=short
+
+  # ─── Backend: real PostgreSQL (pgvector) — migrations + full suite ───────
+  backend-postgres:
+    name: Backend (PostgreSQL + Alembic)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mednarrate-backend
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: mednarrate
+          POSTGRES_PASSWORD: mednarrate_pass
+          POSTGRES_DB: mednarrate_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mednarrate -d mednarrate_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      JWT_SECRET: "ci-test-secret-key-32-chars-min!!"
+      GEMINI_API_KEY: ""
+      ENVIRONMENT: "test"
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: mednarrate-backend/requirements.txt
+
+      - name: Install OCR system dependencies
         run: |
-          PYTHONPATH=. pytest -v --tb=short
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr poppler-utils postgresql-client
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Alembic upgrade head (fresh PostgreSQL)
+        env:
+          DATABASE_URL: postgresql+asyncpg://mednarrate:mednarrate_pass@localhost:5432/mednarrate_db
+        run: |
+          alembic upgrade head
+          alembic current
+          HEADS=$(alembic heads | grep -c '(head)')
+          echo "Alembic heads: $HEADS"
+          test "$HEADS" -eq 1
+
+      - name: Lockout migration round-trip
+        env:
+          DATABASE_URL: postgresql+asyncpg://mednarrate:mednarrate_pass@localhost:5432/mednarrate_db
+        run: |
+          alembic downgrade -1
+          alembic upgrade head
+
+      - name: Create isolated test database
+        env:
+          PGPASSWORD: mednarrate_pass
+        run: |
+          psql -h localhost -U mednarrate -d mednarrate_db -c "CREATE DATABASE mednarrate_test;"
+          psql -h localhost -U mednarrate -d mednarrate_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+      - name: Run full test suite on PostgreSQL
+        env:
+          DATABASE_URL: postgresql+asyncpg://mednarrate:mednarrate_pass@localhost:5432/mednarrate_test
+        run: pytest -q --tb=short
 
   # ─── Flutter ─────────────────────────────────────────────────────────────
   flutter:
-    name: Flutter Tests
+    name: Flutter (analyze + tests)
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.47.x"
           channel: "stable"
+          cache: true
 
-      - name: Get Flutter dependencies
+      - name: Get dependencies
         run: flutter pub get
 
-      - name: Analyze Dart code
+      - name: Analyze
         run: flutter analyze --no-fatal-infos
 
-      - name: Run Flutter tests
+      - name: Test
         run: flutter test --reporter expanded
 
-  # ─── Docker build check ──────────────────────────────────────────────────
-  docker:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: backend
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: docker build -t mednarrate-backend:ci ./mednarrate-backend
-
-  # ─── Admin Frontend: Next.js ─────────────────────────────────────────────
+  # ─── Admin portal (Next.js) ──────────────────────────────────────────────
   admin-frontend:
-    name: Admin Frontend (Next.js)
+    name: Admin (lint, typecheck, test, build)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: mednarrate-admin
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "22"
+          cache: npm
           cache-dependency-path: mednarrate-admin/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --ci
+      - run: npm run build
 
-      - name: Lint and Typecheck
-        run: npm run lint
+  # ─── Docker image checks ─────────────────────────────────────────────────
+  docker:
+    name: Docker Build + Hardening Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Build
-        run: npm run build
+      - name: Build backend image
+        run: docker build -t mednarrate-backend:ci ./mednarrate-backend
+
+      - name: Runs as non-root
+        run: |
+          UID_IN_IMAGE=$(docker run --rm --entrypoint id mednarrate-backend:ci -u)
+          echo "uid=$UID_IN_IMAGE"
+          test "$UID_IN_IMAGE" != "0"
+
+      - name: No secrets, databases or tests baked into the image
+        run: |
+          docker run --rm --entrypoint sh mednarrate-backend:ci -c '
+            cd /app
+            for p in .env tests scratch scratch2.py mednarrate.db pytest_output.txt; do
+              if [ -e "$p" ]; then echo "UNEXPECTED in image: $p"; exit 1; fi
+            done
+            ls *.db 2>/dev/null && exit 1 || true
+          '
+
+  # ─── Security scanning ───────────────────────────────────────────────────
+  secret-scan:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit-js:
+    name: Dependency Audit (npm)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mednarrate-admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - name: Fail on high/critical production advisories
+        run: npm audit --omit=dev --audit-level=high
+
+  dependency-audit-python:
+    name: Dependency Audit (pip-audit, advisory)
+    runs-on: ubuntu-latest
+    # Advisory: the pinned ML stack (torch/transformers/chromadb) has known advisories that need a
+    # model-compatibility upgrade project. The report is published instead of blocking every PR.
+    # Remove `continue-on-error` once those pins are upgraded.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pip-audit
+      - name: Audit
+        run: pip-audit -r mednarrate-backend/requirements.txt --no-deps --disable-pip | tee pip-audit.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-report
+          path: pip-audit.txt

@@ -74,7 +74,7 @@ async def dispatch_global_notification(
             body=payload.body,
             status=status,
             error_message=None if success else "Failed to send to push service",
-            sent_at=datetime.now(timezone.utc)
+            sent_at=datetime.now(timezone.utc).replace(tzinfo=None)
         )
         db.add(nl)
         if success:
@@ -158,7 +158,7 @@ async def retry_notification(
 
     log_entry.status = "sent" if success else "failed"
     log_entry.error_message = None if success else "Failed to send to push service"
-    log_entry.sent_at = datetime.now(timezone.utc)
+    log_entry.sent_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     await log_admin_action(
         db, admin_ctx, "NOTIFICATION_RETRY", "notification_log", str(log_id),

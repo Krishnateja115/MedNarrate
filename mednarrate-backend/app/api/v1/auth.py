@@ -1,11 +1,9 @@
-import sys
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query
 from fastapi.security import OAuth2PasswordRequestForm
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from app.core.rate_limit import limiter, SENSITIVE_LIMIT, REFRESH_LIMIT
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -25,13 +23,12 @@ from app.schemas.auth import RefreshRequest, SignupRequest, Token, MFAChallengeR
 from app.schemas.user import UserOut
 from app.services.audit import log_admin_action
 
-limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
 
 router = APIRouter()
 
 
 @router.post("/signup", response_model=UserOut, status_code=201)
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def signup(
     request: Request, signup_data: SignupRequest, db: AsyncSession = Depends(get_db)
 ):
@@ -56,7 +53,7 @@ async def signup(
 
 from typing import Union
 @router.post("/login", response_model=Union[Token, MFAChallengeResponse])
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def login(
     request: Request,
     response: Response,
@@ -202,7 +199,7 @@ class StepUpResponse(BaseModel):
     step_up_token: str
 
 @router.post("/step-up", response_model=StepUpResponse)
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def step_up_auth(
     request: Request,
     payload: StepUpRequest,
@@ -273,7 +270,7 @@ async def step_up_auth(
 
 
 @router.post("/mfa-verify", response_model=Token)
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def mfa_verify(
     request: Request,
     response: Response,
@@ -374,7 +371,7 @@ async def mfa_verify(
 
 
 @router.post("/mfa-recover", response_model=Token)
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def mfa_recover(
     request: Request,
     response: Response,
@@ -485,6 +482,7 @@ async def mfa_recover(
 
 
 @router.post("/refresh", response_model=Token)
+@limiter.limit(REFRESH_LIMIT)
 async def refresh_token(
     request: Request,
     response: Response,

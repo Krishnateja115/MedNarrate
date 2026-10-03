@@ -140,8 +140,8 @@ async def consume_mfa_challenge(jti: str, user_id, db: AsyncSession) -> bool:
         challenge = MFAChallenge(
             jti=jti,
             user_id=user_id,
-            expires_at=datetime.now(timezone.utc) + timedelta(minutes=5),
-            used_at=datetime.now(timezone.utc)
+            expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=5),
+            used_at=datetime.now(timezone.utc).replace(tzinfo=None)
         )
         db.add(challenge)
         await db.flush() # Will raise IntegrityError if jti already exists (already consumed)

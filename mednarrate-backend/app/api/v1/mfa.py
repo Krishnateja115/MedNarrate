@@ -1,12 +1,10 @@
-import sys
 import secrets
 import pyotp
 import hashlib
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from app.core.rate_limit import limiter, SENSITIVE_LIMIT
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -17,7 +15,6 @@ from app.models.user import User, UserRole
 from app.services.audit import log_admin_action
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
 
 class MFASetupResponse(BaseModel):
     enrollment_token: str
@@ -32,7 +29,7 @@ class MFARecoveryCodesResponse(BaseModel):
     recovery_codes: List[str]
 
 @router.post("/setup", response_model=MFASetupResponse)
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def setup_mfa(
     request: Request,
     current_user: User = Depends(get_current_user),
@@ -54,7 +51,7 @@ async def setup_mfa(
     return MFASetupResponse(secret=totp_secret, provisioning_uri=provisioning_uri, enrollment_token=enrollment_token)
 
 @router.post("/verify-setup", response_model=MFARecoveryCodesResponse)
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def verify_mfa_setup(
     request: Request,
     payload: MFAVerifySetupRequest,
@@ -112,7 +109,7 @@ class MFADisableRequest(BaseModel):
     code: str
 
 @router.post("/disable")
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def disable_mfa(
     request: Request,
     payload: MFADisableRequest,
@@ -167,7 +164,7 @@ class MFARegenerateRequest(BaseModel):
     code: str
 
 @router.post("/regenerate-recovery-codes", response_model=MFARecoveryCodesResponse)
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def regenerate_recovery_codes(
     request: Request,
     payload: MFARegenerateRequest,
@@ -211,7 +208,7 @@ async def regenerate_recovery_codes(
     return MFARecoveryCodesResponse(recovery_codes=raw_codes)
 
 @router.post("/reset/{target_user_id}")
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def super_admin_reset_mfa(
     target_user_id: str,
     request: Request,

@@ -341,7 +341,7 @@ async def reset_password(
     pr_token = PasswordResetToken(
         user_id=user.id,
         token_hash=token_hash,
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1),
         used=False,
     )
     db.add(pr_token)

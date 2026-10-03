@@ -67,7 +67,7 @@ async def test_user_and_token(db_session):
     rt = RefreshToken(
         user_id=user.id,
         token_hash=hash_token(refresh_str),
-        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=7),
     )
     db.add(rt)
     await db.commit()

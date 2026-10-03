@@ -2,25 +2,23 @@ import asyncio
 import logging
 import os
 import re
-import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.v1 import router as api_v1_router
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.middleware import CorrelationIdMiddleware
+from app.core.rate_limit import limiter
 from app.exceptions import setup_exception_handlers
 from app.services.model_registry import get_ner_pipeline
 from app.services.scheduler import start_scheduler, stop_scheduler
 
-limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules, default_limits=["100/minute"])
 logger = logging.getLogger(__name__)
 
 
@@ -49,7 +47,16 @@ async def lifespan(app: FastAPI):
     stop_scheduler()
 
 
-app = FastAPI(title="MedNarrate API", lifespan=lifespan)
+# In production (ENVIRONMENT != 'development'), disable /docs, /redoc, and /openapi.json
+# to prevent API schema enumeration. In development they remain accessible.
+_is_development = (settings.ENVIRONMENT or "").lower() == "development"
+app = FastAPI(
+    title="MedNarrate API",
+    lifespan=lifespan,
+    docs_url="/docs" if _is_development else None,
+    redoc_url="/redoc" if _is_development else None,
+    openapi_url="/openapi.json" if _is_development else None,
+)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -85,10 +92,17 @@ cors_origins.add("http://tauri.localhost")
 if not cors_origins:
     cors_origins.add("http://localhost:3000")
 
+# Only allow localhost/127.x regex in development. In production CORS is restricted
+# to explicitly configured origins only.
+_allow_origin_regex = (
+    r"http://(localhost|127\.0\.0\.1)(:\d+)?"
+    if _is_development
+    else None
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(cors_origins),
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origin_regex=_allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -108,9 +122,36 @@ async def add_security_headers(request: Request, call_next):
 
 
 @app.middleware("http")
+async def resolve_client_ip(request: Request, call_next):
+    """Resolve the real client IP.
+
+    Only trust X-Forwarded-For when TRUSTED_PROXY=true is explicitly set in the
+    deployment environment (e.g., behind an nginx or load-balancer that strips
+    and re-adds the header).  Without that flag, we use request.client.host to
+    prevent IP-spoofing via a crafted X-Forwarded-For header.
+
+    DEPLOYMENT NOTE: Set TRUSTED_PROXY=true only when the server is running
+    behind a trusted reverse-proxy that guarantees the X-Forwarded-For chain.
+    """
+    trusted_proxy = (os.environ.get("TRUSTED_PROXY", "").lower() == "true")
+    if trusted_proxy:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            request.state.client_ip = forwarded.split(",")[0].strip()
+        else:
+            request.state.client_ip = request.client.host if request.client else None
+    else:
+        request.state.client_ip = request.client.host if request.client else None
+    return await call_next(request)
+
+
+@app.middleware("http")
 async def prompt_injection_middleware(request: Request, call_next):
-    # Basic check on POST/PUT requests
-    if request.method in ["POST", "PUT"]:
+    # Basic check on POST/PUT requests. Auth endpoints carry credentials/tokens (random
+    # base64 text), never LLM prompts, so they are excluded to avoid false positives.
+    if request.method in ["POST", "PUT"] and not request.url.path.startswith(
+        f"{settings.API_V1_STR}/auth/"
+    ):
         content_type = request.headers.get("content-type", "")
         if "application/json" in content_type:
             try:
@@ -119,7 +160,7 @@ async def prompt_injection_middleware(request: Request, call_next):
 
                 # Robust Prompt Injection / Jailbreak Detection Regex
                 injection_pattern = re.compile(
-                    r"(ignore previous instructions|ignore all previous|system prompt|you are a helpful assistant|forget previous|override instructions|bypass|jailbreak|dan|do anything now)",
+                    r"\b(ignore previous instructions|ignore all previous|system prompt|you are a helpful assistant|forget previous|override instructions|bypass|jailbreak|dan|do anything now)\b",
                     re.IGNORECASE,
                 )
 

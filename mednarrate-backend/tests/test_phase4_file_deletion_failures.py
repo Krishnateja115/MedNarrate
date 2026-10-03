@@ -70,7 +70,7 @@ async def test_file_deletion_failures(client: AsyncClient, db_session: AsyncSess
             raise Exception("Storage error")
         return None
 
-    with patch("app.services.file_storage.delete_file", side_effect=mock_delete_file):
+    with patch("app.services.user_deletion.delete_file", side_effect=mock_delete_file):
         resp = await client.request(
             "DELETE", f"/api/v1/admin/users/{target_user.id}",
             headers=headers,

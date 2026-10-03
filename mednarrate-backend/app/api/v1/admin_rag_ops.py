@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -63,7 +64,7 @@ async def list_documents(
 
 @router.patch("/documents/{doc_id}/status")
 async def update_document_status(
-    doc_id: str,
+    doc_id: uuid.UUID,
     payload: DocumentStatusUpdate,
     admin_ctx: AdminContext = Depends(require_permission("rag.manage")),
     db: AsyncSession = Depends(get_db),
@@ -81,7 +82,7 @@ async def update_document_status(
         action="RAG_DOCUMENT_LIFECYCLE_UPDATE",
         actor_admin_id=admin_ctx.user.id,
         resource_type="KnowledgeDocument",
-        resource_id=doc.id,
+        resource_id=str(doc.id),
         metadata={"new_status": payload.status},
     )
 

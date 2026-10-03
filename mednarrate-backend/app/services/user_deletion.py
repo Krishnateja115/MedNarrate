@@ -51,6 +51,11 @@ async def anonymize_and_delete_user_data(target_user: User, db: AsyncSession):
     from app.models.medication_schedule import MedicationSchedule
     from app.models.chat_safety import ChatSafetyEvent
     
+    from app.models.rag_chunk import RagChunk
+    # Delete RAG chunks linked to the user's reports BEFORE deleting the reports
+    report_ids = [r.id for r in reports]
+    if report_ids:
+        await db.execute(delete(RagChunk).where(RagChunk.report_id.in_(report_ids)))
     await db.execute(delete(Report).where(Report.user_id == target_user.id))
     await db.execute(delete(MedicalProfile).where(MedicalProfile.user_id == target_user.id))
     await db.execute(delete(DoctorProfile).where(DoctorProfile.user_id == target_user.id))
@@ -66,7 +71,7 @@ async def anonymize_and_delete_user_data(target_user: User, db: AsyncSession):
     await db.execute(delete(AdminRoleAssignment).where(AdminRoleAssignment.user_id == target_user.id))
     await db.execute(delete(SensitiveAccessGrant).where(SensitiveAccessGrant.admin_id == target_user.id))
     await db.execute(delete(MedicationSchedule).where(MedicationSchedule.user_id == target_user.id))
-    await db.execute(delete(ChatSafetyEvent).where(ChatSafetyEvent.user_id == target_user.id.hex))
+    await db.execute(delete(ChatSafetyEvent).where(ChatSafetyEvent.user_id == target_user.id))
     
     # Anonymize User Record
     target_user.full_name = "[DELETED]"

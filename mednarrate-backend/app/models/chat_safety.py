@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Uuid as UUID
 
 from app.core.database import Base
 
@@ -9,12 +10,12 @@ from app.core.database import Base
 class ChatSafetyEvent(Base):
     __tablename__ = "chat_safety_events"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     chat_session_id = Column(
-        String(36), ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False
     )
     user_id = Column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
 
     classification = Column(

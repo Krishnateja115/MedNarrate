@@ -80,17 +80,17 @@ async def test_extensive_hard_delete(client: AsyncClient, db_session: AsyncSessi
         db_session.add(cg_prof)
         push = PushToken(user_id=user.id, device_token=f"tok_{user.id.hex}", platform="ios")
         db_session.add(push)
-        ref_tok = RefreshToken(user_id=user.id, token_hash=f"rt_{user.id.hex}", expires_at=datetime.now(timezone.utc) + timedelta(days=1))
+        ref_tok = RefreshToken(user_id=user.id, token_hash=f"rt_{user.id.hex}", expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=1))
         db_session.add(ref_tok)
-        pr_tok = PasswordResetToken(user_id=user.id, token_hash=f"pr_{user.id.hex}", expires_at=datetime.now(timezone.utc) + timedelta(hours=1))
+        pr_tok = PasswordResetToken(user_id=user.id, token_hash=f"pr_{user.id.hex}", expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1))
         db_session.add(pr_tok)
-        mfa_chal = MFAChallenge(user_id=user.id, jti=f"jti_{uuid.uuid4().hex}", expires_at=datetime.now(timezone.utc) + timedelta(hours=1))
+        mfa_chal = MFAChallenge(user_id=user.id, jti=f"jti_{uuid.uuid4().hex}", expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1))
         db_session.add(mfa_chal)
         priv_req = PrivacyDataRequest(user_id=user.id, request_type="deletion", reason="test")
         db_session.add(priv_req)
         role_ass = AdminRoleAssignment(user_id=user.id, role_id=admin_role.id)
         db_session.add(role_ass)
-        grant = SensitiveAccessGrant(admin_id=user.id, resource_type="medical_report", resource_id="fake", reason="test", status="active", expires_at=datetime.now(timezone.utc) + timedelta(hours=1))
+        grant = SensitiveAccessGrant(admin_id=user.id, resource_type="medical_report", resource_id="fake", reason="test", status="active", expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1))
         db_session.add(grant)
         
         return rep, chat, ticket, audit
@@ -110,9 +110,9 @@ async def test_extensive_hard_delete(client: AsyncClient, db_session: AsyncSessi
         db_session.add(ticket_msg)
         med_sch = MedicationSchedule(report_id=rep.id, user_id=user_id, medication_name="A", dosage="10mg", frequency="daily", times_of_day=[])
         db_session.add(med_sch)
-        safety_evt = ChatSafetyEvent(chat_session_id=chat.id.hex, user_id=user_id.hex, classification="hate", action_taken="blocked")
+        safety_evt = ChatSafetyEvent(chat_session_id=chat.id, user_id=user_id, classification="hate", action_taken="blocked")
         db_session.add(safety_evt)
-        chunk = RagChunk(report_id=rep.id, chunk_text="test", chunk_index=1, embedding_json=[0.1])
+        chunk = RagChunk(report_id=rep.id, chunk_text="test", chunk_index=1, embedding_json=[0.1] * 768)
         db_session.add(chunk)
         return analysis, translation, chat_msg, ticket_msg
 
@@ -161,7 +161,7 @@ async def test_extensive_hard_delete(client: AsyncClient, db_session: AsyncSessi
     assert (await db_session.execute(select(ChatMessage).where(ChatMessage.chat_session_id == tr_chat.id))).scalar() is None
     assert (await db_session.execute(select(SupportTicketMessage).where(SupportTicketMessage.ticket_id == tr_ticket.id))).scalar() is None
     assert (await db_session.execute(select(MedicationSchedule).where(MedicationSchedule.user_id == target_user.id))).scalar() is None
-    assert (await db_session.execute(select(ChatSafetyEvent).where(ChatSafetyEvent.user_id == target_user.id.hex))).scalar() is None
+    assert (await db_session.execute(select(ChatSafetyEvent).where(ChatSafetyEvent.user_id == target_user.id))).scalar() is None
     assert (await db_session.execute(select(RagChunk).where(RagChunk.report_id == tr_rep.id))).scalar() is None
 
     # Verify Audit (Retained but anonymized/nullified)

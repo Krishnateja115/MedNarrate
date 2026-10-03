@@ -1,0 +1,43 @@
+# Secrets / local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*firebase*.json
+
+# Local databases, uploads, runtime data
+*.db
+*.sqlite*
+*.ses
+:memory:.ses
+uploads/
+storage/
+data/kb_index/
+
+# Environments, caches, VCS
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+.git/
+.gitignore
+
+# Tests, scratch and debug artifacts
+tests/
+scratch/
+scratch2.py
+pytest_output*.txt
+test_out.json
+*.log
+check_*.py
+test_*.py
+fix_migration.py
+patch_dashboard.py
+clear_llm.py
+create_user.py
+health_check*.py
+docs/

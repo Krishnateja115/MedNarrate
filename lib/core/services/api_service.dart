@@ -11,6 +11,7 @@ import '../config/app_config.dart';
 import 'connectivity_service.dart';
 import 'cache_service.dart';
 import 'offline_queue_service.dart';
+import 'reminder_service.dart';
 import '../../models/cached/offline_action.dart';
 import '../../features/reports/models/report_model.dart';
 import '../../models/comparison_models.dart';
@@ -28,7 +29,8 @@ class ApiService {
   static ApiService instance = ApiService._();
 
   static String get _baseUrl => AppConfig.apiRoot;
-  static Duration get _timeout => Duration(seconds: AppConfig.apiTimeoutSeconds);
+  static Duration get _timeout =>
+      Duration(seconds: AppConfig.apiTimeoutSeconds);
 
   // ─────────────────────── internal HTTP helpers ───────────────────────
 
@@ -42,39 +44,60 @@ class ApiService {
 
   Future<http.Response> _get(String path, {bool allowRefresh = true}) async {
     try {
-      final resp = await http.get(
-        Uri.parse('$_baseUrl$path'),
-        headers: await _authHeaders(),
-      ).timeout(_timeout);
-      return await _handleResponse(resp, () => _get(path, allowRefresh: false), allowRefresh: allowRefresh);
+      final resp = await http
+          .get(
+            Uri.parse('$_baseUrl$path'),
+            headers: await _authHeaders(),
+          )
+          .timeout(_timeout);
+      return await _handleResponse(resp, () => _get(path, allowRefresh: false),
+          allowRefresh: allowRefresh);
     } catch (error) {
       throw _networkException(error);
     }
   }
 
-  Future<http.Response> _post(String path, {Object? body, bool isJson = true, bool allowRefresh = true, Duration? requestTimeout}) async {
+  Future<http.Response> _post(String path,
+      {Object? body,
+      bool isJson = true,
+      bool allowRefresh = true,
+      Duration? requestTimeout}) async {
     try {
       final headers = await _authHeaders();
-      final resp = await http.post(
-        Uri.parse('$_baseUrl$path'),
-        headers: headers,
-        body: isJson ? jsonEncode(body) : body,
-      ).timeout(requestTimeout ?? _timeout);
-      return await _handleResponse(resp, () => _post(path, body: body, isJson: isJson, allowRefresh: false, requestTimeout: requestTimeout), allowRefresh: allowRefresh);
+      final resp = await http
+          .post(
+            Uri.parse('$_baseUrl$path'),
+            headers: headers,
+            body: isJson ? jsonEncode(body) : body,
+          )
+          .timeout(requestTimeout ?? _timeout);
+      return await _handleResponse(
+          resp,
+          () => _post(path,
+              body: body,
+              isJson: isJson,
+              allowRefresh: false,
+              requestTimeout: requestTimeout),
+          allowRefresh: allowRefresh);
     } catch (error) {
       throw _networkException(error);
     }
   }
 
-  Future<http.Response> _patch(String path, {Object? body, bool allowRefresh = true}) async {
+  Future<http.Response> _patch(String path,
+      {Object? body, bool allowRefresh = true}) async {
     try {
       final headers = await _authHeaders();
-      final resp = await http.patch(
-        Uri.parse('$_baseUrl$path'),
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(_timeout);
-      return await _handleResponse(resp, () => _patch(path, body: body, allowRefresh: false), allowRefresh: allowRefresh);
+      final resp = await http
+          .patch(
+            Uri.parse('$_baseUrl$path'),
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
+      return await _handleResponse(
+          resp, () => _patch(path, body: body, allowRefresh: false),
+          allowRefresh: allowRefresh);
     } catch (error) {
       throw _networkException(error);
     }
@@ -82,11 +105,15 @@ class ApiService {
 
   Future<http.Response> _delete(String path, {bool allowRefresh = true}) async {
     try {
-      final resp = await http.delete(
-        Uri.parse('$_baseUrl$path'),
-        headers: await _authHeaders(),
-      ).timeout(_timeout);
-      return await _handleResponse(resp, () => _delete(path, allowRefresh: false), allowRefresh: allowRefresh);
+      final resp = await http
+          .delete(
+            Uri.parse('$_baseUrl$path'),
+            headers: await _authHeaders(),
+          )
+          .timeout(_timeout);
+      return await _handleResponse(
+          resp, () => _delete(path, allowRefresh: false),
+          allowRefresh: allowRefresh);
     } catch (error) {
       throw _networkException(error);
     }
@@ -97,12 +124,15 @@ class ApiService {
   ApiException _networkException(Object error) {
     if (error is ApiException) return error;
     if (error is TimeoutException) {
-      return const ApiException(0, 'The request timed out. Check your connection and try again.');
+      return const ApiException(
+          0, 'The request timed out. Check your connection and try again.');
     }
     if (error is SocketException || error is http.ClientException) {
-      return const ApiException(0, 'Unable to connect to MedNarrate. Check that the backend is running and try again.');
+      return const ApiException(0,
+          'Unable to connect to MedNarrate. Check that the backend is running and try again.');
     }
-    return const ApiException(0, 'Something went wrong while contacting MedNarrate. Please try again.');
+    return const ApiException(0,
+        'Something went wrong while contacting MedNarrate. Please try again.');
   }
 
   Future<void> _refreshSingleFlight() {
@@ -118,10 +148,8 @@ class ApiService {
   /// refresh and retry the original request once. On double-failure, clears
   /// tokens and throws [UnauthorizedException].
   Future<http.Response> _handleResponse(
-    http.Response resp,
-    Future<http.Response> Function() retry,
-    {bool allowRefresh = true}
-  ) async {
+      http.Response resp, Future<http.Response> Function() retry,
+      {bool allowRefresh = true}) async {
     if (resp.statusCode == 401 && allowRefresh) {
       try {
         await _refreshSingleFlight();
@@ -146,7 +174,6 @@ class ApiService {
 
   // ─────────────────────────── Auth ────────────────────────────────────
 
-
   Future<AuthTokens> signup(
       String email, String password, String fullName) async {
     await _post('/auth/signup', body: {
@@ -162,11 +189,14 @@ class ApiService {
     // OAuth2PasswordRequestForm requires form-encoded body
     late final http.Response resp;
     try {
-      resp = await http.post(
-        Uri.parse('$_baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'username=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
-      ).timeout(_timeout);
+      resp = await http
+          .post(
+            Uri.parse('$_baseUrl/auth/login'),
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body:
+                'username=${Uri.encodeComponent(email)}&password=${Uri.encodeComponent(password)}',
+          )
+          .timeout(_timeout);
     } catch (error) {
       throw _networkException(error);
     }
@@ -180,7 +210,8 @@ class ApiService {
     }
     final data = jsonDecode(resp.body) as Map<String, dynamic>;
     final tokens = AuthTokens.fromMap(data);
-    await StorageService.instance.saveTokens(tokens.accessToken, tokens.refreshToken);
+    await StorageService.instance
+        .saveTokens(tokens.accessToken, tokens.refreshToken);
     return tokens;
   }
 
@@ -189,11 +220,13 @@ class ApiService {
     if (refreshToken == null) throw const UnauthorizedException();
     late final http.Response resp;
     try {
-      resp = await http.post(
-        Uri.parse('$_baseUrl/auth/refresh'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refresh_token': refreshToken}),
-      ).timeout(_timeout);
+      resp = await http
+          .post(
+            Uri.parse('$_baseUrl/auth/refresh'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refresh_token': refreshToken}),
+          )
+          .timeout(_timeout);
     } catch (error) {
       throw _networkException(error);
     }
@@ -223,27 +256,38 @@ class ApiService {
         await _post('/auth/logout', body: body);
       } catch (_) {}
     }
-    
+
     // Privacy: Clear all locally cached user data
     try {
       final user = await StorageService.instance.getCachedProfile();
       await StorageService.instance.clearUserData(user?.id);
+      if (user != null) {
+        await OfflineQueueService.instance.clearUserQueue(user.id);
+      }
     } catch (_) {}
-    
+
+    try {
+      await ReminderService.instance.clearLocalData();
+    } catch (_) {}
+
     try {
       await CacheService.instance.clearAll();
     } catch (_) {}
-    
+
     await StorageService.instance.clearTokens();
   }
 
   Future<Map<String, dynamic>> forgotPassword(String email) async {
-    final resp = await _post('/auth/forgot-password', body: {'email': email}, allowRefresh: false);
+    final resp = await _post('/auth/forgot-password',
+        body: {'email': email}, allowRefresh: false);
     return jsonDecode(resp.body) as Map<String, dynamic>;
   }
 
-  Future<void> resetPassword({required String token, required String newPassword}) async {
-    await _post('/auth/reset-password', body: {'token': token, 'new_password': newPassword}, allowRefresh: false);
+  Future<void> resetPassword(
+      {required String token, required String newPassword}) async {
+    await _post('/auth/reset-password',
+        body: {'token': token, 'new_password': newPassword},
+        allowRefresh: false);
   }
 
   Future<UserModel> getMe() async {
@@ -267,18 +311,26 @@ class ApiService {
   }) async {
     final body = <String, dynamic>{};
     if (fullName != null) body['full_name'] = fullName;
-    if (preferredLanguage != null) body['preferred_language'] = preferredLanguage;
+    if (preferredLanguage != null)
+      body['preferred_language'] = preferredLanguage;
     if (dateOfBirth != null) body['date_of_birth'] = dateOfBirth;
     if (gender != null) body['gender'] = gender;
     if (role != null) body['role'] = role;
-    if (bloodGroup != null || knownAllergies != null || chronicConditions != null ||
-        emergencyContactName != null || emergencyContactPhone != null) {
+    if (bloodGroup != null ||
+        knownAllergies != null ||
+        chronicConditions != null ||
+        emergencyContactName != null ||
+        emergencyContactPhone != null) {
       final medicalProfile = <String, dynamic>{};
       if (bloodGroup != null) medicalProfile['blood_group'] = bloodGroup;
-      if (knownAllergies != null) medicalProfile['known_allergies'] = knownAllergies;
-      if (chronicConditions != null) medicalProfile['chronic_conditions'] = chronicConditions;
-      if (emergencyContactName != null) medicalProfile['emergency_contact_name'] = emergencyContactName;
-      if (emergencyContactPhone != null) medicalProfile['emergency_contact_phone'] = emergencyContactPhone;
+      if (knownAllergies != null)
+        medicalProfile['known_allergies'] = knownAllergies;
+      if (chronicConditions != null)
+        medicalProfile['chronic_conditions'] = chronicConditions;
+      if (emergencyContactName != null)
+        medicalProfile['emergency_contact_name'] = emergencyContactName;
+      if (emergencyContactPhone != null)
+        medicalProfile['emergency_contact_phone'] = emergencyContactPhone;
       body['medical_profile'] = medicalProfile;
     }
     if (doctorProfile != null) {
@@ -301,8 +353,12 @@ class ApiService {
     required String reportType,
   }) async {
     if (!ConnectivityService.instance.isOnline) {
+      // Queued work is owned by the signed-in account so it can never run for another one.
+      final owner = await StorageService.instance.getCachedProfile();
+      if (owner == null) throw const UnauthorizedException();
       final action = OfflineAction(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        userId: owner.id,
         endpoint: '/reports/upload',
         method: 'POST_MULTIPART',
         body: {
@@ -332,7 +388,7 @@ class ApiService {
         uploadedAt: DateTime.now(),
       );
     }
-    
+
     Future<http.Response> doUpload() async {
       final token = await StorageService.instance.getAccessToken();
       final request = http.MultipartRequest(
@@ -346,19 +402,21 @@ class ApiService {
       request.fields['report_date'] = reportDate;
       request.fields['report_type'] = reportType;
       if (hospital != null) request.fields['hospital'] = hospital;
-      
+
       if (kIsWeb) {
-        request.files.add(http.MultipartFile.fromBytes('file', file.bytes!, filename: file.name));
+        request.files.add(http.MultipartFile.fromBytes('file', file.bytes!,
+            filename: file.name));
       } else {
-        request.files.add(await http.MultipartFile.fromPath('file', file.path!));
+        request.files
+            .add(await http.MultipartFile.fromPath('file', file.path!));
       }
       final streamedResponse = await request.send().timeout(_timeout);
       return await http.Response.fromStream(streamedResponse);
     }
-    
+
     final resp = await _handleResponse(await doUpload(), doUpload);
-    return ReportModel.fromMap(_remapReport(
-        jsonDecode(resp.body) as Map<String, dynamic>));
+    return ReportModel.fromMap(
+        _remapReport(jsonDecode(resp.body) as Map<String, dynamic>));
   }
 
   Future<List<ReportModel>> listReports({
@@ -380,9 +438,14 @@ class ApiService {
       if (reportType != null) params['report_type'] = reportType;
       if (isFavourite != null) params['is_favourite'] = isFavourite.toString();
       if (search != null) params['search'] = search;
-      final uri = Uri.parse('$_baseUrl/reports').replace(queryParameters: params);
-      final resp = await http.get(uri, headers: await _authHeaders()).timeout(_timeout);
-      final handled = await _handleResponse(resp, () async => http.get(uri, headers: await _authHeaders()).timeout(_timeout));
+      final uri =
+          Uri.parse('$_baseUrl/reports').replace(queryParameters: params);
+      final resp =
+          await http.get(uri, headers: await _authHeaders()).timeout(_timeout);
+      final handled = await _handleResponse(
+          resp,
+          () async =>
+              http.get(uri, headers: await _authHeaders()).timeout(_timeout));
       final list = jsonDecode(handled.body) as List<dynamic>;
       final reports = <ReportModel>[];
       for (var e in list) {
@@ -393,13 +456,15 @@ class ApiService {
           debugPrint('Failed to parse a report: $err');
         }
       }
-      
+
       // Save to cache
       await CacheService.instance.saveReports(reports);
       return reports;
     } catch (e) {
       if (e is ApiException) rethrow;
-      if (e is TimeoutException || e is SocketException || e is http.ClientException) {
+      if (e is TimeoutException ||
+          e is SocketException ||
+          e is http.ClientException) {
         throw _networkException(e);
       }
       throw ApiException(500, 'Failed to parse reports: $e');
@@ -441,8 +506,7 @@ class ApiService {
         jsonDecode(resp.body) as Map<String, dynamic>);
   }
 
-  Future<TranslationModel> translateAnalysis(
-      String id, String language) async {
+  Future<TranslationModel> translateAnalysis(String id, String language) async {
     final resp = await _post('/reports/$id/analysis/translate',
         body: {'language': language},
         requestTimeout: const Duration(seconds: 270));
@@ -453,13 +517,17 @@ class ApiService {
   Future<ReportComparisonResult> compareReports(List<String> reportIds) async {
     final idsParam = reportIds.map(Uri.encodeComponent).join(',');
     final resp = await _get('/reports/compare?report_ids=$idsParam');
-    return ReportComparisonResult.fromJson(jsonDecode(resp.body) as Map<String, dynamic>);
+    return ReportComparisonResult.fromJson(
+        jsonDecode(resp.body) as Map<String, dynamic>);
   }
 
   Future<List<ComparePoint>> getTestTrend(String testName) async {
-    final resp = await _get('/reports/trend?test_name=${Uri.encodeComponent(testName)}');
+    final resp =
+        await _get('/reports/trend?test_name=${Uri.encodeComponent(testName)}');
     final list = jsonDecode(resp.body) as List<dynamic>;
-    return list.map((e) => ComparePoint.fromMap(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => ComparePoint.fromMap(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<ComparePreviousResult> comparePrevious(String id) async {
@@ -490,8 +558,8 @@ class ApiService {
 
   Future<List<ChatMessageModel>> getChatMessages(String sessionId,
       {int limit = 20, int offset = 0}) async {
-    final resp =
-        await _get('/chat/sessions/$sessionId/messages?limit=$limit&offset=$offset');
+    final resp = await _get(
+        '/chat/sessions/$sessionId/messages?limit=$limit&offset=$offset');
     final list = jsonDecode(resp.body) as List<dynamic>;
     return list
         .map((e) => ChatMessageModel.fromMap(e as Map<String, dynamic>))
@@ -535,7 +603,8 @@ class ApiService {
       'fileType': m['file_type'] ?? m['fileType'],
       'reportType': m['report_type'] ?? m['reportType'],
       'extractedText': m['extracted_text'] ?? m['extractedText'] ?? '',
-      'processingStatus': m['processing_status'] ?? m['processingStatus'] ?? 'uploaded',
+      'processingStatus':
+          m['processing_status'] ?? m['processingStatus'] ?? 'uploaded',
       'isFavourite': m['is_favourite'] ?? m['isFavourite'] ?? false,
       'uploadedAt': m['uploaded_at'] ?? m['uploadedAt'],
     };
@@ -564,9 +633,12 @@ class ApiService {
     return List<Map<String, dynamic>>.from(jsonDecode(resp.body));
   }
 
-  Future<List<Map<String, dynamic>>> getAnnouncements({String audience = 'all', String language = 'en'}) async {
-    final resp = await _get('/admin/announcements/active/public?audience=$audience&language=$language');
-    return List<Map<String, dynamic>>.from(jsonDecode(resp.body)['active_announcements']);
+  Future<List<Map<String, dynamic>>> getAnnouncements(
+      {String audience = 'all', String language = 'en'}) async {
+    final resp = await _get(
+        '/admin/announcements/active/public?audience=$audience&language=$language');
+    return List<Map<String, dynamic>>.from(
+        jsonDecode(resp.body)['active_announcements']);
   }
 
   Future<void> toggleMedicationSchedule(String id) async {
@@ -598,12 +670,13 @@ class ApiService {
     if (durationDays != null) body['duration_days'] = durationDays;
     if (notes != null) body['notes'] = notes;
     if (reportId != null) body['report_id'] = reportId;
-    
+
     final resp = await _post('/reminders/', body: body);
     return jsonDecode(resp.body) as Map<String, dynamic>;
   }
 
-  Future<Map<String, dynamic>> updateReminder(String id, Map<String, dynamic> fields) async {
+  Future<Map<String, dynamic>> updateReminder(
+      String id, Map<String, dynamic> fields) async {
     final resp = await _patch('/reminders/$id', body: fields);
     return jsonDecode(resp.body) as Map<String, dynamic>;
   }
@@ -615,7 +688,10 @@ class ApiService {
   Future<void> executeOfflineAction(OfflineAction action) async {
     if (action.method == 'POST_MULTIPART') {
       await uploadReport(
-        file: PlatformFile(name: action.body['file_name'], size: 0, path: action.body['file_path']),
+        file: PlatformFile(
+            name: action.body['file_name'],
+            size: 0,
+            path: action.body['file_path']),
         title: action.body['title'],
         reportDate: action.body['report_date'],
         reportType: action.body['report_type'],

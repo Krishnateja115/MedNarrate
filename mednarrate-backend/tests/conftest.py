@@ -1,3 +1,8 @@
+import os
+
+# Rate limiting is off for the general suite; test_rate_limiting.py re-enables it explicitly.
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+
 import asyncio
 
 import pytest
@@ -14,22 +19,30 @@ from app.core.security import hash_password
 
 from app.main import app
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-engine = create_async_engine(
-    TEST_DATABASE_URL,
-    echo=False,
-    poolclass=StaticPool,
-    connect_args={"check_same_thread": False},
-)
+# SQLite in-memory by default; set DATABASE_URL=postgresql+asyncpg://... to run the
+# suite against a real PostgreSQL (the CI "backend-postgres" job does this).
+TEST_DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+_IS_SQLITE = TEST_DATABASE_URL.startswith("sqlite")
+if _IS_SQLITE:
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        poolclass=StaticPool,
+        connect_args={"check_same_thread": False},
+    )
+else:
+    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
-@event.listens_for(engine.sync_engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+if _IS_SQLITE:
+
+    @event.listens_for(engine.sync_engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 TestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -39,6 +52,14 @@ def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest.fixture(autouse=True)
+def _restore_event_loop(event_loop):
+    """unittest.IsolatedAsyncioTestCase tears down and clears the current loop;
+    re-install the session loop so later pytest-asyncio tests still have one."""
+    asyncio.set_event_loop(event_loop)
+    yield
 
 
 @pytest.fixture(autouse=True)
@@ -176,7 +197,7 @@ async def admin_token_and_user(client: AsyncClient, db_session: AsyncSession):
         full_name="Admin4",
         role=UserRole.admin,
         mfa_enabled=True,
-        mfa_secret=b"ENCRYPTED_SECRET"
+        mfa_secret="ENCRYPTED_SECRET"
     )
     db_session.add(user)
     await db_session.commit()
