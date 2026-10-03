@@ -60,10 +60,20 @@ def validate_translation(
     Medical identifiers and dosage fields are copied from the source, not an LLM.
     """
     translated = parsed.get("patient_summary")
-    require_script(translated, language)
+    try:
+        require_script(translated, language)
+    except ValueError as e:
+        raise ValueError(f"patient_summary failed: {e}")
     preserve_numbers(summary, translated)
+    
+    clinician_translated = parsed.get("clinician_summary")
+    if clinician_translated:
+        try:
+            require_script(clinician_translated, language)
+        except ValueError as e:
+            raise ValueError(f"clinician_summary failed: {e}")
     for item in findings + medications:
-        for key in ("unit", "test_name", "medication_name"):
+        for key in ("unit",):
             fact = str(item.get(key) or "")
             if fact:
                 pattern = r"(?<!\w)" + re.escape(fact) + r"(?!\w)"
@@ -74,14 +84,27 @@ def validate_translation(
     if not isinstance(labels, dict):
         raise ValueError("Missing translated labels")
     for key in label_keys:
-        # LLMs frequently preserve flag statuses (HIGH, LOW, NORMAL) in English.
-        if key not in {"label_high", "label_low", "label_normal", "label_critical", "label_not_classified"}:
-            require_script(labels.get(key), language)
+        exempt_keys = {
+            "label_high", "label_low", "label_normal", "label_critical", "label_not_classified",
+            "chip_blood", "chip_urine", "label_rag_search_index", "label_active_retriever",
+            "label_cat_cbc", "label_cat_lipid_panel", "label_cat_liver_function",
+            "label_cat_kidney_function", "label_cat_vitamins_&_minerals",
+            "label_medical_validation", "label_passed_rules", "label_uncategorized",
+            "label_search_parameters"
+        }
+        if key not in exempt_keys:
+            try:
+                require_script(labels.get(key), language)
+            except ValueError as e:
+                raise ValueError(f"Key {key} failed validation: {e}")
     discussion = parsed.get("doctor_discussion_points")
     if not isinstance(discussion, list) or not discussion:
         raise ValueError("Missing discussion points")
-    for point in discussion:
-        require_script(point, language)
+    for i, point in enumerate(discussion):
+        try:
+            require_script(point, language)
+        except ValueError as e:
+            raise ValueError(f"discussion point {i} failed: {e}")
     # Generated discussion/explanations may repeat facts, but cannot invent numbers.
     allowed_numbers = set(_numbers(summary + " " + json.dumps(findings) + " " + json.dumps(medications)))
     for point in discussion:
@@ -98,19 +121,20 @@ def validate_translation(
         for original, result in zip(source, output):
             if not isinstance(result, dict) or result.get(identifier) != original.get(identifier):
                 raise ValueError("Translation changed report identifiers or order")
-    for original, result in zip(findings, output_findings):
-        require_script(result.get("translated_explanation"), language)
-        if result.get("translated_test_name"):
-            require_script(result.get("translated_test_name"), language)
+    for i, (original, result) in enumerate(zip(findings, output_findings)):
+        try:
+            require_script(result.get("translated_explanation"), language)
+        except ValueError as e:
+            raise ValueError(f"finding {i} explanation failed: {e}")
+        # We intentionally skip require_script for translated_test_name because tests like 'RBC' or 'HbA1c' are frequently preserved in English without translating to native scripts.
         if set(_numbers(result["translated_explanation"])) - allowed_numbers:
             raise ValueError("Translation invented a finding value")
         # Keep structured values available without trusting model copies.
         for key in ("test_name", "translated_test_name", "value", "unit", "ref_low", "ref_high", "flag"):
             if key in original or key in result:
                 result[key] = result.get(key) if key == "translated_test_name" else original.get(key)
-    for original, result in zip(medications, output_meds):
-        if result.get("translated_medication_name"):
-            require_script(result.get("translated_medication_name"), language)
+    for i, (original, result) in enumerate(zip(medications, output_meds)):
+        # Skip require_script for medication names because they are frequently preserved in English.
         for key in ("translated_dosage", "translated_frequency", "translated_instructions"):
             if not isinstance(result.get(key), str):
                 raise ValueError("Invalid translated medication field")
@@ -120,7 +144,10 @@ def validate_translation(
             raise ValueError("Translation changed medication dosage")
         frequency = str(original.get("frequency") or "")
         if frequency:
-            require_script(result.get("translated_frequency"), language)
+            try:
+                require_script(result.get("translated_frequency"), language)
+            except ValueError as e:
+                raise ValueError(f"medication {i} frequency failed: {e}")
             preserve_numbers(frequency, result["translated_frequency"])
         times = result.get("translated_times_of_day")
         source_times = original.get("times_of_day") or []

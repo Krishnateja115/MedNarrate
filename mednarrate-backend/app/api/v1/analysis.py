@@ -95,6 +95,40 @@ REQUIRED_UI_LABEL_KEYS = [
     "label_retranslate",
     "label_disclaimer_patient",
     "label_disclaimer_summary",
+    "label_hospital",
+    "label_unspecified",
+    "label_date",
+    "label_validation",
+    "label_status_completed",
+    "label_status_processing",
+    "label_status_failed",
+    "label_status_uploaded",
+    "label_validation_passed",
+    "label_validation_failed",
+    "label_validation_pending",
+    "label_why_it_was_flagged",
+    "label_parameter",
+    "label_unit",
+    "label_reference_range",
+    "section_diagnoses",
+    "section_historical_comparison",
+    "section_source_validation",
+    "label_no_previous_report",
+    "label_source_document",
+    "label_report_date",
+    "label_rag_search_index",
+    "label_medical_validation",
+    "label_active_retriever",
+    "label_passed_rules",
+    "chip_blood",
+    "chip_urine",
+    "label_uncategorized",
+    "label_cat_cbc",
+    "label_cat_lipid_panel",
+    "label_cat_liver_function",
+    "label_cat_kidney_function",
+    "label_cat_vitamins_&_minerals",
+    "label_search_parameters",
 ]
 
 
@@ -302,6 +336,7 @@ async def translate_analysis(
         else:
             return TranslationOut(
                 language=lang, patient_summary=translation.patient_summary,
+                clinician_summary=getattr(translation, "clinician_summary", None),
                 findings_json=translation.findings_json,
                 medications_json=translation.medications_json,
                 doctor_discussion_points=translation.doctor_discussion_points,
@@ -310,13 +345,14 @@ async def translate_analysis(
             )
 
     unique_params = list(set([
-        str(m.get("parameter")) for m in (analysis.structured_lab_values or []) if m.get("parameter")
+        str(m.get("test_name")) for m in (analysis.structured_lab_values or []) if m.get("test_name")
     ] + [
         str(f.get("test_name")) for f in abnormal_findings_source if f.get("test_name")
     ]))
 
     prompt = TRANSLATION_PROMPT.format(
         target_language=target_lang_name,
+        clinical_summary=analysis.clinician_summary or "",
         patient_summary=analysis.patient_summary or "",
         abnormal_findings_json=json.dumps(abnormal_findings_source, ensure_ascii=False),
         medications_json=json.dumps(meds_list, ensure_ascii=False),
@@ -334,11 +370,12 @@ async def translate_analysis(
         )
     except (ValueError, TypeError, KeyError) as exc:
         # Do not log the model response or medical data.
-        logger.warning("Translation validation failed language=%s error_type=%s", lang, type(exc).__name__)
+        logger.warning("Translation validation failed language=%s error_type=%s error=%s", lang, type(exc).__name__, str(exc))
         raise TranslationServiceError(
             "The translation could not be verified. Please try again."
         ) from exc
     translated_summary = parsed["patient_summary"]
+    translated_clinical_summary = parsed.get("clinical_summary")
     translated_findings = parsed["abnormal_findings"]
     normalized_meds = parsed["medications"]
     translated_discussion = parsed["doctor_discussion_points"]
@@ -357,6 +394,7 @@ async def translate_analysis(
         language=lang,
         schema_version=TRANSLATION_SCHEMA_VERSION,
         patient_summary=translated_summary,
+        clinician_summary=translated_clinical_summary,
         findings_json=translated_findings,
         medications_json=normalized_meds,
         doctor_discussion_points=translated_discussion,
@@ -369,6 +407,7 @@ async def translate_analysis(
     return TranslationOut(
         language=lang,
         patient_summary=translation.patient_summary,
+        clinician_summary=translation.clinician_summary,
         findings_json=translation.findings_json,
         medications_json=getattr(translation, "medications_json", []) or [],
         doctor_discussion_points=getattr(translation, "doctor_discussion_points", []) or [],

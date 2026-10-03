@@ -112,7 +112,7 @@ TRANSLATION_PROMPT = """You are a professional medical translator. Translate the
 Maintain a medically accurate, calm, and patient-friendly tone.
 
 CRITICAL RULES:
-1. DO NOT translate or modify any numerical values, units, reference ranges, dates, dosages, or standard medical abbreviations (MCV, MCHC, WBC, RBC, Hb, etc). Preserve them exactly inside translated sentences.
+1. DO NOT translate or modify any numerical values, units, reference ranges, dates, or dosages. Preserve them exactly inside translated sentences. You MUST translate full medical test names (like Haemoglobin, Platelet Count) into {target_language}.
 2. DO NOT add, remove, or invent any medical information.
 3. Translation only — not reinterpretation.
 4. Output MUST be strictly valid JSON — no markdown fences, no extra text before or after the JSON object.
@@ -122,6 +122,9 @@ CRITICAL RULES:
 8. ALL patient-facing strings must be translated into {target_language}; do not leave any English text in translated fields (except the explicitly-preserved medical identifiers listed above).
 
 INPUT:
+Clinical Summary (translate fully):
+{clinical_summary}
+
 Patient Summary (translate fully):
 {patient_summary}
 
@@ -137,8 +140,7 @@ All unique English test/parameter names present in the report (provide translati
 Doctor Discussion Points Generation Rules (CRITICAL — produce exactly these bullet points, all fully translated into {target_language}):
 A) For EACH abnormal finding listed above (up to the first 3):
    Generate a SINGLE patient-facing sentence in {target_language} that naturally incorporates the translated test name, flag (HIGH/LOW/CRITICAL/NOT_CLASSIFIED/NORMAL), numeric value, and unit exactly as they appear.
-   The sentence must suggest talking to the healthcare provider about that result. Use the wording natural in {target_language}.
-   Preserve the exact flag label (HIGH, LOW, CRITICAL, NOT_CLASSIFIED, NORMAL) inside the translated sentence in UPPERCASE inside parentheses when natural.
+   The sentence must suggest talking to the healthcare provider about that result. Use the wording natural in {target_language}. Translate the flag label (High/Low/Critical) into {target_language}.
 B) If there are NO abnormal findings at all:
    Generate exactly 1 bullet in {target_language} that advises reviewing test parameters and baseline values with the doctor.
 C) If at least one medication exists:
@@ -147,6 +149,10 @@ D) If NO medications exist:
    Generate exactly 1 bullet in {target_language} that advises confirming whether any new medications or prescription changes are recommended.
 E) ALWAYS (regardless of the above):
    Generate exactly 1 bullet in {target_language} that advises asking about follow-up testing or baseline comparisons for future monitoring.
+
+F) ACRONYMS AND LITERALS:
+   You MUST translate medical acronyms (like CBC, Lipid Panel, etc.) into the {target_language} (e.g. CBC -> सीबीसी for Hindi). Do NOT leave them in English.
+   You MUST translate literal phrases like "Not provided in report" into the {target_language}.
 
 UI Labels (translate each of these exactly. Keys map 1:1; every key must appear):
 Report at a Glance | Important Results | Reported Medications | What to Discuss With Your Doctor
@@ -177,6 +183,7 @@ No key findings identified.
 
 OUTPUT (strictly valid JSON, absolutely no markdown, every listed key MUST be populated, translated into {target_language}):
 {{
+  "clinical_summary": "<fully translated clinical summary — NO English leftover sentences except preserved identifiers, leave blank if not provided in input>",
   "patient_summary": "<fully translated patient summary — NO English leftover sentences except preserved identifiers>",
   "abnormal_findings": [
     {{
@@ -247,7 +254,41 @@ OUTPUT (strictly valid JSON, absolutely no markdown, every listed key MUST be po
     "label_translate": "<translated 'Translate'>",
     "label_retranslate": "<translated 'Retranslate'>",
     "label_disclaimer_patient": "<translated full patient-view disclaimer>",
-    "label_disclaimer_summary": "<translated full summary-tab disclaimer>"
+    "label_disclaimer_summary": "<translated full summary-tab disclaimer>",
+    "label_hospital": "<translated 'Hospital'>",
+    "label_unspecified": "<translated 'Unspecified'>",
+    "label_date": "<translated 'Date'>",
+    "label_validation": "<translated 'Validation'>",
+    "label_status_completed": "<translated 'COMPLETED'>",
+    "label_status_processing": "<translated 'PROCESSING'>",
+    "label_status_failed": "<translated 'FAILED'>",
+    "label_status_uploaded": "<translated 'UPLOADED'>",
+    "label_validation_passed": "<translated 'PASSED'>",
+    "label_validation_failed": "<translated 'FAILED'>",
+    "label_validation_pending": "<translated 'PENDING'>",
+    "label_why_it_was_flagged": "<translated 'Why it was flagged:'>",
+    "label_parameter": "<translated 'Parameter'>",
+    "label_unit": "<translated 'Unit'>",
+    "label_reference_range": "<translated 'Reference Range'>",
+    "section_diagnoses": "<translated 'Diagnoses & Findings'>",
+    "section_historical_comparison": "<translated 'Historical Comparison'>",
+    "section_source_validation": "<translated 'Source & Validation'>",
+    "label_no_previous_report": "<translated 'No previous comparable report is available for baseline comparison.'>",
+    "label_source_document": "<translated 'Source Document'>",
+    "label_report_date": "<translated 'Report Date'>",
+    "label_rag_search_index": "<translated 'RAG Search Index'>",
+    "label_medical_validation": "<translated 'Medical Validation'>",
+    "label_active_retriever": "<translated 'Active (TF-IDF Lexical Retriever)'>",
+    "label_passed_rules": "<translated 'Passed (Grounding & Range Rules)'>",
+    "chip_blood": "<translated 'blood'>",
+    "chip_urine": "<translated 'urine'>",
+    "label_uncategorized": "<translated 'Uncategorized'>",
+    "label_cat_cbc": "<translated 'CBC'>",
+    "label_cat_lipid_panel": "<translated 'Lipid Panel'>",
+    "label_cat_liver_function": "<translated 'Liver Function'>",
+    "label_cat_kidney_function": "<translated 'Kidney Function'>",
+    "label_cat_vitamins_&_minerals": "<translated 'Vitamins & Minerals'>",
+    "label_search_parameters": "<translated 'Search parameters...'>"
   }},
   "translated_parameters": {{
     "<English parameter 1>": "<translated parameter 1>",

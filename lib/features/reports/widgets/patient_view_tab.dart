@@ -697,9 +697,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
     required String sourceLatestReport,
   }) {
     final theme = Theme.of(context);
-    final name = med['translated_medication_name']?.toString() ?? med['medication_name']?.toString() ?? 'Medication';
-    String dosage = med['dosage']?.toString() ?? 'Not specified';
-    String frequency = med['frequency']?.toString() ?? 'Not specified';
+    String name = med['medication_name']?.toString() ?? 'Medication';
+    String dosage = med['dosage']?.toString() ?? l?['label_unspecified'] ?? 'Not specified';
+    String frequency = med['frequency']?.toString() ?? l?['label_unspecified'] ?? 'Not specified';
     final l = translation?.uiLabels;
 
     List<String> times = List<String>.from(med['times_of_day'] ?? []);
@@ -712,6 +712,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
               m['medication_name']?.toString().toLowerCase() ==
               name.toLowerCase(),
         );
+        name = match['translated_medication_name']?.toString() ?? name;
         dosage = match['translated_dosage']?.toString() ?? dosage;
         frequency = match['translated_frequency']?.toString() ?? frequency;
         final tTimes = match['translated_times_of_day'];

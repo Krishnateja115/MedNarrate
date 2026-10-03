@@ -42,7 +42,8 @@ class ClinicalViewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final summary = Helpers.sanitizeDisplayText(
-      analysis?.clinicianSummary ??
+      translation?.clinicianSummary ??
+          analysis?.clinicianSummary ??
           report.clinicalSummary ??
           'No clinical executive summary available for this report.',
     );
@@ -51,11 +52,69 @@ class ClinicalViewTab extends StatelessWidget {
     final labs =
         rawLabs.where((l) => !Helpers.isMetadataParameter(l.testName)).toList();
     final meds = analysis?.medications ?? [];
+    
+    // Merge translated medications if available
+    final List<Map<String, dynamic>> displayMeds = meds.map((m) {
+      if (translation != null && translation.medicationsJson.isNotEmpty) {
+        final origName = m['medication_name']?.toString();
+        final tMed = translation.medicationsJson.firstWhere(
+          (t) => t['medication_name']?.toString() == origName,
+          orElse: () => <String, dynamic>{},
+        );
+        if (tMed.isNotEmpty) {
+          return {
+            ...m,
+            'medication_name': tMed['translated_medication_name'] ?? m['medication_name'],
+            'dosage': tMed['translated_dosage'] ?? m['dosage'],
+            'frequency': tMed['translated_frequency'] ?? m['frequency'],
+            'times_of_day': tMed['translated_times_of_day'] ?? m['times_of_day'],
+            'instructions': tMed['translated_instructions'] ?? m['instructions'],
+          };
+        }
+      }
+      return m;
+    }).toList();
+
     final rawAbnormal = analysis?.abnormalFindings ??
         labs
             .where((l) => l.flag != 'normal' && l.flag != 'not_classified')
             .toList();
-    final abnormalList = rawAbnormal.where((item) {
+
+    final abnormalList = rawAbnormal.map((item) {
+      if (translation != null && translation.findingsJson.isNotEmpty) {
+        String name = '';
+        if (item is LabValue) {
+          name = item.testName;
+        } else if (item is Map<String, dynamic>) {
+          name = item['test_name']?.toString() ?? item['parameter']?.toString() ?? item['original_name']?.toString() ?? '';
+        }
+        
+        final tFinding = translation.findingsJson.firstWhere(
+          (t) => t['test_name']?.toString() == name,
+          orElse: () => <String, dynamic>{},
+        );
+        
+        if (tFinding.isNotEmpty) {
+          if (item is LabValue) {
+            return {
+              'test_name': name,
+              'value': item.value,
+              'unit': item.unit,
+              'flag': item.flag,
+              'ref_low': item.refLow,
+              'ref_high': item.refHigh,
+              'explanation': tFinding['translated_explanation'],
+            };
+          } else if (item is Map<String, dynamic>) {
+            return {
+              ...item,
+              'explanation': tFinding['translated_explanation'] ?? item['explanation'],
+            };
+          }
+        }
+      }
+      return item;
+    }).where((item) {
       if (item is LabValue) return !Helpers.isMetadataParameter(item.testName);
       if (item is Map<String, dynamic>) {
         final name = item['test_name']?.toString() ??
@@ -85,9 +144,9 @@ class ClinicalViewTab extends StatelessWidget {
           const SizedBox(height: 20),
 
           // 2. Clinical Executive Summary
-          const Text(
-            'Clinical Executive Summary',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            _label('label_clinical_report_heading', fallback: 'Clinical Executive Summary'),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
           Container(
@@ -141,7 +200,7 @@ class ClinicalViewTab extends StatelessWidget {
 
           if (abnormalList.isEmpty)
             _buildInfoBox(context,
-                'No out-of-range clinical parameters flagged in this report.')
+                _label('label_no_key_findings', fallback: 'No out-of-range clinical parameters flagged in this report.'))
           else
             ...abnormalList.map((item) {
               if (item is LabValue) {
@@ -152,7 +211,8 @@ class ClinicalViewTab extends StatelessWidget {
                     item.flag,
                     item.refLow,
                     item.refHigh,
-                    null);
+                    null,
+                    translation);
               } else if (item is Map<String, dynamic>) {
                 return ClinicalViewTab.buildAbnormalFindingRow(
                   context,
@@ -164,6 +224,7 @@ class ClinicalViewTab extends StatelessWidget {
                   (item['ref_low'] as num?)?.toDouble(),
                   (item['ref_high'] as num?)?.toDouble(),
                   item['explanation']?.toString(),
+                  translation,
                 );
               }
               return const SizedBox.shrink();
@@ -172,39 +233,39 @@ class ClinicalViewTab extends StatelessWidget {
           const SizedBox(height: 24),
 
           // 4. Laboratory Results Table
-          const Text(
-            'Laboratory Results',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            _label('chip_lab_results', fallback: 'Laboratory Results'),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
 
           if (labs.isEmpty)
             _buildInfoBox(
-                context, 'No laboratory results found in structured analysis.')
+                context, _label('label_no_lab_results', fallback: 'No laboratory results found in structured analysis.'))
           else
-            ClinicalViewTab.buildLabTable(context, labs),
+            ClinicalViewTab.buildLabTable(context, labs, translation),
 
           const SizedBox(height: 24),
 
           // 5. Medications Table
-          const Text(
-            'Reported Medications',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            _label('section_reported_medications', fallback: 'Reported Medications'),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
 
-          if (meds.isEmpty)
-            _buildInfoBox(context, 'No medications recorded in report data.')
+          if (displayMeds.isEmpty)
+            _buildInfoBox(context, _label('label_no_medications', fallback: 'No medications recorded in report data.'))
           else
-            ClinicalViewTab.buildMedicationsTable(context, meds),
+            ClinicalViewTab.buildMedicationsTable(context, displayMeds, translation),
 
           const SizedBox(height: 24),
 
           // 6. Diagnoses & Extracted Findings
           if (diagnoses.isNotEmpty) ...[
-            const Text(
-              'Diagnoses & Findings',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              _label('section_diagnoses', fallback: 'Diagnoses & Findings'),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Container(
@@ -242,19 +303,19 @@ class ClinicalViewTab extends StatelessWidget {
           ],
 
           // 7. Historical Comparison
-          const Text(
-            'Historical Comparison',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            _label('section_historical_comparison', fallback: 'Historical Comparison'),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          ClinicalViewTab.buildHistoricalComparison(context, comparison),
+          ClinicalViewTab.buildHistoricalComparison(context, comparison, translation),
 
           const SizedBox(height: 24),
 
           // 8. Source & Validation Metadata
-          const Text(
-            'Source & Validation',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            _label('section_source_validation', fallback: 'Source & Validation'),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           ClinicalViewTab.buildValidationMetadataCard(
@@ -314,7 +375,7 @@ class ClinicalViewTab extends StatelessWidget {
                           fontSize: 17, fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      'Hospital: ${report.hospital.isNotEmpty ? report.hospital : "Unspecified"} • Date: ${Formatters.formatDate(report.reportDate, translation?.language ?? 'en')}',
+                      '${_label('label_hospital', fallback: 'Hospital')}: ${report.hospital.isNotEmpty ? report.hospital : _label('label_unspecified', fallback: "Unspecified")} • ${_label('label_date', fallback: 'Date')}: ${Formatters.formatDate(report.reportDate, translation?.language ?? 'en')}',
                       style: TextStyle(
                           fontSize: 12.5,
                           color: theme.colorScheme.onSurface
@@ -331,7 +392,7 @@ class ClinicalViewTab extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'Status: ${report.processingStatus.toUpperCase()}',
+                            '${_label('label_status', fallback: 'Status')}: ${_label('label_status_${report.processingStatus}', fallback: report.processingStatus.toUpperCase())}',
                             style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -376,27 +437,28 @@ class ClinicalViewTab extends StatelessWidget {
       String flag,
       double? refLow,
       double? refHigh,
-      String? explanation) {
+      String? explanation,
+      TranslationModel? translation) {
     final theme = Theme.of(context);
     final flagLower = flag.toLowerCase();
 
     Color color = Colors.orange;
-    String statusTitle = 'Not classified';
+    String statusTitle = translation?.uiLabels['label_not_classified'] ?? 'Not classified';
     if (flagLower == 'high') {
       color = Colors.redAccent;
-      statusTitle = 'High';
+      statusTitle = translation?.uiLabels['label_high'] ?? 'High';
     } else if (flagLower == 'low') {
       color = Colors.orange;
-      statusTitle = 'Low';
+      statusTitle = translation?.uiLabels['label_low'] ?? 'Low';
     } else if (flagLower == 'critical') {
       color = AppColors.warning;
-      statusTitle = 'Critical';
+      statusTitle = translation?.uiLabels['label_critical'] ?? 'Critical';
     } else if (flagLower == 'normal') {
       color = const Color(0xFF00C48C);
-      statusTitle = 'Normal';
+      statusTitle = translation?.uiLabels['label_normal'] ?? 'Normal';
     }
 
-    String refText = 'Not provided in report';
+    String refText = translation?.uiLabels['label_not_provided'] ?? 'Not provided in report';
     if (refLow != null && refHigh != null) {
       refText = '$refLow – $refHigh';
     } else if (refLow != null) {
@@ -407,7 +469,7 @@ class ClinicalViewTab extends StatelessWidget {
 
     final reason = (explanation != null && explanation.isNotEmpty)
         ? explanation
-        : 'Result measured outside expected laboratory bounds.';
+        : (translation?.uiLabels['label_key_finding_expansion_patient'] ?? 'Result measured outside expected laboratory bounds.');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -424,7 +486,7 @@ class ClinicalViewTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(testName,
+                child: Text(translation?.uiLabels['param_$testName'] ?? testName,
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16)),
               ),
@@ -443,16 +505,16 @@ class ClinicalViewTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text('Result: $result',
+          Text('${translation?.uiLabels['label_result'] ?? 'Result'}: $result',
               style:
                   const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Text('Reported range: $refText',
+          Text('${translation?.uiLabels['label_reported_range'] ?? 'Reported range'}: $refText',
               style: TextStyle(
                   fontSize: 13,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.8))),
           const SizedBox(height: 2),
-          Text('Status: $statusTitle',
+          Text('${translation?.uiLabels['label_status'] ?? 'Status'}: $statusTitle',
               style: TextStyle(
                   fontSize: 12, fontWeight: FontWeight.bold, color: color)),
           const SizedBox(height: 8),
@@ -465,7 +527,7 @@ class ClinicalViewTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Why it was flagged:',
+                Text(translation?.uiLabels['label_why_it_was_flagged'] ?? 'Why it was flagged:',
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -481,7 +543,7 @@ class ClinicalViewTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text('Source: Uploaded report',
+          Text('${translation?.uiLabels['label_source_latest_report'] ?? 'Source: Uploaded report'}',
               style: TextStyle(
                   fontSize: 10,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
@@ -490,7 +552,7 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  static Widget buildLabTable(BuildContext context, List<LabValue> labs) {
+  static Widget buildLabTable(BuildContext context, List<LabValue> labs, TranslationModel? translation) {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
@@ -505,36 +567,50 @@ class ClinicalViewTab extends StatelessWidget {
           child: DataTable(
             headingRowColor: WidgetStateProperty.all(
                 theme.colorScheme.onSurface.withValues(alpha: 0.04)),
-            columns: const [
+            columns: [
               DataColumn(
-                  label: Text('Parameter',
-                      style: TextStyle(fontWeight: FontWeight.bold))),
+                  label: Text(translation?.uiLabels['label_parameter'] ?? 'Parameter',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(
-                  label: Text('Result',
-                      style: TextStyle(fontWeight: FontWeight.bold))),
+                  label: Text(translation?.uiLabels['label_result'] ?? 'Result',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(
-                  label: Text('Unit',
-                      style: TextStyle(fontWeight: FontWeight.bold))),
+                  label: Text(translation?.uiLabels['label_unit'] ?? 'Unit',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(
-                  label: Text('Reference Range',
-                      style: TextStyle(fontWeight: FontWeight.bold))),
+                  label: Text(translation?.uiLabels['label_reference_range'] ?? 'Reference Range',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(
-                  label: Text('Status',
-                      style: TextStyle(fontWeight: FontWeight.bold))),
+                  label: Text(translation?.uiLabels['label_status'] ?? 'Status',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
             ],
             rows: labs.map((l) {
-              String ref = 'Not provided';
+              String ref = translation?.uiLabels['label_not_provided'] ?? 'Not provided';
               if (l.refLow != null && l.refHigh != null) {
                 ref = '${l.refLow} – ${l.refHigh}';
               }
-              final flagStr = l.flag.toUpperCase();
-              Color c = Colors.grey;
-              if (flagStr == 'HIGH') c = Colors.redAccent;
-              if (flagStr == 'LOW') c = Colors.orange;
-              if (flagStr == 'NORMAL') c = const Color(0xFF00C48C);
+              String flagStr = translation?.uiLabels['label_not_classified']?.toUpperCase() ?? "NOT_CLASSIFIED";
+              Color c = theme.colorScheme.onSurface;
+              final String originalFlag = l.flag.toUpperCase();
+              if (originalFlag == 'HIGH') {
+                c = Colors.redAccent;
+                flagStr = translation?.uiLabels['label_high']?.toUpperCase() ?? "HIGH";
+              }
+              if (originalFlag == 'LOW') {
+                c = Colors.orange;
+                flagStr = translation?.uiLabels['label_low']?.toUpperCase() ?? "LOW";
+              }
+              if (originalFlag == 'NORMAL') {
+                c = const Color(0xFF00C48C);
+                flagStr = translation?.uiLabels['label_normal']?.toUpperCase() ?? "NORMAL";
+              }
+              if (originalFlag == 'CRITICAL') {
+                c = Colors.red.shade900;
+                flagStr = translation?.uiLabels['label_critical']?.toUpperCase() ?? "CRITICAL";
+              }
 
               return DataRow(cells: [
-                DataCell(Text(l.testName,
+                DataCell(Text(translation?.uiLabels['param_${l.testName}'] ?? l.testName,
                     style: const TextStyle(fontWeight: FontWeight.w600))),
                 DataCell(Text('${l.value}')),
                 DataCell(Text(l.unit)),
@@ -551,7 +627,7 @@ class ClinicalViewTab extends StatelessWidget {
   }
 
   static Widget buildMedicationsTable(
-      BuildContext context, List<Map<String, dynamic>> meds) {
+      BuildContext context, List<Map<String, dynamic>> meds, TranslationModel? translation) {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
@@ -566,31 +642,31 @@ class ClinicalViewTab extends StatelessWidget {
           child: DataTable(
             headingRowColor: WidgetStateProperty.all(
                 theme.colorScheme.onSurface.withValues(alpha: 0.04)),
-            columns: const [
+            columns: [
               DataColumn(
-                  label: Text('Medication',
-                      style: TextStyle(fontWeight: FontWeight.bold))),
+                  label: Text(translation?.uiLabels['chip_medications'] ?? 'Medication',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(
-                  label: Text('Dosage',
-                      style: TextStyle(fontWeight: FontWeight.bold))),
+                  label: Text(translation?.uiLabels['label_dose'] ?? 'Dosage',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(
-                  label: Text('Frequency',
-                      style: TextStyle(fontWeight: FontWeight.bold))),
+                  label: Text(translation?.uiLabels['label_frequency'] ?? 'Frequency',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(
-                  label: Text('Timing',
-                      style: TextStyle(fontWeight: FontWeight.bold))),
+                  label: Text(translation?.uiLabels['label_timing'] ?? 'Timing',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
               DataColumn(
-                  label: Text('Provenance',
-                      style: TextStyle(fontWeight: FontWeight.bold))),
+                  label: Text(translation?.uiLabels['label_source_document'] ?? 'Provenance',
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
             ],
             rows: meds.map((m) {
               final name = m['medication_name']?.toString() ?? 'Medication';
-              final dose = m['dosage']?.toString() ?? 'Not specified';
-              final freq = m['frequency']?.toString() ?? 'Not specified';
+              final dose = m['dosage']?.toString() ?? translation?.uiLabels['label_unspecified'] ?? 'Not specified';
+              final freq = m['frequency']?.toString() ?? translation?.uiLabels['label_unspecified'] ?? 'Not specified';
               final times = List<String>.from(m['times_of_day'] ?? []);
               final timing =
-                  times.isNotEmpty ? times.join(', ') : 'Not specified';
-              final prov = m['provenance']?.toString() ?? 'Report Extracted';
+                  times.isNotEmpty ? times.join(', ') : translation?.uiLabels['label_unspecified'] ?? 'Not specified';
+              final prov = m['provenance']?.toString() ?? translation?.uiLabels['label_report_extracted'] ?? 'Report Extracted';
 
               return DataRow(cells: [
                 DataCell(Text(name,
@@ -609,7 +685,7 @@ class ClinicalViewTab extends StatelessWidget {
   }
 
   static Widget buildHistoricalComparison(
-      BuildContext context, ComparePreviousResult? comp) {
+      BuildContext context, ComparePreviousResult? comp, TranslationModel? translation) {
     final theme = Theme.of(context);
     if (comp == null || !comp.comparable) {
       return Container(
@@ -622,8 +698,9 @@ class ClinicalViewTab extends StatelessWidget {
               Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         child: Text(
-          comp?.reason ??
-              'No previous comparable report is available for baseline comparison.',
+          (comp?.reason == 'no_previous_report' || comp?.reason == null)
+              ? (translation?.uiLabels['label_no_previous_report'] ?? 'No previous comparable report is available for baseline comparison.')
+              : (translation?.uiLabels['label_${comp?.reason}'] ?? comp?.reason ?? ''),
           style: TextStyle(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 14),
@@ -651,7 +728,7 @@ class ClinicalViewTab extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(f['parameter']?.toString() ?? 'Test',
+                    Text(translation?.uiLabels['param_${f['parameter']}'] ?? f['parameter']?.toString() ?? (translation?.uiLabels['label_parameter'] ?? 'Test'),
                         style: const TextStyle(fontWeight: FontWeight.w600)),
                     Text(
                         '${f['previous_value']} ➔ ${f['current_value']} ${f['unit']} (${f['change']})',
@@ -677,15 +754,16 @@ class ClinicalViewTab extends StatelessWidget {
       child: Column(
         children: [
           ClinicalViewTab.buildMetaRow(
-              context, 'Source Document', report.fileName),
+              context, translation?.uiLabels['label_source_document'] ?? 'Source Document', report.fileName),
           ClinicalViewTab.buildMetaRow(
-              context, 'Report Date', Formatters.formatDate(report.reportDate, translation?.language ?? 'en')),
+              context, translation?.uiLabels['label_report_date'] ?? 'Report Date', Formatters.formatDate(report.reportDate, translation?.language ?? 'en')),
           ClinicalViewTab.buildMetaRow(
-              context, 'Report Type', report.reportType),
+              context, translation?.uiLabels['chip_report_type'] ?? 'Report Type', translation?.uiLabels['chip_${report.reportType}'] ?? report.reportType),
           ClinicalViewTab.buildMetaRow(
-              context, 'RAG Search Index', 'Active (TF-IDF Lexical Retriever)'),
-          ClinicalViewTab.buildMetaRow(context, 'Medical Validation',
-              'Passed (Grounding & Range Rules)'),
+              context, translation?.uiLabels['label_rag_search_index'] ?? 'RAG Search Index', translation?.uiLabels['label_active_retriever'] ?? 'Active (TF-IDF Lexical Retriever)'),
+          ClinicalViewTab.buildMetaRow(
+              context, translation?.uiLabels['label_medical_validation'] ?? 'Medical Validation',
+              translation?.uiLabels['label_passed_rules'] ?? 'Passed (Grounding & Range Rules)'),
         ],
       ),
     );

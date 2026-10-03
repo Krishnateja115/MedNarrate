@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 
-TRANSLATION_SCHEMA_VERSION: int = 3
+TRANSLATION_SCHEMA_VERSION: int = 5
 
 
 class AnalysisTranslation(Base):
@@ -24,6 +24,7 @@ class AnalysisTranslation(Base):
     language: Mapped[str] = mapped_column(String, nullable=False)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     patient_summary: Mapped[str] = mapped_column(Text, nullable=False)
+    clinician_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     findings_json: Mapped[list] = mapped_column(JSONB, default=list)
     medications_json: Mapped[list] = mapped_column(JSONB, default=list)
     doctor_discussion_points: Mapped[list] = mapped_column(JSONB, default=list)

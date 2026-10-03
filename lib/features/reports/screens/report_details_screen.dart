@@ -342,11 +342,11 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                   indicatorColor: theme.colorScheme.primary,
                   indicatorWeight: 3,
                   isScrollable: true,
-                  tabs: const [
-                    Tab(text: "For You"),
-                    Tab(text: "Clinical View"),
-                    Tab(text: "Lab Results"),
-                    Tab(text: "AI Chat"),
+                  tabs: [
+                    Tab(text: AppLocalizations.of(context)?.forYou ?? "For You"),
+                    Tab(text: AppLocalizations.of(context)?.clinicalView ?? "Clinical View"),
+                    Tab(text: AppLocalizations.of(context)?.labResults ?? "Lab Results"),
+                    Tab(text: AppLocalizations.of(context)?.aiChat ?? "AI Chat"),
                   ],
                 ),
         ),

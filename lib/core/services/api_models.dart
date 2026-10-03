@@ -415,6 +415,7 @@ class ReportAnalysisModel {
 class TranslationModel {
   final String language;
   final String patientSummary;
+  final String? clinicianSummary;
   final List<Map<String, dynamic>> findingsJson;
   final List<Map<String, dynamic>> medicationsJson;
   final List<String> doctorDiscussionPoints;
@@ -424,6 +425,7 @@ class TranslationModel {
   const TranslationModel({
     required this.language,
     required this.patientSummary,
+    this.clinicianSummary,
     required this.findingsJson,
     this.medicationsJson = const [],
     this.doctorDiscussionPoints = const [],
@@ -443,6 +445,7 @@ class TranslationModel {
     return TranslationModel(
       language: map['language'] as String,
       patientSummary: map['patient_summary'] as String? ?? '',
+      clinicianSummary: map['clinician_summary'] as String?,
       findingsJson: List<Map<String, dynamic>>.from(map['findings_json'] ?? []),
       medicationsJson: List<Map<String, dynamic>>.from(map['medications_json'] ?? []),
       doctorDiscussionPoints: discussion,
