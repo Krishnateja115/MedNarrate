@@ -47,21 +47,29 @@ class StorageService {
 
   Future<void> saveTokens(String access, String refresh) async {
     if (kIsWeb) {
-      throw UnsupportedError(
-          'Secure token persistence is not supported on Flutter Web in this release. Use HttpOnly cookies instead.');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyAccess, access);
+      await prefs.setString(_keyRefresh, refresh);
+      return;
     }
     await _secureStorage.write(key: _keyAccess, value: access);
     await _secureStorage.write(key: _keyRefresh, value: refresh);
   }
 
   Future<String?> getAccessToken() async {
-    if (kIsWeb) return null;
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keyAccess);
+    }
     await _migrateTokensIfNeeded();
     return _secureStorage.read(key: _keyAccess);
   }
 
   Future<String?> getRefreshToken() async {
-    if (kIsWeb) return null;
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keyRefresh);
+    }
     await _migrateTokensIfNeeded();
     return _secureStorage.read(key: _keyRefresh);
   }
