@@ -698,9 +698,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
   }) {
     final theme = Theme.of(context);
     String name = med['medication_name']?.toString() ?? 'Medication';
+    final l = translation?.uiLabels;
     String dosage = med['dosage']?.toString() ?? l?['label_unspecified'] ?? 'Not specified';
     String frequency = med['frequency']?.toString() ?? l?['label_unspecified'] ?? 'Not specified';
-    final l = translation?.uiLabels;
 
     List<String> times = List<String>.from(med['times_of_day'] ?? []);
     String instructions = med['instructions']?.toString() ?? '';

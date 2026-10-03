@@ -55,9 +55,9 @@ class ClinicalViewTab extends StatelessWidget {
     
     // Merge translated medications if available
     final List<Map<String, dynamic>> displayMeds = meds.map((m) {
-      if (translation != null && translation.medicationsJson.isNotEmpty) {
+      if (translation != null && translation!.medicationsJson.isNotEmpty) {
         final origName = m['medication_name']?.toString();
-        final tMed = translation.medicationsJson.firstWhere(
+        final tMed = translation!.medicationsJson.firstWhere(
           (t) => t['medication_name']?.toString() == origName,
           orElse: () => <String, dynamic>{},
         );
@@ -81,7 +81,7 @@ class ClinicalViewTab extends StatelessWidget {
             .toList();
 
     final abnormalList = rawAbnormal.map((item) {
-      if (translation != null && translation.findingsJson.isNotEmpty) {
+      if (translation != null && translation!.findingsJson.isNotEmpty) {
         String name = '';
         if (item is LabValue) {
           name = item.testName;
@@ -89,7 +89,7 @@ class ClinicalViewTab extends StatelessWidget {
           name = item['test_name']?.toString() ?? item['parameter']?.toString() ?? item['original_name']?.toString() ?? '';
         }
         
-        final tFinding = translation.findingsJson.firstWhere(
+        final tFinding = translation!.findingsJson.firstWhere(
           (t) => t['test_name']?.toString() == name,
           orElse: () => <String, dynamic>{},
         );
