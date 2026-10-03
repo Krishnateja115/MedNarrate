@@ -78,9 +78,14 @@ async def test_language(lang, lang_name):
 
     prompt = TRANSLATION_PROMPT.format(
         target_language=lang_name,
-        patient_summary=PATIENT_SUMMARY,
-        abnormal_findings_json=json.dumps(ABNORMAL_FINDINGS, ensure_ascii=False),
-        medications_json=json.dumps(MEDICATIONS, ensure_ascii=False),
+        patient_summary="The patient has elevated blood pressure.",
+        clinical_summary="Patient presents with hypertension. BP 150/95.",
+        clinician_summary="Patient presents with hypertension. BP 150/95.",
+        summary_metrics="BP: 150/95",
+        abnormal_findings_json="[]",
+        medications_json="[]",
+        unique_parameters_json="[]",
+        labels_json="{}"
     )
     
     print(f"\n=== Testing {lang_name} ({lang}) ===")

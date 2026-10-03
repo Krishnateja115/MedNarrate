@@ -1,29 +1,11 @@
-import asyncio
-import logging
-import os
-
-logging.basicConfig(level=logging.DEBUG)
-logging.getLogger("httpx").setLevel(logging.DEBUG)
-logging.getLogger("httpcore").setLevel(logging.DEBUG)
-
-os.environ["DATABASE_URL"] = "postgresql+asyncpg://fake:fake@localhost:5432/fake"
-os.environ["JWT_SECRET"] = "test-secret-for-boot-check"
-os.environ["CORS_ORIGINS"] = '["https://app.mednarrate.com"]'
-os.environ["PRIMARY_LLM_PROVIDER"] = "gemini"
-os.environ["GEMINI_MODEL"] = "gemini-3.8-flash"
-os.environ["GEMINI_API_KEY"] = "dummy"
-os.environ["ENVIRONMENT"] = "development"
-
-from app.services.llm_client import DevGeminiProvider
-
-async def test_llm():
-    provider = DevGeminiProvider()
-    print("Testing generate with model:", provider.model_name)
-    try:
-        res = await provider.generate("Say hello world in 2 words")
-        print("Generate response:", res)
-    except Exception as e:
-        print("Error during generate:", e)
-
-if __name__ == "__main__":
-    asyncio.run(test_llm())
+import json
+import urllib.request
+req = urllib.request.Request(
+    'http://127.0.0.1:8000/api/v1/reports/4b5da880-0a1a-44ad-b9c2-cb1f1d768dc1/analysis/translate',
+    data=json.dumps({"target_language":"hi"}).encode('utf-8'),
+    headers={'Content-Type': 'application/json'}
+)
+resp = urllib.request.urlopen(req)
+data = json.loads(resp.read().decode('utf-8'))
+print("label_not_provided:", data.get('ui_labels', {}).get('label_not_provided'))
+print("label_cat_cbc:", data.get('ui_labels', {}).get('label_cat_cbc'))

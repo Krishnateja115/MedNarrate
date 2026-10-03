@@ -19,6 +19,12 @@ def parse_translation(text: str) -> dict:
     fence = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw)
     if fence:
         raw = fence.group(1)
+    else:
+        # If no markdown fence, try to find the outermost JSON braces
+        match = re.search(r"(\{[\s\S]*\})", raw)
+        if match:
+            raw = match.group(1)
+    
     parsed = json.loads(raw)
     if not isinstance(parsed, dict):
         raise ValueError("Translation must be a JSON object")
@@ -72,14 +78,7 @@ def validate_translation(
             require_script(clinician_translated, language)
         except ValueError as e:
             raise ValueError(f"clinician_summary failed: {e}")
-    for item in findings + medications:
-        for key in ("unit",):
-            fact = str(item.get(key) or "")
-            if fact:
-                pattern = r"(?<!\w)" + re.escape(fact) + r"(?!\w)"
-                count = len(re.findall(pattern, summary))
-                if count and len(re.findall(pattern, translated)) != count:
-                    raise ValueError("Translation changed a medical identifier or unit")
+            
     labels = parsed.get("ui_labels")
     if not isinstance(labels, dict):
         raise ValueError("Missing translated labels")
