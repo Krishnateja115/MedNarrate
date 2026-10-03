@@ -9,7 +9,6 @@ import '../services/api_models.dart';
 import '../utils/helpers.dart';
 
 import 'pdf_downloader/pdf_downloader.dart';
-import 'translated_report_pdf.dart';
 
 /// ExportService — generates a professional, structured PDF from a ReportAnalysisModel.
 /// Export PDF  → direct download, NO print dialog.
@@ -245,14 +244,15 @@ class ExportService {
     );
   }
 
-  // ─── Abnormal finding card ────────────────────────────────────────────────
   pw.Widget _findingCard(
     Map<String, dynamic> f,
     pw.TextStyle base,
     pw.TextStyle bold,
-    pw.Font fontBold,
-  ) {
-    final name = _s(f['test_name']?.toString() ?? f['parameter']?.toString() ?? 'Finding');
+    pw.Font fontBold, {
+    String Function(String)? getTranslatedName,
+  }) {
+    final rawName = f['test_name']?.toString() ?? f['parameter']?.toString() ?? 'Finding';
+    final name = _s(getTranslatedName != null ? getTranslatedName(rawName) : rawName);
     final val  = f['value']?.toString() ?? '';
     final unit = _s(f['unit']?.toString() ?? '');
     final flag = f['flag']?.toString() ?? 'normal';
@@ -307,9 +307,9 @@ class ExportService {
   }
 
   // ─── Lab table row data ───────────────────────────────────────────────────
-  List<List<String>> _labTableData(List<LabValue> labResults) {
+  List<List<String>> _labTableData(List<LabValue> labResults, {String Function(String)? getTranslatedName}) {
     return labResults.map((lv) {
-      final name  = _s(lv.testName);
+      final name  = _s(getTranslatedName != null ? getTranslatedName(lv.testName) : lv.testName);
       final val   = lv.value % 1 == 0
           ? lv.value.toInt().toString()
           : lv.value.toStringAsFixed(2);
@@ -395,15 +395,49 @@ class ExportService {
     required String reportTitle,
     required String reportDate,
     String reportType = '',
+    TranslationModel? translation,
   }) async {
     final doc      = pw.Document();
-    final font     = pw.Font.helvetica();
-    final fontBold = pw.Font.helveticaBold();
+    pw.Font font     = pw.Font.helvetica();
+    pw.Font fontBold = pw.Font.helveticaBold();
+    List<pw.Font> fallbacks = [];
+
+    if (translation != null && translation.language != 'en') {
+      font = await PdfGoogleFonts.notoSansRegular();
+      fontBold = await PdfGoogleFonts.notoSansBold();
+      
+      switch (translation.language) {
+        case 'hi':
+        case 'mr':
+          fallbacks.add(await PdfGoogleFonts.notoSansDevanagariRegular());
+          break;
+        case 'te':
+          fallbacks.add(await PdfGoogleFonts.notoSansTeluguRegular());
+          break;
+        case 'ta':
+          fallbacks.add(await PdfGoogleFonts.notoSansTamilRegular());
+          break;
+        case 'kn':
+          fallbacks.add(await PdfGoogleFonts.notoSansKannadaRegular());
+          break;
+        case 'ml':
+          fallbacks.add(await PdfGoogleFonts.notoSansMalayalamRegular());
+          break;
+        case 'bn':
+          fallbacks.add(await PdfGoogleFonts.notoSansBengaliRegular());
+          break;
+      }
+    }
+
+    String l(String key, String fallback) {
+      if (translation == null) return fallback;
+      return translation.uiLabels[key] ?? fallback;
+    }
 
     // Typography scale
-    final base  = pw.TextStyle(font: font,     fontSize: 9.5,  color: _textDark, lineSpacing: 1.5);
-    final bold  = pw.TextStyle(font: fontBold, fontSize: 9.5,  color: _textDark, lineSpacing: 1.5);
-    final muted = pw.TextStyle(font: font,     fontSize: 8.5,  color: _textMuted, lineSpacing: 1.4);
+    final base  = pw.TextStyle(font: font, fontFallback: fallbacks, fontSize: 9.5,  color: _textDark, lineSpacing: 1.5);
+    final bold  = pw.TextStyle(font: fontBold, fontFallback: fallbacks, fontSize: 9.5,  color: _textDark, lineSpacing: 1.5);
+    final muted = pw.TextStyle(font: font, fontFallback: fallbacks, fontSize: 8.5,  color: _textMuted, lineSpacing: 1.4);
 
     final cleanTitle = _s(reportTitle);
     final cleanDate  = _s(reportDate);
@@ -442,7 +476,36 @@ class ExportService {
         .toList();
 
     // Doctor discussion points
-    final discussPoints = _discussionPoints(abnormalFindings, analysis.medications);
+    final discussPoints = (translation != null && translation.doctorDiscussionPoints.isNotEmpty)
+        ? translation.doctorDiscussionPoints
+        : _discussionPoints(abnormalFindings, analysis.medications);
+
+    // Medications
+    final medsList = (translation != null && translation.medicationsJson.isNotEmpty)
+        ? translation.medicationsJson
+        : analysis.medications;
+
+    final patientSummaryStr = (translation != null && translation.patientSummary.trim().isNotEmpty)
+        ? translation.patientSummary
+        : analysis.patientSummary;
+
+    // Translated Findings Mapping
+    Map<String, String> translatedFindingNames = {};
+    if (translation != null) {
+      for (var f in translation.findingsJson) {
+        final originalName = f['original_test_name']?.toString().toLowerCase() ?? f['test_name']?.toString().toLowerCase() ?? '';
+        final translatedName = f['translated_test_name']?.toString() ?? f['test_name']?.toString() ?? '';
+        if (originalName.isNotEmpty && translatedName.isNotEmpty) {
+          translatedFindingNames[originalName] = translatedName;
+        }
+      }
+    }
+
+    String getTranslatedName(String original) {
+      if (translation == null) return original;
+      final key = original.toLowerCase();
+      return translatedFindingNames[key] ?? original;
+    }
 
     // Curated medical terms
     final medTerms = _curatedTerms(analysis.entities);
@@ -456,8 +519,8 @@ class ExportService {
               children: [
                 pw.Text('MedNarrate',
                     style: pw.TextStyle(
-                        font: fontBold, fontSize: 15, color: _primary)),
-                pw.Text('Medical Report Summary',
+                        font: fontBold, fontFallback: fallbacks, fontSize: 15, color: _primary)),
+                pw.Text(l('label_patient_report_heading', 'Medical Report Summary'),
                     style: muted),
               ],
             ),
@@ -468,14 +531,14 @@ class ExportService {
                 pw.Expanded(
                   child: pw.Text(cleanTitle,
                       style: pw.TextStyle(
-                          font: fontBold, fontSize: 11, color: _textDark)),
+                          font: fontBold, fontFallback: fallbacks, fontSize: 11, color: _textDark)),
                 ),
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
-                    pw.Text('Date: $cleanDate', style: muted),
+                    pw.Text('${l('label_date', 'Date')}: $cleanDate', style: muted),
                     if (cleanType.isNotEmpty)
-                      pw.Text('Type: $cleanType', style: muted),
+                      pw.Text('${l('label_type', 'Type')}: $cleanType', style: muted),
                   ],
                 ),
               ],
@@ -495,10 +558,10 @@ class ExportService {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('MedNarrate — For informational purposes only',
+                pw.Text(l('label_disclaimer_patient', 'MedNarrate — For informational purposes only'),
                     style: muted.copyWith(fontSize: 7.5)),
                 pw.Text(
-                    'Page ${ctx.pageNumber} of ${ctx.pagesCount}',
+                    '${l('label_page', 'Page')} ${ctx.pageNumber} / ${ctx.pagesCount}',
                     style: muted.copyWith(fontSize: 7.5)),
               ],
             ),
@@ -515,15 +578,15 @@ class ExportService {
 
           // ── SECTION 1: Patient / Report Metadata ──────────────────────
           if (metadataItems.isNotEmpty) ...[
-            _sectionHeader('Patient & Report Information', fontBold),
+            _sectionHeader(l('label_patient_report_heading', 'Patient & Report Information'), fontBold),
             pw.TableHelper.fromTextArray(
-              headers: ['Field', 'Value'],
+              headers: [l('label_parameter', 'Field'), l('label_result', 'Value')],
               data: metadataItems.map((m) => [
                 _s(m.testName),
                 _s('${m.value == 0 ? '' : m.value} ${m.unit}'.trim()),
               ]).toList(),
               headerStyle:
-                  pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.white),
+                  pw.TextStyle(font: fontBold, fontFallback: fallbacks, fontSize: 8.5, color: PdfColors.white),
               cellStyle: base,
               headerDecoration:
                   const pw.BoxDecoration(color: _headerBg),
@@ -536,13 +599,13 @@ class ExportService {
           ],
 
           // ── SECTION 2: Plain Language Summary ─────────────────────────
-          if ((analysis.patientSummary ?? '').trim().isNotEmpty) ...[
-            _sectionHeader('Plain Language Summary', fontBold),
-            ..._mdWidgets(analysis.patientSummary!, base, bold, fontBold),
+          if ((patientSummaryStr ?? '').trim().isNotEmpty) ...[
+            _sectionHeader(l('section_plain_language_summary', 'Plain Language Summary'), fontBold),
+            ..._mdWidgets(patientSummaryStr!, base, bold, fontBold),
           ],
 
           // ── SECTION 3: Key Findings (Abnormal) ────────────────────────
-          _sectionHeader('Key Findings', fontBold),
+          _sectionHeader(l('section_important_findings', 'Key Findings'), fontBold),
           if (abnormalLabRows.isEmpty && abnormalFindings.isEmpty)
             pw.Padding(
               padding: const pw.EdgeInsets.only(bottom: 6),
@@ -561,7 +624,7 @@ class ExportService {
             // Use structured abnormal findings if available; fall back to lab rows
             if (abnormalFindings.isNotEmpty)
               ...abnormalFindings.map((f) =>
-                  _findingCard(f, base, bold, fontBold))
+                  _findingCard(f, base, bold, fontBold, getTranslatedName: getTranslatedName))
             else
               ...abnormalLabRows.map((lv) => _findingCard({
                     'test_name': lv.testName,
@@ -570,13 +633,14 @@ class ExportService {
                     'flag': lv.flag,
                     'ref_low': lv.refLow,
                     'ref_high': lv.refHigh,
-                  }, base, bold, fontBold)),
+                  }, base, bold, fontBold, getTranslatedName: getTranslatedName)),
 
             if (normalFindings.isNotEmpty) ...[
               pw.SizedBox(height: 10),
-              pw.Text('NORMAL FINDINGS',
+              pw.Text(l('label_normal', 'NORMAL FINDINGS'),
                   style: pw.TextStyle(
                       font: fontBold,
+                      fontFallback: fallbacks,
                       fontSize: 9,
                       color: _success,
                       letterSpacing: 0.5)),
@@ -595,7 +659,7 @@ class ExportService {
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Expanded(
-                          child: pw.Text(_s(lv.testName),
+                          child: pw.Text(_s(getTranslatedName(lv.testName)),
                               style: base.copyWith(font: fontBold)),
                         ),
                         pw.Text(
@@ -611,26 +675,26 @@ class ExportService {
           ],
 
           // ── SECTION 4: Complete Lab Results Table ──────────────────────
-          _sectionHeader('Complete Laboratory Results', fontBold),
+          _sectionHeader(l('chip_lab_results', 'Complete Laboratory Results'), fontBold),
           if (labResults.isEmpty)
             pw.Padding(
               padding: const pw.EdgeInsets.only(bottom: 6),
               child: pw.Text(
-                  'No laboratory results were identified in this report.',
+                  l('msg_no_labs', 'No laboratory results were identified in this report.'),
                   style: muted),
             )
           else
             pw.TableHelper.fromTextArray(
               headers: [
-                'Test Name',
-                'Result',
-                'Unit',
-                'Reference Range',
-                'Status'
+                l('label_parameter', 'Test Name'),
+                l('label_result', 'Result'),
+                l('label_unit', 'Unit'),
+                l('label_reported_range', 'Reference Range'),
+                l('label_status', 'Status')
               ],
-              data: _labTableData(labResults),
+              data: _labTableData(labResults, getTranslatedName: getTranslatedName),
               headerStyle: pw.TextStyle(
-                  font: fontBold, fontSize: 8.5, color: PdfColors.white),
+                  font: fontBold, fontFallback: fallbacks, fontSize: 8.5, color: PdfColors.white),
               cellStyle: base.copyWith(fontSize: 8.5),
               headerDecoration: const pw.BoxDecoration(color: _headerBg),
               oddRowDecoration: const pw.BoxDecoration(color: _rowOdd),
@@ -648,25 +712,30 @@ class ExportService {
             ),
 
           // ── SECTION 5: Medications ─────────────────────────────────────
-          _sectionHeader('Reported Medications', fontBold),
-          if (analysis.medications.isEmpty)
+          _sectionHeader(l('section_reported_medications', 'Reported Medications'), fontBold),
+          if (medsList.isEmpty)
             pw.Padding(
               padding: const pw.EdgeInsets.only(bottom: 6),
               child: pw.Text(
-                  'No medications were identified in the uploaded report.',
+                  l('msg_no_meds', 'No medications were identified in the uploaded report.'),
                   style: muted),
             )
           else
             pw.TableHelper.fromTextArray(
-              headers: ['Medication', 'Dosage', 'Frequency', 'Notes'],
-              data: analysis.medications.map((m) => [
+              headers: [
+                l('label_medication', 'Medication'),
+                l('label_dose', 'Dosage'),
+                l('label_frequency', 'Frequency'),
+                l('label_notes', 'Notes')
+              ],
+              data: medsList.map((m) => [
                 _s(m['medication_name']?.toString() ?? ''),
-                _s(m['dosage']?.toString() ?? '-'),
-                _s(m['frequency']?.toString() ?? '-'),
-                _s(m['notes']?.toString() ?? m['instructions']?.toString() ?? '-'),
+                _s(m['translated_dosage']?.toString() ?? m['dosage']?.toString() ?? '-'),
+                _s(m['translated_frequency']?.toString() ?? m['frequency']?.toString() ?? '-'),
+                _s(m['translated_instructions']?.toString() ?? m['notes']?.toString() ?? m['instructions']?.toString() ?? '-'),
               ]).toList(),
               headerStyle:
-                  pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.white),
+                  pw.TextStyle(font: fontBold, fontFallback: fallbacks, fontSize: 8.5, color: PdfColors.white),
               cellStyle: base.copyWith(fontSize: 8.5),
               headerDecoration: const pw.BoxDecoration(color: _headerBg),
               oddRowDecoration: const pw.BoxDecoration(color: _rowOdd),
@@ -674,9 +743,9 @@ class ExportService {
                   const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             ),
 
-          // ── SECTION 6: Clinical Executive Summary ─────────────────────
+          // ── SECTION 6: Clinical Executive Summary (English Only) ───────
           if ((analysis.clinicianSummary ?? '').trim().isNotEmpty) ...[
-            _sectionHeader('Clinical Executive Summary', fontBold),
+            _sectionHeader('Clinical Executive Summary (Original)', fontBold),
             ..._mdWidgets(
                 analysis.clinicianSummary!, base, bold, fontBold),
           ],
@@ -703,7 +772,7 @@ class ExportService {
           ],
 
           // ── SECTION 8: What to Discuss With Your Doctor ────────────────
-          _sectionHeader('What to Discuss With Your Doctor', fontBold),
+          _sectionHeader(l('section_what_to_discuss', 'What to Discuss With Your Doctor'), fontBold),
           ...discussPoints.map((point) => pw.Padding(
                 padding: const pw.EdgeInsets.only(left: 8, bottom: 5),
                 child: pw.Row(
@@ -735,9 +804,9 @@ class ExportService {
                   const pw.BorderRadius.all(pw.Radius.circular(5)),
             ),
             child: pw.Text(
-              'DISCLAIMER: This summary is generated by MedNarrate AI for educational and informational purposes only. '
+              l('label_disclaimer_patient', 'DISCLAIMER: This summary is generated by MedNarrate AI for educational and informational purposes only. '
               'It does not constitute medical advice, diagnosis, or treatment. '
-              'Please consult a qualified healthcare professional before making any health decisions.',
+              'Please consult a qualified healthcare professional before making any health decisions.'),
               style: base.copyWith(fontSize: 8, color: _textMuted),
             ),
           ),
@@ -758,14 +827,12 @@ class ExportService {
     String reportType = '',
     TranslationModel? translation,
   }) async {
-    final doc = translation != null && translation.language != 'en'
-        ? await buildTranslatedReportPdf(analysis: analysis, translation: translation,
-            reportTitle: reportTitle, reportDate: reportDate, reportType: reportType)
-        : await _buildDocument(
+    final doc = await _buildDocument(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
       reportType: reportType,
+      translation: translation,
     );
     final bytes = await doc.save();
 
@@ -795,14 +862,12 @@ class ExportService {
     String reportType = '',
     TranslationModel? translation,
   }) async {
-    final doc = translation != null && translation.language != 'en'
-        ? await buildTranslatedReportPdf(analysis: analysis, translation: translation,
-            reportTitle: reportTitle, reportDate: reportDate, reportType: reportType)
-        : await _buildDocument(
+    final doc = await _buildDocument(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
       reportType: reportType,
+      translation: translation,
     );
     final bytes = await doc.save();
     await Printing.layoutPdf(onLayout: (_) async => bytes);
