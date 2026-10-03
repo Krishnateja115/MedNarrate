@@ -41,11 +41,19 @@ This explanation is derived directly from your uploaded document for information
 
 ABNORMAL_FINDINGS = [
     {
-        "test_name": "MCV",
-        "value": 80.0,
-        "unit": "fL",
-        "ref_low": 83.0,
-        "ref_high": 101.0,
+        "test_name": "Hemoglobin",
+        "value": 11.2,
+        "unit": "g/dL",
+        "ref_low": 12.0,
+        "ref_high": 16.0,
+        "flag": "low",
+    },
+    {
+        "test_name": "RBC",
+        "value": 3.8,
+        "unit": "x10^6/uL",
+        "ref_low": 4.2,
+        "ref_high": 5.4,
         "flag": "low",
     }
 ]
@@ -179,7 +187,7 @@ async def test_language(lang, lang_name):
 async def main():
     print("=== Translation Validation Debug ===\n")
     
-    langs = [("ta", "Tamil"), ("hi", "Hindi")]
+    langs = [("ml", "Malayalam"), ("mr", "Marathi")]
     for lang, name in langs:
         await test_language(lang, name)
 

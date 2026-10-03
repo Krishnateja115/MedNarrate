@@ -363,14 +363,17 @@ async def translate_analysis(
     if llm_res.get("provider") == "fallback":
         raise TranslationServiceError()
     try:
-        parsed = validate_translation(
-            parse_translation(llm_res.get("content", "")), lang,
+        raw_text = llm_res.get("content", "")
+        parsed = parse_translation(raw_text)
+        validated = validate_translation(
+            parsed, lang,
             analysis.patient_summary or "", abnormal_findings_source,
             meds_list, REQUIRED_UI_LABEL_KEYS,
         )
     except (ValueError, TypeError, KeyError) as exc:
         # Do not log the model response or medical data.
         abnormal_len = len(parsed.get("abnormal_findings") or []) if 'parsed' in locals() and isinstance(parsed, dict) else -1
+
         med_len = len(parsed.get("medications") or []) if 'parsed' in locals() and isinstance(parsed, dict) else -1
         logger.warning(f"Translation validation failed language={lang} error_type={type(exc).__name__} error={str(exc)} src_find_len={len(abnormal_findings_source)} out_find_len={abnormal_len} src_med_len={len(meds_list)} out_med_len={med_len}")
         raise TranslationServiceError(

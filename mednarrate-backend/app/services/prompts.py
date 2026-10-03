@@ -128,7 +128,7 @@ Clinical Summary (translate fully):
 Patient Summary (translate fully):
 {patient_summary}
 
-Findings JSON (this contains BOTH normal and abnormal results; keep test_name in English as identifier; translate ONLY the explanation/exposition text; YOU MUST INCLUDE EVERY SINGLE ITEM FROM THIS INPUT LIST IN YOUR OUTPUT ARRAY WITHOUT OMITTING ANY NORMAL OR ABNORMAL RESULT):
+Findings JSON (this contains BOTH normal and abnormal results; keep test_name in English as identifier; translate ONLY the explanation/exposition text; YOU MUST INCLUDE EVERY SINGLE ITEM FROM THIS INPUT LIST IN YOUR OUTPUT ARRAY WITHOUT OMITTING ANY NORMAL OR ABNORMAL RESULT, AND DO NOT ADD ANY NEW ITEMS):
 {abnormal_findings_json}
 
 Medications JSON (keep medication_name in English; copy dosage exactly; translate frequency, non-clock times_of_day, and instructions):
