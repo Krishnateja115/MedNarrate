@@ -55,7 +55,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
                 "message": msg,
                 "type": error.get("type", "value_error"),
             })
-        
+
         # Build a readable string from the first error for single-error responses
         first = safe_errors[0]
         loc = first.get("field", "")
@@ -63,7 +63,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         detail = f"{loc}: {msg}" if loc else msg
     else:
         detail = "Validation error"
-    
+
     return JSONResponse(
         status_code=422,
         content={"detail": detail, "code": "validation_error", "errors": safe_errors}
@@ -78,20 +78,23 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
             content={"detail": exc.detail},
             headers=getattr(exc, "headers", None) or {},
         )
-    
+
+    from app.core.logging_helpers import redact_secrets
     request_id = getattr(request.state, "request_id", None) or request.headers.get("x-request-id", "unknown")
-    logger.error(f"Unhandled exception on {request.method} {request.url.path} (request_id={request_id}): {type(exc).__name__}: {exc}", exc_info=True)
-    
+    exc_str = redact_secrets(f"{type(exc).__name__}: {exc}")
+    logger.error(f"Unhandled exception on {request.method} {request.url.path} (request_id={request_id}): {exc_str}", exc_info=True)
+
     return JSONResponse(
         status_code=500,
         content={
-            "detail": "An internal error occurred. Please contact support if this persists.", 
+            "detail": "An internal error occurred. Please contact support if this persists.",
             "code": "internal_server_error",
             "request_id": request_id
         }
     )
 
 async def integrity_exception_handler(request: Request, exc: IntegrityError):
+    logger.error(f"INTEGRITY ERROR DETAILS: {exc}")
     return JSONResponse(
         status_code=409,
         content={"detail": "Database integrity error, possibly a duplicate entry", "code": "integrity_error"}

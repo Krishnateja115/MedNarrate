@@ -111,6 +111,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
     if (confirm != true) return;
+    // Full logout: revokes the session server-side and wipes tokens, cached
+    // profile/report data, the account's offline queue and local reminders.
+    try {
+      await ApiService.instance.logout();
+    } catch (_) {}
     await StorageService.instance.clearTokens();
     if (mounted) context.go(Routes.login);
   }

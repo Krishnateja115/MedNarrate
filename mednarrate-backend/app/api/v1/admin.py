@@ -89,10 +89,10 @@ async def get_kb_stats(
         permission_used="rag.view",
         request=request,
     )
-    
+
     total_docs = (await db.execute(select(func.count(KnowledgeDocument.id)))).scalar() or 0
     total_chunks = (await db.execute(select(func.count(RagChunk.id)))).scalar() or 0
-    
+
     await db.commit()
     return {"status": "ok", "total_documents": total_docs, "total_chunks": total_chunks}
 

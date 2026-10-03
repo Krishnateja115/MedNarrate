@@ -22,94 +22,13 @@ def upgrade() -> None:
     op.create_table('support_tickets', sa.Column('id', sa.UUID(), nullable=False), sa.Column('user_id', sa.UUID(), nullable=False), sa.Column('title', sa.String(length=255), nullable=False), sa.Column('description', sa.Text(), nullable=False), sa.Column('category', sa.Enum('login', 'report', 'ai', 'chat', 'translation', 'notifications', 'medication', 'performance', 'security', 'privacy', 'other', name='ticketcategory'), nullable=False), sa.Column('priority', sa.Enum('p1', 'p2', 'p3', 'p4', name='ticketpriority'), nullable=False), sa.Column('status', sa.Enum('new', 'triaged', 'investigating', 'waiting_user', 'waiting_eng', 'resolved', 'closed', name='ticketstatus'), nullable=False), sa.Column('assigned_admin_id', sa.UUID(), nullable=True), sa.Column('related_report_id', sa.UUID(), nullable=True), sa.Column('related_request_id', sa.String(length=100), nullable=True), sa.Column('related_incident_id', sa.UUID(), nullable=True), sa.Column('created_at', sa.DateTime(), nullable=False), sa.Column('updated_at', sa.DateTime(), nullable=False), sa.Column('resolved_at', sa.DateTime(), nullable=True), sa.Column('closed_at', sa.DateTime(), nullable=True), sa.ForeignKeyConstraint(['assigned_admin_id'], ['users.id'], ondelete='SET NULL'), sa.ForeignKeyConstraint(['related_incident_id'], ['incidents.id'], ondelete='SET NULL'), sa.ForeignKeyConstraint(['related_report_id'], ['reports.id'], ondelete='SET NULL'), sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'), sa.PrimaryKeyConstraint('id'))
     op.create_table('support_ticket_events', sa.Column('id', sa.UUID(), nullable=False), sa.Column('ticket_id', sa.UUID(), nullable=False), sa.Column('event_type', sa.String(length=50), nullable=False), sa.Column('content', sa.Text(), nullable=False), sa.Column('created_at', sa.DateTime(), nullable=False), sa.ForeignKeyConstraint(['ticket_id'], ['support_tickets.id'], ondelete='CASCADE'), sa.PrimaryKeyConstraint('id'))
     op.create_table('support_ticket_messages', sa.Column('id', sa.UUID(), nullable=False), sa.Column('ticket_id', sa.UUID(), nullable=False), sa.Column('sender_id', sa.UUID(), nullable=True), sa.Column('is_internal', sa.Boolean(), nullable=False), sa.Column('content', sa.Text(), nullable=False), sa.Column('help_article_ref', sa.String(length=255), nullable=True), sa.Column('created_at', sa.DateTime(), nullable=False), sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ondelete='SET NULL'), sa.ForeignKeyConstraint(['ticket_id'], ['support_tickets.id'], ondelete='CASCADE'), sa.PrimaryKeyConstraint('id'))
-    with op.batch_alter_table('admin_audit_logs', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('admin_permissions', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('admin_role_assignments', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('admin_role_permissions', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('admin_roles', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('chat_messages', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('chat_sessions', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('incident_events', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('incidents', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('llm_diagnostic_events', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('medical_profiles', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('medication_schedules', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('notification_logs', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('push_tokens', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('rag_chunks', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('refresh_tokens', schema=None) as batch_op:
-        pass
     with op.batch_alter_table('report_analyses', schema=None) as batch_op:
         batch_op.add_column(sa.Column('evidence_sources', sa.JSON(), nullable=False))
         batch_op.add_column(sa.Column('failure_category', sa.Text(), nullable=True))
-    with op.batch_alter_table('report_translations', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('reports', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('sensitive_access_grants', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('users', schema=None) as batch_op:
-        pass
-
 def downgrade() -> None:
-    with op.batch_alter_table('users', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('sensitive_access_grants', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('reports', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('report_translations', schema=None) as batch_op:
-        pass
     with op.batch_alter_table('report_analyses', schema=None) as batch_op:
         batch_op.drop_column('failure_category')
         batch_op.drop_column('evidence_sources')
-    with op.batch_alter_table('refresh_tokens', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('rag_chunks', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('push_tokens', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('notification_logs', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('medication_schedules', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('medical_profiles', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('llm_diagnostic_events', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('incidents', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('incident_events', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('chat_sessions', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('chat_messages', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('admin_roles', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('admin_role_permissions', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('admin_role_assignments', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('admin_permissions', schema=None) as batch_op:
-        pass
-    with op.batch_alter_table('admin_audit_logs', schema=None) as batch_op:
-        pass
     op.drop_table('support_ticket_messages')
     op.drop_table('support_ticket_events')
     op.drop_table('support_tickets')

@@ -130,10 +130,10 @@ async def test_superadmin_governance_flow(client: AsyncClient, db_session):
     bg_resp = await client.post(
         "/api/v1/admin/break-glass/request",
         json={
-            "resource_type": "patient_record",
+            "resource_type": "medical_report",
             "resource_id": "rep_9999",
             "reason": "Clinical emergency diagnostic review by attending physician",
-            "duration_minutes": 15,
+            "expires_in_hours": 1,
         },
         headers=headers,
     )

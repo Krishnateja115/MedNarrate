@@ -109,8 +109,6 @@ async def create_announcement(
     )
 
     db.add(ann)
-    await db.commit()
-    await db.refresh(ann)
 
     await log_admin_action(
         db=db,
@@ -124,6 +122,9 @@ async def create_announcement(
         request=request,
         metadata={"title": ann.title, "audience": ann.audience, "status": ann.status},
     )
+
+    await db.commit()
+    await db.refresh(ann)
 
     return {
         "message": "Announcement created successfully",
@@ -172,7 +173,6 @@ async def update_announcement(
     if payload.status is not None:
         ann.status = payload.status
 
-    await db.commit()
 
     await log_admin_action(
         db=db,
@@ -186,6 +186,8 @@ async def update_announcement(
         request=request,
         metadata={"title": ann.title, "status": ann.status},
     )
+
+    await db.commit()
 
     return {
         "message": "Announcement updated successfully",
@@ -212,7 +214,6 @@ async def delete_announcement(
 
     title = ann.title
     await db.delete(ann)
-    await db.commit()
 
     await log_admin_action(
         db=db,
@@ -226,6 +227,8 @@ async def delete_announcement(
         request=request,
         metadata={"title": title},
     )
+
+    await db.commit()
 
     return {"message": f"Announcement '{title}' deleted successfully"}
 

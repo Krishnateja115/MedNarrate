@@ -1,12 +1,10 @@
 import hashlib
 import secrets
-import sys
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from app.core.rate_limit import limiter, SENSITIVE_LIMIT
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -16,16 +14,23 @@ from app.models.password_reset_token import PasswordResetToken
 from app.models.user import User
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address, enabled="pytest" not in sys.modules)
 
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
 
+from pydantic import BaseModel, EmailStr, field_validator
+from app.schemas.auth import validate_password_policy
+
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return validate_password_policy(v)
 
 
 class ForgotPasswordResponse(BaseModel):
@@ -33,7 +38,7 @@ class ForgotPasswordResponse(BaseModel):
 
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def forgot_password(
     request: Request, req: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
 ):
@@ -50,7 +55,7 @@ async def forgot_password(
     # Generate a secure random token
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1)
 
     db_token = PasswordResetToken(
         user_id=user.id, token_hash=token_hash, expires_at=expires_at, used=False
@@ -66,7 +71,7 @@ async def forgot_password(
 
 
 @router.post("/reset-password")
-@limiter.limit("5/minute")
+@limiter.limit(SENSITIVE_LIMIT)
 async def reset_password(
     request: Request, req: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
 ):
@@ -102,6 +107,11 @@ async def reset_password(
 
     user.hashed_password = hash_password(req.new_password)
     db_token.used = True
+
+    # Revoke all existing sessions for this user upon password reset
+    from app.core.security import revoke_all_user_sessions
+    await revoke_all_user_sessions(user, db, increment_session_version=True)
+
     await db.commit()
 
     return {

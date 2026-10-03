@@ -93,6 +93,7 @@ dependencies:
   sentry_flutter: ^9.30.0
   audioplayers: ^6.8.1
   web: ^1.1.0
+  flutter_secure_storage: ^10.3.4
 
 dev_dependencies:
   flutter_test:

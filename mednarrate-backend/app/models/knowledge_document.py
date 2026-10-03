@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Enum, String, Text
+from sqlalchemy import Uuid as UUID
 
 from app.core.database import Base
 
@@ -18,7 +19,7 @@ class DocLifecycleStatus(str, enum.Enum):
 class KnowledgeDocument(Base):
     __tablename__ = "knowledge_documents"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
     version = Column(String(50), nullable=False, default="1.0")
     status = Column(

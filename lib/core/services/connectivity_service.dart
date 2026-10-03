@@ -3,6 +3,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'offline_queue_service.dart';
 import 'api_service.dart';
 import 'api_exception.dart';
+import 'storage_service.dart';
 
 class ConnectivityService {
   ConnectivityService._();
@@ -35,22 +36,35 @@ class ConnectivityService {
       _isOnline = online;
       _controller.add(online);
       if (online) {
-        OfflineQueueService.instance.processQueue((action) async {
-          try {
-            await ApiService.instance.executeOfflineAction(action);
-            return true;
-          } catch (e) {
-            if (e is ApiException) {
-              // 4xx errors (except 401/408) are client-side errors that will never succeed.
-              // Drop the action to prevent infinite loops.
-              if (e.statusCode >= 400 && e.statusCode < 500 && e.statusCode != 401 && e.statusCode != 408) {
-                return true;
-              }
-            }
-            return false;
-          }
-        });
+        _drainQueueForCurrentUser();
       }
     }
+  }
+
+  Future<void> _drainQueueForCurrentUser() async {
+    String? userId;
+    try {
+      userId = (await StorageService.instance.getCachedProfile())?.id;
+    } catch (_) {
+      userId = null;
+    }
+    await OfflineQueueService.instance.processQueue((action) async {
+      try {
+        await ApiService.instance.executeOfflineAction(action);
+        return true;
+      } catch (e) {
+        if (e is ApiException) {
+          // 4xx errors (except 401/408) are client-side errors that will never succeed.
+          // Drop the action to prevent infinite loops.
+          if (e.statusCode >= 400 &&
+              e.statusCode < 500 &&
+              e.statusCode != 401 &&
+              e.statusCode != 408) {
+            return true;
+          }
+        }
+        return false;
+      }
+    }, userId: userId);
   }
 }

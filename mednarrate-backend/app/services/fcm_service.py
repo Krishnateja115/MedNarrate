@@ -25,10 +25,13 @@ async def send_push_notification(token: str, title: str, body: str, data: dict =
         logger.warning("Attempted to send notification without a token.")
         return False
 
+    masked = f"{token[:6]}…" if len(token) > 6 else "***"
     if not settings.FIREBASE_SERVICE_ACCOUNT_JSON:
-        logger.info(
-            f"Firebase not configured. Mock sending notification to {token}: {title} - {body}"
-        )
+        if (settings.ENVIRONMENT or "").lower() == "production":
+            # Never report a notification as delivered when it was not actually sent.
+            logger.error("Firebase is not configured; notification to %s NOT sent.", masked)
+            return False
+        logger.info("Firebase not configured (non-production). Mock send to %s.", masked)
         return True
 
     try:
@@ -44,5 +47,5 @@ async def send_push_notification(token: str, title: str, body: str, data: dict =
         logger.info(f"Successfully sent message: {response}")
         return True
     except Exception as e:
-        logger.error(f"Error sending message to {token}: {e}")
+        logger.error("Error sending message to %s: %s", masked, type(e).__name__)
         return False

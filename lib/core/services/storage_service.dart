@@ -1,9 +1,11 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_models.dart';
 
-/// StorageService — persists auth tokens and preferences in shared_preferences.
+/// StorageService — persists auth tokens in secure storage and preferences in shared_preferences.
 class StorageService {
   StorageService._();
   static final StorageService instance = StorageService._();
@@ -19,32 +21,72 @@ class StorageService {
   static const _keyMedicalUnits = 'medical_units';
   static const _keyDismissedAnnouncements = 'dismissed_announcements';
 
-  // ── Tokens (shared_preferences) ──────────────────────────────────
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+
+  // ── Tokens (flutter_secure_storage with migration) ─────────────────────────
+
+  Future<void> _migrateTokensIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final oldAccess = prefs.getString(_keyAccess);
+    final oldRefresh = prefs.getString(_keyRefresh);
+
+    if (oldAccess != null || oldRefresh != null) {
+      if (oldAccess != null) {
+        await _secureStorage.write(key: _keyAccess, value: oldAccess);
+      }
+      if (oldRefresh != null) {
+        await _secureStorage.write(key: _keyRefresh, value: oldRefresh);
+      }
+      await prefs.remove(_keyAccess);
+      await prefs.remove(_keyRefresh);
+    }
+  }
 
   Future<void> saveTokens(String access, String refresh) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyAccess, access);
-    await prefs.setString(_keyRefresh, refresh);
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyAccess, access);
+      await prefs.setString(_keyRefresh, refresh);
+      return;
+    }
+    await _secureStorage.write(key: _keyAccess, value: access);
+    await _secureStorage.write(key: _keyRefresh, value: refresh);
   }
 
   Future<String?> getAccessToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyAccess);
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keyAccess);
+    }
+    await _migrateTokensIfNeeded();
+    return _secureStorage.read(key: _keyAccess);
   }
-  
+
   Future<String?> getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyRefresh);
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keyRefresh);
+    }
+    await _migrateTokensIfNeeded();
+    return _secureStorage.read(key: _keyRefresh);
   }
 
   Future<void> clearTokens() async {
+    if (!kIsWeb) {
+      await _secureStorage.delete(key: _keyAccess);
+      await _secureStorage.delete(key: _keyRefresh);
+    }
+    // Also clear from prefs just in case
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyAccess);
     await prefs.remove(_keyRefresh);
   }
 
   // ─────────────────────────── App Preferences ────────────────────────
-  
+
   Future<void> setMedicalUnits(String units) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyMedicalUnits, units);
@@ -67,16 +109,27 @@ class StorageService {
     return prefs.getBool(_keyOnboarding) ?? false;
   }
 
-  // ── Cached user profile (shared_preferences, JSON string) ────────────
+  // ── Cached user profile (flutter_secure_storage) ────────────
 
   Future<void> cacheUserProfile(UserModel user) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyCachedUser, jsonEncode(user.toMap()));
+    await prefs.remove(_keyCachedUser); // Remove from legacy plaintext storage
+    await _secureStorage.write(
+        key: _keyCachedUser, value: jsonEncode(user.toMap()));
   }
 
   Future<UserModel?> getCachedProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_keyCachedUser);
+    String? raw = await _secureStorage.read(key: _keyCachedUser);
+
+    // Migration: Check plaintext storage
+    if (raw == null) {
+      final prefs = await SharedPreferences.getInstance();
+      raw = prefs.getString(_keyCachedUser);
+      if (raw != null) {
+        await cacheUserProfile(UserModel.fromMap(jsonDecode(raw)));
+      }
+    }
+
     if (raw == null) return null;
     try {
       return UserModel.fromMap(jsonDecode(raw) as Map<String, dynamic>);
@@ -119,7 +172,8 @@ class StorageService {
   Future<ThemeMode> getThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString(_keyTheme) ?? ThemeMode.system.name;
-    return ThemeMode.values.firstWhere((e) => e.name == name, orElse: () => ThemeMode.system);
+    return ThemeMode.values
+        .firstWhere((e) => e.name == name, orElse: () => ThemeMode.system);
   }
 
   // ── Notifications (shared_preferences) ──────────────────────────────────
@@ -149,7 +203,7 @@ class StorageService {
   }
 
   // ── Reminder Sound (shared_preferences) ──────────────────────────────────
-  
+
   static const String _keyReminderSound = 'reminder_sound';
 
   Future<void> setReminderSound(String soundName) async {
@@ -163,7 +217,7 @@ class StorageService {
   }
 
   // ── Announcements (shared_preferences) ──────────────────────────────────
-  
+
   Future<void> dismissAnnouncement(String id) async {
     final prefs = await SharedPreferences.getInstance();
     final list = prefs.getStringList(_keyDismissedAnnouncements) ?? [];
@@ -181,33 +235,55 @@ class StorageService {
 
   // ── Role Profile Isolation Storage ──────────────────────────────────────
 
-  Future<void> saveDoctorProfile(String userId, DoctorProfileModel profile) async {
+  Future<void> saveDoctorProfile(
+      String userId, DoctorProfileModel profile) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('doctor_profile_$userId', jsonEncode(profile.toMap()));
+    await prefs.remove('doctor_profile_$userId');
+    await _secureStorage.write(
+        key: 'doctor_profile_$userId', value: jsonEncode(profile.toMap()));
   }
 
   Future<DoctorProfileModel?> getDoctorProfile(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('doctor_profile_$userId');
+    String? raw = await _secureStorage.read(key: 'doctor_profile_$userId');
+    if (raw == null) {
+      final prefs = await SharedPreferences.getInstance();
+      raw = prefs.getString('doctor_profile_$userId');
+      if (raw != null) {
+        await saveDoctorProfile(
+            userId, DoctorProfileModel.fromMap(jsonDecode(raw)));
+      }
+    }
     if (raw == null) return null;
     try {
-      return DoctorProfileModel.fromMap(jsonDecode(raw) as Map<String, dynamic>);
+      return DoctorProfileModel.fromMap(
+          jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
       return null;
     }
   }
 
-  Future<void> saveCaregiverProfile(String userId, CaregiverProfileModel profile) async {
+  Future<void> saveCaregiverProfile(
+      String userId, CaregiverProfileModel profile) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('caregiver_profile_$userId', jsonEncode(profile.toMap()));
+    await prefs.remove('caregiver_profile_$userId');
+    await _secureStorage.write(
+        key: 'caregiver_profile_$userId', value: jsonEncode(profile.toMap()));
   }
 
   Future<CaregiverProfileModel?> getCaregiverProfile(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('caregiver_profile_$userId');
+    String? raw = await _secureStorage.read(key: 'caregiver_profile_$userId');
+    if (raw == null) {
+      final prefs = await SharedPreferences.getInstance();
+      raw = prefs.getString('caregiver_profile_$userId');
+      if (raw != null) {
+        await saveCaregiverProfile(
+            userId, CaregiverProfileModel.fromMap(jsonDecode(raw)));
+      }
+    }
     if (raw == null) return null;
     try {
-      return CaregiverProfileModel.fromMap(jsonDecode(raw) as Map<String, dynamic>);
+      return CaregiverProfileModel.fromMap(
+          jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
       return null;
     }
@@ -216,9 +292,12 @@ class StorageService {
   Future<void> clearUserData(String? userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyCachedUser);
+    await _secureStorage.delete(key: _keyCachedUser);
     if (userId != null) {
       await prefs.remove('doctor_profile_$userId');
       await prefs.remove('caregiver_profile_$userId');
+      await _secureStorage.delete(key: 'doctor_profile_$userId');
+      await _secureStorage.delete(key: 'caregiver_profile_$userId');
     }
   }
 }

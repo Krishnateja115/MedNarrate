@@ -21,14 +21,14 @@ async def test_regression_feature_flag_update_uuid(client: AsyncClient, token_he
     await db_session.commit()
 
     headers = token_headers
-    
+
     # Needs feature_flags:manage. Let's assume dashboard_admin_user needs it or we just patch it.
     # We will test the lookup logic directly if API fails due to permissions.
     # Actually, let's just make sure the API returns 403 or 200, not 400 ValueError.
     payload = {"enabled": True}
     response = await client.put(f"/api/v1/admin/feature-flags/{flag_uuid}", json=payload, headers=headers)
     assert response.status_code in [200, 403]
-    
+
     if response.status_code == 200:
         data = response.json()
         assert data["flag"]["enabled"] is True

@@ -273,3 +273,15 @@ mednarrate/
 
 ---
 
+
+## Security & Operations Notes
+
+- **Secrets**: never commit `.env`. Copy `mednarrate-backend/.env.example` and set `JWT_SECRET` (strong, non-default) and, in production, a PostgreSQL `DATABASE_URL`. Production (`ENVIRONMENT=production`) refuses to start with wildcard CORS, a weak JWT secret or SQLite.
+- **API docs**: `/docs`, `/redoc` and `/openapi.json` are only served when `ENVIRONMENT=development`.
+- **Reverse proxy**: `X-Forwarded-For` is ignored unless `TRUSTED_PROXY=true` (set it only behind a proxy that overwrites the header). Rate limits and audit logs use the resolved client IP.
+- **Rate limiting**: one shared limiter (`app/core/rate_limit.py`) protects signup, login, MFA, refresh and password reset (`RATE_LIMIT_SENSITIVE`, default `5/minute`) plus a global default (`RATE_LIMIT_DEFAULT`). Counters are in-memory per process; set `RATE_LIMIT_STORAGE_URI` (e.g. Redis) for multi-worker deployments.
+- **Medical verifier / translation**: verifier timeouts, errors and malformed output are stored as `unverified`-class statuses (never `verified`). A failed translation raises an error instead of returning English as if translated.
+- **RAG privacy**: report text and queries are always de-identified before embedding, independent of `LLM_SEND_MODE`.
+- **Account deletion** anonymizes the `users` row (kept for audit/referential integrity) and deletes the user's reports, files (failures create `OrphanFile` records), tokens, MFA challenges, profiles, chats and RAG chunks.
+- **Mobile**: tokens, the Hive encryption key, cached profile and reminders live in `flutter_secure_storage`; the offline queue is encrypted, owned per user, and wiped on logout.
+- **Tests**: `cd mednarrate-backend && PYTHONPATH=. pytest` (SQLite). To run on PostgreSQL, point `DATABASE_URL` at an empty database with the `vector` extension, e.g. `postgresql+asyncpg://user:pass@localhost/mednarrate_test`.

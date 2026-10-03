@@ -172,7 +172,7 @@ async def build_diagnostic_snapshot(
         import uuid
 
         report_res = await db.execute(
-            select(Report).where(Report.id == uuid.UUID(ticket.related_report_id))
+            select(Report).where(Report.id == ticket.related_report_id)
         )
         report = report_res.scalars().first()
 
@@ -268,7 +268,7 @@ async def build_diagnostic_snapshot(
         import uuid
 
         incident_res = await db.execute(
-            select(Incident).where(Incident.id == uuid.UUID(ticket.related_incident_id))
+            select(Incident).where(Incident.id == ticket.related_incident_id)
         )
         incident = incident_res.scalars().first()
         if incident:
@@ -288,7 +288,7 @@ async def build_diagnostic_snapshot(
 
         notif_res = await db.execute(
             select(NotificationLog)
-            .where(NotificationLog.user_id == uuid.UUID(ticket.user_id))
+            .where(NotificationLog.user_id == ticket.user_id)
             .order_by(desc(NotificationLog.sent_at))
             .limit(1)
         )

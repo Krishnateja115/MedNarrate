@@ -299,18 +299,30 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
 
         # NEW LLM-based verification using MedGemma (Medical Verifier)
         # We verify the clinician_summary as it is the most critical medical output
+        verification_status = "unverified"
         use_verifier = await evaluate_flag(db, "experimental_medical_verifier", user_id=str(report.user_id))
         if use_verifier:
             verification_result = await verify_medical_facts(
                 clinician_summary, request_id=req_id
             )
-            if not verification_result["is_valid"]:
-                # If the verifier flags dangerous errors, we append the correction warning
+            is_valid = verification_result["is_valid"]
+            verification_status = verification_result["verification_status"]
+
+            if is_valid is False:
+                # Verifier ran and detected dangerous errors
                 clinician_summary += f"\n\n[WARNING from Medical Verifier]: {verification_result['correction']}"
                 patient_summary += "\n\n[Note: This summary has been flagged by the automated verification system and requires doctor review.]"
                 logger.warning(
                     "[STAGE:VALIDATION:FAILED] Medical Verifier flagged output. (Correction text omitted for privacy)."
                 )
+            elif is_valid is None:
+                # Verifier unavailable or returned malformed response — content is UNVERIFIED
+                # Do NOT present as medically verified. Log and continue without a false-valid label.
+                logger.warning(
+                    f"[STAGE:VALIDATION:UNVERIFIED] Medical Verifier unavailable (status={verification_status}). "
+                    "Content is UNVERIFIED and will not be labelled as medically confirmed."
+                )
+            # is_valid is True: verifier confirmed content — proceed normally
 
         # Pre-generate translations safely
         try:
@@ -359,10 +371,11 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         analysis.abnormal_findings = abnormal_findings
         analysis.evidence_sources = []
         analysis.clinician_summary = clinician_summary
+        analysis.verification_status = verification_status
         analysis.patient_summary = patient_summary
         analysis.llm_provider = llm_provider
         analysis.llm_model = llm_model
-        analysis.processed_at = datetime.now(timezone.utc)
+        analysis.processed_at = datetime.now(timezone.utc).replace(tzinfo=None)
         analysis.error_reason = None
 
         report.processing_status = ProcessingStatus.completed

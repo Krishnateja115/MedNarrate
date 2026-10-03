@@ -19,10 +19,12 @@ router = APIRouter()
 _acknowledged_alerts = set()
 
 
+from app.core.admin_auth import AdminContext, require_any_permission
+
 @router.get("")
 async def get_admin_alerts(
     request: Request,
-    admin_ctx: AdminContext = Depends(get_admin_context),
+    admin_ctx: AdminContext = Depends(require_any_permission(["dashboard.view", "security.view"])),
     db: AsyncSession = Depends(get_db),
 ):
     alerts: List[Dict[str, Any]] = []
@@ -174,7 +176,7 @@ async def get_admin_alerts(
 
 @router.post("/{alert_id}/acknowledge")
 async def acknowledge_alert(
-    alert_id: str, admin_ctx: AdminContext = Depends(get_admin_context)
+    alert_id: str, admin_ctx: AdminContext = Depends(require_any_permission(["dashboard.view", "security.view"]))
 ):
     _acknowledged_alerts.add(alert_id)
     return {

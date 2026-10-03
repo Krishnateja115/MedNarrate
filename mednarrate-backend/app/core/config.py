@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "MedNarrate"
     ENVIRONMENT: str = "development"
+    # Centralized API rate limiting (see app/core/rate_limit.py). Disable only in tests.
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_DEFAULT: str = "100/minute"
+    RATE_LIMIT_SENSITIVE: str = "5/minute"
+    RATE_LIMIT_REFRESH: str = "30/minute"
     FIREBASE_SERVICE_ACCOUNT_JSON: str | None = None
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_MB: int = 25
@@ -55,6 +60,7 @@ class Settings(BaseSettings):
 
     # Development-Only Gemini Provider
     GEMINI_API_KEY: str | None = None
+    EMBEDDING_PROVIDER: str | None = None  # defaults to PRIMARY_LLM_PROVIDER
     GEMINI_MODEL: str = "gemini-3.8-flash"
 
     # Privacy & Data Governance Boundary
@@ -75,13 +81,20 @@ class Settings(BaseSettings):
         return self.GEMINI_MODEL
 
     def validate_production_security(self):
-        """Enforces that loose CORS boundaries are blocked in production."""
+        """Enforces that loose CORS boundaries and default secrets are blocked in production."""
         if (self.ENVIRONMENT or "").lower() == "production":
             if "*" in self.CORS_ORIGINS:
                 raise ValueError(
                     "Wildcard CORS origins ('*') are prohibited in production environments. "
                     "Please configure CORS_ORIGINS to an explicit list of allowed origins."
                 )
+            jwt = self.JWT_SECRET or ""
+            jwt_lower = jwt.lower().strip()
+            unsafe_substrings = ["changeme", "secret", "default", "test", "mednarrate", "your-", "placeholder", "please_change"]
+            if not jwt or len(jwt) < 16 or any(s in jwt_lower for s in unsafe_substrings):
+                raise ValueError("JWT_SECRET must be configured with a strong, non-default value for production.")
+            if self.DATABASE_URL.startswith("sqlite"):
+                raise ValueError("SQLite databases are not supported in production. Please configure a PostgreSQL DATABASE_URL.")
 
     # Storage Configuration
     STORAGE_BACKEND: str = "local"

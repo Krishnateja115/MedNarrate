@@ -278,7 +278,7 @@ async def create_admin(
     role_ids = _parse_role_ids(req.role_ids)
     if not role_ids:
         raise HTTPException(status_code=400, detail="At least one role must be assigned during admin creation.")
-        
+
     roles = (
         (
             await db.execute(select(AdminRole).where(AdminRole.id.in_(role_ids)))
@@ -662,7 +662,7 @@ async def get_admin_support_tickets(
 
     stmt = (
         select(SupportTicket)
-        .where(SupportTicket.assigned_admin_id == str(admin_uuid))
+        .where(SupportTicket.assigned_admin_id == admin_uuid)
         .order_by(desc(SupportTicket.created_at))
     )
     tickets = (await db.execute(stmt)).scalars().all()

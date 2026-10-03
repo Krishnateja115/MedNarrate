@@ -1,3 +1,6 @@
+import uuid
+
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -38,7 +41,7 @@ async def create_ticket(
     db: AsyncSession = Depends(get_db),
 ):
     ticket = SupportTicket(
-        user_id=str(current_user.id),
+        user_id=current_user.id,
         title=payload.title,
         description=payload.description,
         category=payload.category,
@@ -52,7 +55,7 @@ async def create_ticket(
     # Initial message
     message = SupportTicketMessage(
         ticket_id=ticket.id,
-        sender_id=str(current_user.id),
+        sender_id=current_user.id,
         is_internal=False,
         content=payload.description,
     )
@@ -67,7 +70,7 @@ async def list_user_tickets(
 ):
     stmt = (
         select(SupportTicket)
-        .where(SupportTicket.user_id == str(current_user.id))
+        .where(SupportTicket.user_id == current_user.id)
         .order_by(SupportTicket.updated_at.desc())
     )
     result = await db.execute(stmt)
@@ -91,12 +94,12 @@ async def list_user_tickets(
 
 @router.get("/{ticket_id}")
 async def get_user_ticket(
-    ticket_id: str,
+    ticket_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(SupportTicket).where(
-        SupportTicket.id == ticket_id, SupportTicket.user_id == str(current_user.id)
+        SupportTicket.id == ticket_id, SupportTicket.user_id == current_user.id
     )
     ticket = (await db.execute(stmt)).scalars().first()
 
@@ -138,13 +141,13 @@ async def get_user_ticket(
 
 @router.post("/{ticket_id}/reply")
 async def reply_to_ticket(
-    ticket_id: str,
+    ticket_id: uuid.UUID,
     payload: SupportTicketReply,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(SupportTicket).where(
-        SupportTicket.id == ticket_id, SupportTicket.user_id == str(current_user.id)
+        SupportTicket.id == ticket_id, SupportTicket.user_id == current_user.id
     )
     ticket = (await db.execute(stmt)).scalars().first()
 
@@ -153,7 +156,7 @@ async def reply_to_ticket(
 
     message = SupportTicketMessage(
         ticket_id=ticket.id,
-        sender_id=str(current_user.id),
+        sender_id=current_user.id,
         is_internal=False,
         content=payload.content,
     )
