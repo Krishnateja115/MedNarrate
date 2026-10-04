@@ -61,6 +61,7 @@ htmlcov/
 mednarrate-backend/data/kb_index/
 data/
 *.db
+*.db.pre-history-repair.bak
 *.sqlite
 *.sqlite3
 
