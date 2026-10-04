@@ -92,7 +92,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
     try {
       final PlatformFile? file;
-      if (kIsWeb || !Platform.isMacOS) {
+      if (!kIsWeb && !Platform.isMacOS) {
         final result = await FilePicker.platform.pickFiles(
           type: FileType.custom,
           allowedExtensions: _validExtensions,
