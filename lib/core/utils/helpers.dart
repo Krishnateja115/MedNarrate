@@ -122,7 +122,7 @@ class Helpers {
   /// Sanitises text for PDF rendering:
   /// - removes markdown heading markers (###, ##, #)
   /// - removes inline markdown symbols (**, *, __, _)
-  /// - strips <INPUT_TEXT> block content and similar artifacts
+  /// - strips `<INPUT_TEXT>` block content and similar artifacts
   /// - removes entity group labels like (Diagnostic_procedure)
   /// - replaces non-WinAnsi glyphs (bullet chars, emoji, curly quotes)
   /// - strips any remaining non-Latin-1 characters to prevent PdfException
@@ -191,7 +191,7 @@ class Helpers {
   }
 
   /// Sanitises text for on-screen Flutter display:
-  /// - removes <INPUT_TEXT> artifacts
+  /// - removes `<INPUT_TEXT>` artifacts
   /// - removes raw entity labels
   /// Emoji are allowed in Flutter UI, so we don't strip them here.
   static String sanitizeDisplayText(String text) {

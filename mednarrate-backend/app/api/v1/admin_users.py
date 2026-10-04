@@ -670,23 +670,65 @@ async def get_user_chats(
     ]
     return build_pagination_response(items, total_count, page, limit)
 
+REDACTED_PHI = "Hidden - break-glass access required"
+
+
 @router.get("/{user_id}/reminders")
 async def get_user_reminders(
     user_id: uuid.UUID,
+    request: Request,
     admin_ctx: AdminContext = Depends(require_permission("users.view")),
     db: AsyncSession = Depends(get_db),
 ):
+    """Medication schedules are PHI (see DATA_CLASSIFICATION_MAP.md).
+
+    users.view alone only exposes operational metadata (status, timestamps).
+    Medication name, dosage and frequency (all PHI) are returned only when the admin
+    holds an active, scope-matching break-glass grant for the user's medical
+    profile, and that disclosure is audited.
+    """
     stmt = select(MedicationSchedule).where(MedicationSchedule.user_id == user_id).order_by(desc(MedicationSchedule.created_at))
     reminders = (await db.execute(stmt)).scalars().all()
 
+    phi_visible = False
+    grant = None
+    if reminders:
+        try:
+            grant = await validate_access_grant(
+                admin_ctx=admin_ctx,
+                resource_type="medical_profile",
+                resource_id=str(user_id),
+                db=db,
+            )
+            phi_visible = True
+        except HTTPException as exc:
+            if exc.status_code != status.HTTP_403_FORBIDDEN:
+                raise
+
+    if phi_visible:
+        await log_admin_action(
+            db=db,
+            actor_admin_id=admin_ctx.user_id,
+            action="SENSITIVE_MEDICATION_ACCESS",
+            resource_type="medical_profile",
+            resource_id=str(user_id),
+            permission_used="users.view",
+            result="success",
+            reason=f"Break-glass grant {grant.id}",
+            request=request,
+            metadata={"grant_id": str(grant.id), "reminder_count": len(reminders)},
+        )
+        await db.commit()
+
     return {
         "status": "ok",
+        "phi_redacted": not phi_visible,
         "reminders": [
             {
                 "id": str(r.id),
-                "medication_name": r.medication_name,
-                "dosage": r.dosage,
-                "frequency": r.frequency,
+                "medication_name": r.medication_name if phi_visible else REDACTED_PHI,
+                "dosage": r.dosage if phi_visible else None,
+                "frequency": r.frequency if phi_visible else None,
                 "is_active": r.is_active,
                 "created_at": r.created_at.isoformat() if r.created_at else None
             } for r in reminders

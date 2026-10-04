@@ -78,11 +78,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadData() async {
-    if (mounted)
+    if (mounted) {
       setState(() {
         _loading = true;
         _loadError = null;
       });
+    }
     try {
       final user = await ApiService.instance.getMe();
       final reports = await ApiService.instance.listReports();

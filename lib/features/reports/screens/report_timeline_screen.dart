@@ -54,11 +54,12 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
         await _loadPoints(_selectedTest);
       }
     } on ApiException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.message;
           _loading = false;
         });
+      }
     }
   }
 
@@ -198,8 +199,9 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                                       showTitles: true,
                                       getTitlesWidget: (value, meta) {
                                         final idx = value.toInt();
-                                        if (idx < 0 || idx >= _points!.length)
+                                        if (idx < 0 || idx >= _points!.length) {
                                           return SizedBox();
+                                        }
                                         return Text(
                                           Formatters.formatMonthYear(
                                               _points![idx].reportDate),

@@ -268,9 +268,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await _storageService.setPreferredLanguage(lang);
       localeModeNotifier.value = Locale(lang);
       if (mounted) setState(() => _currentLang = lang);
-      if (mounted)
+      if (mounted) {
         Helpers.showSuccess(
             context, AppLocalizations.of(context)!.languageUpdated);
+      }
     } on ApiException catch (e) {
       if (mounted) Helpers.showError(context, e.message);
     } finally {
@@ -287,9 +288,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _changeMedicalUnits(String units) async {
     await _storageService.setMedicalUnits(units);
     if (mounted) setState(() => _currentUnits = units);
-    if (mounted)
+    if (mounted) {
       Helpers.showSuccess(
           context, AppLocalizations.of(context)!.medicalUnitsUpdated);
+    }
   }
 
   Future<void> _toggleNotifications(bool enabled) async {
@@ -312,8 +314,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _playSound(String sound) {
-    if (sound == 'default')
+    if (sound == 'default') {
       return; // Cannot play system default easily via audioplayers without knowing URI
+    }
     _audioPlayer.play(AssetSource('sounds/$sound.wav'));
   }
 
@@ -381,9 +384,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _toggleProfessionalMode(bool enabled) async {
     await _storageService.setProfessionalMode(enabled);
     if (mounted) setState(() => _professionalMode = enabled);
-    if (mounted)
+    if (mounted) {
       Helpers.showSuccess(context,
           enabled ? 'Professional Mode enabled' : 'Professional Mode disabled');
+    }
   }
 
   void _showSoonSheet(String featureName, String description) {

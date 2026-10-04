@@ -70,7 +70,7 @@ class _AnnouncementBannerState extends State<AnnouncementBanner> {
         color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -93,7 +93,7 @@ class _AnnouncementBannerState extends State<AnnouncementBanner> {
                 Text(
                   message,
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.9),
+                    color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.9),
                   ),
                 ),
               ],

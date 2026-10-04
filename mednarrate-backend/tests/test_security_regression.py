@@ -3,6 +3,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from tests.pdf_fixtures import VALID_PDF
 
 
 @pytest.fixture
@@ -50,7 +51,7 @@ async def test_malicious_filename_crlf_injection(client: AsyncClient, auth_heade
     ]
 
     for m_name in malicious_names:
-        file_content = b"%PDF-1.4 dummy"
+        file_content = VALID_PDF
         files = {"file": (m_name, file_content, "application/pdf")}
         data = {
             "title": "Malicious Test",
@@ -83,7 +84,7 @@ async def test_cross_user_analysis_authorization(
 ):
     """Verify that a user cannot access another user's analysis."""
     # User 1 uploads
-    files = {"file": ("test.pdf", b"%PDF-1.4 dummy", "application/pdf")}
+    files = {"file": ("test.pdf", VALID_PDF, "application/pdf")}
     data = {"title": "Auth Test", "report_date": "2024-01-01", "report_type": "blood"}
     resp = await client.post(
         "/api/v1/reports/upload", headers=auth_headers, files=files, data=data

@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     FIREBASE_SERVICE_ACCOUNT_JSON: str | None = None
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_MB: int = 25
+    # Parser complexity budgets enforced at the upload boundary.
+    MAX_PDF_PAGES: int = 60
+    MAX_IMAGE_PIXELS: int = 40_000_000
+    # Cap for JSON request bodies inspected by the prompt-injection middleware.
+    MAX_JSON_BODY_BYTES: int = 2 * 1024 * 1024
     # SECURITY: ["*"] is acceptable for local development only.
     # For production, set this to an explicit list of allowed origins, e.g.:
     #   CORS_ORIGINS=["https://app.mednarrate.com"]

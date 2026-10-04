@@ -238,8 +238,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.person_outline,
                       errorText: nameError,
                       onChanged: (_) {
-                        if (nameError != null)
+                        if (nameError != null) {
                           setDialogState(() => nameError = null);
+                        }
                       },
                     ),
                     const SizedBox(height: 16),
@@ -249,8 +250,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.calendar_today,
                       errorText: dobError,
                       onChanged: (_) {
-                        if (dobError != null)
+                        if (dobError != null) {
                           setDialogState(() => dobError = null);
+                        }
                       },
                     ),
                   ],
@@ -335,8 +337,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.person_outline,
                     errorText: nameError,
                     onChanged: (_) {
-                      if (nameError != null)
+                      if (nameError != null) {
                         setDialogState(() => nameError = null);
+                      }
                     },
                   ),
                 ],
@@ -432,8 +435,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           errorText: specialtyError,
                           onChanged: (val) {
                             specialtyCtrl.text = val;
-                            if (specialtyError != null)
+                            if (specialtyError != null) {
                               setDialogState(() => specialtyError = null);
+                            }
                           },
                         );
                       },
@@ -445,8 +449,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.school_outlined,
                       errorText: qualError,
                       onChanged: (_) {
-                        if (qualError != null)
+                        if (qualError != null) {
                           setDialogState(() => qualError = null);
+                        }
                       },
                     ),
                     const SizedBox(height: 14),
@@ -456,8 +461,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.verified_outlined,
                       errorText: licenseError,
                       onChanged: (_) {
-                        if (licenseError != null)
+                        if (licenseError != null) {
                           setDialogState(() => licenseError = null);
+                        }
                       },
                     ),
                     const SizedBox(height: 14),
@@ -468,8 +474,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       keyboardType: TextInputType.number,
                       errorText: expError,
                       onChanged: (_) {
-                        if (expError != null)
+                        if (expError != null) {
                           setDialogState(() => expError = null);
+                        }
                       },
                     ),
                     const SizedBox(height: 14),
@@ -506,13 +513,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           String? lErr;
                           String? eErr;
 
-                          if (spec.isEmpty)
+                          if (spec.isEmpty) {
                             sErr = 'Medical specialty is required.';
-                          if (qual.isEmpty)
+                          }
+                          if (qual.isEmpty) {
                             qErr = 'Qualifications are required.';
-                          if (lic.isEmpty)
+                          }
+                          if (lic.isEmpty) {
                             lErr =
                                 'Medical license / registration number is required.';
+                          }
                           if (expStr.isEmpty ||
                               expVal == null ||
                               expVal < 0 ||
@@ -596,8 +606,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.person_outline,
                     errorText: nameError,
                     onChanged: (_) {
-                      if (nameError != null)
+                      if (nameError != null) {
                         setDialogState(() => nameError = null);
+                      }
                     },
                   ),
                 ],
@@ -691,8 +702,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onChanged: (val) {
                         if (val != null) {
                           relCtrl.text = val;
-                          if (relError != null)
+                          if (relError != null) {
                             setDialogState(() => relError = null);
+                          }
                         }
                       },
                     ),

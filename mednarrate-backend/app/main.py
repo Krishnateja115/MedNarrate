@@ -154,8 +154,30 @@ async def prompt_injection_middleware(request: Request, call_next):
     ):
         content_type = request.headers.get("content-type", "")
         if "application/json" in content_type:
+            from fastapi.responses import JSONResponse
+
+            limit = settings.MAX_JSON_BODY_BYTES
+            declared = request.headers.get("content-length")
+            if declared and declared.isdigit() and int(declared) > limit:
+                return JSONResponse(
+                    status_code=413, content={"detail": "Request body too large."}
+                )
+
+            # Bounded read: abort as soon as the cap is exceeded, even for
+            # chunked bodies that declare no Content-Length. This runs before
+            # authentication, so it must never buffer an unbounded payload.
+            chunks: list[bytes] = []
+            received = 0
+            async for chunk in request.stream():
+                received += len(chunk)
+                if received > limit:
+                    return JSONResponse(
+                        status_code=413, content={"detail": "Request body too large."}
+                    )
+                chunks.append(chunk)
+            body = b"".join(chunks)
+
             try:
-                body = await request.body()
                 body_str = body.decode("utf-8").lower()
 
                 # Robust Prompt Injection / Jailbreak Detection Regex
@@ -165,8 +187,6 @@ async def prompt_injection_middleware(request: Request, call_next):
                 )
 
                 if injection_pattern.search(body_str):
-                    from fastapi.responses import JSONResponse
-
                     return JSONResponse(
                         status_code=400,
                         content={"detail": "Potential prompt injection detected."},
@@ -174,9 +194,12 @@ async def prompt_injection_middleware(request: Request, call_next):
             except Exception:
                 pass
 
-            # need to make the body available again for downstream consumers
+            # Make the body available again for downstream consumers. Starlette's
+            # BaseHTTPMiddleware replays a cached request body only when `_body` is
+            # set (stream() does not set it), so set it explicitly.
+            request._body = body
             async def receive():
-                return {"type": "http.request", "body": body}
+                return {"type": "http.request", "body": body, "more_body": False}
 
             request._receive = receive
     response = await call_next(request)

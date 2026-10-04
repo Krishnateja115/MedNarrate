@@ -23,7 +23,7 @@ async def check_and_send_medication_reminders():
 
     async with AsyncSessionLocal() as db:
         # Fetch active schedules
-        stmt = select(MedicationSchedule).where(MedicationSchedule.is_active is True)
+        stmt = select(MedicationSchedule).where(MedicationSchedule.is_active.is_(True))
         result = await db.execute(stmt)
         schedules = result.scalars().all()
 

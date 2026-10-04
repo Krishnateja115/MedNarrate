@@ -510,13 +510,20 @@ function UserDetailPageContent() {
               <CardTitle>Medication Schedules</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
+              {reminders?.phi_redacted && reminders.reminders?.length > 0 && (
+                <p className="text-xs text-muted-foreground pb-3">
+                  Medication details are protected health information. Request break-glass access to view them.
+                </p>
+              )}
               {reminders?.reminders ? (
                 <div className="divide-y">
                   {reminders.reminders.length > 0 ? reminders.reminders.map((reminder: any) => (
                     <div key={reminder.id} className="py-3 flex justify-between items-center">
                       <div>
                         <div className="font-medium text-sm">{reminder.medication_name}</div>
-                        <div className="text-xs text-muted-foreground mt-1">{reminder.dosage} • {reminder.frequency}</div>
+                        {!reminders.phi_redacted && (
+                          <div className="text-xs text-muted-foreground mt-1">{[reminder.dosage, reminder.frequency].filter(Boolean).join(' • ')}</div>
+                        )}
                       </div>
                       <Badge variant={reminder.is_active ? 'outline' : 'secondary'}>{reminder.is_active ? 'Active' : 'Inactive'}</Badge>
                     </div>

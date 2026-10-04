@@ -11,6 +11,7 @@ from app.models.medication_schedule import MedicationSchedule
 from app.models.rag_chunk import RagChunk
 from app.models.report_analysis import ReportAnalysis
 from app.models.user import User
+from tests.pdf_fixtures import VALID_PDF
 
 
 @pytest.mark.asyncio
@@ -30,7 +31,7 @@ async def test_report_delete_and_cascade_cleanup(
         files={
             "file": (
                 "test_report.pdf",
-                b"%PDF-1.4 test document content",
+                VALID_PDF,
                 "application/pdf",
             )
         },
@@ -79,7 +80,7 @@ async def test_delete_processed_report_with_child_records(
         files={
             "file": (
                 "processed.pdf",
-                b"%PDF-1.4 processed test content",
+                VALID_PDF,
                 "application/pdf",
             )
         },

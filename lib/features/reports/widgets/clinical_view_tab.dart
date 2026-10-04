@@ -576,7 +576,7 @@ class ClinicalViewTab extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-              '${translation?.uiLabels['label_source_latest_report'] ?? 'Source: Uploaded report'}',
+              translation?.uiLabels['label_source_latest_report'] ?? 'Source: Uploaded report',
               style: TextStyle(
                   fontSize: 10,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),

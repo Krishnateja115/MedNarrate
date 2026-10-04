@@ -12,8 +12,9 @@ class OfflineQueueService {
 
   Future<void> initialize() async {
     if (_initialized) return;
-    if (!Hive.isAdapterRegistered(3))
+    if (!Hive.isAdapterRegistered(3)) {
       Hive.registerAdapter(OfflineActionAdapter());
+    }
 
     // Use encryption for the offline queue box
     final key = await KeystoreService.instance.getEncryptionKey();

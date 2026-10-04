@@ -1,5 +1,6 @@
 import pytest
 from httpx import AsyncClient
+from tests.pdf_fixtures import VALID_PDF
 
 
 @pytest.fixture
@@ -25,7 +26,7 @@ async def test_create_chat_session(client: AsyncClient, auth_headers):
     resp = await client.post(
         "/api/v1/reports/upload",
         headers=auth_headers,
-        files={"file": ("test.pdf", b"%PDF-1.4 dummy", "application/pdf")},
+        files={"file": ("test.pdf", VALID_PDF, "application/pdf")},
         data={
             "title": "Test Report",
             "report_date": "2024-01-01",

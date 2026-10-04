@@ -311,8 +311,9 @@ class ApiService {
   }) async {
     final body = <String, dynamic>{};
     if (fullName != null) body['full_name'] = fullName;
-    if (preferredLanguage != null)
+    if (preferredLanguage != null) {
       body['preferred_language'] = preferredLanguage;
+    }
     if (dateOfBirth != null) body['date_of_birth'] = dateOfBirth;
     if (gender != null) body['gender'] = gender;
     if (role != null) body['role'] = role;
@@ -323,14 +324,18 @@ class ApiService {
         emergencyContactPhone != null) {
       final medicalProfile = <String, dynamic>{};
       if (bloodGroup != null) medicalProfile['blood_group'] = bloodGroup;
-      if (knownAllergies != null)
+      if (knownAllergies != null) {
         medicalProfile['known_allergies'] = knownAllergies;
-      if (chronicConditions != null)
+      }
+      if (chronicConditions != null) {
         medicalProfile['chronic_conditions'] = chronicConditions;
-      if (emergencyContactName != null)
+      }
+      if (emergencyContactName != null) {
         medicalProfile['emergency_contact_name'] = emergencyContactName;
-      if (emergencyContactPhone != null)
+      }
+      if (emergencyContactPhone != null) {
         medicalProfile['emergency_contact_phone'] = emergencyContactPhone;
+      }
       body['medical_profile'] = medicalProfile;
     }
     if (doctorProfile != null) {

@@ -395,8 +395,9 @@ class _ReminderFormState extends State<_ReminderForm> {
     if (t.contains('morning')) return const TimeOfDay(hour: 8, minute: 0);
     if (t.contains('afternoon')) return const TimeOfDay(hour: 14, minute: 0);
     if (t.contains('evening')) return const TimeOfDay(hour: 18, minute: 0);
-    if (t.contains('night') || t.contains('bedtime'))
+    if (t.contains('night') || t.contains('bedtime')) {
       return const TimeOfDay(hour: 21, minute: 0);
+    }
 
     final parts = t.split(RegExp(r'[:.]'));
     if (parts.length >= 2) {

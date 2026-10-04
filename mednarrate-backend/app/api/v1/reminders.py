@@ -2,7 +2,7 @@ import uuid
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -22,6 +22,25 @@ class ReminderCreate(BaseModel):
     duration_days: Optional[int] = None
     notes: Optional[str] = None
     report_id: Optional[uuid.UUID] = None
+
+
+class ReminderUpdate(BaseModel):
+    """Allowlisted, typed PATCH body.
+
+    Ownership (user_id), id and timestamps are intentionally absent and unknown
+    keys are rejected, so a caller can never reassign a schedule to another user.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    medication_name: Optional[str] = None
+    dosage: Optional[str] = None
+    frequency: Optional[str] = None
+    times_of_day: Optional[List[str]] = None
+    duration_days: Optional[int] = None
+    notes: Optional[str] = None
+    report_id: Optional[uuid.UUID] = None
+    is_active: Optional[bool] = None
 
 
 class ReminderOut(ReminderCreate):
@@ -56,7 +75,7 @@ async def get_reminders(
 @router.patch("/{reminder_id}", response_model=ReminderOut)
 async def update_reminder(
     reminder_id: uuid.UUID,
-    reminder: dict,
+    reminder: ReminderUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -69,7 +88,7 @@ async def update_reminder(
     if not db_reminder:
         raise HTTPException(status_code=404, detail="Reminder not found")
 
-    for k, v in reminder.items():
+    for k, v in reminder.model_dump(exclude_unset=True).items():
         setattr(db_reminder, k, v)
 
     await db.commit()

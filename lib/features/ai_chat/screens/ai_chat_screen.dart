@@ -52,11 +52,12 @@ class _AIChatScreenState extends State<AIChatScreen> {
       }
       await _loadMessages();
     } on ApiException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.message;
           _initializing = false;
         });
+      }
     }
   }
 
@@ -76,11 +77,12 @@ class _AIChatScreenState extends State<AIChatScreen> {
         _scrollToBottom();
       }
     } on ApiException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.message;
           _initializing = false;
         });
+      }
     }
   }
 

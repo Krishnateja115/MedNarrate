@@ -62,11 +62,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
         _startPollingForProcessingReports();
       }
     } on ApiException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.message;
           _loading = false;
         });
+      }
     }
   }
 

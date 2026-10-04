@@ -103,6 +103,8 @@
 - `notes`: PHI
 - `created_at`, `updated_at`: INTERNAL
 
+**Access policy:** the admin endpoint `GET /api/v1/admin/users/{id}/reminders` (`users.view`) returns only `id`, `is_active`, `created_at` unless the admin holds an active break-glass grant for `medical_profile` on that user; medication name, dosage and frequency are then returned and the disclosure is audited as `SENSITIVE_MEDICATION_ACCESS`. Patient-side PATCH accepts an allowlisted field set only; `user_id` is immutable.
+
 ### SupportTicket & SupportTicketMessage (support.py)
 - `id`: INTERNAL
 - `user_id`: INTERNAL

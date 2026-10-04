@@ -2,6 +2,7 @@ import os
 import pytest
 from httpx import AsyncClient
 from app.core.config import settings
+from tests.pdf_fixtures import VALID_PDF
 
 
 @pytest.fixture
@@ -31,7 +32,7 @@ async def other_auth_headers(client: AsyncClient):
 
 
 async def _upload_dummy_report(client, auth_headers):
-    file_content = b"%PDF-1.4 dummy pdf content"
+    file_content = VALID_PDF
     files = {"file": ("test.pdf", file_content, "application/pdf")}
     data = {"title": "My Blood Test", "report_date": "2024-01-01", "report_type": "blood"}
     resp = await client.post("/api/v1/reports/upload", headers=auth_headers, files=files, data=data)
@@ -39,7 +40,7 @@ async def _upload_dummy_report(client, auth_headers):
 
 
 async def test_upload_success(client: AsyncClient, auth_headers):
-    file_content = b"%PDF-1.4 dummy pdf content"
+    file_content = VALID_PDF
     files = {"file": ("test.pdf", file_content, "application/pdf")}
     data = {"title": "My Blood Test", "report_date": "2024-01-01", "report_type": "blood"}
 
