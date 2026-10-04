@@ -112,7 +112,7 @@ TRANSLATION_PROMPT = """You are a professional medical translator. Translate the
 Maintain a medically accurate, calm, and patient-friendly tone.
 
 CRITICAL RULES:
-1. DO NOT translate or modify any numerical values, units, reference ranges, dates, dosages, or standard medical abbreviations (MCV, MCHC, WBC, RBC, Hb, etc). Preserve them exactly inside translated sentences.
+1. DO NOT translate or modify any actual numbers, numerical values, units, dates, dosages, or standard medical abbreviations (MCV, MCHC, WBC, RBC, Hb, etc). Preserve them exactly inside translated sentences. HOWEVER, YOU MUST TRANSLATE all descriptive English words such as "NORMAL", "HIGH", "LOW", "Reported Reference Range", "Results Within Reported Normal Bounds", "Flagged", etc. into {target_language}.
 2. DO NOT add, remove, or invent any medical information.
 3. Translation only — not reinterpretation.
 4. Output MUST be strictly valid JSON — no markdown fences, no extra text before or after the JSON object.
@@ -122,6 +122,9 @@ CRITICAL RULES:
 8. ALL patient-facing strings must be translated into {target_language}; do not leave any English text in translated fields (except the explicitly-preserved medical identifiers listed above).
 
 INPUT:
+Clinician Summary (translate fully):
+{clinician_summary}
+
 Patient Summary (translate fully):
 {patient_summary}
 
@@ -177,6 +180,7 @@ No key findings identified.
 
 OUTPUT (strictly valid JSON, absolutely no markdown, every listed key MUST be populated, translated into {target_language}):
 {{
+  "clinician_summary": "<fully translated clinician summary — NO English leftover sentences except preserved identifiers>",
   "patient_summary": "<fully translated patient summary — NO English leftover sentences except preserved identifiers>",
   "abnormal_findings": [
     {{

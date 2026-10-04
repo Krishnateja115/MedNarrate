@@ -568,4 +568,70 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get reportAnalyzedSuccessfully =>
       'నివేదిక విజయవంతంగా విశ్లేషించబడింది!';
+
+  @override
+  String get statusHigh => 'అధికం';
+
+  @override
+  String get statusLow => 'తక్కువ';
+
+  @override
+  String get statusNormal => 'సాధారణ';
+
+  @override
+  String get statusCritical => 'క్లిష్టమైన';
+
+  @override
+  String get statusNotClassified => 'వర్గీకరించబడలేదు';
+
+  @override
+  String get hospitalUnspecified => 'పేర్కొనబడలేదు';
+
+  @override
+  String get validationPassed => 'ఆమోదించబడింది';
+
+  @override
+  String get statusCompleted => 'పూర్తయింది';
+
+  @override
+  String get sectionLaboratoryResults => 'ప్రయోగశాల ఫలితాలు';
+
+  @override
+  String get sectionReportedMedications => 'నివేదించబడిన మందులు';
+
+  @override
+  String get sectionDiagnosesAndFindings => 'రోగనిర్ధారణలు & అన్వేషణలు';
+
+  @override
+  String get sectionHistoricalComparison => 'చారిత్రక పోలిక';
+
+  @override
+  String get sectionSourceAndValidation => 'మూలం మరియు ధ్రువీకరణ';
+
+  @override
+  String get sectionClinicalExecutiveSummary =>
+      'క్లినికల్ ఎగ్జిక్యూటివ్ సారాంశం';
+
+  @override
+  String get translationUnavailable =>
+      'అనువాదం అందుబాటులో లేదు, అసలు చూపిస్తుంది.';
+
+  @override
+  String get translationFailedRetry =>
+      'అనువాదం విఫలమైంది. దయచేసి మళ్లీ ప్రయత్నించండి.';
+
+  @override
+  String get disclaimerPatient =>
+      'నిరాకరణ: MedNarrate రోగి సారాంశాలు విద్యాపరమైన సందర్భాన్ని మాత్రమే అందిస్తాయి...';
+
+  @override
+  String get disclaimerSummary =>
+      'నిరాకరణ: MedNarrate AI సారాంశం సమాచార ప్రయోజనాల కోసం మాత్రమే...';
+
+  @override
+  String get disclaimerEmergency =>
+      'ఇది వైద్య అత్యవసర పరిస్థితిలా అనిపిస్తుంది...';
+
+  @override
+  String get disclaimerNoFindings => 'ఎలాంటి కీలక అన్వేషణలు గుర్తించబడలేదు.';
 }

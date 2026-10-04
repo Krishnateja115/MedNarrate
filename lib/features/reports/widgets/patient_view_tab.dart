@@ -1,3 +1,5 @@
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_models.dart';
@@ -5,7 +7,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/markdown_formatter.dart';
 import '../models/report_model.dart';
-import 'package:mednarrate/l10n/app_localizations.dart';
+import '../../../core/services/api_exception.dart';
 
 class PatientViewTab extends StatefulWidget {
   final ReportModel report;
@@ -112,10 +114,12 @@ class _PatientViewTabState extends State<PatientViewTab> {
 
     try {
       await widget.onTranslate!(selected);
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
+        final errorMsg =
+            (e is ApiException) ? e.message : l10n.translationFailed;
         messenger.showSnackBar(
-          SnackBar(content: Text(l10n.translationFailed)),
+          SnackBar(content: Text(errorMsg)),
         );
       }
     }
@@ -199,7 +203,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
 
     final disclaimerPatient = _label('label_disclaimer_patient',
         fallback:
-            'Disclaimer: MedNarrate patient summaries provide educational context only and do not constitute a medical diagnosis or prescription. Always consult your doctor for personalized advice.');
+            AppLocalizations.of(context)?.disclaimerPatient ?? AppLocalizations.of(context)?.disclaimerPatient ?? 'Disclaimer: MedNarrate patient summaries provide educational context only and do not constitute a medical diagnosis or prescription. Always consult your doctor for personalized advice.');
 
     final sectionPatientReportInfo = _label('section_patient_report_info',
         fallback: 'Patient & Report Information');
@@ -346,7 +350,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
           // 5. Reported Medications
           Text(
             _label('section_reported_medications',
-                fallback: 'Reported Medications'),
+                fallback: AppLocalizations.of(context)?.sectionReportedMedications ?? AppLocalizations.of(context)?.sectionReportedMedications ?? 'Reported Medications'),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -484,7 +488,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
                         Icon(Icons.calendar_today,
                             size: 12, color: theme.colorScheme.primary),
                         const SizedBox(width: 4),
-                        Text(Formatters.formatDate(report.reportDate, translation?.language ?? 'en'),
+                        Text(
+                            Formatters.formatDate(report.reportDate,
+                                translation?.language ?? 'en'),
                             style: const TextStyle(fontSize: 12)),
                         const SizedBox(width: 10),
                         Container(
@@ -697,7 +703,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
     required String sourceLatestReport,
   }) {
     final theme = Theme.of(context);
-    final name = med['translated_medication_name']?.toString() ?? med['medication_name']?.toString() ?? 'Medication';
+    final name = med['translated_medication_name']?.toString() ??
+        med['medication_name']?.toString() ??
+        'Medication';
     String dosage = med['dosage']?.toString() ?? 'Not specified';
     String frequency = med['frequency']?.toString() ?? 'Not specified';
     final l = translation?.uiLabels;

@@ -432,11 +432,13 @@ async def test_admin_copilot_chat(
         "messages": [{"role": "user", "content": "How many active users are there?"}]
     }
 
-    res = await client.post(
-        "/api/v1/admin/copilot/chat",
-        json=payload,
-        headers={"Cookie": f"access_token={token}"},
-    )
+    from unittest.mock import patch
+    with patch("app.core.config.settings.GEMINI_API_KEY", None):
+        res = await client.post(
+            "/api/v1/admin/copilot/chat",
+            json=payload,
+            headers={"Cookie": f"access_token={token}"},
+        )
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "ok"

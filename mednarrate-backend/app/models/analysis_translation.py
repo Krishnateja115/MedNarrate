@@ -23,6 +23,7 @@ class AnalysisTranslation(Base):
     )
     language: Mapped[str] = mapped_column(String, nullable=False)
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    clinician_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     patient_summary: Mapped[str] = mapped_column(Text, nullable=False)
     findings_json: Mapped[list] = mapped_column(JSONB, default=list)
     medications_json: Mapped[list] = mapped_column(JSONB, default=list)

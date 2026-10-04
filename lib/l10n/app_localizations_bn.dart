@@ -564,4 +564,68 @@ class AppLocalizationsBn extends AppLocalizations {
   @override
   String get reportAnalyzedSuccessfully =>
       'রিপোর্ট সফলভাবে বিশ্লেষণ করা হয়েছে!';
+
+  @override
+  String get statusHigh => 'HIGH';
+
+  @override
+  String get statusLow => 'LOW';
+
+  @override
+  String get statusNormal => 'NORMAL';
+
+  @override
+  String get statusCritical => 'CRITICAL';
+
+  @override
+  String get statusNotClassified => 'Not classified';
+
+  @override
+  String get hospitalUnspecified => 'Unspecified';
+
+  @override
+  String get validationPassed => 'PASSED';
+
+  @override
+  String get statusCompleted => 'COMPLETED';
+
+  @override
+  String get sectionLaboratoryResults => 'Laboratory Results';
+
+  @override
+  String get sectionReportedMedications => 'Reported Medications';
+
+  @override
+  String get sectionDiagnosesAndFindings => 'Diagnoses & Findings';
+
+  @override
+  String get sectionHistoricalComparison => 'Historical Comparison';
+
+  @override
+  String get sectionSourceAndValidation => 'Source & Validation';
+
+  @override
+  String get sectionClinicalExecutiveSummary => 'Clinical Executive Summary';
+
+  @override
+  String get translationUnavailable =>
+      'Translation unavailable, showing original.';
+
+  @override
+  String get translationFailedRetry => 'Translation failed. Please try again.';
+
+  @override
+  String get disclaimerPatient =>
+      'Disclaimer: MedNarrate patient summaries provide educational context only and do not constitute a medical diagnosis or prescription. Always consult your doctor for personalized advice.';
+
+  @override
+  String get disclaimerSummary =>
+      'Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.';
+
+  @override
+  String get disclaimerEmergency =>
+      'This sounds like a medical emergency. Please call your local emergency services (like 911) or go to the nearest emergency room immediately.';
+
+  @override
+  String get disclaimerNoFindings => 'No key findings identified.';
 }

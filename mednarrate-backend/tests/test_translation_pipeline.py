@@ -95,7 +95,7 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
         self.report_id = uuid.uuid4()
         self.user = types.SimpleNamespace(id=uuid.uuid4())
         self.source = types.SimpleNamespace(id=uuid.uuid4(), report_id=self.report_id,
-            patient_summary='Hemoglobin 10.2 g/dL', abnormal_findings=[], structured_lab_values=[])
+            patient_summary='Hemoglobin 10.2 g/dL', clinician_summary='Clinician Summary text', abnormal_findings_source='abnormal findings', meds_list='meds list', abnormal_findings=[], structured_lab_values=[], doctor_discussion_points=['English text point'])
         self.saved = []
         self.db = types.SimpleNamespace(execute=AsyncMock(), commit=AsyncMock(), refresh=AsyncMock(),
             delete=AsyncMock(), flush=AsyncMock(), add=self.saved.append)
@@ -121,7 +121,8 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
 
     def payload(self):
         text = 'మీ రక్త పరీక్ష నివేదిక'
-        return {'patient_summary': text+' Hemoglobin 10.2 g/dL', 'abnormal_findings': [],
+        long_text = text + ' ' + text + ' ' + text
+        return {'patient_summary': long_text + ' Hemoglobin 10.2 g/dL', 'clinician_summary': long_text, 'abnormal_findings': [],
             'medications': [], 'doctor_discussion_points': [text],
             'ui_labels': {key: text for key in self.route.REQUIRED_UI_LABEL_KEYS}}
 

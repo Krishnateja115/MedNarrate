@@ -16,6 +16,7 @@ from app.schemas.chat import (
     ChatSessionCreate,
     ChatSessionOut,
 )
+from app.services.translation_validation import TranslationVerifier
 from app.services.llm_client import generate
 from app.services.prompts import (
     CHAT_EMERGENCY_RESPONSE,
@@ -160,9 +161,29 @@ async def send_chat_message(
         # 4. Generate response
         prompt = RAG_SYSTEM_PROMPT.format(context=context, question=req.content)
         chat_sys = "You are a helpful medical AI assistant. Answer conversationally, concisely, and clearly based on the context. Do not offer diagnoses or prescribe medication."
+        
+        language = getattr(req, "language", "en")
+        if language != "en":
+            chat_sys += f" You MUST reply in the language with ISO code: {language}."
+
         ai_response = await generate(
             prompt, system_instruction=chat_sys, thinking_level="LOW"
         )
+        
+        # Lightweight Verification
+        verifier = TranslationVerifier()
+        # Mock a verification payload
+        verify_result = verifier.verify({"content": req.content}, {"content": ai_response}, language)
+        if not verify_result["ok"]:
+            retry_prompt = prompt + f"\n\nYOUR PREVIOUS RESPONSE FAILED: {'; '.join(f['reason'] for f in verify_result['failures'])}. PLEASE REPLY IN {language} WITHOUT META-TEXT."
+            ai_response_retry = await generate(
+                retry_prompt, system_instruction=chat_sys, thinking_level="LOW"
+            )
+            verify_result_retry = verifier.verify({"content": req.content}, {"content": ai_response_retry}, language)
+            if verify_result_retry["ok"] or len(verify_result_retry["failures"]) < len(verify_result["failures"]):
+                ai_response = ai_response_retry
+            else:
+                ai_response = ai_response + "\n\n(Translation note: The system encountered difficulty formatting this response in your language.)"
 
         # 5. Hallucination guard
         if context:

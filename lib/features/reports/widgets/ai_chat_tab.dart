@@ -118,8 +118,9 @@ class _AIChatTabState extends State<AIChatTab> {
     _scrollToBottom();
 
     try {
+      final lang = Localizations.localeOf(context).languageCode;
       final response =
-          await ApiService.instance.sendChatMessage(_sessionId!, text);
+          await ApiService.instance.sendChatMessage(_sessionId!, text, language: lang);
       if (mounted) {
         setState(() {
           _messages.add(response);

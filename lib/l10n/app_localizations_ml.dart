@@ -571,4 +571,71 @@ class AppLocalizationsMl extends AppLocalizations {
   @override
   String get reportAnalyzedSuccessfully =>
       'റിപ്പോർട്ട് വിജയകരമായി വിശകലനം ചെയ്തു!';
+
+  @override
+  String get statusHigh => 'ഉയർന്ന';
+
+  @override
+  String get statusLow => 'കുറഞ്ഞ';
+
+  @override
+  String get statusNormal => 'സാധാരണ';
+
+  @override
+  String get statusCritical => 'ഗുരുതരമായ';
+
+  @override
+  String get statusNotClassified => 'തരംതിരിച്ചിട്ടില്ല';
+
+  @override
+  String get hospitalUnspecified => 'വ്യക്തമാക്കിയിട്ടില്ല';
+
+  @override
+  String get validationPassed => 'പാസ്സായി';
+
+  @override
+  String get statusCompleted => 'പൂർത്തിയായി';
+
+  @override
+  String get sectionLaboratoryResults => 'ലബോറട്ടറി ഫലങ്ങൾ';
+
+  @override
+  String get sectionReportedMedications => 'റിപ്പോർട്ട് ചെയ്ത മരുന്നുകൾ';
+
+  @override
+  String get sectionDiagnosesAndFindings => 'രോഗനിർണ്ണയങ്ങളും കണ്ടെത്തലുകളും';
+
+  @override
+  String get sectionHistoricalComparison => 'ചരിത്രപരമായ താരതമ്യം';
+
+  @override
+  String get sectionSourceAndValidation => 'ഉറവിടവും സാധുതയും';
+
+  @override
+  String get sectionClinicalExecutiveSummary =>
+      'ക്ലിനിക്കൽ എക്സിക്യൂട്ടീവ് സംഗ്രഹം';
+
+  @override
+  String get translationUnavailable =>
+      'വിവർത്തനം ലഭ്യമല്ല, ഒറിജിനൽ കാണിക്കുന്നു.';
+
+  @override
+  String get translationFailedRetry =>
+      'വിവർത്തനം പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.';
+
+  @override
+  String get disclaimerPatient =>
+      'നിരാകരണം: മെഡ്‌നറേറ്റ് രോഗിയുടെ സംഗ്രഹങ്ങൾ വിദ്യാഭ്യാസ പശ്ചാത്തലം മാത്രമേ നൽകുന്നുള്ളൂ...';
+
+  @override
+  String get disclaimerSummary =>
+      'നിരാകരണം: മെഡ്‌നറേറ്റ് AI സംഗ്രഹം വിവരദായക ആവശ്യങ്ങൾക്ക് മാത്രമുള്ളതാണ്...';
+
+  @override
+  String get disclaimerEmergency =>
+      'ഇത് ഒരു മെഡിക്കൽ എമർജൻസി ആണെന്ന് തോന്നുന്നു...';
+
+  @override
+  String get disclaimerNoFindings =>
+      'പ്രധാന കണ്ടെത്തലുകളൊന്നും തിരിച്ചറിഞ്ഞിട്ടില്ല.';
 }

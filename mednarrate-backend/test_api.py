@@ -1,29 +1,33 @@
-import asyncio
-import logging
 import os
+import sys
+from dotenv import load_dotenv
+import httpx
+import asyncio
 
-logging.basicConfig(level=logging.DEBUG)
-logging.getLogger("httpx").setLevel(logging.DEBUG)
-logging.getLogger("httpcore").setLevel(logging.DEBUG)
+load_dotenv()
 
-os.environ["DATABASE_URL"] = "postgresql+asyncpg://fake:fake@localhost:5432/fake"
-os.environ["JWT_SECRET"] = "test-secret-for-boot-check"
-os.environ["CORS_ORIGINS"] = '["https://app.mednarrate.com"]'
-os.environ["PRIMARY_LLM_PROVIDER"] = "gemini"
-os.environ["GEMINI_MODEL"] = "gemini-3.8-flash"
-os.environ["GEMINI_API_KEY"] = "dummy"
-os.environ["ENVIRONMENT"] = "development"
-
-from app.services.llm_client import DevGeminiProvider
-
-async def test_llm():
-    provider = DevGeminiProvider()
-    print("Testing generate with model:", provider.model_name)
-    try:
-        res = await provider.generate("Say hello world in 2 words")
-        print("Generate response:", res)
-    except Exception as e:
-        print("Error during generate:", e)
+async def main():
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print("No API key found in .env")
+        return
+        
+    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    print(f"Testing model: {model_name}")
+    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
+    
+    payload = {
+        "contents": [{"parts": [{"text": "Hello, how are you?"}]}],
+    }
+    
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(url, json=payload, headers={"x-goog-api-key": api_key.strip()})
+        print(f"Status Code: {resp.status_code}")
+        if resp.status_code != 200:
+            print(f"Error: {resp.text}")
+        else:
+            print("Success!")
 
 if __name__ == "__main__":
-    asyncio.run(test_llm())
+    asyncio.run(main())

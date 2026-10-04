@@ -1,3 +1,5 @@
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_models.dart';
@@ -20,6 +22,20 @@ class ClinicalViewTab extends StatelessWidget {
     this.translation,
   });
 
+  String _translatedName(BuildContext context, String original) {
+    if (translation != null && translation!.language != 'en') {
+      final t = translation!.uiLabels['param_$original'];
+      if (t != null && t.isNotEmpty) {
+        if (t.trim().toLowerCase() == original.trim().toLowerCase()) {
+          final note = AppLocalizations.of(context)?.translationUnavailable ?? 'Translation unavailable';
+          return '$t ($note)';
+        }
+        return t;
+      }
+    }
+    return original;
+  }
+
   String _label(String key, {required String fallback}) {
     final t = translation;
     final labels = t?.uiLabels;
@@ -41,11 +57,20 @@ class ClinicalViewTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final summary = Helpers.sanitizeDisplayText(
+    String summary = Helpers.sanitizeDisplayText(
+      translation?.clinicianSummary ??
+      analysis?.translatedClinicianSummary ??
+      report.translatedClinicalSummary ??
       analysis?.clinicianSummary ??
-          report.clinicalSummary ??
-          'No clinical executive summary available for this report.',
+      report.clinicalSummary ??
+      'No clinical executive summary available for this report.',
     );
+    if (translation != null && translation!.language != 'en' && analysis != null) {
+      if (summary == Helpers.sanitizeDisplayText(analysis!.clinicianSummary ?? '')) {
+        final note = AppLocalizations.of(context)?.translationUnavailable ?? 'Translation unavailable';
+        summary = '$summary\n\n*($note)*';
+      }
+    }
 
     final rawLabs = analysis?.structuredLabValues ?? [];
     final labs =
@@ -85,8 +110,7 @@ class ClinicalViewTab extends StatelessWidget {
           const SizedBox(height: 20),
 
           // 2. Clinical Executive Summary
-          const Text(
-            'Clinical Executive Summary',
+          Text(AppLocalizations.of(context)?.sectionClinicalExecutiveSummary ?? AppLocalizations.of(context)?.sectionClinicalExecutiveSummary ?? 'Clinical Executive Summary',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
@@ -134,7 +158,7 @@ class ClinicalViewTab extends StatelessWidget {
           // 3. Key Clinical Findings / Noteworthy Alerts
           Text(
             _label('section_key_clinical_findings',
-                fallback: 'Key Clinical Findings'),
+                fallback: AppLocalizations.of(context)?.keyFindings ?? AppLocalizations.of(context)?.sectionKeyClinicalFindings ?? 'Key Clinical Findings'),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -147,23 +171,37 @@ class ClinicalViewTab extends StatelessWidget {
               if (item is LabValue) {
                 return ClinicalViewTab.buildAbnormalFindingRow(
                     context,
-                    item.testName,
+                    _translatedName(context, item.testName),
                     '${item.value} ${item.unit}',
                     item.flag,
                     item.refLow,
                     item.refHigh,
                     null);
               } else if (item is Map<String, dynamic>) {
+                final testName = item['test_name']?.toString() ??
+                      item['parameter']?.toString() ??
+                      'Finding';
+                String? explanation = item['explanation']?.toString();
+                if (translation != null && translation!.language != 'en') {
+                  try {
+                    final trItem = translation!.findingsJson.firstWhere((t) => t['test_name'] == testName);
+                    if (trItem['translated_explanation'] != null) {
+                        explanation = trItem['translated_explanation']?.toString();
+                        if (explanation == item['explanation']?.toString()) {
+                            final note = AppLocalizations.of(context)?.translationUnavailable ?? 'Translation unavailable';
+                            explanation = '$explanation\n\n*($note)*';
+                        }
+                    }
+                  } catch (_) {}
+                }
                 return ClinicalViewTab.buildAbnormalFindingRow(
                   context,
-                  item['test_name']?.toString() ??
-                      item['parameter']?.toString() ??
-                      'Finding',
+                  _translatedName(context, testName),
                   '${item['value'] ?? ''} ${item['unit'] ?? ''}',
                   item['flag']?.toString() ?? 'HIGH',
                   (item['ref_low'] as num?)?.toDouble(),
                   (item['ref_high'] as num?)?.toDouble(),
-                  item['explanation']?.toString(),
+                  explanation,
                 );
               }
               return const SizedBox.shrink();
@@ -172,8 +210,7 @@ class ClinicalViewTab extends StatelessWidget {
           const SizedBox(height: 24),
 
           // 4. Laboratory Results Table
-          const Text(
-            'Laboratory Results',
+          Text(AppLocalizations.of(context)?.sectionLaboratoryResults ?? AppLocalizations.of(context)?.sectionLaboratoryResults ?? 'Laboratory Results',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -182,13 +219,12 @@ class ClinicalViewTab extends StatelessWidget {
             _buildInfoBox(
                 context, 'No laboratory results found in structured analysis.')
           else
-            ClinicalViewTab.buildLabTable(context, labs),
+            buildLabTable(context, labs),
 
           const SizedBox(height: 24),
 
           // 5. Medications Table
-          const Text(
-            'Reported Medications',
+          Text(AppLocalizations.of(context)?.sectionReportedMedications ?? AppLocalizations.of(context)?.sectionReportedMedications ?? 'Reported Medications',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -196,14 +232,13 @@ class ClinicalViewTab extends StatelessWidget {
           if (meds.isEmpty)
             _buildInfoBox(context, 'No medications recorded in report data.')
           else
-            ClinicalViewTab.buildMedicationsTable(context, meds),
+            buildMedicationsTable(context, meds),
 
           const SizedBox(height: 24),
 
           // 6. Diagnoses & Extracted Findings
           if (diagnoses.isNotEmpty) ...[
-            const Text(
-              'Diagnoses & Findings',
+            Text(AppLocalizations.of(context)?.sectionDiagnosesAndFindings ?? AppLocalizations.of(context)?.sectionDiagnosesAndFindings ?? 'Diagnoses & Findings',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -242,8 +277,7 @@ class ClinicalViewTab extends StatelessWidget {
           ],
 
           // 7. Historical Comparison
-          const Text(
-            'Historical Comparison',
+          Text(AppLocalizations.of(context)?.sectionHistoricalComparison ?? AppLocalizations.of(context)?.sectionHistoricalComparison ?? 'Historical Comparison',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -252,8 +286,7 @@ class ClinicalViewTab extends StatelessWidget {
           const SizedBox(height: 24),
 
           // 8. Source & Validation Metadata
-          const Text(
-            'Source & Validation',
+          Text(AppLocalizations.of(context)?.sectionSourceAndValidation ?? AppLocalizations.of(context)?.sectionSourceAndValidation ?? 'Source & Validation',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -331,7 +364,7 @@ class ClinicalViewTab extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'Status: ${report.processingStatus.toUpperCase()}',
+                            'Status: ${report.processingStatus == "completed" ? (AppLocalizations.of(context)?.statusCompleted ?? "COMPLETED") : report.processingStatus.toUpperCase()}',
                             style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -349,9 +382,9 @@ class ClinicalViewTab extends StatelessWidget {
                                 .withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
-                            'Validation: PASSED',
-                            style: TextStyle(
+                          child: Text(
+                            'Validation: ${AppLocalizations.of(context)?.validationPassed ?? "PASSED"}',
+                            style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primary),
@@ -381,19 +414,19 @@ class ClinicalViewTab extends StatelessWidget {
     final flagLower = flag.toLowerCase();
 
     Color color = Colors.orange;
-    String statusTitle = 'Not classified';
+    String statusTitle = AppLocalizations.of(context)?.statusNotClassified ?? 'Not classified';
     if (flagLower == 'high') {
       color = Colors.redAccent;
-      statusTitle = 'High';
+      statusTitle = AppLocalizations.of(context)?.statusHigh ?? 'High';
     } else if (flagLower == 'low') {
       color = Colors.orange;
-      statusTitle = 'Low';
+      statusTitle = AppLocalizations.of(context)?.statusLow ?? 'Low';
     } else if (flagLower == 'critical') {
       color = AppColors.warning;
-      statusTitle = 'Critical';
+      statusTitle = AppLocalizations.of(context)?.statusCritical ?? 'Critical';
     } else if (flagLower == 'normal') {
       color = const Color(0xFF00C48C);
-      statusTitle = 'Normal';
+      statusTitle = AppLocalizations.of(context)?.statusNormal ?? 'Normal';
     }
 
     String refText = 'Not provided in report';
@@ -490,7 +523,7 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  static Widget buildLabTable(BuildContext context, List<LabValue> labs) {
+  Widget buildLabTable(BuildContext context, List<LabValue> labs) {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
@@ -534,7 +567,7 @@ class ClinicalViewTab extends StatelessWidget {
               if (flagStr == 'NORMAL') c = const Color(0xFF00C48C);
 
               return DataRow(cells: [
-                DataCell(Text(l.testName,
+                DataCell(Text(_translatedName(context, l.testName),
                     style: const TextStyle(fontWeight: FontWeight.w600))),
                 DataCell(Text('${l.value}')),
                 DataCell(Text(l.unit)),
@@ -550,7 +583,7 @@ class ClinicalViewTab extends StatelessWidget {
     );
   }
 
-  static Widget buildMedicationsTable(
+  Widget buildMedicationsTable(
       BuildContext context, List<Map<String, dynamic>> meds) {
     final theme = Theme.of(context);
     return Container(
@@ -591,13 +624,36 @@ class ClinicalViewTab extends StatelessWidget {
               final timing =
                   times.isNotEmpty ? times.join(', ') : 'Not specified';
               final prov = m['provenance']?.toString() ?? 'Report Extracted';
+              
+              String transName = name;
+              String transDose = dose;
+              String transFreq = freq;
+              String transTiming = timing;
+              
+              if (translation != null && translation!.language != 'en') {
+                 try {
+                    final trM = translation!.medicationsJson.firstWhere((t) => t['medication_name'] == name);
+                    transName = trM['translated_medication_name']?.toString() ?? name;
+                    if (transName == name) {
+                        final note = AppLocalizations.of(context)?.translationUnavailable ?? 'Translation unavailable';
+                        transName = '$transName ($note)';
+                    }
+                    final trDose = trM['translated_dosage']?.toString() ?? '';
+                    if (trDose.isNotEmpty) transDose = trDose;
+                    transFreq = trM['translated_frequency']?.toString() ?? freq;
+                    final trTimes = trM['translated_times_of_day'];
+                    if (trTimes is List && trTimes.isNotEmpty) {
+                       transTiming = trTimes.join(', ');
+                    }
+                 } catch (_) {}
+              }
 
               return DataRow(cells: [
-                DataCell(Text(name,
+                DataCell(Text(transName,
                     style: const TextStyle(fontWeight: FontWeight.bold))),
-                DataCell(Text(dose)),
-                DataCell(Text(freq)),
-                DataCell(Text(timing)),
+                DataCell(Text(transDose)),
+                DataCell(Text(transFreq)),
+                DataCell(Text(transTiming)),
                 DataCell(Text(prov,
                     style: const TextStyle(fontSize: 11, color: Colors.grey))),
               ]);

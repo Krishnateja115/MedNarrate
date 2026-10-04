@@ -1,540 +1,799 @@
 {
   "@@locale": "en",
-
   "appTitle": "MedNarrate",
-  "@appTitle": {"description": "Application name"},
-
+  "@appTitle": {
+    "description": "Application name"
+  },
   "welcomeBack": "Welcome Back",
-  "@welcomeBack": {"description": "Login screen greeting"},
-
+  "@welcomeBack": {
+    "description": "Login screen greeting"
+  },
   "signInToContinue": "Sign in to continue",
-  "@signInToContinue": {"description": "Login screen subtitle"},
-
+  "@signInToContinue": {
+    "description": "Login screen subtitle"
+  },
   "email": "Email",
-  "@email": {"description": "Email field label"},
-
+  "@email": {
+    "description": "Email field label"
+  },
   "emailAddress": "Email Address",
-  "@emailAddress": {"description": "Email address field label"},
-
+  "@emailAddress": {
+    "description": "Email address field label"
+  },
   "password": "Password",
-  "@password": {"description": "Password field label"},
-
+  "@password": {
+    "description": "Password field label"
+  },
   "confirmPassword": "Confirm Password",
-  "@confirmPassword": {"description": "Confirm password field label"},
-
+  "@confirmPassword": {
+    "description": "Confirm password field label"
+  },
   "forgotPassword": "Forgot Password?",
-  "@forgotPassword": {"description": "Forgot password link"},
-
+  "@forgotPassword": {
+    "description": "Forgot password link"
+  },
   "login": "Login",
-  "@login": {"description": "Login button"},
-
+  "@login": {
+    "description": "Login button"
+  },
   "signingIn": "Signing in…",
-  "@signingIn": {"description": "Login loading state"},
-
+  "@signingIn": {
+    "description": "Login loading state"
+  },
   "dontHaveAccount": "Don't have an account?",
-  "@dontHaveAccount": {"description": "Signup link prompt"},
-
+  "@dontHaveAccount": {
+    "description": "Signup link prompt"
+  },
   "signUp": "Sign Up",
-  "@signUp": {"description": "Sign up button"},
-
+  "@signUp": {
+    "description": "Sign up button"
+  },
   "createAccount": "Create Account",
-  "@createAccount": {"description": "Signup screen heading"},
-
+  "@createAccount": {
+    "description": "Signup screen heading"
+  },
   "personalizeHealthJourney": "Let's personalize your health journey.",
-  "@personalizeHealthJourney": {"description": "Signup screen subtitle"},
-
+  "@personalizeHealthJourney": {
+    "description": "Signup screen subtitle"
+  },
   "fullName": "Full Name",
-  "@fullName": {"description": "Full name field label"},
-
+  "@fullName": {
+    "description": "Full name field label"
+  },
   "creatingAccount": "Creating Account…",
-  "@creatingAccount": {"description": "Signup loading state"},
-
+  "@creatingAccount": {
+    "description": "Signup loading state"
+  },
   "alreadyHaveAccount": "Already have an account? Login",
-  "@alreadyHaveAccount": {"description": "Login link on signup page"},
-
+  "@alreadyHaveAccount": {
+    "description": "Login link on signup page"
+  },
   "resetPassword": "Reset Password",
-  "@resetPassword": {"description": "Reset password screen title"},
-
+  "@resetPassword": {
+    "description": "Reset password screen title"
+  },
   "sendResetToken": "Send Reset Token",
-  "@sendResetToken": {"description": "Send reset token button"},
-
+  "@sendResetToken": {
+    "description": "Send reset token button"
+  },
   "backToEmail": "Back to Email",
-  "@backToEmail": {"description": "Back to email button on reset"},
-
+  "@backToEmail": {
+    "description": "Back to email button on reset"
+  },
   "dashboard": "Dashboard",
-  "@dashboard": {"description": "Dashboard tab label"},
-
+  "@dashboard": {
+    "description": "Dashboard tab label"
+  },
   "journal": "Journal",
-  "@journal": {"description": "Journal/Reports tab label"},
-
+  "@journal": {
+    "description": "Journal/Reports tab label"
+  },
   "settings": "Settings",
-  "@settings": {"description": "Settings tab label"},
-
+  "@settings": {
+    "description": "Settings tab label"
+  },
   "profile": "Profile",
-  "@profile": {"description": "Profile tab label"},
-
+  "@profile": {
+    "description": "Profile tab label"
+  },
   "quickActions": "Quick Actions",
-  "@quickActions": {"description": "Dashboard section heading"},
-
+  "@quickActions": {
+    "description": "Dashboard section heading"
+  },
   "recentReports": "Recent Reports",
-  "@recentReports": {"description": "Dashboard section heading"},
-
+  "@recentReports": {
+    "description": "Dashboard section heading"
+  },
   "noRecentReports": "No recent reports.",
-  "@noRecentReports": {"description": "Empty state on dashboard"},
-
+  "@noRecentReports": {
+    "description": "Empty state on dashboard"
+  },
   "reports": "Reports",
-  "@reports": {"description": "Reports title"},
-
+  "@reports": {
+    "description": "Reports title"
+  },
   "allReports": "All Reports",
-  "@allReports": {"description": "All reports quick action"},
-
+  "@allReports": {
+    "description": "All reports quick action"
+  },
   "aiChat": "AI Chat",
-  "@aiChat": {"description": "AI Chat quick action"},
-
+  "@aiChat": {
+    "description": "AI Chat quick action"
+  },
   "insights": "Insights",
-  "@insights": {"description": "Insights quick action"},
-
+  "@insights": {
+    "description": "Insights quick action"
+  },
   "statReports": "Reports",
-  "@statReports": {"description": "Statistics card: reports count"},
-
+  "@statReports": {
+    "description": "Statistics card: reports count"
+  },
   "statReminders": "Reminders",
-  "@statReminders": {"description": "Statistics card: reminders count"},
-
+  "@statReminders": {
+    "description": "Statistics card: reminders count"
+  },
   "statFavourites": "Favourites",
-  "@statFavourites": {"description": "Statistics card: favourites count"},
-
+  "@statFavourites": {
+    "description": "Statistics card: favourites count"
+  },
   "noReportsFound": "No reports found",
-  "@noReportsFound": {"description": "Empty state in reports screen"},
-
+  "@noReportsFound": {
+    "description": "Empty state in reports screen"
+  },
   "uploadFirstReport": "Upload your first medical report to get started",
-  "@uploadFirstReport": {"description": "Empty state subtitle in reports screen"},
-
+  "@uploadFirstReport": {
+    "description": "Empty state subtitle in reports screen"
+  },
   "uploadReport": "Upload Report",
-  "@uploadReport": {"description": "Upload report app bar title"},
-
+  "@uploadReport": {
+    "description": "Upload report app bar title"
+  },
   "uploadMedicalReport": "Upload Medical Report",
-  "@uploadMedicalReport": {"description": "Upload screen heading"},
-
+  "@uploadMedicalReport": {
+    "description": "Upload screen heading"
+  },
   "pdfJpgPngMax": "PDF, JPG, JPEG, or PNG · max 25 MB",
-  "@pdfJpgPngMax": {"description": "Upload file type hint"},
-
+  "@pdfJpgPngMax": {
+    "description": "Upload file type hint"
+  },
   "chooseFile": "Choose File",
-  "@chooseFile": {"description": "File picker button"},
-
+  "@chooseFile": {
+    "description": "File picker button"
+  },
   "uploadAndAnalyze": "Upload & Analyze",
-  "@uploadAndAnalyze": {"description": "Upload & analyze button"},
-
+  "@uploadAndAnalyze": {
+    "description": "Upload & analyze button"
+  },
   "uploading": "Uploading…",
-  "@uploading": {"description": "Upload in-progress label"},
-
+  "@uploading": {
+    "description": "Upload in-progress label"
+  },
   "analyzingReport": "Analyzing your report with AI…",
-  "@analyzingReport": {"description": "Analysis in progress message on upload"},
-
+  "@analyzingReport": {
+    "description": "Analysis in progress message on upload"
+  },
   "thisMayTakeAMinute": "This may take a minute.",
-  "@thisMayTakeAMinute": {"description": "Analysis wait time hint"},
-
+  "@thisMayTakeAMinute": {
+    "description": "Analysis wait time hint"
+  },
   "title": "Title",
-  "@title": {"description": "Report title field label"},
-
+  "@title": {
+    "description": "Report title field label"
+  },
   "hospital": "Hospital (optional)",
-  "@hospital": {"description": "Hospital field label"},
-
+  "@hospital": {
+    "description": "Hospital field label"
+  },
   "reportType": "Report Type",
-  "@reportType": {"description": "Report type dropdown label"},
-
+  "@reportType": {
+    "description": "Report type dropdown label"
+  },
   "reportDetails": "Report Details",
-  "@reportDetails": {"description": "Report details screen title"},
-
+  "@reportDetails": {
+    "description": "Report details screen title"
+  },
   "summaryTab": "Summary",
-  "@summaryTab": {"description": "Tab label: Summary"},
-
+  "@summaryTab": {
+    "description": "Tab label: Summary"
+  },
   "labResultsTab": "Lab Results",
-  "@labResultsTab": {"description": "Tab label: Lab Results"},
-
+  "@labResultsTab": {
+    "description": "Tab label: Lab Results"
+  },
   "aiChatTab": "AI Chat",
-  "@aiChatTab": {"description": "Tab label: AI Chat"},
-
+  "@aiChatTab": {
+    "description": "Tab label: AI Chat"
+  },
   "reportDeleted": "Report deleted.",
-  "@reportDeleted": {"description": "Success message after deleting report"},
-
+  "@reportDeleted": {
+    "description": "Success message after deleting report"
+  },
   "deleteReport": "Delete Report",
-  "@deleteReport": {"description": "Delete report menu item"},
-
+  "@deleteReport": {
+    "description": "Delete report menu item"
+  },
   "deleteReportTitle": "Delete Report?",
-  "@deleteReportTitle": {"description": "Delete report dialog title"},
-
+  "@deleteReportTitle": {
+    "description": "Delete report dialog title"
+  },
   "deleteReportConfirm": "This will permanently delete this report and all its analysis. This cannot be undone.",
-  "@deleteReportConfirm": {"description": "Delete report confirmation message"},
-
+  "@deleteReportConfirm": {
+    "description": "Delete report confirmation message"
+  },
   "cancel": "Cancel",
-  "@cancel": {"description": "Cancel button"},
-
+  "@cancel": {
+    "description": "Cancel button"
+  },
   "delete": "Delete",
-  "@delete": {"description": "Delete button"},
-
+  "@delete": {
+    "description": "Delete button"
+  },
   "aiAnalysis": "AI Analysis",
-  "@aiAnalysis": {"description": "AI analysis screen title"},
-
+  "@aiAnalysis": {
+    "description": "AI analysis screen title"
+  },
   "analyzingYourReport": "Analyzing your report…",
-  "@analyzingYourReport": {"description": "Analysis in progress heading"},
-
+  "@analyzingYourReport": {
+    "description": "Analysis in progress heading"
+  },
   "aiReadingDocument": "AI is reading your document. This may take a minute.",
-  "@aiReadingDocument": {"description": "Analysis wait description"},
-
+  "@aiReadingDocument": {
+    "description": "Analysis wait description"
+  },
   "analysisFailed": "Analysis Failed",
-  "@analysisFailed": {"description": "Analysis failure heading"},
-
+  "@analysisFailed": {
+    "description": "Analysis failure heading"
+  },
   "retryAnalysis": "Retry Analysis",
-  "@retryAnalysis": {"description": "Retry analysis button"},
-
+  "@retryAnalysis": {
+    "description": "Retry analysis button"
+  },
   "forYou": "For You",
-  "@forYou": {"description": "Patient summary mode tab"},
-
+  "@forYou": {
+    "description": "Patient summary mode tab"
+  },
   "clinicalView": "Clinical View",
-  "@clinicalView": {"description": "Clinician summary mode tab"},
-
+  "@clinicalView": {
+    "description": "Clinician summary mode tab"
+  },
   "summary": "Summary",
-  "@summary": {"description": "Summary section heading"},
-
+  "@summary": {
+    "description": "Summary section heading"
+  },
   "labValues": "Lab Values",
-  "@labValues": {"description": "Lab values section heading"},
-
+  "@labValues": {
+    "description": "Lab values section heading"
+  },
   "abnormalFindings": "Abnormal Findings",
-  "@abnormalFindings": {"description": "Abnormal findings section heading"},
-
+  "@abnormalFindings": {
+    "description": "Abnormal findings section heading"
+  },
   "abnormalValuesDetected": "Abnormal Values Detected",
-  "@abnormalValuesDetected": {"description": "Abnormal alert title"},
-
+  "@abnormalValuesDetected": {
+    "description": "Abnormal alert title"
+  },
   "someParametersOutOfRange": "Some parameters are outside the normal reference range.",
-  "@someParametersOutOfRange": {"description": "Abnormal alert body"},
-
+  "@someParametersOutOfRange": {
+    "description": "Abnormal alert body"
+  },
   "consultYourDoctor": "Consult your doctor about these findings.",
-  "@consultYourDoctor": {"description": "Medical advice note"},
-
+  "@consultYourDoctor": {
+    "description": "Medical advice note"
+  },
   "keyFindings": "Key Findings",
-  "@keyFindings": {"description": "Key findings section"},
-
+  "@keyFindings": {
+    "description": "Key findings section"
+  },
   "noKeyFindings": "No key findings available for this report.",
-  "@noKeyFindings": {"description": "Empty state for key findings"},
-
+  "@noKeyFindings": {
+    "description": "Empty state for key findings"
+  },
   "noLabValues": "No lab values found.",
-  "@noLabValues": {"description": "Empty state for lab values"},
-
+  "@noLabValues": {
+    "description": "Empty state for lab values"
+  },
   "exportPdf": "Export PDF",
-  "@exportPdf": {"description": "Export PDF button"},
-
+  "@exportPdf": {
+    "description": "Export PDF button"
+  },
   "exporting": "Exporting…",
-  "@exporting": {"description": "Exporting in progress"},
-
+  "@exporting": {
+    "description": "Exporting in progress"
+  },
   "printPreview": "Print / Preview",
-  "@printPreview": {"description": "Print button"},
-
+  "@printPreview": {
+    "description": "Print button"
+  },
   "translate": "Translate",
-  "@translate": {"description": "Translate button"},
-
+  "@translate": {
+    "description": "Translate button"
+  },
   "retranslate": "Retranslate",
-  "@retranslate": {"description": "Retranslate button"},
-
+  "@retranslate": {
+    "description": "Retranslate button"
+  },
   "translateSummary": "Translate Summary",
-  "@translateSummary": {"description": "Translate bottom sheet title"},
-
+  "@translateSummary": {
+    "description": "Translate bottom sheet title"
+  },
   "translationFailed": "Translation failed. Please try again.",
-  "@translationFailed": {"description": "Translation error message"},
-
+  "@translationFailed": {
+    "description": "Translation error message"
+  },
   "translatedVersionAvailable": "Translated version available",
-  "@translatedVersionAvailable": {"description": "Translated version available hint"},
-
+  "@translatedVersionAvailable": {
+    "description": "Translated version available hint"
+  },
   "load": "Load",
-  "@load": {"description": "Load button"},
-
+  "@load": {
+    "description": "Load button"
+  },
   "healthInsights": "Health Insights",
-  "@healthInsights": {"description": "Insights screen title"},
-
+  "@healthInsights": {
+    "description": "Insights screen title"
+  },
   "compareSelected": "Compare Selected",
-  "@compareSelected": {"description": "Compare button in insights"},
-
+  "@compareSelected": {
+    "description": "Compare button in insights"
+  },
   "comparedToPreviousReport": "Compared to Previous Report",
-  "@comparedToPreviousReport": {"description": "Comparison section heading"},
-
+  "@comparedToPreviousReport": {
+    "description": "Comparison section heading"
+  },
   "noEarlierReport": "No earlier report available for comparison.",
-  "@noEarlierReport": {"description": "No earlier report empty state"},
-
+  "@noEarlierReport": {
+    "description": "No earlier report empty state"
+  },
   "needTwoReports": "Need at least 2 reports to show a trend graph.",
-  "@needTwoReports": {"description": "Trend graph minimum reports message"},
-
+  "@needTwoReports": {
+    "description": "Trend graph minimum reports message"
+  },
   "noHistoricalData": "No historical data for this test.",
-  "@noHistoricalData": {"description": "No trend data empty state"},
-
+  "@noHistoricalData": {
+    "description": "No trend data empty state"
+  },
   "testTrend": "Test Trend",
-  "@testTrend": {"description": "Test trend section heading"},
-
+  "@testTrend": {
+    "description": "Test trend section heading"
+  },
   "historicalTrend": "Historical Trend",
-  "@historicalTrend": {"description": "Historical trend section heading"},
-
+  "@historicalTrend": {
+    "description": "Historical trend section heading"
+  },
   "medicineReminders": "Medicine Reminders",
-  "@medicineReminders": {"description": "Medicine reminders card title"},
-
+  "@medicineReminders": {
+    "description": "Medicine reminders card title"
+  },
   "medicationReminders": "Medication Reminders",
-  "@medicationReminders": {"description": "Medication reminders screen title"},
-
+  "@medicationReminders": {
+    "description": "Medication reminders screen title"
+  },
   "setDailyReminders": "Set daily reminders for your medications",
-  "@setDailyReminders": {"description": "Medicine reminders subtitle"},
-
+  "@setDailyReminders": {
+    "description": "Medicine reminders subtitle"
+  },
   "noRemindersSet": "No reminders set",
-  "@noRemindersSet": {"description": "Empty state for reminders"},
-
+  "@noRemindersSet": {
+    "description": "Empty state for reminders"
+  },
   "addFirstReminder": "Add your first reminder",
-  "@addFirstReminder": {"description": "Empty reminder prompt"},
-
+  "@addFirstReminder": {
+    "description": "Empty reminder prompt"
+  },
   "repeatDaily": "Repeat Daily",
-  "@repeatDaily": {"description": "Repeat daily reminder option"},
-
+  "@repeatDaily": {
+    "description": "Repeat daily reminder option"
+  },
   "daily": "Daily",
-  "@daily": {"description": "Daily frequency label"},
-
+  "@daily": {
+    "description": "Daily frequency label"
+  },
   "deleteReminder": "Delete Reminder",
-  "@deleteReminder": {"description": "Delete reminder title"},
-
+  "@deleteReminder": {
+    "description": "Delete reminder title"
+  },
   "deleteReminderConfirm": "Are you sure you want to delete this reminder?",
-  "@deleteReminderConfirm": {"description": "Delete reminder confirmation"},
-
+  "@deleteReminderConfirm": {
+    "description": "Delete reminder confirmation"
+  },
   "medicalProfile": "Medical Information",
-  "@medicalProfile": {"description": "Medical profile screen title"},
-
+  "@medicalProfile": {
+    "description": "Medical profile screen title"
+  },
   "keepMedicalHistoryUpdated": "Keep your medical history up to date for better analysis.",
-  "@keepMedicalHistoryUpdated": {"description": "Medical profile subtitle"},
-
+  "@keepMedicalHistoryUpdated": {
+    "description": "Medical profile subtitle"
+  },
   "bloodGroup": "Blood Group",
-  "@bloodGroup": {"description": "Blood group field"},
-
+  "@bloodGroup": {
+    "description": "Blood group field"
+  },
   "knownAllergies": "Known Allergies",
-  "@knownAllergies": {"description": "Known allergies field"},
-
+  "@knownAllergies": {
+    "description": "Known allergies field"
+  },
   "chronicConditions": "Chronic Conditions",
-  "@chronicConditions": {"description": "Chronic conditions field"},
-
+  "@chronicConditions": {
+    "description": "Chronic conditions field"
+  },
   "save": "Save",
-  "@save": {"description": "Save button"},
-
+  "@save": {
+    "description": "Save button"
+  },
   "saving": "Saving...",
-  "@saving": {"description": "Saving in progress"},
-
+  "@saving": {
+    "description": "Saving in progress"
+  },
   "emergencyContact": "Emergency Contact",
-  "@emergencyContact": {"description": "Emergency contact screen title"},
-
+  "@emergencyContact": {
+    "description": "Emergency contact screen title"
+  },
   "emergencyContactSubtitle": "We'll use this only during emergencies.",
-  "@emergencyContactSubtitle": {"description": "Emergency contact subtitle"},
-
+  "@emergencyContactSubtitle": {
+    "description": "Emergency contact subtitle"
+  },
   "phoneNumber": "Phone Number",
-  "@phoneNumber": {"description": "Phone number field"},
-
+  "@phoneNumber": {
+    "description": "Phone number field"
+  },
   "account": "Account",
-  "@account": {"description": "Profile account section title"},
-
+  "@account": {
+    "description": "Profile account section title"
+  },
   "personalInformation": "Personal Information",
-  "@personalInformation": {"description": "Personal info profile tile"},
-
+  "@personalInformation": {
+    "description": "Personal info profile tile"
+  },
   "viewEditPersonalDetails": "View and edit your personal details",
-  "@viewEditPersonalDetails": {"description": "Personal info tile subtitle"},
-
+  "@viewEditPersonalDetails": {
+    "description": "Personal info tile subtitle"
+  },
   "bloodGroupAllergiesHistory": "Blood group, allergies and history",
-  "@bloodGroupAllergiesHistory": {"description": "Medical info tile subtitle"},
-
+  "@bloodGroupAllergiesHistory": {
+    "description": "Medical info tile subtitle"
+  },
   "emergencyContactInfo": "Emergency contact information",
-  "@emergencyContactInfo": {"description": "Emergency contact tile subtitle"},
-
+  "@emergencyContactInfo": {
+    "description": "Emergency contact tile subtitle"
+  },
   "appAndAppearance": "Application & Appearance",
-  "@appAndAppearance": {"description": "Profile appearance section"},
-
+  "@appAndAppearance": {
+    "description": "Profile appearance section"
+  },
   "themeMode": "Theme Mode",
-  "@themeMode": {"description": "Theme mode tile"},
-
+  "@themeMode": {
+    "description": "Theme mode tile"
+  },
   "darkMode": "Dark Mode (OLED)",
-  "@darkMode": {"description": "Dark mode label"},
-
+  "@darkMode": {
+    "description": "Dark mode label"
+  },
   "lightMode": "Light Mode",
-  "@lightMode": {"description": "Light mode label"},
-
+  "@lightMode": {
+    "description": "Light mode label"
+  },
   "languageAndPreferences": "Language & Advanced Preferences",
-  "@languageAndPreferences": {"description": "Settings tile subtitle"},
-
+  "@languageAndPreferences": {
+    "description": "Settings tile subtitle"
+  },
   "logout": "Logout",
-  "@logout": {"description": "Logout button"},
-
+  "@logout": {
+    "description": "Logout button"
+  },
   "logOut": "Log Out",
-  "@logOut": {"description": "Log out confirm button"},
-
+  "@logOut": {
+    "description": "Log out confirm button"
+  },
   "logOutTitle": "Log Out?",
-  "@logOutTitle": {"description": "Log out dialog title"},
-
+  "@logOutTitle": {
+    "description": "Log out dialog title"
+  },
   "logOutConfirm": "Are you sure you want to log out of MedNarrate?",
-  "@logOutConfirm": {"description": "Log out confirmation message"},
-
+  "@logOutConfirm": {
+    "description": "Log out confirmation message"
+  },
   "failedToLoadProfile": "Failed to load profile",
-  "@failedToLoadProfile": {"description": "Profile load error"},
-
+  "@failedToLoadProfile": {
+    "description": "Profile load error"
+  },
   "updatingRole": "Updating role...",
-  "@updatingRole": {"description": "Role update in progress"},
-
+  "@updatingRole": {
+    "description": "Role update in progress"
+  },
   "editPersonalInfo": "Edit Personal Info",
-  "@editPersonalInfo": {"description": "Edit personal info dialog title"},
-
+  "@editPersonalInfo": {
+    "description": "Edit personal info dialog title"
+  },
   "dateOfBirth": "Date of Birth (YYYY-MM-DD)",
-  "@dateOfBirth": {"description": "Date of birth field"},
-
+  "@dateOfBirth": {
+    "description": "Date of birth field"
+  },
   "accountAndProfile": "ACCOUNT & PROFILE",
-  "@accountAndProfile": {"description": "Settings section header"},
-
+  "@accountAndProfile": {
+    "description": "Settings section header"
+  },
   "preferencesSection": "PREFERENCES",
-  "@preferencesSection": {"description": "Settings section header"},
-
+  "@preferencesSection": {
+    "description": "Settings section header"
+  },
   "securitySection": "SECURITY",
-  "@securitySection": {"description": "Settings section header"},
-
+  "@securitySection": {
+    "description": "Settings section header"
+  },
   "notificationsSection": "NOTIFICATIONS",
-  "@notificationsSection": {"description": "Settings section header"},
-
+  "@notificationsSection": {
+    "description": "Settings section header"
+  },
   "integrationsSection": "INTEGRATIONS",
-  "@integrationsSection": {"description": "Settings section header"},
-
+  "@integrationsSection": {
+    "description": "Settings section header"
+  },
   "supportAboutSection": "SUPPORT & ABOUT",
-  "@supportAboutSection": {"description": "Settings section header"},
-
+  "@supportAboutSection": {
+    "description": "Settings section header"
+  },
   "language": "Language",
-  "@language": {"description": "Language setting tile"},
-
+  "@language": {
+    "description": "Language setting tile"
+  },
   "selectLanguage": "Select Language",
-  "@selectLanguage": {"description": "Language picker title"},
-
+  "@selectLanguage": {
+    "description": "Language picker title"
+  },
   "medicalUnits": "Medical Units",
-  "@medicalUnits": {"description": "Medical units tile"},
-
+  "@medicalUnits": {
+    "description": "Medical units tile"
+  },
   "selectMedicalUnits": "Select Medical Units",
-  "@selectMedicalUnits": {"description": "Medical units picker title"},
-
+  "@selectMedicalUnits": {
+    "description": "Medical units picker title"
+  },
   "metricUnits": "Metric (kg, cm, mmol/L)",
-  "@metricUnits": {"description": "Metric units option"},
-
+  "@metricUnits": {
+    "description": "Metric units option"
+  },
   "imperialUnits": "Imperial (lb, in, mg/dL)",
-  "@imperialUnits": {"description": "Imperial units option"},
-
+  "@imperialUnits": {
+    "description": "Imperial units option"
+  },
   "selectThemeMode": "Select Theme Mode",
-  "@selectThemeMode": {"description": "Theme mode picker title"},
-
+  "@selectThemeMode": {
+    "description": "Theme mode picker title"
+  },
   "professionalMode": "Professional Mode",
-  "@professionalMode": {"description": "Professional mode toggle tile"},
-
+  "@professionalMode": {
+    "description": "Professional mode toggle tile"
+  },
   "professionalModeSubtitle": "Show clinical summaries by default",
-  "@professionalModeSubtitle": {"description": "Professional mode subtitle"},
-
+  "@professionalModeSubtitle": {
+    "description": "Professional mode subtitle"
+  },
   "appLock": "App Lock",
-  "@appLock": {"description": "App lock tile"},
-
+  "@appLock": {
+    "description": "App lock tile"
+  },
   "appLockSubtitle": "Require biometrics to open app",
-  "@appLockSubtitle": {"description": "App lock subtitle"},
-
+  "@appLockSubtitle": {
+    "description": "App lock subtitle"
+  },
   "disableAppLock": "Disable App Lock?",
-  "@disableAppLock": {"description": "Disable biometric dialog title"},
-
+  "@disableAppLock": {
+    "description": "Disable biometric dialog title"
+  },
   "appLockReportsAccessible": "Your reports will be accessible without biometrics.",
-  "@appLockReportsAccessible": {"description": "Disable biometric warning"},
-
+  "@appLockReportsAccessible": {
+    "description": "Disable biometric warning"
+  },
   "disable": "Disable",
-  "@disable": {"description": "Disable button"},
-
+  "@disable": {
+    "description": "Disable button"
+  },
   "notifications": "Notifications",
-  "@notifications": {"description": "Notifications toggle tile"},
-
+  "@notifications": {
+    "description": "Notifications toggle tile"
+  },
   "notificationsSubtitle": "Enable medicine reminders & alerts",
-  "@notificationsSubtitle": {"description": "Notifications subtitle"},
-
+  "@notificationsSubtitle": {
+    "description": "Notifications subtitle"
+  },
   "medicationSchedules": "Medication Schedules",
-  "@medicationSchedules": {"description": "Medication schedules tile"},
-
+  "@medicationSchedules": {
+    "description": "Medication schedules tile"
+  },
   "managePillReminders": "Manage your automated pill reminders",
-  "@managePillReminders": {"description": "Medication schedules subtitle"},
-
+  "@managePillReminders": {
+    "description": "Medication schedules subtitle"
+  },
   "reminderSound": "Reminder Sound",
-  "@reminderSound": {"description": "Reminder sound tile"},
-
+  "@reminderSound": {
+    "description": "Reminder sound tile"
+  },
   "healthAppSync": "Health App Sync",
-  "@healthAppSync": {"description": "Health app sync tile"},
-
+  "@healthAppSync": {
+    "description": "Health app sync tile"
+  },
   "connectedDevices": "Connected Devices",
-  "@connectedDevices": {"description": "Connected devices tile"},
-
+  "@connectedDevices": {
+    "description": "Connected devices tile"
+  },
   "helpCenter": "Help Center",
-  "@helpCenter": {"description": "Help center tile"},
-
+  "@helpCenter": {
+    "description": "Help center tile"
+  },
   "aboutMedNarrate": "About MedNarrate",
-  "@aboutMedNarrate": {"description": "About tile"},
-
+  "@aboutMedNarrate": {
+    "description": "About tile"
+  },
   "version": "Version 1.0.0",
-  "@version": {"description": "App version subtitle"},
-
+  "@version": {
+    "description": "App version subtitle"
+  },
   "termsOfService": "Terms of Service",
-  "@termsOfService": {"description": "Terms of service link"},
-
+  "@termsOfService": {
+    "description": "Terms of service link"
+  },
   "privacyPolicy": "Privacy Policy",
-  "@privacyPolicy": {"description": "Privacy policy link"},
-
+  "@privacyPolicy": {
+    "description": "Privacy policy link"
+  },
   "contactSupport": "Contact Support",
-  "@contactSupport": {"description": "Contact support link"},
-
+  "@contactSupport": {
+    "description": "Contact support link"
+  },
   "comingSoon": "Coming Soon",
-  "@comingSoon": {"description": "Coming soon badge"},
-
+  "@comingSoon": {
+    "description": "Coming soon badge"
+  },
   "processing": "Processing",
-  "@processing": {"description": "Processing status label"},
-
+  "@processing": {
+    "description": "Processing status label"
+  },
   "retry": "Retry",
-  "@retry": {"description": "Retry button"},
-
+  "@retry": {
+    "description": "Retry button"
+  },
   "goToReports": "Go to Reports",
-  "@goToReports": {"description": "Go to reports button"},
-
+  "@goToReports": {
+    "description": "Go to reports button"
+  },
   "noMedicationSchedules": "No medication schedules found in your reports yet. Upload a report that contains prescriptions to start tracking.",
-  "@noMedicationSchedules": {"description": "Empty state for medication schedules"},
-
+  "@noMedicationSchedules": {
+    "description": "Empty state for medication schedules"
+  },
   "messageCopied": "Message copied",
-  "@messageCopied": {"description": "Chat message copy toast"},
-
+  "@messageCopied": {
+    "description": "Chat message copy toast"
+  },
   "askAiAboutThis": "Ask AI about this",
-  "@askAiAboutThis": {"description": "Ask AI button label"},
-
+  "@askAiAboutThis": {
+    "description": "Ask AI button label"
+  },
   "searchParameters": "Search parameters...",
-  "@searchParameters": {"description": "Lab results search hint"},
-
+  "@searchParameters": {
+    "description": "Lab results search hint"
+  },
   "timeline": "Timeline",
-  "@timeline": {"description": "Timeline screen title"},
-
+  "@timeline": {
+    "description": "Timeline screen title"
+  },
   "export": "Export",
-  "@export": {"description": "Export button"},
-
+  "@export": {
+    "description": "Export button"
+  },
   "exportData": "Export Data",
-  "@exportData": {"description": "Export data tile"},
-
+  "@exportData": {
+    "description": "Export data tile"
+  },
   "requestArchive": "Request an archive of your medical history?",
-  "@requestArchive": {"description": "Export data confirmation"},
-
+  "@requestArchive": {
+    "description": "Export data confirmation"
+  },
   "languageUpdated": "Language updated successfully",
-  "@languageUpdated": {"description": "Language update success toast"},
-
+  "@languageUpdated": {
+    "description": "Language update success toast"
+  },
   "medicalUnitsUpdated": "Medical units updated",
-  "@medicalUnitsUpdated": {"description": "Medical units update success toast"},
-
+  "@medicalUnitsUpdated": {
+    "description": "Medical units update success toast"
+  },
   "notificationsEnabled": "Notifications enabled",
-  "@notificationsEnabled": {"description": "Notifications enabled toast"},
-
+  "@notificationsEnabled": {
+    "description": "Notifications enabled toast"
+  },
   "notificationsDisabled": "Notifications disabled",
-  "@notificationsDisabled": {"description": "Notifications disabled toast"},
-
+  "@notificationsDisabled": {
+    "description": "Notifications disabled toast"
+  },
   "professionalModeEnabled": "Professional Mode enabled",
-  "@professionalModeEnabled": {"description": "Pro mode enabled toast"},
-
+  "@professionalModeEnabled": {
+    "description": "Pro mode enabled toast"
+  },
   "professionalModeDisabled": "Professional Mode disabled",
-  "@professionalModeDisabled": {"description": "Pro mode disabled toast"},
-
+  "@professionalModeDisabled": {
+    "description": "Pro mode disabled toast"
+  },
   "reportAnalyzedSuccessfully": "Report analyzed successfully!",
-  "@reportAnalyzedSuccessfully": {"description": "Upload success toast"}
+  "@reportAnalyzedSuccessfully": {
+    "description": "Upload success toast"
+  },
+  "statusHigh": "HIGH",
+  "@statusHigh": {
+    "description": "statusHigh text"
+  },
+  "statusLow": "LOW",
+  "@statusLow": {
+    "description": "statusLow text"
+  },
+  "statusNormal": "NORMAL",
+  "@statusNormal": {
+    "description": "statusNormal text"
+  },
+  "statusCritical": "CRITICAL",
+  "@statusCritical": {
+    "description": "statusCritical text"
+  },
+  "statusNotClassified": "Not classified",
+  "@statusNotClassified": {
+    "description": "statusNotClassified text"
+  },
+  "hospitalUnspecified": "Unspecified",
+  "@hospitalUnspecified": {
+    "description": "hospitalUnspecified text"
+  },
+  "validationPassed": "PASSED",
+  "@validationPassed": {
+    "description": "validationPassed text"
+  },
+  "statusCompleted": "COMPLETED",
+  "@statusCompleted": {
+    "description": "statusCompleted text"
+  },
+  "sectionLaboratoryResults": "Laboratory Results",
+  "@sectionLaboratoryResults": {
+    "description": "sectionLaboratoryResults text"
+  },
+  "sectionReportedMedications": "Reported Medications",
+  "@sectionReportedMedications": {
+    "description": "sectionReportedMedications text"
+  },
+  "sectionDiagnosesAndFindings": "Diagnoses & Findings",
+  "@sectionDiagnosesAndFindings": {
+    "description": "sectionDiagnosesAndFindings text"
+  },
+  "sectionHistoricalComparison": "Historical Comparison",
+  "@sectionHistoricalComparison": {
+    "description": "sectionHistoricalComparison text"
+  },
+  "sectionSourceAndValidation": "Source & Validation",
+  "@sectionSourceAndValidation": {
+    "description": "sectionSourceAndValidation text"
+  },
+  "sectionClinicalExecutiveSummary": "Clinical Executive Summary",
+  "@sectionClinicalExecutiveSummary": {
+    "description": "sectionClinicalExecutiveSummary text"
+  },
+  "translationUnavailable": "Translation unavailable, showing original.",
+  "@translationUnavailable": {
+    "description": "translationUnavailable text"
+  },
+  "translationFailedRetry": "Translation failed. Please try again.",
+  "@translationFailedRetry": {
+    "description": "translationFailedRetry text"
+  },
+  "disclaimerPatient": "Disclaimer: MedNarrate patient summaries provide educational context only and do not constitute a medical diagnosis or prescription. Always consult your doctor for personalized advice.",
+  "@disclaimerPatient": {
+    "description": "disclaimerPatient text"
+  },
+  "disclaimerSummary": "Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.",
+  "@disclaimerSummary": {
+    "description": "disclaimerSummary text"
+  },
+  "disclaimerEmergency": "This sounds like a medical emergency. Please call your local emergency services (like 911) or go to the nearest emergency room immediately.",
+  "@disclaimerEmergency": {
+    "description": "disclaimerEmergency text"
+  },
+  "disclaimerNoFindings": "No key findings identified.",
+  "@disclaimerNoFindings": {
+    "description": "disclaimerNoFindings text"
+  }
 }

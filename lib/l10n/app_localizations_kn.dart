@@ -565,4 +565,71 @@ class AppLocalizationsKn extends AppLocalizations {
   @override
   String get reportAnalyzedSuccessfully =>
       'ವರದಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ವಿಶ್ಲೇಷಿಸಲಾಗಿದೆ!';
+
+  @override
+  String get statusHigh => 'ಹೆಚ್ಚು';
+
+  @override
+  String get statusLow => 'ಕಡಿಮೆ';
+
+  @override
+  String get statusNormal => 'ಸಾಮಾನ್ಯ';
+
+  @override
+  String get statusCritical => 'ಗಂಭೀರ';
+
+  @override
+  String get statusNotClassified => 'ವರ್ಗೀಕರಿಸಲಾಗಿಲ್ಲ';
+
+  @override
+  String get hospitalUnspecified => 'ನಿರ್ದಿಷ್ಟಪಡಿಸಿಲ್ಲ';
+
+  @override
+  String get validationPassed => 'ಉತ್ತೀರ್ಣ';
+
+  @override
+  String get statusCompleted => 'ಪೂರ್ಣಗೊಂಡಿದೆ';
+
+  @override
+  String get sectionLaboratoryResults => 'ಪ್ರಯೋಗಾಲಯ ಫಲಿತಾಂಶಗಳು';
+
+  @override
+  String get sectionReportedMedications => 'ವರದಿ ಮಾಡಿದ ಔಷಧಿಗಳು';
+
+  @override
+  String get sectionDiagnosesAndFindings => 'ರೋಗನಿರ್ಣಯಗಳು ಮತ್ತು ಆವಿಷ್ಕಾರಗಳು';
+
+  @override
+  String get sectionHistoricalComparison => 'ಐತಿಹಾಸಿಕ ಹೋಲಿಕೆ';
+
+  @override
+  String get sectionSourceAndValidation => 'ಮೂಲ ಮತ್ತು ಮೌಲ್ಯೀಕರಣ';
+
+  @override
+  String get sectionClinicalExecutiveSummary =>
+      'ಕ್ಲಿನಿಕಲ್ ಕಾರ್ಯನಿರ್ವಾಹಕ ಸಾರಾಂಶ';
+
+  @override
+  String get translationUnavailable =>
+      'ಅನುವಾದ ಲಭ್ಯವಿಲ್ಲ, ಮೂಲವನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ.';
+
+  @override
+  String get translationFailedRetry =>
+      'ಅನುವಾದ ವಿಫಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get disclaimerPatient =>
+      'ಹಕ್ಕುತ್ಯಾಗ: ಮೆಡ್‌ನರೇಟ್ ರೋಗಿಗಳ ಸಾರಾಂಶಗಳು ಶೈಕ್ಷಣಿಕ ಸಂದರ್ಭವನ್ನು ಮಾತ್ರ ಒದಗಿಸುತ್ತವೆ...';
+
+  @override
+  String get disclaimerSummary =>
+      'ಹಕ್ಕುತ್ಯಾಗ: ಮೆಡ್‌ನರೇಟ್ ಎಐ ಸಾರಾಂಶವು ಮಾಹಿತಿ ಉದ್ದೇಶಗಳಿಗಾಗಿ ಮಾತ್ರ...';
+
+  @override
+  String get disclaimerEmergency =>
+      'ಇದು ವೈದ್ಯಕೀಯ ತುರ್ತುಸ್ಥಿತಿಯಂತೆ ತೋರುತ್ತದೆ...';
+
+  @override
+  String get disclaimerNoFindings =>
+      'ಯಾವುದೇ ಪ್ರಮುಖ ಆವಿಷ್ಕಾರಗಳನ್ನು ಗುರುತಿಸಲಾಗಿಲ್ಲ.';
 }

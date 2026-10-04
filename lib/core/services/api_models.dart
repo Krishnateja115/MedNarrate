@@ -357,6 +357,7 @@ class ReportAnalysisModel {
   final List<EvidenceSource> evidenceSources;
   final String? clinicianSummary;
   final String? patientSummary;
+  final String? translatedClinicianSummary;
   final String? translatedPatientSummary;
   final bool translationAvailable;
   final String? verificationStatus;
@@ -375,6 +376,7 @@ class ReportAnalysisModel {
     required this.evidenceSources,
     this.clinicianSummary,
     this.patientSummary,
+    this.translatedClinicianSummary,
     this.translatedPatientSummary,
     this.translationAvailable = false,
     this.verificationStatus,
@@ -399,6 +401,7 @@ class ReportAnalysisModel {
           .toList(),
       clinicianSummary: map['clinician_summary'] as String? ?? map['clinical_summary'] as String? ?? map['clinicianSummary'] as String? ?? map['clinicalSummary'] as String?,
       patientSummary: map['patient_summary'] as String? ?? map['patient_friendly_summary'] as String? ?? map['patientSummary'] as String? ?? map['summary'] as String?,
+      translatedClinicianSummary: map['translated_clinician_summary'] as String? ?? map['translatedClinicianSummary'] as String?,
       translatedPatientSummary: map['translated_patient_summary'] as String? ?? map['translatedPatientSummary'] as String?,
       translationAvailable: map['translation_available'] as bool? ?? map['translationAvailable'] as bool? ?? false,
       verificationStatus: map['verification_status'] as String? ?? map['verificationStatus'] as String?,
@@ -414,6 +417,7 @@ class ReportAnalysisModel {
 
 class TranslationModel {
   final String language;
+  final String? clinicianSummary;
   final String patientSummary;
   final List<Map<String, dynamic>> findingsJson;
   final List<Map<String, dynamic>> medicationsJson;
@@ -423,6 +427,7 @@ class TranslationModel {
 
   const TranslationModel({
     required this.language,
+    this.clinicianSummary,
     required this.patientSummary,
     required this.findingsJson,
     this.medicationsJson = const [],
@@ -442,6 +447,7 @@ class TranslationModel {
     }
     return TranslationModel(
       language: map['language'] as String,
+      clinicianSummary: map['clinician_summary'] as String?,
       patientSummary: map['patient_summary'] as String? ?? '',
       findingsJson: List<Map<String, dynamic>>.from(map['findings_json'] ?? []),
       medicationsJson: List<Map<String, dynamic>>.from(map['medications_json'] ?? []),
