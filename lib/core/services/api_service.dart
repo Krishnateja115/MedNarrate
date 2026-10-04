@@ -408,13 +408,7 @@ class ApiService {
       request.fields['report_type'] = reportType;
       if (hospital != null) request.fields['hospital'] = hospital;
 
-      if (kIsWeb) {
-        request.files.add(http.MultipartFile.fromBytes('file', file.bytes!,
-            filename: file.name));
-      } else {
-        request.files
-            .add(await http.MultipartFile.fromPath('file', file.path!));
-      }
+      request.files.add(await _multipartFileFromPlatformFile(file));
       final streamedResponse = await request.send().timeout(_timeout);
       return await http.Response.fromStream(streamedResponse);
     }
@@ -422,6 +416,26 @@ class ApiService {
     final resp = await _handleResponse(await doUpload(), doUpload);
     return ReportModel.fromMap(
         _remapReport(jsonDecode(resp.body) as Map<String, dynamic>));
+  }
+
+  /// Supports regular Finder files as well as cloud-provider files that expose
+  /// bytes but no stable local path. FilePicker can return either on macOS.
+  Future<http.MultipartFile> _multipartFileFromPlatformFile(
+      PlatformFile file) async {
+    final path = file.path;
+    if (!kIsWeb && path != null && path.isNotEmpty) {
+      return http.MultipartFile.fromPath('file', path, filename: file.name);
+    }
+
+    final bytes = file.bytes;
+    if (bytes != null) {
+      return http.MultipartFile.fromBytes('file', bytes, filename: file.name);
+    }
+
+    throw const ApiException(
+      422,
+      'The selected file could not be read. Please select it again from Finder.',
+    );
   }
 
   Future<List<ReportModel>> listReports({

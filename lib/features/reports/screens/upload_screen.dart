@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -40,6 +41,7 @@ class _UploadScreenState extends State<UploadScreen> {
   String _reportType = 'blood';
   DateTime? _reportDate;
   bool _customDateSelected = false;
+  bool _isPickingFile = false;
 
   String? _errorMessage;
   String? _failureCategory;
@@ -79,50 +81,74 @@ class _UploadScreenState extends State<UploadScreen> {
   }
 
   Future<void> _pickFile() async {
+    if (_isPickingFile) return;
+
     _clearError();
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: _validExtensions,
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
+    setState(() => _isPickingFile = true);
 
-    final file = result.files.first;
-    final ext = file.extension?.toLowerCase() ?? '';
-    if (!_validExtensions.contains(ext)) {
-      setState(() {
-        _errorMessage = 'Only PDF, JPG, JPEG, and PNG files are supported.';
-        _step = UploadStep.idle;
-      });
-      return;
-    }
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: _validExtensions,
+        // Keeps a byte fallback available for cloud-backed files that do not
+        // expose a stable local path on macOS and web.
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
 
-    final sizeMb = (file.size) / (1024 * 1024);
-    if (sizeMb > _maxSizeMb) {
-      setState(() {
-        _errorMessage =
-            'File must be smaller than ${Formatters.formatFileSize(_maxSizeMb * 1024 * 1024)}.';
-        _step = UploadStep.idle;
-      });
-      return;
-    }
-
-    setState(() {
-      _selectedFile = file;
-      _errorMessage = null;
-      _createdReportId = null;
-      _step = UploadStep.fileSelected;
-
-      // Auto-suggest title if empty
-      if (_titleCtrl.text.trim().isEmpty) {
-        final rawName = file.name.replaceAll(RegExp(r'\.[^/.]+$'), '');
-        final cleanTitle = rawName.replaceAll(RegExp(r'[_-]'), ' ').trim();
-        if (cleanTitle.isNotEmpty) {
-          _titleCtrl.text =
-              cleanTitle[0].toUpperCase() + cleanTitle.substring(1);
-        }
+      final file = result.files.first;
+      final ext = file.extension?.toLowerCase() ?? '';
+      if (!_validExtensions.contains(ext)) {
+        setState(() {
+          _errorMessage = 'Only PDF, JPG, JPEG, and PNG files are supported.';
+          _step = UploadStep.idle;
+        });
+        return;
       }
-    });
+
+      final sizeMb = (file.size) / (1024 * 1024);
+      if (sizeMb > _maxSizeMb) {
+        setState(() {
+          _errorMessage =
+              'File must be smaller than ${Formatters.formatFileSize(_maxSizeMb * 1024 * 1024)}.';
+          _step = UploadStep.idle;
+        });
+        return;
+      }
+
+      setState(() {
+        _selectedFile = file;
+        _errorMessage = null;
+        _createdReportId = null;
+        _step = UploadStep.fileSelected;
+
+        // Auto-suggest title if empty
+        if (_titleCtrl.text.trim().isEmpty) {
+          final rawName = file.name.replaceAll(RegExp(r'\.[^/.]+$'), '');
+          final cleanTitle = rawName.replaceAll(RegExp(r'[_-]'), ' ').trim();
+          if (cleanTitle.isNotEmpty) {
+            _titleCtrl.text =
+                cleanTitle[0].toUpperCase() + cleanTitle.substring(1);
+          }
+        }
+      });
+    } on PlatformException {
+      if (!mounted) return;
+      setState(() {
+        _step = UploadStep.idle;
+        _errorMessage =
+            'The file chooser could not open. Close any open file dialog and try again.';
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _step = UploadStep.idle;
+        _errorMessage =
+            'The selected file could not be read. Please choose it again from Finder.';
+      });
+    } finally {
+      if (mounted) setState(() => _isPickingFile = false);
+    }
   }
 
   String _sanitizeError(String? rawError, {String? category}) {
@@ -605,24 +631,27 @@ class _UploadScreenState extends State<UploadScreen> {
 
   Widget _buildFileArea(ThemeData theme) {
     if (_selectedFile == null) {
-      return GestureDetector(
-        onTap: _pickFile,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
+      return Semantics(
+        button: true,
+        label: 'Choose a file to analyze',
+        child: OutlinedButton(
+          onPressed: _isPickingFile ? null : _pickFile,
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.all(24),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            side: BorderSide(
                 color: theme.colorScheme.primary.withValues(alpha: 0.40),
                 width: 1.5),
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.attach_file_rounded,
                   color: theme.colorScheme.primary, size: 32),
               const SizedBox(height: 10),
               Text(
-                'Choose a file to analyze',
+                _isPickingFile ? 'Opening file chooser…' : 'Choose a file to analyze',
                 style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
