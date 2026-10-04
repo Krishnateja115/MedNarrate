@@ -103,6 +103,15 @@ alembic upgrade head
 python run_server.py
 ```
 
+`run_server.py` applies the checked-in Alembic migrations automatically in
+development, so the desktop app and admin portal stay on the same local schema
+after an update. If an older local database reports the removed revision
+`0d9c40325c4d`, run this one-time, data-preserving repair before starting it:
+
+```bash
+python scripts/repair_local_sqlite_history.py
+```
+
 The API will be available at `http://localhost:8000`  
 Interactive docs: `http://localhost:8000/docs`
 
