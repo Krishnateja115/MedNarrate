@@ -6,8 +6,5 @@
 	<false/>
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>
-	<!-- Required by flutter_secure_storage for tokens stored in the macOS Keychain. -->
-	<key>keychain-access-groups</key>
-	<array/>
 </dict>
 </plist>

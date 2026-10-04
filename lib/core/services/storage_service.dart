@@ -40,7 +40,10 @@ class StorageService {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
     aOptions: AndroidOptions(),
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-    mOptions: MacOsOptions(usesDataProtectionKeychain: true),
+    // The standard macOS Keychain remains encrypted but does not require an
+    // Apple developer signing identity. This keeps local desktop builds able
+    // to persist secure sessions on developer machines.
+    mOptions: MacOsOptions(usesDataProtectionKeychain: false),
   );
 
   Future<T> _withSecureStorage<T>(Future<T> Function() operation) async {
