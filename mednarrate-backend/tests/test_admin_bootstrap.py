@@ -1,9 +1,11 @@
 import uuid
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import hash_password
 from app.models.admin import (
     AdminPermission,
     AdminRole,
@@ -73,3 +75,32 @@ async def test_bootstrap_refuses_to_elevate_a_non_admin_account(
 
     with pytest.raises(ValueError, match="Only accounts"):
         await ensure_super_admin_access(db_session, user)
+
+
+@pytest.mark.asyncio
+async def test_bootstrapped_admin_can_log_in_and_restore_portal_session(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    email = f"portal-admin-{uuid.uuid4().hex}@example.com"
+    user = User(
+        email=email,
+        hashed_password=hash_password("StrongP@ssword1"),
+        full_name="Portal Admin",
+        role=UserRole.admin,
+    )
+    db_session.add(user)
+    await db_session.flush()
+    await ensure_super_admin_access(db_session, user)
+    await db_session.commit()
+
+    login = await client.post(
+        "/api/v1/auth/login",
+        data={"username": email, "password": "StrongP@ssword1"},
+    )
+    assert login.status_code == 200
+    assert "access_token" in login.headers.get("set-cookie", "")
+
+    identity = await client.get("/api/v1/admin/me")
+    assert identity.status_code == 200
+    assert identity.json()["email"] == email
+    assert "super_admin" in identity.json()["permissions"]
