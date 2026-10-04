@@ -1,4 +1,3 @@
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
@@ -158,7 +157,7 @@ class ClinicalViewTab extends StatelessWidget {
           // 3. Key Clinical Findings / Noteworthy Alerts
           Text(
             _label('section_key_clinical_findings',
-                fallback: AppLocalizations.of(context)?.keyFindings ?? AppLocalizations.of(context)?.sectionKeyClinicalFindings ?? 'Key Clinical Findings'),
+                fallback: AppLocalizations.of(context)?.keyFindings ?? 'Key Clinical Findings'),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
