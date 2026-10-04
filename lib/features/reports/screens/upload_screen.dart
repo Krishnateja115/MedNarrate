@@ -126,7 +126,10 @@ class _UploadScreenState extends State<UploadScreen> {
         );
       }
 
-      final ext = file.extension?.toLowerCase() ?? '';
+      final selectedFile = file;
+      if (selectedFile == null) return;
+
+      final ext = selectedFile.extension?.toLowerCase() ?? '';
       if (!_validExtensions.contains(ext)) {
         setState(() {
           _errorMessage = 'Only PDF, JPG, JPEG, and PNG files are supported.';
@@ -135,7 +138,7 @@ class _UploadScreenState extends State<UploadScreen> {
         return;
       }
 
-      final sizeMb = (file.size) / (1024 * 1024);
+      final sizeMb = (selectedFile.size) / (1024 * 1024);
       if (sizeMb > _maxSizeMb) {
         setState(() {
           _errorMessage =
@@ -146,14 +149,15 @@ class _UploadScreenState extends State<UploadScreen> {
       }
 
       setState(() {
-        _selectedFile = file;
+        _selectedFile = selectedFile;
         _errorMessage = null;
         _createdReportId = null;
         _step = UploadStep.fileSelected;
 
         // Auto-suggest title if empty
         if (_titleCtrl.text.trim().isEmpty) {
-          final rawName = file.name.replaceAll(RegExp(r'\.[^/.]+$'), '');
+          final rawName =
+              selectedFile.name.replaceAll(RegExp(r'\.[^/.]+$'), '');
           final cleanTitle = rawName.replaceAll(RegExp(r'[_-]'), ' ').trim();
           if (cleanTitle.isNotEmpty) {
             _titleCtrl.text =
