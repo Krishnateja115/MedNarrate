@@ -101,11 +101,11 @@ jobs:
           echo "Alembic heads: $HEADS"
           test "$HEADS" -eq 1
 
-      - name: Lockout migration round-trip
+      - name: Full migration round-trip
         env:
           DATABASE_URL: postgresql+asyncpg://mednarrate:mednarrate_pass@localhost:5432/mednarrate_db
         run: |
-          alembic downgrade -1
+          alembic downgrade base
           alembic upgrade head
 
       - name: Create isolated test database

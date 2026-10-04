@@ -1,4 +1,3 @@
-import 'package:mednarrate/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_models.dart';
@@ -6,7 +5,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/markdown_formatter.dart';
 import '../models/report_model.dart';
-import '../../../core/services/api_exception.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class PatientViewTab extends StatefulWidget {
   final ReportModel report;
@@ -113,12 +112,10 @@ class _PatientViewTabState extends State<PatientViewTab> {
 
     try {
       await widget.onTranslate!(selected);
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
-        final errorMsg =
-            (e is ApiException) ? e.message : l10n.translationFailed;
         messenger.showSnackBar(
-          SnackBar(content: Text(errorMsg)),
+          SnackBar(content: Text(l10n.translationFailed)),
         );
       }
     }
@@ -202,7 +199,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
 
     final disclaimerPatient = _label('label_disclaimer_patient',
         fallback:
-            AppLocalizations.of(context)?.disclaimerPatient ?? AppLocalizations.of(context)?.disclaimerPatient ?? 'Disclaimer: MedNarrate patient summaries provide educational context only and do not constitute a medical diagnosis or prescription. Always consult your doctor for personalized advice.');
+            'Disclaimer: MedNarrate patient summaries provide educational context only and do not constitute a medical diagnosis or prescription. Always consult your doctor for personalized advice.');
 
     final sectionPatientReportInfo = _label('section_patient_report_info',
         fallback: 'Patient & Report Information');
@@ -349,7 +346,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
           // 5. Reported Medications
           Text(
             _label('section_reported_medications',
-                fallback: AppLocalizations.of(context)?.sectionReportedMedications ?? AppLocalizations.of(context)?.sectionReportedMedications ?? 'Reported Medications'),
+                fallback: 'Reported Medications'),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -702,12 +699,13 @@ class _PatientViewTabState extends State<PatientViewTab> {
     required String sourceLatestReport,
   }) {
     final theme = Theme.of(context);
-    final name = med['translated_medication_name']?.toString() ??
-        med['medication_name']?.toString() ??
-        'Medication';
-    String dosage = med['dosage']?.toString() ?? 'Not specified';
-    String frequency = med['frequency']?.toString() ?? 'Not specified';
+    String name = med['medication_name']?.toString() ?? 'Medication';
     final l = translation?.uiLabels;
+    String dosage =
+        med['dosage']?.toString() ?? l?['label_unspecified'] ?? 'Not specified';
+    String frequency = med['frequency']?.toString() ??
+        l?['label_unspecified'] ??
+        'Not specified';
 
     List<String> times = List<String>.from(med['times_of_day'] ?? []);
     String instructions = med['instructions']?.toString() ?? '';
@@ -719,6 +717,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
               m['medication_name']?.toString().toLowerCase() ==
               name.toLowerCase(),
         );
+        name = match['translated_medication_name']?.toString() ?? name;
         dosage = match['translated_dosage']?.toString() ?? dosage;
         frequency = match['translated_frequency']?.toString() ?? frequency;
         final tTimes = match['translated_times_of_day'];

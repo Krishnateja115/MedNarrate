@@ -9,7 +9,6 @@ import '../services/api_models.dart';
 import '../utils/helpers.dart';
 
 import 'pdf_downloader/pdf_downloader.dart';
-import 'translated_report_pdf.dart';
 
 /// ExportService — generates a professional, structured PDF from a ReportAnalysisModel.
 /// Export PDF  → direct download, NO print dialog.
@@ -19,20 +18,20 @@ class ExportService {
   static final ExportService instance = ExportService._();
 
   // ─── Colour palette ────────────────────────────────────────────────────────
-  static const _primary   = PdfColor.fromInt(0xFF1A73E8);
-  static const _danger    = PdfColor.fromInt(0xFFE53935);
-  static const _warning   = PdfColor.fromInt(0xFFE65100);
-  static const _success   = PdfColor.fromInt(0xFF1B8A5A);
-  static const _textDark  = PdfColor.fromInt(0xFF0D1117);
+  static const _primary = PdfColor.fromInt(0xFF1A73E8);
+  static const _danger = PdfColor.fromInt(0xFFE53935);
+  static const _warning = PdfColor.fromInt(0xFFE65100);
+  static const _success = PdfColor.fromInt(0xFF1B8A5A);
+  static const _textDark = PdfColor.fromInt(0xFF0D1117);
   static const _textMuted = PdfColor.fromInt(0xFF5A6472);
-  static const _divider   = PdfColor.fromInt(0xFFE0E6EF);
-  static const _rowOdd    = PdfColor.fromInt(0xFFF5F8FC);
-  static const _headerBg  = PdfColor.fromInt(0xFF1A73E8);
-  static const _dangerBg  = PdfColor.fromInt(0xFFFFF0EE);
+  static const _divider = PdfColor.fromInt(0xFFE0E6EF);
+  static const _rowOdd = PdfColor.fromInt(0xFFF5F8FC);
+  static const _headerBg = PdfColor.fromInt(0xFF1A73E8);
+  static const _dangerBg = PdfColor.fromInt(0xFFFFF0EE);
   static const _dangerBdr = PdfColor.fromInt(0xFFFFCDD2);
-  static const _warnBg    = PdfColor.fromInt(0xFFFFF8E1);
-  static const _warnBdr   = PdfColor.fromInt(0xFFFFE082);
-  static const _normalBg  = PdfColor.fromInt(0xFFE8F5E9);
+  static const _warnBg = PdfColor.fromInt(0xFFFFF8E1);
+  static const _warnBdr = PdfColor.fromInt(0xFFFFE082);
+  static const _normalBg = PdfColor.fromInt(0xFFE8F5E9);
   static const _normalBdr = PdfColor.fromInt(0xFFA5D6A7);
 
   // ─── Flag colour lookup ────────────────────────────────────────────────────
@@ -161,7 +160,8 @@ class ExportService {
                 ),
               ),
               pw.Expanded(
-                  child: pw.RichText(text: _inlineBold(content, fontBold, base))),
+                  child:
+                      pw.RichText(text: _inlineBold(content, fontBold, base))),
             ],
           ),
         ));
@@ -185,13 +185,27 @@ class ExportService {
         continue;
       }
 
-      // ── Regular paragraph
-      out.add(pw.Padding(
-        padding: const pw.EdgeInsets.only(bottom: 3),
-        child: pw.RichText(text: _inlineBold(trimmed, fontBold, base)),
-      ));
+      // ── Regular paragraph. Keep each widget comfortably below one page so
+      // MultiPage can move/split long generated summaries without overflow.
+      for (final chunk in _textChunks(trimmed)) {
+        out.add(pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 3),
+          child: pw.RichText(text: _inlineBold(chunk, fontBold, base)),
+        ));
+      }
     }
     return out;
+  }
+
+  Iterable<String> _textChunks(String text, {int maxLength = 40}) sync* {
+    var remaining = text.trim();
+    while (remaining.length > maxLength) {
+      var splitAt = remaining.lastIndexOf(' ', maxLength);
+      if (splitAt <= 0) splitAt = maxLength;
+      yield remaining.substring(0, splitAt).trimRight();
+      remaining = remaining.substring(splitAt).trimLeft();
+    }
+    if (remaining.isNotEmpty) yield remaining;
   }
 
   /// Converts inline **bold** into pw.TextSpan.
@@ -201,11 +215,13 @@ class ExportService {
     int last = 0;
     for (final m in exp.allMatches(text)) {
       if (m.start > last) {
-        spans.add(pw.TextSpan(text: text.substring(last, m.start), style: base));
+        spans
+            .add(pw.TextSpan(text: text.substring(last, m.start), style: base));
       }
       spans.add(pw.TextSpan(
           text: m.group(1) ?? '',
-          style: base.copyWith(font: boldFont, fontWeight: pw.FontWeight.bold)));
+          style:
+              base.copyWith(font: boldFont, fontWeight: pw.FontWeight.bold)));
       last = m.end;
     }
     if (last < text.length) {
@@ -220,8 +236,8 @@ class ExportService {
         children: [
           pw.SizedBox(height: 18),
           pw.Text(title,
-              style: pw.TextStyle(
-                  font: fontBold, fontSize: 13, color: _primary)),
+              style:
+                  pw.TextStyle(font: fontBold, fontSize: 13, color: _primary)),
           pw.SizedBox(height: 4),
           pw.Divider(color: _divider, thickness: 1),
           pw.SizedBox(height: 8),
@@ -245,18 +261,21 @@ class ExportService {
     );
   }
 
-  // ─── Abnormal finding card ────────────────────────────────────────────────
   pw.Widget _findingCard(
     Map<String, dynamic> f,
     pw.TextStyle base,
     pw.TextStyle bold,
-    pw.Font fontBold,
-  ) {
-    final name = _s(f['test_name']?.toString() ?? f['parameter']?.toString() ?? 'Finding');
-    final val  = f['value']?.toString() ?? '';
+    pw.Font fontBold, {
+    String Function(String)? getTranslatedName,
+  }) {
+    final rawName =
+        f['test_name']?.toString() ?? f['parameter']?.toString() ?? 'Finding';
+    final name =
+        _s(getTranslatedName != null ? getTranslatedName(rawName) : rawName);
+    final val = f['value']?.toString() ?? '';
     final unit = _s(f['unit']?.toString() ?? '');
     final flag = f['flag']?.toString() ?? 'normal';
-    final refLow  = f['ref_low'] ?? f['refLow'];
+    final refLow = f['ref_low'] ?? f['refLow'];
     final refHigh = f['ref_high'] ?? f['refHigh'];
 
     String refText = '';
@@ -268,7 +287,7 @@ class ExportService {
       refText = 'Reference Range: < $refHigh';
     }
 
-    final bgColor  = _flagBg(flag);
+    final bgColor = _flagBg(flag);
     final bdrColor = _flagBorder(flag);
 
     return pw.Container(
@@ -286,8 +305,7 @@ class ExportService {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Expanded(
-                child: pw.Text(name,
-                    style: bold.copyWith(fontSize: 10.5)),
+                child: pw.Text(name, style: bold.copyWith(fontSize: 10.5)),
               ),
               _flagBadge(flag, fontBold),
             ],
@@ -295,11 +313,13 @@ class ExportService {
           pw.SizedBox(height: 4),
           pw.Text(
             '$val ${unit.isNotEmpty ? unit : ''}'.trim(),
-            style: base.copyWith(fontSize: 11, font: fontBold, color: _flagColor(flag)),
+            style: base.copyWith(
+                fontSize: 11, font: fontBold, color: _flagColor(flag)),
           ),
           if (refText.isNotEmpty) ...[
             pw.SizedBox(height: 2),
-            pw.Text(refText, style: base.copyWith(fontSize: 8.5, color: _textMuted)),
+            pw.Text(refText,
+                style: base.copyWith(fontSize: 8.5, color: _textMuted)),
           ],
         ],
       ),
@@ -307,17 +327,22 @@ class ExportService {
   }
 
   // ─── Lab table row data ───────────────────────────────────────────────────
-  List<List<String>> _labTableData(List<LabValue> labResults) {
+  List<List<String>> _labTableData(List<LabValue> labResults,
+      {String Function(String)? getTranslatedName}) {
     return labResults.map((lv) {
-      final name  = _s(lv.testName);
-      final val   = lv.value % 1 == 0
+      final name = _s(getTranslatedName != null
+          ? getTranslatedName(lv.testName)
+          : lv.testName);
+      final val = lv.value % 1 == 0
           ? lv.value.toInt().toString()
           : lv.value.toStringAsFixed(2);
-      final unit  = _s(lv.unit);
+      final unit = _s(lv.unit);
       final range = (lv.refLow != null && lv.refHigh != null)
           ? '${lv.refLow} - ${lv.refHigh}'
-          : (lv.refLow != null ? '> ${lv.refLow}' : (lv.refHigh != null ? '< ${lv.refHigh}' : '-'));
-      final flag  = lv.flag.toUpperCase();
+          : (lv.refLow != null
+              ? '> ${lv.refLow}'
+              : (lv.refHigh != null ? '< ${lv.refHigh}' : '-'));
+      final flag = lv.flag.toUpperCase();
       return [name, val, unit, range, flag];
     }).toList();
   }
@@ -329,27 +354,33 @@ class ExportService {
   ) {
     final points = <String>[];
     for (final f in abnormal.take(4)) {
-      final name = f['test_name']?.toString() ?? f['parameter']?.toString() ?? '';
-      final val  = f['value']?.toString() ?? '';
+      final name =
+          f['test_name']?.toString() ?? f['parameter']?.toString() ?? '';
+      final val = f['value']?.toString() ?? '';
       final unit = f['unit']?.toString() ?? '';
       final flag = (f['flag']?.toString() ?? '').toUpperCase();
       if (name.isNotEmpty) {
         points.add(
-          'Discuss your $flag $name result ($val $unit) and whether any follow-up is needed.');
+            'Discuss your $flag $name result ($val $unit) and whether any follow-up is needed.');
       }
     }
     if (meds.isNotEmpty) {
-      final medNames =
-          meds.map((m) => m['medication_name']?.toString() ?? '').where((n) => n.isNotEmpty).take(3).join(', ');
+      final medNames = meds
+          .map((m) => m['medication_name']?.toString() ?? '')
+          .where((n) => n.isNotEmpty)
+          .take(3)
+          .join(', ');
       if (medNames.isNotEmpty) {
         points.add('Confirm dosage and frequency for: $medNames.');
       }
     }
     if (points.isEmpty) {
-      points.add('Review your complete test results with your doctor to establish a baseline.');
+      points.add(
+          'Review your complete test results with your doctor to establish a baseline.');
     }
     points.add('Ask whether a follow-up test or re-check is recommended.');
-    points.add('Discuss any symptoms you have been experiencing alongside these findings.');
+    points.add(
+        'Discuss any symptoms you have been experiencing alongside these findings.');
     return points;
   }
 
@@ -364,15 +395,31 @@ class ExportService {
       'Procedure',
     };
     const skipWords = {
-      'high', 'low', 'normal', 'result', 'test', 'blood', 'lab', 'report',
-      'value', 'range', 'mg', 'dl', 'ml', 'fl', 'g', '%', 'no', 'not',
+      'high',
+      'low',
+      'normal',
+      'result',
+      'test',
+      'blood',
+      'lab',
+      'report',
+      'value',
+      'range',
+      'mg',
+      'dl',
+      'ml',
+      'fl',
+      'g',
+      '%',
+      'no',
+      'not',
     };
 
     final seen = <String>{};
     final terms = <String>[];
     for (final e in entities) {
       final group = (e['entity_group'] ?? e['category'] ?? '').toString();
-      final word  = _s(e['word']?.toString() ?? '').trim();
+      final word = _s(e['word']?.toString() ?? '').trim();
       if (word.isEmpty) continue;
       if (word.length < 3) continue;
       if (skipWords.contains(word.toLowerCase())) continue;
@@ -395,23 +442,72 @@ class ExportService {
     required String reportTitle,
     required String reportDate,
     String reportType = '',
+    TranslationModel? translation,
   }) async {
-    final doc      = pw.Document();
-    final font     = pw.Font.helvetica();
-    final fontBold = pw.Font.helveticaBold();
+    final doc = pw.Document();
+    pw.Font font = pw.Font.helvetica();
+    pw.Font fontBold = pw.Font.helveticaBold();
+    List<pw.Font> fallbacks = [];
+
+    if (translation != null && translation.language != 'en') {
+      font = await PdfGoogleFonts.notoSansRegular();
+      fontBold = await PdfGoogleFonts.notoSansBold();
+
+      switch (translation.language) {
+        case 'hi':
+        case 'mr':
+          fallbacks.add(await PdfGoogleFonts.notoSansDevanagariRegular());
+          break;
+        case 'te':
+          fallbacks.add(await PdfGoogleFonts.notoSansTeluguRegular());
+          break;
+        case 'ta':
+          fallbacks.add(await PdfGoogleFonts.notoSansTamilRegular());
+          break;
+        case 'kn':
+          fallbacks.add(await PdfGoogleFonts.notoSansKannadaRegular());
+          break;
+        case 'ml':
+          fallbacks.add(await PdfGoogleFonts.notoSansMalayalamRegular());
+          break;
+        case 'bn':
+          fallbacks.add(await PdfGoogleFonts.notoSansBengaliRegular());
+          break;
+      }
+    }
+
+    String l(String key, String fallback) {
+      if (translation == null) return fallback;
+      return translation.uiLabels[key] ?? fallback;
+    }
 
     // Typography scale
-    final base  = pw.TextStyle(font: font,     fontSize: 9.5,  color: _textDark, lineSpacing: 1.5);
-    final bold  = pw.TextStyle(font: fontBold, fontSize: 9.5,  color: _textDark, lineSpacing: 1.5);
-    final muted = pw.TextStyle(font: font,     fontSize: 8.5,  color: _textMuted, lineSpacing: 1.4);
+    final base = pw.TextStyle(
+        font: font,
+        fontFallback: fallbacks,
+        fontSize: 9.5,
+        color: _textDark,
+        lineSpacing: 1.5);
+    final bold = pw.TextStyle(
+        font: fontBold,
+        fontFallback: fallbacks,
+        fontSize: 9.5,
+        color: _textDark,
+        lineSpacing: 1.5);
+    final muted = pw.TextStyle(
+        font: font,
+        fontFallback: fallbacks,
+        fontSize: 8.5,
+        color: _textMuted,
+        lineSpacing: 1.4);
 
     final cleanTitle = _s(reportTitle);
-    final cleanDate  = _s(reportDate);
-    final cleanType  = _s(reportType);
+    final cleanDate = _s(reportDate);
+    final cleanType = _s(reportType);
 
     // Partition lab values: metadata vs. actual lab results
     final metadataItems = <LabValue>[];
-    final labResults    = <LabValue>[];
+    final labResults = <LabValue>[];
     for (final lv in analysis.structuredLabValues) {
       if (Helpers.isMetadataParameter(lv.testName)) {
         metadataItems.add(lv);
@@ -421,13 +517,11 @@ class ExportService {
     }
 
     // Partition findings: abnormal vs normal (non-metadata only)
-    final abnormalFindings = analysis.abnormalFindings
-        .where((f) {
-          final name = f['test_name']?.toString() ??
-              f['parameter']?.toString() ?? '';
-          return !Helpers.isMetadataParameter(name);
-        })
-        .toList();
+    final abnormalFindings = analysis.abnormalFindings.where((f) {
+      final name =
+          f['test_name']?.toString() ?? f['parameter']?.toString() ?? '';
+      return !Helpers.isMetadataParameter(name);
+    }).toList();
 
     final normalFindings = labResults
         .where((lv) =>
@@ -442,7 +536,44 @@ class ExportService {
         .toList();
 
     // Doctor discussion points
-    final discussPoints = _discussionPoints(abnormalFindings, analysis.medications);
+    final discussPoints =
+        (translation != null && translation.doctorDiscussionPoints.isNotEmpty)
+            ? translation.doctorDiscussionPoints
+            : _discussionPoints(abnormalFindings, analysis.medications);
+
+    // Medications
+    final medsList =
+        (translation != null && translation.medicationsJson.isNotEmpty)
+            ? translation.medicationsJson
+            : analysis.medications;
+
+    final patientSummaryStr =
+        (translation != null && translation.patientSummary.trim().isNotEmpty)
+            ? translation.patientSummary
+            : analysis.patientSummary;
+
+    // Translated Findings Mapping
+    Map<String, String> translatedFindingNames = {};
+    if (translation != null) {
+      for (var f in translation.findingsJson) {
+        final originalName =
+            f['original_test_name']?.toString().toLowerCase() ??
+                f['test_name']?.toString().toLowerCase() ??
+                '';
+        final translatedName = f['translated_test_name']?.toString() ??
+            f['test_name']?.toString() ??
+            '';
+        if (originalName.isNotEmpty && translatedName.isNotEmpty) {
+          translatedFindingNames[originalName] = translatedName;
+        }
+      }
+    }
+
+    String getTranslatedName(String original) {
+      if (translation == null) return original;
+      final key = original.toLowerCase();
+      return translatedFindingNames[key] ?? original;
+    }
 
     // Curated medical terms
     final medTerms = _curatedTerms(analysis.entities);
@@ -456,8 +587,12 @@ class ExportService {
               children: [
                 pw.Text('MedNarrate',
                     style: pw.TextStyle(
-                        font: fontBold, fontSize: 15, color: _primary)),
-                pw.Text('Medical Report Summary',
+                        font: fontBold,
+                        fontFallback: fallbacks,
+                        fontSize: 15,
+                        color: _primary)),
+                pw.Text(
+                    l('label_patient_report_heading', 'Medical Report Summary'),
                     style: muted),
               ],
             ),
@@ -468,14 +603,19 @@ class ExportService {
                 pw.Expanded(
                   child: pw.Text(cleanTitle,
                       style: pw.TextStyle(
-                          font: fontBold, fontSize: 11, color: _textDark)),
+                          font: fontBold,
+                          fontFallback: fallbacks,
+                          fontSize: 11,
+                          color: _textDark)),
                 ),
                 pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
-                    pw.Text('Date: $cleanDate', style: muted),
+                    pw.Text('${l('label_date', 'Date')}: $cleanDate',
+                        style: muted),
                     if (cleanType.isNotEmpty)
-                      pw.Text('Type: $cleanType', style: muted),
+                      pw.Text('${l('label_type', 'Type')}: $cleanType',
+                          style: muted),
                   ],
                 ),
               ],
@@ -495,10 +635,12 @@ class ExportService {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('MedNarrate — For informational purposes only',
+                pw.Text(
+                    l('label_disclaimer_patient',
+                        'MedNarrate — For informational purposes only'),
                     style: muted.copyWith(fontSize: 7.5)),
                 pw.Text(
-                    'Page ${ctx.pageNumber} of ${ctx.pagesCount}',
+                    '${l('label_page', 'Page')} ${ctx.pageNumber} / ${ctx.pagesCount}',
                     style: muted.copyWith(fontSize: 7.5)),
               ],
             ),
@@ -512,37 +654,51 @@ class ExportService {
         header: pageHeader,
         footer: pageFooter,
         build: (ctx) => [
-
           // ── SECTION 1: Patient / Report Metadata ──────────────────────
           if (metadataItems.isNotEmpty) ...[
-            _sectionHeader('Patient & Report Information', fontBold),
+            _sectionHeader(
+                l('label_patient_report_heading',
+                    'Patient & Report Information'),
+                fontBold),
             pw.TableHelper.fromTextArray(
-              headers: ['Field', 'Value'],
-              data: metadataItems.map((m) => [
-                _s(m.testName),
-                _s('${m.value == 0 ? '' : m.value} ${m.unit}'.trim()),
-              ]).toList(),
-              headerStyle:
-                  pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.white),
+              headers: [
+                l('label_parameter', 'Field'),
+                l('label_result', 'Value')
+              ],
+              data: metadataItems
+                  .map((m) => [
+                        _s(m.testName),
+                        _s('${m.value == 0 ? '' : m.value} ${m.unit}'.trim()),
+                      ])
+                  .toList(),
+              headerStyle: pw.TextStyle(
+                  font: fontBold,
+                  fontFallback: fallbacks,
+                  fontSize: 8.5,
+                  color: PdfColors.white),
               cellStyle: base,
-              headerDecoration:
-                  const pw.BoxDecoration(color: _headerBg),
-              oddRowDecoration:
-                  const pw.BoxDecoration(color: _rowOdd),
-              columnWidths: {0: const pw.FixedColumnWidth(140), 1: const pw.FlexColumnWidth()},
+              headerDecoration: const pw.BoxDecoration(color: _headerBg),
+              oddRowDecoration: const pw.BoxDecoration(color: _rowOdd),
+              columnWidths: {
+                0: const pw.FixedColumnWidth(140),
+                1: const pw.FlexColumnWidth()
+              },
               cellPadding:
                   const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             ),
           ],
 
           // ── SECTION 2: Plain Language Summary ─────────────────────────
-          if ((analysis.patientSummary ?? '').trim().isNotEmpty) ...[
-            _sectionHeader('Plain Language Summary', fontBold),
-            ..._mdWidgets(analysis.patientSummary!, base, bold, fontBold),
+          if ((patientSummaryStr ?? '').trim().isNotEmpty) ...[
+            _sectionHeader(
+                l('section_plain_language_summary', 'Plain Language Summary'),
+                fontBold),
+            ..._mdWidgets(patientSummaryStr!, base, bold, fontBold),
           ],
 
           // ── SECTION 3: Key Findings (Abnormal) ────────────────────────
-          _sectionHeader('Key Findings', fontBold),
+          _sectionHeader(
+              l('section_important_findings', 'Key Findings'), fontBold),
           if (abnormalLabRows.isEmpty && abnormalFindings.isEmpty)
             pw.Padding(
               padding: const pw.EdgeInsets.only(bottom: 6),
@@ -560,8 +716,9 @@ class ExportService {
             pw.SizedBox(height: 6),
             // Use structured abnormal findings if available; fall back to lab rows
             if (abnormalFindings.isNotEmpty)
-              ...abnormalFindings.map((f) =>
-                  _findingCard(f, base, bold, fontBold))
+              ...abnormalFindings.map((f) => _findingCard(
+                  f, base, bold, fontBold,
+                  getTranslatedName: getTranslatedName))
             else
               ...abnormalLabRows.map((lv) => _findingCard({
                     'test_name': lv.testName,
@@ -570,21 +727,23 @@ class ExportService {
                     'flag': lv.flag,
                     'ref_low': lv.refLow,
                     'ref_high': lv.refHigh,
-                  }, base, bold, fontBold)),
+                  }, base, bold, fontBold,
+                      getTranslatedName: getTranslatedName)),
 
             if (normalFindings.isNotEmpty) ...[
               pw.SizedBox(height: 10),
-              pw.Text('NORMAL FINDINGS',
+              pw.Text(l('label_normal', 'NORMAL FINDINGS'),
                   style: pw.TextStyle(
                       font: fontBold,
+                      fontFallback: fallbacks,
                       fontSize: 9,
                       color: _success,
                       letterSpacing: 0.5)),
               pw.SizedBox(height: 6),
               ...normalFindings.map((lv) => pw.Container(
                     margin: const pw.EdgeInsets.only(bottom: 4),
-                    padding:
-                        const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
                     decoration: pw.BoxDecoration(
                       color: _normalBg,
                       border: pw.Border.all(color: _normalBdr, width: 0.8),
@@ -595,7 +754,7 @@ class ExportService {
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Expanded(
-                          child: pw.Text(_s(lv.testName),
+                          child: pw.Text(_s(getTranslatedName(lv.testName)),
                               style: base.copyWith(font: fontBold)),
                         ),
                         pw.Text(
@@ -611,26 +770,32 @@ class ExportService {
           ],
 
           // ── SECTION 4: Complete Lab Results Table ──────────────────────
-          _sectionHeader('Complete Laboratory Results', fontBold),
+          _sectionHeader(
+              l('chip_lab_results', 'Complete Laboratory Results'), fontBold),
           if (labResults.isEmpty)
             pw.Padding(
               padding: const pw.EdgeInsets.only(bottom: 6),
               child: pw.Text(
-                  'No laboratory results were identified in this report.',
+                  l('msg_no_labs',
+                      'No laboratory results were identified in this report.'),
                   style: muted),
             )
           else
             pw.TableHelper.fromTextArray(
               headers: [
-                'Test Name',
-                'Result',
-                'Unit',
-                'Reference Range',
-                'Status'
+                l('label_parameter', 'Test Name'),
+                l('label_result', 'Result'),
+                l('label_unit', 'Unit'),
+                l('label_reported_range', 'Reference Range'),
+                l('label_status', 'Status')
               ],
-              data: _labTableData(labResults),
+              data: _labTableData(labResults,
+                  getTranslatedName: getTranslatedName),
               headerStyle: pw.TextStyle(
-                  font: fontBold, fontSize: 8.5, color: PdfColors.white),
+                  font: fontBold,
+                  fontFallback: fallbacks,
+                  fontSize: 8.5,
+                  color: PdfColors.white),
               cellStyle: base.copyWith(fontSize: 8.5),
               headerDecoration: const pw.BoxDecoration(color: _headerBg),
               oddRowDecoration: const pw.BoxDecoration(color: _rowOdd),
@@ -648,25 +813,45 @@ class ExportService {
             ),
 
           // ── SECTION 5: Medications ─────────────────────────────────────
-          _sectionHeader('Reported Medications', fontBold),
-          if (analysis.medications.isEmpty)
+          _sectionHeader(
+              l('section_reported_medications', 'Reported Medications'),
+              fontBold),
+          if (medsList.isEmpty)
             pw.Padding(
               padding: const pw.EdgeInsets.only(bottom: 6),
               child: pw.Text(
-                  'No medications were identified in the uploaded report.',
+                  l('msg_no_meds',
+                      'No medications were identified in the uploaded report.'),
                   style: muted),
             )
           else
             pw.TableHelper.fromTextArray(
-              headers: ['Medication', 'Dosage', 'Frequency', 'Notes'],
-              data: analysis.medications.map((m) => [
-                _s(m['medication_name']?.toString() ?? ''),
-                _s(m['dosage']?.toString() ?? '-'),
-                _s(m['frequency']?.toString() ?? '-'),
-                _s(m['notes']?.toString() ?? m['instructions']?.toString() ?? '-'),
-              ]).toList(),
-              headerStyle:
-                  pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.white),
+              headers: [
+                l('label_medication', 'Medication'),
+                l('label_dose', 'Dosage'),
+                l('label_frequency', 'Frequency'),
+                l('label_notes', 'Notes')
+              ],
+              data: medsList
+                  .map((m) => [
+                        _s(m['medication_name']?.toString() ?? ''),
+                        _s(m['translated_dosage']?.toString() ??
+                            m['dosage']?.toString() ??
+                            '-'),
+                        _s(m['translated_frequency']?.toString() ??
+                            m['frequency']?.toString() ??
+                            '-'),
+                        _s(m['translated_instructions']?.toString() ??
+                            m['notes']?.toString() ??
+                            m['instructions']?.toString() ??
+                            '-'),
+                      ])
+                  .toList(),
+              headerStyle: pw.TextStyle(
+                  font: fontBold,
+                  fontFallback: fallbacks,
+                  fontSize: 8.5,
+                  color: PdfColors.white),
               cellStyle: base.copyWith(fontSize: 8.5),
               headerDecoration: const pw.BoxDecoration(color: _headerBg),
               oddRowDecoration: const pw.BoxDecoration(color: _rowOdd),
@@ -674,11 +859,10 @@ class ExportService {
                   const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             ),
 
-          // ── SECTION 6: Clinical Executive Summary ─────────────────────
+          // ── SECTION 6: Clinical Executive Summary (English Only) ───────
           if ((analysis.clinicianSummary ?? '').trim().isNotEmpty) ...[
-            _sectionHeader('Clinical Executive Summary', fontBold),
-            ..._mdWidgets(
-                analysis.clinicianSummary!, base, bold, fontBold),
+            _sectionHeader('Clinical Executive Summary (Original)', fontBold),
+            ..._mdWidgets(analysis.clinicianSummary!, base, bold, fontBold),
           ],
 
           // ── SECTION 7: Key Medical Terms ───────────────────────────────
@@ -687,41 +871,59 @@ class ExportService {
             pw.Wrap(
               spacing: 6,
               runSpacing: 5,
-              children: medTerms.map((term) => pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
-                    decoration: pw.BoxDecoration(
-                      color: _rowOdd,
-                      border: pw.Border.all(color: _divider, width: 0.8),
-                      borderRadius:
-                          const pw.BorderRadius.all(pw.Radius.circular(4)),
-                    ),
-                    child: pw.Text(term,
-                        style: base.copyWith(fontSize: 8.5)),
-                  )).toList(),
+              children: medTerms
+                  .map((term) => pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: pw.BoxDecoration(
+                          color: _rowOdd,
+                          border: pw.Border.all(color: _divider, width: 0.8),
+                          borderRadius:
+                              const pw.BorderRadius.all(pw.Radius.circular(4)),
+                        ),
+                        child:
+                            pw.Text(term, style: base.copyWith(fontSize: 8.5)),
+                      ))
+                  .toList(),
             ),
           ],
 
           // ── SECTION 8: What to Discuss With Your Doctor ────────────────
-          _sectionHeader('What to Discuss With Your Doctor', fontBold),
-          ...discussPoints.map((point) => pw.Padding(
+          _sectionHeader(
+              l('section_what_to_discuss', 'What to Discuss With Your Doctor'),
+              fontBold),
+          ...discussPoints.expand((point) {
+            var firstChunk = true;
+            return _textChunks(point).map((chunk) {
+              final showBullet = firstChunk;
+              firstChunk = false;
+              return pw.Padding(
                 padding: const pw.EdgeInsets.only(left: 8, bottom: 5),
                 child: pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.only(top: 5, right: 7),
-                      child: pw.Container(
-                        width: 4,
-                        height: 4,
-                        decoration: pw.BoxDecoration(
-                            color: _primary, shape: pw.BoxShape.circle),
-                      ),
+                    pw.SizedBox(
+                      width: 11,
+                      child: showBullet
+                          ? pw.Padding(
+                              padding: const pw.EdgeInsets.only(top: 5),
+                              child: pw.Container(
+                                width: 4,
+                                height: 4,
+                                decoration: const pw.BoxDecoration(
+                                  color: _primary,
+                                  shape: pw.BoxShape.circle,
+                                ),
+                              ),
+                            )
+                          : pw.SizedBox(),
                     ),
-                    pw.Expanded(child: pw.Text(point, style: base)),
+                    pw.Expanded(child: pw.Text(chunk, style: base)),
                   ],
                 ),
-              )),
+              );
+            });
+          }),
 
           // ── DISCLAIMER ─────────────────────────────────────────────────
           pw.SizedBox(height: 20),
@@ -731,13 +933,14 @@ class ExportService {
               color: const PdfColor.fromInt(0xFFFFF8E1),
               border: pw.Border.all(
                   color: const PdfColor.fromInt(0xFFFFCC80), width: 1),
-              borderRadius:
-                  const pw.BorderRadius.all(pw.Radius.circular(5)),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5)),
             ),
             child: pw.Text(
-              'DISCLAIMER: This summary is generated by MedNarrate AI for educational and informational purposes only. '
-              'It does not constitute medical advice, diagnosis, or treatment. '
-              'Please consult a qualified healthcare professional before making any health decisions.',
+              l(
+                  'label_disclaimer_patient',
+                  'DISCLAIMER: This summary is generated by MedNarrate AI for educational and informational purposes only. '
+                      'It does not constitute medical advice, diagnosis, or treatment. '
+                      'Please consult a qualified healthcare professional before making any health decisions.'),
               style: base.copyWith(fontSize: 8, color: _textMuted),
             ),
           ),
@@ -750,6 +953,24 @@ class ExportService {
 
   // ─── Public API ───────────────────────────────────────────────────────────
 
+  /// Builds a structured report document without downloading or printing it.
+  /// This keeps PDF tests and other callers on the same production renderer.
+  Future<pw.Document> buildReportPdf({
+    required ReportAnalysisModel analysis,
+    required String reportTitle,
+    required String reportDate,
+    String reportType = '',
+    TranslationModel? translation,
+  }) {
+    return _buildDocument(
+      analysis: analysis,
+      reportTitle: reportTitle,
+      reportDate: reportDate,
+      reportType: reportType,
+      translation: translation,
+    );
+  }
+
   /// EXPORT PDF — generates and DIRECTLY DOWNLOADS the PDF. No print dialog.
   Future<void> exportReportPdf({
     required ReportAnalysisModel analysis,
@@ -758,19 +979,16 @@ class ExportService {
     String reportType = '',
     TranslationModel? translation,
   }) async {
-    final doc = translation != null && translation.language != 'en'
-        ? await buildTranslatedReportPdf(analysis: analysis, translation: translation,
-            reportTitle: reportTitle, reportDate: reportDate, reportType: reportType)
-        : await _buildDocument(
+    final doc = await buildReportPdf(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
       reportType: reportType,
+      translation: translation,
     );
     final bytes = await doc.save();
 
-    final safeTitle =
-        reportTitle.replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '_');
+    final safeTitle = reportTitle.replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '_');
     final filename = 'MedNarrate_${safeTitle}_$reportDate.pdf';
 
     if (kIsWeb) {
@@ -778,7 +996,7 @@ class ExportService {
       return;
     }
 
-    final dir  = await getTemporaryDirectory();
+    final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/$filename');
     await file.writeAsBytes(bytes);
     await Share.shareXFiles(
@@ -795,14 +1013,12 @@ class ExportService {
     String reportType = '',
     TranslationModel? translation,
   }) async {
-    final doc = translation != null && translation.language != 'en'
-        ? await buildTranslatedReportPdf(analysis: analysis, translation: translation,
-            reportTitle: reportTitle, reportDate: reportDate, reportType: reportType)
-        : await _buildDocument(
+    final doc = await buildReportPdf(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
       reportType: reportType,
+      translation: translation,
     );
     final bytes = await doc.save();
     await Printing.layoutPdf(onLayout: (_) async => bytes);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/services/api_models.dart';
 
 class LabResultRow extends StatelessWidget {
   final String parameter;
@@ -7,6 +8,7 @@ class LabResultRow extends StatelessWidget {
   final double? minRange;
   final double? maxRange;
   final String flag;
+  final TranslationModel? translation;
   final VoidCallback onTap;
 
   const LabResultRow({
@@ -17,6 +19,7 @@ class LabResultRow extends StatelessWidget {
     this.minRange,
     this.maxRange,
     this.flag = 'not_classified',
+    this.translation,
     required this.onTap,
   });
 
@@ -27,20 +30,24 @@ class LabResultRow extends StatelessWidget {
         minRange != null && maxRange != null && (maxRange! > minRange!);
 
     Color statusColor = theme.colorScheme.onSurface;
-    String badgeText = "Not Classified";
+    String badgeText =
+        translation?.uiLabels['label_not_classified']?.toUpperCase() ??
+            "NOT CLASSIFIED";
 
     if (flag == 'high') {
       statusColor = Colors.redAccent;
-      badgeText = "HIGH";
+      badgeText = translation?.uiLabels['label_high']?.toUpperCase() ?? "HIGH";
     } else if (flag == 'low') {
       statusColor = Colors.orange;
-      badgeText = "LOW";
+      badgeText = translation?.uiLabels['label_low']?.toUpperCase() ?? "LOW";
     } else if (flag == 'critical') {
       statusColor = Colors.red.shade900;
-      badgeText = "CRITICAL";
+      badgeText =
+          translation?.uiLabels['label_critical']?.toUpperCase() ?? "CRITICAL";
     } else if (flag == 'normal') {
       statusColor = Colors.green;
-      badgeText = "NORMAL";
+      badgeText =
+          translation?.uiLabels['label_normal']?.toUpperCase() ?? "NORMAL";
     }
 
     return InkWell(
@@ -73,7 +80,9 @@ class LabResultRow extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        unit.isNotEmpty ? unit : 'Unit: -',
+                        unit.isNotEmpty
+                            ? unit
+                            : '${translation?.uiLabels['label_unit'] ?? 'Unit'}: -',
                         style: TextStyle(
                             fontSize: 12,
                             color: theme.colorScheme.onSurface

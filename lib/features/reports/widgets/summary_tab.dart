@@ -1,4 +1,3 @@
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
@@ -112,11 +111,14 @@ class _SummaryTabState extends State<SummaryTab> {
     final headingPatient = _label('label_patient_report_heading',
         fallback: 'For You — Plain Language Summary');
     final headingClinical = _label('label_clinical_report_heading',
-        fallback: AppLocalizations.of(context)?.sectionClinicalExecutiveSummary ?? AppLocalizations.of(context)?.sectionClinicalExecutiveSummary ?? 'Clinical Executive Summary');
+        fallback:
+            AppLocalizations.of(context)?.sectionClinicalExecutiveSummary ??
+                'Clinical Executive Summary');
     final headingImportantFindings =
         _label('section_important_findings', fallback: 'Important Findings');
     final headingKeyClinicalFindings = _label('section_key_clinical_findings',
-        fallback: AppLocalizations.of(context)?.keyFindings ?? AppLocalizations.of(context)?.sectionKeyClinicalFindings ?? 'Key Clinical Findings');
+        fallback: AppLocalizations.of(context)?.keyFindings ??
+            'Key Clinical Findings');
     final labelNoKeyFindings = _label('label_no_key_findings',
         fallback: AppLocalizations.of(context)!.noKeyFindings);
     final expansionPatient = _label('label_key_finding_expansion_patient',
@@ -129,8 +131,8 @@ class _SummaryTabState extends State<SummaryTab> {
     final labelRetranslate =
         _label('label_retranslate', fallback: 'Retranslate');
     final disclaimerSummary = _label('label_disclaimer_summary',
-        fallback:
-            AppLocalizations.of(context)?.disclaimerSummary ?? AppLocalizations.of(context)?.disclaimerSummary ?? 'Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.');
+        fallback: AppLocalizations.of(context)?.disclaimerSummary ??
+            'Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.');
     final reportTypeLabel = _label('chip_report_type',
         fallback: Helpers.reportTypeLabel(report.reportType));
 

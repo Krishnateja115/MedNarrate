@@ -119,8 +119,8 @@ class TranslationRequest(BaseModel):
 
 class TranslationOut(BaseModel):
     language: str
-    clinician_summary: Optional[str] = None
     patient_summary: str
+    clinician_summary: str | None = None
     findings_json: List[dict] = []
     medications_json: List[dict] = []
     doctor_discussion_points: List[str] = []

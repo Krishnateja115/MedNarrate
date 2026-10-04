@@ -36,3 +36,11 @@ def downgrade() -> None:
         batch_op.drop_index(batch_op.f('ix_help_articles_slug'))
         batch_op.drop_index(batch_op.f('ix_help_articles_category'))
     op.drop_table('help_articles')
+    if op.get_bind().dialect.name == 'postgresql':
+        for enum_name in (
+            'ticketstatus',
+            'ticketpriority',
+            'ticketcategory',
+            'articlestatus',
+        ):
+            sa.Enum(name=enum_name).drop(op.get_bind(), checkfirst=True)

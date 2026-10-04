@@ -40,6 +40,10 @@ class _LabResultsTabState extends State<LabResultsTab> {
 
   void _showParameterDetails(
       BuildContext context, Map<String, dynamic> metric) {
+    final String parameterName = metric['parameter']?.toString() ?? '';
+    final String translatedName =
+        widget.translation?.uiLabels['param_$parameterName'] ?? parameterName;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -51,12 +55,12 @@ class _LabResultsTabState extends State<LabResultsTab> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(metric['parameter'],
+              Text(translatedName,
                   style: const TextStyle(
                       fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Text(
-                'What is ${metric['parameter']}?',
+                '${widget.translation?.uiLabels['label_what_is'] ?? 'What is'} $translatedName?',
                 style: TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
@@ -99,13 +103,17 @@ class _LabResultsTabState extends State<LabResultsTab> {
       return paramName.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
-    Map<String, List<Map<String, dynamic>>> grouped = {'Uncategorized': []};
+    final defaultCat =
+        widget.translation?.uiLabels['label_uncategorized'] ?? 'Uncategorized';
+    Map<String, List<Map<String, dynamic>>> grouped = {defaultCat: []};
     for (var m in filteredMetrics) {
-      String cat = 'Uncategorized';
+      String cat = defaultCat;
       for (var entry in _categories.entries) {
         if (entry.value.any((v) =>
             v.toLowerCase() == m['parameter'].toString().toLowerCase())) {
-          cat = entry.key;
+          cat = widget.translation?.uiLabels[
+                  'label_cat_${entry.key.toLowerCase().replaceAll(' ', '_')}'] ??
+              entry.key;
           break;
         }
       }
@@ -120,7 +128,9 @@ class _LabResultsTabState extends State<LabResultsTab> {
           child: TextField(
             onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
-              hintText: AppLocalizations.of(context)!.searchParameters,
+              hintText:
+                  widget.translation?.uiLabels['label_search_parameters'] ??
+                      AppLocalizations.of(context)!.searchParameters,
               prefixIcon: const Icon(Icons.search),
               filled: true,
               fillColor: Theme.of(context).cardColor,
@@ -168,8 +178,11 @@ class _LabResultsTabState extends State<LabResultsTab> {
                     final String flag =
                         m['flag']?.toString() ?? 'not_classified';
 
-                    final String parameterName = m['parameter']?.toString() ?? '';
-                    final String translatedName = widget.translation?.uiLabels['param_$parameterName'] ?? parameterName;
+                    final String parameterName =
+                        m['parameter']?.toString() ?? '';
+                    final String translatedName =
+                        widget.translation?.uiLabels['param_$parameterName'] ??
+                            parameterName;
 
                     return LabResultRow(
                       parameter: translatedName,
@@ -178,6 +191,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
                       minRange: minR,
                       maxRange: maxR,
                       flag: flag,
+                      translation: widget.translation,
                       onTap: () => _showParameterDetails(context, m),
                     );
                   }),

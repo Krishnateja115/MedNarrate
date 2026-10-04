@@ -26,7 +26,7 @@ from app.schemas.report import (
 )
 from app.services.analysis_pipeline import run_analysis
 from app.services.llm_client import generate_translation
-from app.services.translation_validation import parse_translation, TranslationVerifier
+from app.services.translation_validation import parse_translation, validate_translation
 from app.exceptions import TranslationServiceError
 from app.services.prompts import TRANSLATION_PROMPT
 
@@ -95,6 +95,40 @@ REQUIRED_UI_LABEL_KEYS = [
     "label_retranslate",
     "label_disclaimer_patient",
     "label_disclaimer_summary",
+    "label_hospital",
+    "label_unspecified",
+    "label_date",
+    "label_validation",
+    "label_status_completed",
+    "label_status_processing",
+    "label_status_failed",
+    "label_status_uploaded",
+    "label_validation_passed",
+    "label_validation_failed",
+    "label_validation_pending",
+    "label_why_it_was_flagged",
+    "label_parameter",
+    "label_unit",
+    "label_reference_range",
+    "section_diagnoses",
+    "section_historical_comparison",
+    "section_source_validation",
+    "label_no_previous_report",
+    "label_source_document",
+    "label_report_date",
+    "label_rag_search_index",
+    "label_medical_validation",
+    "label_active_retriever",
+    "label_passed_rules",
+    "chip_blood",
+    "chip_urine",
+    "label_uncategorized",
+    "label_cat_cbc",
+    "label_cat_lipid_panel",
+    "label_cat_liver_function",
+    "label_cat_kidney_function",
+    "label_cat_vitamins_&_minerals",
+    "label_search_parameters",
 ]
 
 
@@ -105,7 +139,7 @@ async def process_report(
     force: bool = Query(False),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-    maintenance = Depends(check_maintenance("report_analysis")),
+    maintenance=Depends(check_maintenance("report_analysis")),
 ):
     report = await verify_report_ownership(id, str(current_user.id), db)
 
@@ -205,8 +239,8 @@ async def get_report_analysis(
         res_trans = await db.execute(stmt_trans)
         translation = res_trans.scalars().first()
         if translation:
-            analysis_out.translated_patient_summary = translation.patient_summary
             analysis_out.translated_clinician_summary = translation.clinician_summary
+            analysis_out.translated_patient_summary = translation.patient_summary
             analysis_out.translation_available = True
         else:
             analysis_out.translation_available = False
@@ -220,7 +254,7 @@ async def translate_analysis(
     req: TranslationRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-    maintenance = Depends(check_maintenance("translation")),
+    maintenance=Depends(check_maintenance("translation")),
 ):
     report = await verify_report_ownership(id, str(current_user.id), db)
 
@@ -231,7 +265,9 @@ async def translate_analysis(
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
 
-    stmt_meds = select(MedicationSchedule).where(MedicationSchedule.report_id == report.id)
+    stmt_meds = select(MedicationSchedule).where(
+        MedicationSchedule.report_id == report.id
+    )
     res_meds = await db.execute(stmt_meds)
     meds = res_meds.scalars().all()
     meds_list = [
@@ -258,8 +294,7 @@ async def translate_analysis(
     target_lang_name = SUPPORTED_TRANSLATION_LANGUAGES[lang]
 
     abnormal_findings_source = [
-        f for f in (analysis.abnormal_findings or [])
-        if not _is_metadata_finding(f)
+        f for f in (analysis.abnormal_findings or []) if not _is_metadata_finding(f)
     ]
 
     if lang == "en":
@@ -282,13 +317,24 @@ async def translate_analysis(
     res_trans = await db.execute(stmt_trans)
     translation = res_trans.scalars().first()
 
-    source_fingerprint = hashlib.sha256(json.dumps(
-        [analysis.clinician_summary or "", analysis.patient_summary or "", abnormal_findings_source, meds_list],
-        sort_keys=True, ensure_ascii=False,
-    ).encode("utf-8")).hexdigest()
-    if (translation is not None
-            and translation.schema_version >= TRANSLATION_SCHEMA_VERSION
-            and (translation.ui_labels or {}).get("_source_fingerprint") == source_fingerprint):
+    source_fingerprint = hashlib.sha256(
+        json.dumps(
+            [
+                analysis.clinician_summary or "",
+                analysis.patient_summary or "",
+                abnormal_findings_source,
+                meds_list,
+            ],
+            sort_keys=True,
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    if (
+        translation is not None
+        and translation.schema_version >= TRANSLATION_SCHEMA_VERSION
+        and (translation.ui_labels or {}).get("_source_fingerprint")
+        == source_fingerprint
+    ):
         cached_payload = {
             "clinician_summary": translation.clinician_summary,
             "patient_summary": translation.patient_summary,
@@ -298,25 +344,44 @@ async def translate_analysis(
             "ui_labels": translation.ui_labels,
         }
         try:
-            validate_translation(cached_payload, lang, analysis.clinician_summary or "", analysis.patient_summary or "",
-                                 abnormal_findings_source, meds_list, REQUIRED_UI_LABEL_KEYS)
-        except (ValueError, TypeError, KeyError) as exc:
-            logger.info("Translation cache failed validation language=%s message=%s", lang, str(exc))
+            validate_translation(
+                cached_payload,
+                lang,
+                analysis.clinician_summary or "",
+                analysis.patient_summary or "",
+                abnormal_findings_source,
+                meds_list,
+                REQUIRED_UI_LABEL_KEYS,
+            )
+        except (ValueError, TypeError, KeyError):
+            logger.info("Translation cache failed validation language=%s", lang)
         else:
             return TranslationOut(
-                language=lang, clinician_summary=translation.clinician_summary, patient_summary=translation.patient_summary,
+                language=lang,
+                patient_summary=translation.patient_summary,
+                clinician_summary=getattr(translation, "clinician_summary", None),
                 findings_json=translation.findings_json,
                 medications_json=translation.medications_json,
                 doctor_discussion_points=translation.doctor_discussion_points,
                 ui_labels=translation.ui_labels,
-                schema_version=translation.schema_version, cached=True,
+                schema_version=translation.schema_version,
+                cached=True,
             )
 
-    unique_params = list(set([
-        str(m.get("parameter")) for m in (analysis.structured_lab_values or []) if m.get("parameter")
-    ] + [
-        str(f.get("test_name")) for f in abnormal_findings_source if f.get("test_name")
-    ]))
+    unique_params = list(
+        set(
+            [
+                str(m.get("test_name"))
+                for m in (analysis.structured_lab_values or [])
+                if m.get("test_name")
+            ]
+            + [
+                str(f.get("test_name"))
+                for f in abnormal_findings_source
+                if f.get("test_name")
+            ]
+        )
+    )
 
     prompt = TRANSLATION_PROMPT.format(
         target_language=target_lang_name,
@@ -326,129 +391,97 @@ async def translate_analysis(
         medications_json=json.dumps(meds_list, ensure_ascii=False),
         unique_parameters_json=json.dumps(unique_params, ensure_ascii=False),
     )
-    try:
-        llm_res = await generate_translation(prompt)
-    except Exception as e:
-        logger.error("STAGE_FAILURE | stage=LLM_CALL | language=%s | error=%s", lang, str(e))
-        raise TranslationServiceError("Translation service unavailable") from e
-
+    logger.info("Translation requested language=%s input_chars=%d", lang, len(prompt))
+    llm_res = await generate_translation(prompt)
     if llm_res.get("provider") == "fallback":
-        logger.warning("STAGE_FAILURE | stage=LLM_EMPTY_RESPONSE | language=%s", lang)
         raise TranslationServiceError()
-        
     try:
-        parsed = parse_translation(llm_res.get("content", ""))
-    except ValueError as exc:
-        logger.warning("STAGE_FAILURE | stage=JSON_PARSE_FAILURE | language=%s | message=%s", lang, str(exc))
-        raise TranslationServiceError("The translation could not be verified. Please try again.") from exc
+        raw_text = llm_res.get("content", "")
+        parsed = parse_translation(raw_text)
+        validate_translation(
+            parsed,
+            lang,
+            analysis.clinician_summary or "",
+            analysis.patient_summary or "",
+            abnormal_findings_source,
+            meds_list,
+            REQUIRED_UI_LABEL_KEYS,
+        )
+    except (ValueError, TypeError, KeyError) as exc:
+        # Do not log the model response or medical data.
+        abnormal_len = (
+            len(parsed.get("abnormal_findings") or [])
+            if "parsed" in locals() and isinstance(parsed, dict)
+            else -1
+        )
 
-    verifier = TranslationVerifier()
-    source_payload = {
-        "clinician_summary": analysis.clinician_summary or "",
-        "patient_summary": analysis.patient_summary or "",
-        "abnormal_findings": abnormal_findings_source,
-        "medications": meds_list,
-        "doctor_discussion_points": getattr(analysis, "doctor_discussion_points", []) or [],
+        med_len = (
+            len(parsed.get("medications") or [])
+            if "parsed" in locals() and isinstance(parsed, dict)
+            else -1
+        )
+        logger.warning(
+            "Translation validation failed language=%s error_type=%s "
+            "src_find_len=%d out_find_len=%d src_med_len=%d out_med_len=%d",
+            lang,
+            type(exc).__name__,
+            len(abnormal_findings_source),
+            abnormal_len,
+            len(meds_list),
+            med_len,
+        )
+        raise TranslationServiceError(
+            "The translation could not be verified. Please try again."
+        ) from exc
+    translated_summary = parsed["patient_summary"]
+    translated_clinician_summary = parsed.get("clinician_summary")
+    translated_findings = parsed["abnormal_findings"]
+    normalized_meds = parsed["medications"]
+    translated_discussion = parsed["doctor_discussion_points"]
+    translated_ui_labels = {
+        **parsed["ui_labels"],
+        "_source_fingerprint": source_fingerprint,
     }
-    
-    verify_result = verifier.verify(source_payload, parsed, lang)
-    
-    if not verify_result["ok"]:
-        failure_reasons = "; ".join([f"{f['itemId']}.{f['field']}: {f['reason']}" for f in verify_result["failures"]])
-        logger.warning("STAGE_FAILURE | stage=VERIFIER_RULE_FAILURE | language=%s | reasons=%s", lang, failure_reasons)
-        
-        retry_prompt = prompt + f"\n\nYOUR PREVIOUS OUTPUT FAILED VALIDATION:\n{failure_reasons}\nPLEASE FIX THESE ERRORS AND RETURN CORRECTED JSON."
-        try:
-            llm_res_retry = await generate_translation(retry_prompt)
-        except Exception as e:
-            logger.error("STAGE_FAILURE | stage=RETRY_LLM_CALL | language=%s | error=%s", lang, str(e))
-            llm_res_retry = {"provider": "fallback"}
-            
-        if llm_res_retry.get("provider") != "fallback":
-            try:
-                parsed_retry = parse_translation(llm_res_retry.get("content", ""))
-                verify_result_retry = verifier.verify(source_payload, parsed_retry, lang)
-                if verify_result_retry["ok"] or len(verify_result_retry["failures"]) < len(verify_result["failures"]):
-                    parsed = parsed_retry
-                    verify_result = verify_result_retry
-            except ValueError as e:
-                logger.warning("STAGE_FAILURE | stage=RETRY_PARSE_FAILURE | language=%s | error=%s", lang, str(e))
-                pass
-
-        if not verify_result["ok"]:
-            logger.warning("STAGE_FAILURE | stage=RETRY_ALSO_FAILED | language=%s | remaining_failures=%d", lang, len(verify_result["failures"]))
-
-        # Apply per-item fallback by reverting failed fields to English source.
-        # Ensure we still save what succeeded.
-        for failure in verify_result["failures"]:
-            item_path = failure["itemId"]
-            # A simple way to handle per-item fallback:
-            # Re-parse the path and copy from source_payload to parsed.
-            try:
-                if item_path.startswith("abnormal_findings["):
-                    idx = int(re.search(r'\[(\d+)\]', item_path).group(1))
-                    field = failure["field"]
-                    if len(source_payload["abnormal_findings"]) > idx and len(parsed.get("abnormal_findings", [])) > idx:
-                        parsed["abnormal_findings"][idx][field] = source_payload["abnormal_findings"][idx].get(field, "")
-                elif item_path.startswith("medications["):
-                    idx = int(re.search(r'\[(\d+)\]', item_path).group(1))
-                    field = failure["field"]
-                    if len(source_payload["medications"]) > idx and len(parsed.get("medications", [])) > idx:
-                        parsed["medications"][idx][field] = source_payload["medications"][idx].get(field, "")
-                elif item_path.startswith("doctor_discussion_points["):
-                    idx = int(re.search(r'\[(\d+)\]', item_path).group(1))
-                    if len(source_payload["doctor_discussion_points"]) > idx and len(parsed.get("doctor_discussion_points", [])) > idx:
-                        parsed["doctor_discussion_points"][idx] = source_payload["doctor_discussion_points"][idx]
-                else:
-                    # Top level fields
-                    if item_path in source_payload:
-                        parsed[item_path] = source_payload[item_path]
-            except Exception as e:
-                logger.error("Failed to apply per-item fallback for %s: %s", item_path, str(e))
-
-    translated_clinician = parsed.get("clinician_summary", "")
-    translated_summary = parsed.get("patient_summary", "")
-    translated_findings = parsed.get("abnormal_findings", [])
-    normalized_meds = parsed.get("medications", [])
-    translated_discussion = parsed.get("doctor_discussion_points", [])
-    translated_ui_labels = {**parsed.get("ui_labels", {}), "_source_fingerprint": source_fingerprint}
-    if "translated_parameters" in parsed and isinstance(parsed["translated_parameters"], dict):
+    if "translated_parameters" in parsed and isinstance(
+        parsed["translated_parameters"], dict
+    ):
         for k, v in parsed["translated_parameters"].items():
             translated_ui_labels[f"param_{k}"] = v
 
     # Keep the previous row until generation succeeds; replace it atomically.
-    try:
-        if translation is not None:
-            await db.delete(translation)
-            await db.flush()
+    if translation is not None:
+        await db.delete(translation)
+        await db.flush()
 
-        translation = AnalysisTranslation(
-            report_analysis_id=analysis.id,
-            language=lang,
-            schema_version=TRANSLATION_SCHEMA_VERSION,
-            clinician_summary=translated_clinician,
-            patient_summary=translated_summary,
-            findings_json=translated_findings,
-            medications_json=normalized_meds,
-            doctor_discussion_points=translated_discussion,
-            ui_labels=translated_ui_labels,
-        )
-        db.add(translation)
-        await db.commit()
-        await db.refresh(translation)
-    except Exception as e:
-        logger.error("STAGE_FAILURE | stage=CACHE_WRITE_ERROR | language=%s | error=%s", lang, str(e))
-        raise TranslationServiceError("Database error during translation save.") from e
+    translation = AnalysisTranslation(
+        report_analysis_id=analysis.id,
+        language=lang,
+        schema_version=TRANSLATION_SCHEMA_VERSION,
+        patient_summary=translated_summary,
+        clinician_summary=translated_clinician_summary,
+        findings_json=translated_findings,
+        medications_json=normalized_meds,
+        doctor_discussion_points=translated_discussion,
+        ui_labels=translated_ui_labels,
+    )
+    db.add(translation)
+    await db.commit()
+    await db.refresh(translation)
 
     return TranslationOut(
         language=lang,
-        clinician_summary=translation.clinician_summary,
         patient_summary=translation.patient_summary,
+        clinician_summary=translation.clinician_summary,
         findings_json=translation.findings_json,
         medications_json=getattr(translation, "medications_json", []) or [],
-        doctor_discussion_points=getattr(translation, "doctor_discussion_points", []) or [],
-        ui_labels={k: str(v) for k, v in (getattr(translation, "ui_labels", {}) or {}).items()},
-        schema_version=getattr(translation, "schema_version", TRANSLATION_SCHEMA_VERSION),
+        doctor_discussion_points=getattr(translation, "doctor_discussion_points", [])
+        or [],
+        ui_labels={
+            k: str(v) for k, v in (getattr(translation, "ui_labels", {}) or {}).items()
+        },
+        schema_version=getattr(
+            translation, "schema_version", TRANSLATION_SCHEMA_VERSION
+        ),
     )
 
 

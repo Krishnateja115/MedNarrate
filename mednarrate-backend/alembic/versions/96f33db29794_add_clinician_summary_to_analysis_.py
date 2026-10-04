@@ -1,0 +1,28 @@
+"""Add clinician_summary to analysis_translations
+
+Revision ID: 96f33db29794
+Revises: 4a8cb92e5f1d
+Create Date: 2026-09-30 17:40:54.175531
+
+"""
+
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+# revision identifiers, used by Alembic.
+revision: str = "96f33db29794"
+down_revision: Union[str, None] = "4a8cb92e5f1d"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    with op.batch_alter_table("analysis_translations", schema=None) as batch_op:
+        batch_op.add_column(sa.Column("clinician_summary", sa.Text(), nullable=True))
+
+
+def downgrade() -> None:
+    with op.batch_alter_table("analysis_translations", schema=None) as batch_op:
+        batch_op.drop_column("clinician_summary")
