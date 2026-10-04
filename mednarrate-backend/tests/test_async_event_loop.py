@@ -8,6 +8,8 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from app.core.database import AsyncSessionLocal, get_db
+from app.main import app
 from app.models.report import FileType, ProcessingStatus, Report, ReportType
 from app.models.user import User
 
@@ -60,6 +62,15 @@ async def test_status_endpoint_responsive_during_background_processing(
         )
         assert process_resp.status_code == 202
         assert process_resp.json()["processing_status"] == "processing"
+
+        # The shared client fixture normally reuses db_session so tests can inspect
+        # their writes. These requests are deliberately concurrent, so mirror the
+        # production get_db lifecycle and give each request its own AsyncSession.
+        async def get_independent_db():
+            async with AsyncSessionLocal() as session:
+                yield session
+
+        app.dependency_overrides[get_db] = get_independent_db
 
         # 5. Concurrently send multiple status GET requests while processing is underway
         async def fetch_status():
