@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:file_selector/file_selector.dart' as file_selector;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -91,7 +92,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
     try {
       final PlatformFile? file;
-      if (!Platform.isMacOS) {
+      if (kIsWeb || !Platform.isMacOS) {
         final result = await FilePicker.platform.pickFiles(
           type: FileType.custom,
           allowedExtensions: _validExtensions,
