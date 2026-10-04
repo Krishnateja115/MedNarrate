@@ -1,4 +1,7 @@
+import 'dart:io' show Platform;
+
 import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart' as file_selector;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -87,16 +90,42 @@ class _UploadScreenState extends State<UploadScreen> {
     setState(() => _isPickingFile = true);
 
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: _validExtensions,
-        // Keeps a byte fallback available for cloud-backed files that do not
-        // expose a stable local path on macOS and web.
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty) return;
+      final PlatformFile? file;
+      if (!Platform.isMacOS) {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: _validExtensions,
+          // Keeps a byte fallback available for cloud-backed files that do not
+          // expose a stable local path on web and mobile.
+          withData: true,
+        );
+        if (result == null || result.files.isEmpty) return;
+        file = result.files.first;
+      } else {
+        // file_picker's macOS dialog can fail to appear without returning an
+        // error. Use Flutter's native macOS selector for report files instead.
+        const typeGroup = file_selector.XTypeGroup(
+          label: 'Medical reports',
+          extensions: _validExtensions,
+          uniformTypeIdentifiers: <String>[
+            'com.adobe.pdf',
+            'public.jpeg',
+            'public.png',
+          ],
+        );
+        final selected = await file_selector.openFile(
+          acceptedTypeGroups: <file_selector.XTypeGroup>[typeGroup],
+          confirmButtonText: 'Choose Report',
+        );
+        if (selected == null) return;
+        file = PlatformFile(
+          name: selected.name,
+          path: selected.path,
+          size: await selected.length(),
+          bytes: await selected.readAsBytes(),
+        );
+      }
 
-      final file = result.files.first;
       final ext = file.extension?.toLowerCase() ?? '';
       if (!_validExtensions.contains(ext)) {
         setState(() {
