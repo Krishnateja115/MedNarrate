@@ -4,6 +4,7 @@ import '../../../core/services/api_models.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/markdown_formatter.dart';
+import '../../../core/utils/report_text_structurer.dart';
 import '../models/report_model.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
@@ -13,6 +14,8 @@ class PatientViewTab extends StatefulWidget {
   final TranslationModel? translation;
   final bool isTranslating;
   final Future<void> Function(String)? onTranslate;
+  /// Language currently being fetched, if any (for the selector UI only).
+  final String? pendingLanguage;
 
   const PatientViewTab({
     super.key,
@@ -21,6 +24,7 @@ class PatientViewTab extends StatefulWidget {
     this.translation,
     this.isTranslating = false,
     this.onTranslate,
+    this.pendingLanguage,
   });
 
   @override
@@ -46,18 +50,30 @@ class _PatientViewTabState extends State<PatientViewTab> {
     return fallback;
   }
 
+  static const Map<String, String> _languages = {
+    'en': 'English',
+    'hi': 'Hindi (हिन्दी)',
+    'ta': 'Tamil (தமிழ்)',
+    'te': 'Telugu (తెలుగు)',
+    'kn': 'Kannada (ಕನ್ನಡ)',
+    'ml': 'Malayalam (മലയാളം)',
+    'mr': 'Marathi (मराठी)',
+    'bn': 'Bengali (বাংলা)',
+  };
+
+  /// Native display name for the selector button, e.g. "हिन्दी".
+  static String _nativeName(String code) {
+    final full = _languages[code] ?? code;
+    final m = RegExp(r'\((.+)\)').firstMatch(full);
+    return m?.group(1) ?? full;
+  }
+
   Future<void> _translate(BuildContext context) async {
-    if (widget.isTranslating || widget.onTranslate == null) return;
-    final languages = const {
-      'en': 'English',
-      'hi': 'Hindi (हिन्दी)',
-      'ta': 'Tamil (தமிழ்)',
-      'te': 'Telugu (తెలుగు)',
-      'kn': 'Kannada (ಕನ್ನಡ)',
-      'ml': 'Malayalam (മലയാളം)',
-      'mr': 'Marathi (मराठी)',
-      'bn': 'Bengali (বাংলা)',
-    };
+    // The selector stays usable while a request is in flight; the controller
+    // supersedes stale requests, so the user is never locked out.
+    if (widget.onTranslate == null) return;
+    final languages = _languages;
+    final current = widget.pendingLanguage ?? widget.translation?.language ?? 'en';
     final selected = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -93,7 +109,12 @@ class _PatientViewTabState extends State<PatientViewTab> {
                   controller: scrollController,
                   children: [
                     ...languages.entries.map((e) => ListTile(
+                          key: ValueKey('lang_option_${e.key}'),
                           title: Text(e.value),
+                          selected: e.key == current,
+                          trailing: e.key == current
+                              ? const Icon(Icons.check_rounded)
+                              : null,
                           onTap: () => Navigator.pop(sheetCtx, e.key),
                         )),
                   ],
@@ -130,9 +151,12 @@ class _PatientViewTabState extends State<PatientViewTab> {
     // ignore: unused_local_variable
     final l = t?.uiLabels;
 
+    // Translated summaries that were stored without line breaks are given
+    // their section structure back for display only (stored text untouched).
     final summary = Helpers.sanitizeDisplayText(
-      t?.patientSummary ??
-          (analysis?.patientSummary ??
+      t != null
+          ? ReportTextStructurer.restoreStructure(t.patientSummary)
+          : (analysis?.patientSummary ??
               report.aiSummary ??
               'No patient-friendly summary available for this report.'),
     );
@@ -192,10 +216,13 @@ class _PatientViewTabState extends State<PatientViewTab> {
           fallback: 'Generated in offline mode');
     }
 
-    // Translate/retranslate button labels.
-    final translateBtn = widget.translation != null
-        ? _label('label_retranslate', fallback: 'Retranslate')
-        : _label('label_translate', fallback: 'Translate');
+    // Selector button label: always show the active (or loading) language so
+    // the button never renders empty when a ui label key is missing.
+    final selectorLanguage =
+        widget.pendingLanguage ?? widget.translation?.language ?? 'en';
+    final translateBtn = selectorLanguage == 'en'
+        ? _label('label_translate', fallback: 'Translate')
+        : _nativeName(selectorLanguage);
 
     final disclaimerPatient = _label('label_disclaimer_patient',
         fallback:
@@ -231,16 +258,17 @@ class _PatientViewTabState extends State<PatientViewTab> {
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              widget.isTranslating
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : TextButton.icon(
-                      onPressed: () => _translate(context),
-                      icon: const Icon(Icons.translate, size: 16),
-                      label: Text(translateBtn),
-                    ),
+              TextButton.icon(
+                key: const ValueKey('language_selector_button'),
+                onPressed: () => _translate(context),
+                icon: widget.isTranslating
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.translate, size: 16),
+                label: Text(translateBtn.isEmpty ? 'Translate' : translateBtn),
+              ),
             ],
           ),
           const SizedBox(height: 10),

@@ -7,6 +7,7 @@ import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/api_models.dart';
 import '../utils/helpers.dart';
+import '../utils/report_text_structurer.dart';
 
 import 'pdf_downloader/pdf_downloader.dart';
 
@@ -78,8 +79,20 @@ class ExportService {
   }
 
   // ─── Safe text helper ─────────────────────────────────────────────────────
-  /// Sanitizes a string for PDF rendering (Helvetica/WinAnsi safe).
-  static String _s(String? raw) => Helpers.sanitizePdfText(raw ?? '');
+  /// True while rendering a non-English translation with embedded Noto fonts.
+  /// In that mode Indic glyphs must NOT be stripped (the WinAnsi sanitizer
+  /// removes every non-Latin-1 character, which erased translated text).
+  static bool _unicodeMode = false;
+
+  /// Sanitizes a string for PDF rendering (Helvetica/WinAnsi safe), or — for
+  /// translated documents — strips only markdown/artifacts and keeps Unicode.
+  static String _s(String? raw) => _unicodeMode
+      ? Helpers.sanitizePdfTextUnicode(raw ?? '')
+      : Helpers.sanitizePdfText(raw ?? '');
+
+  /// Section numbers may use ASCII or native Indic digits (१. ২. ౧. …).
+  static final RegExp _numberedHeading = RegExp(
+      r'^([0-9\u0966-\u096F\u09E6-\u09EF\u0BE6-\u0BEF\u0C66-\u0C6F\u0CE6-\u0CEF\u0D66-\u0D6F]+)\.\s+(.+)$');
 
   // ─── Markdown-to-PDF widgets ──────────────────────────────────────────────
   /// Converts AI-generated Markdown text into structured pw.Widget list.
@@ -110,7 +123,7 @@ class ExportService {
       prevWasEmpty = false;
 
       // ── Numbered section heading: "1. Section Title" or "2. Key Findings"
-      final numberedMatch = RegExp(r'^(\d+)\.\s+(.+)$').firstMatch(trimmed);
+      final numberedMatch = _numberedHeading.firstMatch(trimmed);
       if (numberedMatch != null) {
         final num = numberedMatch.group(1)!;
         final title = _inlineBold(numberedMatch.group(2)!, fontBold, base);
@@ -547,10 +560,11 @@ class ExportService {
             ? translation.medicationsJson
             : analysis.medications;
 
-    final patientSummaryStr =
-        (translation != null && translation.patientSummary.trim().isNotEmpty)
-            ? translation.patientSummary
-            : analysis.patientSummary;
+    // Translated summaries stored without line breaks are re-structured in
+    // memory only (whitespace → line breaks); the stored text is untouched.
+    final patientSummaryStr = (translation != null && translation.patientSummary.trim().isNotEmpty)
+        ? ReportTextStructurer.restoreStructure(translation.patientSummary)
+        : analysis.patientSummary;
 
     // Translated Findings Mapping
     Map<String, String> translatedFindingNames = {};
@@ -971,6 +985,32 @@ class ExportService {
     );
   }
 
+  /// Builds and serialises the document. The MultiPage `build` callback runs
+  /// lazily inside `doc.save()`, so the Unicode flag must stay set until the
+  /// bytes have been produced.
+  Future<Uint8List> _renderBytes({
+    required ReportAnalysisModel analysis,
+    required String reportTitle,
+    required String reportDate,
+    String reportType = '',
+    TranslationModel? translation,
+  }) async {
+    final previous = _unicodeMode;
+    _unicodeMode = translation != null && translation.language != 'en';
+    try {
+      final doc = await buildReportPdf(
+        analysis: analysis,
+        reportTitle: reportTitle,
+        reportDate: reportDate,
+        reportType: reportType,
+        translation: translation,
+      );
+      return await doc.save();
+    } finally {
+      _unicodeMode = previous;
+    }
+  }
+
   /// EXPORT PDF — generates and DIRECTLY DOWNLOADS the PDF. No print dialog.
   Future<void> exportReportPdf({
     required ReportAnalysisModel analysis,
@@ -979,14 +1019,13 @@ class ExportService {
     String reportType = '',
     TranslationModel? translation,
   }) async {
-    final doc = await buildReportPdf(
+    final bytes = await _renderBytes(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
       reportType: reportType,
       translation: translation,
     );
-    final bytes = await doc.save();
 
     final safeTitle = reportTitle.replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '_');
     final filename = 'MedNarrate_${safeTitle}_$reportDate.pdf';
@@ -1013,14 +1052,13 @@ class ExportService {
     String reportType = '',
     TranslationModel? translation,
   }) async {
-    final doc = await buildReportPdf(
+    final bytes = await _renderBytes(
       analysis: analysis,
       reportTitle: reportTitle,
       reportDate: reportDate,
       reportType: reportType,
       translation: translation,
     );
-    final bytes = await doc.save();
     await Printing.layoutPdf(onLayout: (_) async => bytes);
   }
 }

@@ -23,6 +23,16 @@ class ReportDetailController extends ChangeNotifier {
   String? translationLanguage;
   int _translationRequest = 0;
   String? _pendingLanguage;
+  /// Translations already loaded during this screen session, keyed by language.
+  /// Display-only memo: switching back to a loaded language re-uses it instead
+  /// of showing a blocking spinner. Nothing here is persisted or modified.
+  final Map<String, TranslationModel> _loadedTranslations = {};
+
+  /// Language currently being fetched (null when idle).
+  String? get pendingLanguage => _pendingLanguage;
+
+  /// Language currently displayed ('en' when no translation is active).
+  String get displayLanguage => translation?.language ?? 'en';
   final Future<TranslationModel> Function(String, String) _translateAnalysis;
 
   ReportDetailController({Future<TranslationModel> Function(String, String)? translateAnalysis})
@@ -148,12 +158,25 @@ class ReportDetailController extends ChangeNotifier {
       return;
     }
 
+    final cached = _loadedTranslations[languageCode];
+    if (cached != null) {
+      translation = cached;
+      translationLanguage = cached.language;
+      isTranslating = false;
+      _pendingLanguage = null;
+      notifyListeners();
+      return;
+    }
+
     isTranslating = true;
     notifyListeners();
     try {
       final t = await _translateAnalysis(report!.id, languageCode);
-      if (_disposed || request != _translationRequest) return;
-      if (t.language != languageCode || t.patientSummary.trim().isEmpty) {
+      if (_disposed) return;
+      final valid = t.language == languageCode && t.patientSummary.trim().isNotEmpty;
+      if (valid) _loadedTranslations[t.language] = t;
+      if (request != _translationRequest) return;
+      if (!valid) {
         throw const ApiException(502, 'Translation returned an unexpected language or empty report.');
       }
       translation = t;

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mednarrate/core/services/api_models.dart';
-import 'package:mednarrate/core/services/translated_report_pdf.dart';
+import 'package:mednarrate/core/utils/helpers.dart';
 import 'package:mednarrate/features/reports/controllers/report_detail_controller.dart';
 import 'package:mednarrate/features/reports/models/report_model.dart';
 import 'package:mednarrate/features/reports/widgets/patient_view_tab.dart';
@@ -87,6 +87,46 @@ void main() {
     controller.dispose();
   });
 
+  test('switching back to an already-loaded language is instant (no new request)', () async {
+    final calls = <String>[];
+    final controller = ReportDetailController(translateAnalysis: (_, language) async {
+      calls.add(language);
+      return translated(language, 'text-$language');
+    })..report = report;
+    await controller.translate('hi');
+    await controller.translate('te');
+    await controller.translate('en');
+    expect(controller.translation, isNull);
+    final back = controller.translate('hi');
+    // Served synchronously from the in-memory memo: never enters loading state.
+    expect(controller.isTranslating, isFalse);
+    await back;
+    expect(controller.translation!.language, 'hi');
+    expect(controller.translation!.patientSummary, 'text-hi');
+    expect(calls, ['hi', 'te']);
+    controller.dispose();
+  });
+
+  test('selector can switch to a loaded language while another is loading', () async {
+    final slow = Completer<TranslationModel>();
+    final controller = ReportDetailController(translateAnalysis: (_, language) =>
+        language == 'ml' ? slow.future : Future.value(translated(language, 'text-$language')))
+      ..report = report;
+    await controller.translate('hi');
+    final pending = controller.translate('ml');
+    expect(controller.pendingLanguage, 'ml');
+    await controller.translate('hi');
+    expect(controller.isTranslating, isFalse);
+    expect(controller.displayLanguage, 'hi');
+    slow.complete(translated('ml', 'text-ml'));
+    await pending;
+    expect(controller.displayLanguage, 'hi');
+    // The finished Malayalam result is kept for an instant later switch.
+    await controller.translate('ml');
+    expect(controller.displayLanguage, 'ml');
+    controller.dispose();
+  });
+
   const scripts = {
     'te': 'మీ రక్త పరీక్ష నివేదిక', 'ta': 'உங்கள் இரத்த பரிசோதனை அறிக்கை',
     'kn': 'ನಿಮ್ಮ ರಕ್ತ ಪರೀಕ್ಷಾ ವರದಿ', 'ml': 'നിങ്ങളുടെ രക്ത പരിശോധന റിപ്പോർട്ട്',
@@ -114,16 +154,16 @@ void main() {
     });
   }
 
-  testWidgets('translated PDF accepts all scripts and long reports', (tester) async {
-    await tester.runAsync(() async {
-      final body = List.generate(90, (i) => '${scripts.values.join(' ')} 10.2 g/dL').join('\n');
-      final doc = await buildTranslatedReportPdf(
-        analysis: analysis, translation: translated('te', body),
-        reportTitle: report.title, reportDate: '2026-09-28',
-      );
-      final bytes = await doc.save();
-      expect(ascii.decode(bytes.take(4).toList()), '%PDF');
-      expect(bytes.length, greaterThan(1000));
-    });
+  test('translated PDF sanitizer keeps every script; English sanitizer unchanged', () {
+    for (final text in scripts.values) {
+      final line = '### $text\n• MCV (MCV): 80.0 — $text (81.0 - 101.0).';
+      final out = Helpers.sanitizePdfTextUnicode(line);
+      expect(out, contains(text));
+      expect(out, contains('(MCV)'));
+      expect(out, contains('80.0'));
+      expect(out.startsWith('#'), isFalse);
+    }
+    // Existing English/WinAnsi behaviour is preserved for English PDFs.
+    expect(Helpers.sanitizePdfText('Hb • low'), 'Hb - low');
   });
 }

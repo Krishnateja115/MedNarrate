@@ -190,6 +190,30 @@ class Helpers {
     return s.trim();
   }
 
+  /// Unicode-safe variant of [sanitizePdfText] for translated PDFs rendered
+  /// with embedded Noto fonts. Removes the same markdown/artifact noise but
+  /// keeps every script character, so translated text is never erased.
+  /// Bullet glyphs are still normalised to "-" so list detection matches the
+  /// English PDF layout.
+  static String sanitizePdfTextUnicode(String text) {
+    if (text.isEmpty) return '';
+    var s = text;
+    s = s.replaceAll(
+        RegExp(r'<INPUT_TEXT>.*?</INPUT_TEXT>', dotAll: true), '');
+    s = s.replaceAll('<INPUT_TEXT>', '').replaceAll('</INPUT_TEXT>', '');
+    s = s.replaceAll(RegExp(r'^#+\s*', multiLine: true), '');
+    s = s.replaceAll('**', '').replaceAll('__', '');
+    s = s.replaceAll(RegExp(r'(?<=\s)\*(?=\S)|\*(?=\s)'), '');
+    // Only raw NLP entity labels (contain "_"), e.g. (Lab_value); keep (MCV).
+    s = s.replaceAll(RegExp(r'\([A-Za-z]+_[A-Za-z_]+\)'), '');
+    s = s.replaceAll('\u2022', '-').replaceAll('\u25a1', '-')
+        .replaceAll('\u25a0', '-').replaceAll('\u2610', '-');
+    // Drop control characters only (keep tab/LF/CR and all printable Unicode).
+    s = s.replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'), '');
+    s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    return s.trim();
+  }
+
   /// Sanitises text for on-screen Flutter display:
   /// - removes `<INPUT_TEXT>` artifacts
   /// - removes raw entity labels

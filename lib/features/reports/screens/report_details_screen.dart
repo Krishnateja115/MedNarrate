@@ -233,6 +233,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                               .split(' ')
                               .first,
                           reportType: report.reportType,
+                          translation: _controller.translation,
                         );
                         if (mounted) {
                           messenger.showSnackBar(const SnackBar(
@@ -256,17 +257,31 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                       final analysis = _controller.analysis;
                       final report = _controller.report;
                       if (analysis == null || report == null) return;
-                      await ExportService.instance.previewReportPdf(
-                        analysis: analysis,
-                        reportTitle: report.title,
-                        reportDate: report.reportDate
-                            .toLocal()
-                            .toString()
-                            .split(' ')
-                            .first,
-                        reportType: report.reportType,
-                        translation: _controller.translation,
-                      );
+                      final messenger = ScaffoldMessenger.of(context);
+                      setState(() => _exporting = true);
+                      try {
+                        await ExportService.instance.previewReportPdf(
+                          analysis: analysis,
+                          reportTitle: report.title,
+                          reportDate: report.reportDate
+                              .toLocal()
+                              .toString()
+                              .split(' ')
+                              .first,
+                          reportType: report.reportType,
+                          translation: _controller.translation,
+                        );
+                      } catch (e) {
+                        if (mounted) {
+                          messenger.showSnackBar(SnackBar(
+                            content: Text('Preview failed: $e'),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                          ));
+                        }
+                      } finally {
+                        if (mounted) setState(() => _exporting = false);
+                      }
                     }
                   },
                   itemBuilder: (_) => [
@@ -371,6 +386,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                         analysis: _controller.analysis,
                         translation: _controller.translation,
                         isTranslating: _controller.isTranslating,
+                        pendingLanguage: _controller.pendingLanguage,
                         onTranslate: (lang) => _controller.translate(lang),
                       ),
                       ClinicalViewTab(
