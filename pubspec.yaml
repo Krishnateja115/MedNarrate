@@ -20,6 +20,8 @@ dependencies:
 
   # File Picker
   file_picker: ^10.3.2
+  # Native desktop file selection (used on macOS for report uploads)
+  file_selector: ^1.0.3
 
   # Image Picker
   image_picker: ^1.1.2
