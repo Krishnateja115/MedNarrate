@@ -3,11 +3,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:math';
 
+import 'secure_storage_config.dart';
+
 class KeystoreService {
   KeystoreService._();
   static final KeystoreService instance = KeystoreService._();
 
-  final _secureStorage = const FlutterSecureStorage();
+  final FlutterSecureStorage _secureStorage = appSecureStorage;
 
   Future<List<int>> getEncryptionKey() async {
     final prefs = await SharedPreferences.getInstance();

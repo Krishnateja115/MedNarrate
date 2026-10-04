@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_models.dart';
+import 'secure_storage_config.dart';
 
 /// Raised when the operating system cannot access the encrypted token store.
 ///
@@ -37,14 +38,7 @@ class StorageService {
   static const _keyMedicalUnits = 'medical_units';
   static const _keyDismissedAnnouncements = 'dismissed_announcements';
 
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(),
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-    // The standard macOS Keychain remains encrypted but does not require an
-    // Apple developer signing identity. This keeps local desktop builds able
-    // to persist secure sessions on developer machines.
-    mOptions: MacOsOptions(usesDataProtectionKeychain: false),
-  );
+  final FlutterSecureStorage _secureStorage = appSecureStorage;
 
   Future<T> _withSecureStorage<T>(Future<T> Function() operation) async {
     try {

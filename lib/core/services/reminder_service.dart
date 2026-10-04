@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_service.dart';
+import 'secure_storage_config.dart';
 
 class ReminderModel {
   final int id;
@@ -64,7 +65,7 @@ class ReminderService {
   static final ReminderService instance = ReminderService._();
 
   static const _key = 'reminders_list';
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final FlutterSecureStorage _secureStorage = appSecureStorage;
 
   Future<List<ReminderModel>> getAll() async {
     String? raw = await _secureStorage.read(key: _key);
