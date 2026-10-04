@@ -19,6 +19,7 @@ from app.models.incidents import Incident, IncidentEvent
 from app.models.job_execution import JobExecution
 from app.models.knowledge_document import KnowledgeDocument
 from app.models.llm_telemetry import LLMDiagnosticEvent
+from app.models.mfa_challenge import MFAChallenge
 from app.models.medical_profile import MedicalProfile
 from app.models.medication_schedule import MedicationSchedule
 from app.models.notification_log import NotificationLog
@@ -41,6 +42,7 @@ from app.models.user import User
 
 __all__ = [
     "Base",
+    "MFAChallenge",
     "User",
     "MedicalProfile",
     "Report",
@@ -81,3 +83,4 @@ __all__ = [
     "MaintenanceMode",
     "Announcement",
 ]
+from app.models.orphan_file import OrphanFile

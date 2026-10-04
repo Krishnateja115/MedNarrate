@@ -1183,6 +1183,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report analyzed successfully!'**
   String get reportAnalyzedSuccessfully;
+
+  /// statusHigh text
+  ///
+  /// In en, this message translates to:
+  /// **'HIGH'**
+  String get statusHigh;
+
+  /// statusLow text
+  ///
+  /// In en, this message translates to:
+  /// **'LOW'**
+  String get statusLow;
+
+  /// statusNormal text
+  ///
+  /// In en, this message translates to:
+  /// **'NORMAL'**
+  String get statusNormal;
+
+  /// statusCritical text
+  ///
+  /// In en, this message translates to:
+  /// **'CRITICAL'**
+  String get statusCritical;
+
+  /// statusNotClassified text
+  ///
+  /// In en, this message translates to:
+  /// **'Not classified'**
+  String get statusNotClassified;
+
+  /// hospitalUnspecified text
+  ///
+  /// In en, this message translates to:
+  /// **'Unspecified'**
+  String get hospitalUnspecified;
+
+  /// validationPassed text
+  ///
+  /// In en, this message translates to:
+  /// **'PASSED'**
+  String get validationPassed;
+
+  /// statusCompleted text
+  ///
+  /// In en, this message translates to:
+  /// **'COMPLETED'**
+  String get statusCompleted;
+
+  /// sectionLaboratoryResults text
+  ///
+  /// In en, this message translates to:
+  /// **'Laboratory Results'**
+  String get sectionLaboratoryResults;
+
+  /// sectionReportedMedications text
+  ///
+  /// In en, this message translates to:
+  /// **'Reported Medications'**
+  String get sectionReportedMedications;
+
+  /// sectionDiagnosesAndFindings text
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnoses & Findings'**
+  String get sectionDiagnosesAndFindings;
+
+  /// sectionHistoricalComparison text
+  ///
+  /// In en, this message translates to:
+  /// **'Historical Comparison'**
+  String get sectionHistoricalComparison;
+
+  /// sectionSourceAndValidation text
+  ///
+  /// In en, this message translates to:
+  /// **'Source & Validation'**
+  String get sectionSourceAndValidation;
+
+  /// sectionClinicalExecutiveSummary text
+  ///
+  /// In en, this message translates to:
+  /// **'Clinical Executive Summary'**
+  String get sectionClinicalExecutiveSummary;
+
+  /// translationUnavailable text
+  ///
+  /// In en, this message translates to:
+  /// **'Translation unavailable, showing original.'**
+  String get translationUnavailable;
+
+  /// translationFailedRetry text
+  ///
+  /// In en, this message translates to:
+  /// **'Translation failed. Please try again.'**
+  String get translationFailedRetry;
+
+  /// disclaimerPatient text
+  ///
+  /// In en, this message translates to:
+  /// **'Disclaimer: MedNarrate patient summaries provide educational context only and do not constitute a medical diagnosis or prescription. Always consult your doctor for personalized advice.'**
+  String get disclaimerPatient;
+
+  /// disclaimerSummary text
+  ///
+  /// In en, this message translates to:
+  /// **'Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.'**
+  String get disclaimerSummary;
+
+  /// disclaimerEmergency text
+  ///
+  /// In en, this message translates to:
+  /// **'This sounds like a medical emergency. Please call your local emergency services (like 911) or go to the nearest emergency room immediately.'**
+  String get disclaimerEmergency;
+
+  /// disclaimerNoFindings text
+  ///
+  /// In en, this message translates to:
+  /// **'No key findings identified.'**
+  String get disclaimerNoFindings;
 }
 
 class _AppLocalizationsDelegate

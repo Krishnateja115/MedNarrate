@@ -99,7 +99,7 @@ def test_medication_extraction_preserves_dose_and_frequency():
         "3. Atorvastatin 10 mg once daily"
     )
     labs = extract_lab_values(ocr_text)
-    
+
     # Ensure medication frequencies like "Once daily" are not treated as independent numerical lab values
     lab_names = [val["test_name"].lower() for val in labs]
     assert "once daily" not in lab_names

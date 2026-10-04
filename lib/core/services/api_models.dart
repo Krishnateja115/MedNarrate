@@ -83,7 +83,8 @@ class UserModel {
       'is_active': isActive,
       if (medicalProfile != null) 'medical_profile': medicalProfile!.toMap(),
       if (doctorProfile != null) 'doctor_profile': doctorProfile!.toMap(),
-      if (caregiverProfile != null) 'caregiver_profile': caregiverProfile!.toMap(),
+      if (caregiverProfile != null)
+        'caregiver_profile': caregiverProfile!.toMap(),
     };
   }
 
@@ -98,13 +99,16 @@ class UserModel {
       gender: map['gender'] as String?,
       isActive: map['is_active'] as bool? ?? true,
       medicalProfile: map['medical_profile'] != null
-          ? MedicalProfileModel.fromMap(map['medical_profile'] as Map<String, dynamic>)
+          ? MedicalProfileModel.fromMap(
+              map['medical_profile'] as Map<String, dynamic>)
           : null,
       doctorProfile: map['doctor_profile'] != null
-          ? DoctorProfileModel.fromMap(map['doctor_profile'] as Map<String, dynamic>)
+          ? DoctorProfileModel.fromMap(
+              map['doctor_profile'] as Map<String, dynamic>)
           : null,
       caregiverProfile: map['caregiver_profile'] != null
-          ? CaregiverProfileModel.fromMap(map['caregiver_profile'] as Map<String, dynamic>)
+          ? CaregiverProfileModel.fromMap(
+              map['caregiver_profile'] as Map<String, dynamic>)
           : null,
     );
   }
@@ -247,7 +251,8 @@ class MedicalProfileModel {
       knownAllergies: knownAllergies ?? this.knownAllergies,
       chronicConditions: chronicConditions ?? this.chronicConditions,
       emergencyContactName: emergencyContactName ?? this.emergencyContactName,
-      emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
+      emergencyContactPhone:
+          emergencyContactPhone ?? this.emergencyContactPhone,
     );
   }
 
@@ -287,7 +292,8 @@ class ReportStatus {
     return ReportStatus(
       processingStatus: map['processing_status'] as String,
       errorReason: map['error_reason'] as String?,
-      failureCategory: (map['failure_category'] ?? map['failureCategory']) as String?,
+      failureCategory:
+          (map['failure_category'] ?? map['failureCategory']) as String?,
     );
   }
 }
@@ -315,12 +321,23 @@ class LabValue {
 
   factory LabValue.fromMap(Map<String, dynamic> map) {
     return LabValue(
-      testName: map['test_name'] as String? ?? map['testName'] as String? ?? map['parameter'] as String? ?? '',
-      originalName: map['original_name'] as String? ?? map['originalName'] as String? ?? '',
+      testName: map['test_name'] as String? ??
+          map['testName'] as String? ??
+          map['parameter'] as String? ??
+          '',
+      originalName: map['original_name'] as String? ??
+          map['originalName'] as String? ??
+          '',
       value: (map['value'] as num? ?? 0).toDouble(),
       unit: map['unit'] as String? ?? '',
-      refLow: map['ref_low'] != null ? (map['ref_low'] as num).toDouble() : (map['refLow'] != null ? (map['refLow'] as num).toDouble() : null),
-      refHigh: map['ref_high'] != null ? (map['ref_high'] as num).toDouble() : (map['refHigh'] != null ? (map['refHigh'] as num).toDouble() : null),
+      refLow: map['ref_low'] != null
+          ? (map['ref_low'] as num).toDouble()
+          : (map['refLow'] != null ? (map['refLow'] as num).toDouble() : null),
+      refHigh: map['ref_high'] != null
+          ? (map['ref_high'] as num).toDouble()
+          : (map['refHigh'] != null
+              ? (map['refHigh'] as num).toDouble()
+              : null),
       flag: map['flag'] as String? ?? 'not_classified',
       category: map['category'] as String? ?? 'LabResult',
     );
@@ -357,6 +374,7 @@ class ReportAnalysisModel {
   final List<EvidenceSource> evidenceSources;
   final String? clinicianSummary;
   final String? patientSummary;
+  final String? translatedClinicianSummary;
   final String? translatedPatientSummary;
   final bool translationAvailable;
   final String? verificationStatus;
@@ -375,6 +393,7 @@ class ReportAnalysisModel {
     required this.evidenceSources,
     this.clinicianSummary,
     this.patientSummary,
+    this.translatedClinicianSummary,
     this.translatedPatientSummary,
     this.translationAvailable = false,
     this.verificationStatus,
@@ -387,23 +406,45 @@ class ReportAnalysisModel {
   factory ReportAnalysisModel.fromMap(Map<String, dynamic> map) {
     return ReportAnalysisModel(
       id: map['id']?.toString() ?? '',
-      reportId: map['report_id']?.toString() ?? map['reportId']?.toString() ?? '',
-      structuredLabValues: (map['structured_lab_values'] as List<dynamic>? ?? map['structuredLabValues'] as List<dynamic>? ?? [])
+      reportId:
+          map['report_id']?.toString() ?? map['reportId']?.toString() ?? '',
+      structuredLabValues: (map['structured_lab_values'] as List<dynamic>? ??
+              map['structuredLabValues'] as List<dynamic>? ??
+              [])
           .map((e) => LabValue.fromMap(e as Map<String, dynamic>))
           .toList(),
       entities: List<Map<String, dynamic>>.from(map['entities'] ?? []),
-      abnormalFindings: List<Map<String, dynamic>>.from(map['abnormal_findings'] ?? map['abnormalFindings'] ?? []),
-      medications: List<Map<String, dynamic>>.from(map['medications'] ?? map['medication_schedule'] ?? []),
-      evidenceSources: (map['evidence_sources'] as List<dynamic>? ?? map['evidenceSources'] as List<dynamic>? ?? [])
+      abnormalFindings: List<Map<String, dynamic>>.from(
+          map['abnormal_findings'] ?? map['abnormalFindings'] ?? []),
+      medications: List<Map<String, dynamic>>.from(
+          map['medications'] ?? map['medication_schedule'] ?? []),
+      evidenceSources: (map['evidence_sources'] as List<dynamic>? ??
+              map['evidenceSources'] as List<dynamic>? ??
+              [])
           .map((e) => EvidenceSource.fromMap(e as Map<String, dynamic>))
           .toList(),
-      clinicianSummary: map['clinician_summary'] as String? ?? map['clinical_summary'] as String? ?? map['clinicianSummary'] as String? ?? map['clinicalSummary'] as String?,
-      patientSummary: map['patient_summary'] as String? ?? map['patient_friendly_summary'] as String? ?? map['patientSummary'] as String? ?? map['summary'] as String?,
-      translatedPatientSummary: map['translated_patient_summary'] as String? ?? map['translatedPatientSummary'] as String?,
-      translationAvailable: map['translation_available'] as bool? ?? map['translationAvailable'] as bool? ?? false,
-      verificationStatus: map['verification_status'] as String? ?? map['verificationStatus'] as String?,
-      errorReason: map['error_reason'] as String? ?? map['errorReason'] as String?,
-      llmProvider: map['llm_provider'] as String? ?? map['llmProvider'] as String?,
+      clinicianSummary: map['clinician_summary'] as String? ??
+          map['clinical_summary'] as String? ??
+          map['clinicianSummary'] as String? ??
+          map['clinicalSummary'] as String?,
+      patientSummary: map['patient_summary'] as String? ??
+          map['patient_friendly_summary'] as String? ??
+          map['patientSummary'] as String? ??
+          map['summary'] as String?,
+      translatedClinicianSummary:
+          map['translated_clinician_summary'] as String? ??
+              map['translatedClinicianSummary'] as String?,
+      translatedPatientSummary: map['translated_patient_summary'] as String? ??
+          map['translatedPatientSummary'] as String?,
+      translationAvailable: map['translation_available'] as bool? ??
+          map['translationAvailable'] as bool? ??
+          false,
+      verificationStatus: map['verification_status'] as String? ??
+          map['verificationStatus'] as String?,
+      errorReason:
+          map['error_reason'] as String? ?? map['errorReason'] as String?,
+      llmProvider:
+          map['llm_provider'] as String? ?? map['llmProvider'] as String?,
       llmModel: map['llm_model'] as String? ?? map['llmModel'] as String?,
       processedAt: map['processed_at'] != null
           ? DateTime.tryParse(map['processed_at'].toString())?.toLocal()
@@ -438,7 +479,10 @@ class TranslationModel {
     final rawDiscussion = map['doctor_discussion_points'];
     final List<String> discussion;
     if (rawDiscussion is List) {
-      discussion = rawDiscussion.map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList();
+      discussion = rawDiscussion
+          .map((e) => e?.toString() ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
     } else {
       discussion = [];
     }
@@ -447,7 +491,8 @@ class TranslationModel {
       patientSummary: map['patient_summary'] as String? ?? '',
       clinicianSummary: map['clinician_summary'] as String?,
       findingsJson: List<Map<String, dynamic>>.from(map['findings_json'] ?? []),
-      medicationsJson: List<Map<String, dynamic>>.from(map['medications_json'] ?? []),
+      medicationsJson:
+          List<Map<String, dynamic>>.from(map['medications_json'] ?? []),
       doctorDiscussionPoints: discussion,
       uiLabels: rawLabels.map((k, v) => MapEntry(k, v?.toString() ?? '')),
       schemaVersion: (map['schema_version'] as num?)?.toInt() ?? 1,
@@ -501,7 +546,8 @@ class ComparePreviousResult {
       comparable: map['comparable'] as bool,
       reason: map['reason'] as String?,
       previousReportId: map['previous_report_id'] as String?,
-      comparedFindings: List<Map<String, dynamic>>.from(map['compared_findings'] ?? []),
+      comparedFindings:
+          List<Map<String, dynamic>>.from(map['compared_findings'] ?? []),
       narrativeSummary: map['narrative_summary'] as String?,
     );
   }

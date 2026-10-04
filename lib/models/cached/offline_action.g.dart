@@ -22,13 +22,14 @@ class OfflineActionAdapter extends TypeAdapter<OfflineAction> {
       method: fields[2] as String,
       body: (fields[3] as Map).cast<String, dynamic>(),
       createdAt: fields[4] as DateTime,
+      userId: fields[5] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, OfflineAction obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -38,7 +39,9 @@ class OfflineActionAdapter extends TypeAdapter<OfflineAction> {
       ..writeByte(3)
       ..write(obj.body)
       ..writeByte(4)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(5)
+      ..write(obj.userId);
   }
 
   @override

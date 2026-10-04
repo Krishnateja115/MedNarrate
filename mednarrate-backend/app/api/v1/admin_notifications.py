@@ -22,7 +22,7 @@ class DispatchNotificationRequest(BaseModel):
     body: str = Field(..., min_length=1)
     user_id: Optional[uuid.UUID] = None
     audience: Optional[str] = "all"  # 'all', 'doctors', 'patients', 'caregivers', 'specific_user'
-    
+
 @router.post("/dispatch")
 async def dispatch_global_notification(
     payload: DispatchNotificationRequest,
@@ -31,7 +31,7 @@ async def dispatch_global_notification(
     admin_ctx: AdminContext = Depends(require_permission("notifications.manage")),
 ):
     from app.models.user import User, UserRole
-    
+
     # 1. Determine target users
     target_users = []
     if payload.audience == "specific_user" and payload.user_id:
@@ -49,17 +49,17 @@ async def dispatch_global_notification(
         # All users
         users = (await db.execute(select(User.id))).scalars().all()
         target_users.extend(users)
-        
+
     if not target_users:
         return {"status": "ok", "message": "No target users found for this audience.", "dispatched_count": 0}
 
     # 2. Find push tokens
     stmt = select(PushToken).where(PushToken.user_id.in_(target_users))
     tokens = (await db.execute(stmt)).scalars().all()
-    
+
     if not tokens:
         return {"status": "ok", "message": "No devices registered for target audience.", "dispatched_count": 0}
-        
+
     # 3. Dispatch and log it
     dispatched_count = 0
     failed_count = 0
@@ -74,16 +74,16 @@ async def dispatch_global_notification(
             body=payload.body,
             status=status,
             error_message=None if success else "Failed to send to push service",
-            sent_at=datetime.now(timezone.utc)
+            sent_at=datetime.now(timezone.utc).replace(tzinfo=None)
         )
         db.add(nl)
         if success:
             dispatched_count += 1
         else:
             failed_count += 1
-        
+
     await log_admin_action(
-        db, admin_ctx, "NOTIFICATION_DISPATCH", "system", "global", 
+        db, admin_ctx, "NOTIFICATION_DISPATCH", "system", "global",
         {
             "audience": payload.audience,
             "target_users": len(target_users),
@@ -93,7 +93,7 @@ async def dispatch_global_notification(
             "skipped": 0,
         }, request
     )
-    
+
     await db.commit()
     return {"status": "ok", "message": f"Successfully dispatched to {dispatched_count} devices.", "dispatched_count": dispatched_count}
 
@@ -108,16 +108,16 @@ async def get_notification_logs(
 ):
     limit = clamp_limit(limit)
     stmt = select(NotificationLog)
-    
+
     if status_filter:
         stmt = stmt.where(NotificationLog.status == status_filter)
-        
+
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total_count = (await db.execute(count_stmt)).scalar() or 0
-    
+
     stmt = stmt.order_by(desc(NotificationLog.sent_at)).offset(page_to_offset(page, limit)).limit(limit)
     logs = (await db.execute(stmt)).scalars().all()
-    
+
     items = [
         {
             "id": str(l.id),
@@ -130,7 +130,7 @@ async def get_notification_logs(
         }
         for l in logs
     ]
-    
+
     return build_pagination_response(items, total_count, page, limit)
 
 @router.post("/{log_id}/retry")
@@ -144,7 +144,7 @@ async def retry_notification(
     log_entry = (await db.execute(stmt)).scalars().first()
     if not log_entry:
         raise HTTPException(status_code=404, detail="Notification log not found")
-        
+
     if log_entry.status == "sent":
         raise HTTPException(status_code=400, detail="Notification was already sent successfully")
 
@@ -153,18 +153,18 @@ async def retry_notification(
     token = (await db.execute(tk_stmt)).scalars().first()
     if not token:
         raise HTTPException(status_code=400, detail="No registered device for user")
-        
+
     success = await send_push_notification(token.token, log_entry.title, log_entry.body)
-    
+
     log_entry.status = "sent" if success else "failed"
     log_entry.error_message = None if success else "Failed to send to push service"
-    log_entry.sent_at = datetime.now(timezone.utc)
-    
+    log_entry.sent_at = datetime.now(timezone.utc).replace(tzinfo=None)
+
     await log_admin_action(
-        db, admin_ctx, "NOTIFICATION_RETRY", "notification_log", str(log_id), 
+        db, admin_ctx, "NOTIFICATION_RETRY", "notification_log", str(log_id),
         {"success": success}, request
     )
-    
+
     await db.commit()
     if not success:
         raise HTTPException(status_code=500, detail="Retry failed.")

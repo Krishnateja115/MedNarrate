@@ -43,9 +43,9 @@ class TicketStatus(str, enum.Enum):
 class SupportTicket(Base):
     __tablename__ = "support_tickets"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
@@ -57,15 +57,15 @@ class SupportTicket(Base):
     status = Column(Enum(TicketStatus), nullable=False, default=TicketStatus.new)
 
     assigned_admin_id = Column(
-        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
     related_report_id = Column(
-        String(36), ForeignKey("reports.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("reports.id", ondelete="SET NULL"), nullable=True
     )
     related_request_id = Column(String(100), nullable=True)
     related_incident_id = Column(
-        String(36), ForeignKey("incidents.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("incidents.id", ondelete="SET NULL"), nullable=True
     )
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -97,13 +97,13 @@ class SupportTicket(Base):
 class SupportTicketMessage(Base):
     __tablename__ = "support_ticket_messages"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     ticket_id = Column(
-        String(36), ForeignKey("support_tickets.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("support_tickets.id", ondelete="CASCADE"), nullable=False
     )
 
     sender_id = Column(
-        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     is_internal = Column(Boolean, default=False, nullable=False)
     content = Column(Text, nullable=False)
@@ -122,9 +122,9 @@ class SupportTicketEvent(Base):
 
     __tablename__ = "support_ticket_events"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     ticket_id = Column(
-        String(36), ForeignKey("support_tickets.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("support_tickets.id", ondelete="CASCADE"), nullable=False
     )
 
     event_type = Column(
@@ -143,7 +143,7 @@ class SupportTicketHelpArticle(Base):
     __tablename__ = "support_ticket_help_articles"
 
     ticket_id = Column(
-        String(36),
+        UUID(as_uuid=True),
         ForeignKey("support_tickets.id", ondelete="CASCADE"),
         primary_key=True,
     )

@@ -55,11 +55,11 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(pwd_bytes, hashed.encode("utf-8"))
 
 
-def create_access_token(subject: str) -> str:
+def create_access_token(subject: str, session_version: int = 1) -> str:
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    to_encode = {"exp": expire, "sub": str(subject)}
+    to_encode = {"exp": expire, "sub": str(subject), "session_version": session_version, "type": "access"}
     encoded_jwt = jwt.encode(
         to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM
     )
@@ -69,9 +69,86 @@ def create_access_token(subject: str) -> str:
 def create_refresh_token() -> str:
     return secrets.token_urlsafe(48)
 
+def create_mfa_challenge_token(user_id: str) -> str:
+    import uuid
+    expire = datetime.now(timezone.utc) + timedelta(minutes=5)
+    to_encode = {"exp": expire, "sub": str(user_id), "type": "mfa_challenge", "jti": str(uuid.uuid4())}
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+
+def decode_mfa_challenge_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        if payload.get("type") != "mfa_challenge":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        return payload
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="MFA challenge expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid MFA token")
+
+def create_mfa_enrollment_token(user_id: str, secret: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=10)
+    to_encode = {"exp": expire, "sub": str(user_id), "type": "mfa_enrollment", "secret": secret}
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+
+def decode_mfa_enrollment_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        if payload.get("type") != "mfa_enrollment":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="MFA enrollment expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid MFA enrollment token")
 
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
+
+async def verify_totp_and_prevent_replay(user, code: str, secret: str, db: AsyncSession) -> bool:
+    import pyotp
+    totp = pyotp.TOTP(secret)
+    # PyOTP uses valid_window to check current and nearby timesteps.
+    # We want to identify EXACTLY which counter matched, to prevent replay.
+    current_counter = int(datetime.now().timestamp() / totp.interval)
+
+    # valid_window=1 means checking current, current-1, current+1
+    matched_counter = None
+    for offset in (0, -1, 1):
+        test_counter = current_counter + offset
+        if secrets.compare_digest(totp.generate_otp(test_counter), code):
+            matched_counter = test_counter
+            break
+
+    if matched_counter is None:
+        return False
+
+    if user.last_totp_counter is not None and matched_counter <= user.last_totp_counter:
+        # Replay detected or old code used
+        return False
+
+    # Update counter
+    user.last_totp_counter = matched_counter
+    db.add(user)
+    return True
+
+async def consume_mfa_challenge(jti: str, user_id, db: AsyncSession) -> bool:
+    from app.models.mfa_challenge import MFAChallenge
+    from sqlalchemy.exc import IntegrityError
+    try:
+        challenge = MFAChallenge(
+            jti=jti,
+            user_id=user_id,
+            expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=5),
+            used_at=datetime.now(timezone.utc).replace(tzinfo=None)
+        )
+        db.add(challenge)
+        await db.flush() # Will raise IntegrityError if jti already exists (already consumed)
+        return True
+    except IntegrityError:
+        await db.rollback()
+        return False
 
 
 def decode_access_token(token: str) -> dict:
@@ -79,11 +156,36 @@ def decode_access_token(token: str) -> dict:
         decoded_token = jwt.decode(
             token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
         )
+        if decoded_token.get("type") not in (None, "access"):
+            raise HTTPException(status_code=401, detail="Invalid token type")
         return decoded_token
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+def create_step_up_token(user_id: str, session_version: int) -> str:
+    import uuid
+    expire = datetime.now(timezone.utc) + timedelta(minutes=5)
+    to_encode = {
+        "exp": expire,
+        "sub": str(user_id),
+        "type": "privileged_step_up",
+        "session_version": session_version,
+        "jti": str(uuid.uuid4())
+    }
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+
+def decode_step_up_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        if payload.get("type") != "privileged_step_up":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Step-up token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid step-up token")
 
 
 async def get_current_user(
@@ -140,4 +242,32 @@ async def get_current_user(
             detail="Account is inactive",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    token_session_version = payload.get("session_version")
+    if token_session_version is None or token_session_version != user.session_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session has been invalidated or is missing version claim",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return user
+
+
+async def revoke_all_user_sessions(user, db: AsyncSession, increment_session_version: bool = True):
+    """
+    Centrally revokes all refresh tokens for a user and optionally increments session_version
+    to instantly invalidate active access tokens.
+    """
+    from sqlalchemy import update
+    from app.models.refresh_token import RefreshToken
+
+    if increment_session_version:
+        user.session_version += 1
+        db.add(user)
+
+    await db.execute(
+        update(RefreshToken)
+        .where(RefreshToken.user_id == user.id)
+        .values(revoked=True)
+    )

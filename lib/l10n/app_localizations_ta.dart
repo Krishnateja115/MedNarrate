@@ -568,4 +568,71 @@ class AppLocalizationsTa extends AppLocalizations {
   @override
   String get reportAnalyzedSuccessfully =>
       'அறிக்கை வெற்றிகரமாக பகுப்பாய்வு செய்யப்பட்டது!';
+
+  @override
+  String get statusHigh => 'அதிகம்';
+
+  @override
+  String get statusLow => 'குறைவு';
+
+  @override
+  String get statusNormal => 'இயல்பான';
+
+  @override
+  String get statusCritical => 'ஆபத்தான';
+
+  @override
+  String get statusNotClassified => 'வகைப்படுத்தப்படவில்லை';
+
+  @override
+  String get hospitalUnspecified => 'குறிப்பிடப்படவில்லை';
+
+  @override
+  String get validationPassed => 'தேர்ச்சி';
+
+  @override
+  String get statusCompleted => 'முடிந்தது';
+
+  @override
+  String get sectionLaboratoryResults => 'ஆய்வக முடிவுகள்';
+
+  @override
+  String get sectionReportedMedications => 'தெரிவிக்கப்பட்ட மருந்துகள்';
+
+  @override
+  String get sectionDiagnosesAndFindings =>
+      'நோயறிதல்கள் மற்றும் கண்டுபிடிப்புகள்';
+
+  @override
+  String get sectionHistoricalComparison => 'வரலாற்று ஒப்பீடு';
+
+  @override
+  String get sectionSourceAndValidation => 'ஆதாரம் மற்றும் சரிபார்ப்பு';
+
+  @override
+  String get sectionClinicalExecutiveSummary => 'மருத்துவ நிர்வாக சுருக்கம்';
+
+  @override
+  String get translationUnavailable =>
+      'மொழிபெயர்ப்பு கிடைக்கவில்லை, அசலைக் காட்டுகிறது.';
+
+  @override
+  String get translationFailedRetry =>
+      'மொழிபெயர்ப்பு தோல்வியடைந்தது. மீண்டும் முயற்சிக்கவும்.';
+
+  @override
+  String get disclaimerPatient =>
+      'பொறுப்புத்துறப்பு: மெட்நரேட் நோயாளி சுருக்கங்கள் கல்விச் சூழலை மட்டுமே வழங்குகின்றன...';
+
+  @override
+  String get disclaimerSummary =>
+      'பொறுப்புத்துறப்பு: மெட்நரேட் AI சுருக்கம் தகவல் நோக்கங்களுக்காக மட்டுமே...';
+
+  @override
+  String get disclaimerEmergency =>
+      'இது ஒரு மருத்துவ அவசரநிலை போல் தெரிகிறது...';
+
+  @override
+  String get disclaimerNoFindings =>
+      'முக்கிய கண்டுபிடிப்புகள் எதுவும் அடையாளம் காணப்படவில்லை.';
 }

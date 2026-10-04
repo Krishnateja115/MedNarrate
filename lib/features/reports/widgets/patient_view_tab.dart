@@ -484,7 +484,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
                         Icon(Icons.calendar_today,
                             size: 12, color: theme.colorScheme.primary),
                         const SizedBox(width: 4),
-                        Text(Formatters.formatDate(report.reportDate, translation?.language ?? 'en'),
+                        Text(
+                            Formatters.formatDate(report.reportDate,
+                                translation?.language ?? 'en'),
                             style: const TextStyle(fontSize: 12)),
                         const SizedBox(width: 10),
                         Container(
@@ -699,8 +701,11 @@ class _PatientViewTabState extends State<PatientViewTab> {
     final theme = Theme.of(context);
     String name = med['medication_name']?.toString() ?? 'Medication';
     final l = translation?.uiLabels;
-    String dosage = med['dosage']?.toString() ?? l?['label_unspecified'] ?? 'Not specified';
-    String frequency = med['frequency']?.toString() ?? l?['label_unspecified'] ?? 'Not specified';
+    String dosage =
+        med['dosage']?.toString() ?? l?['label_unspecified'] ?? 'Not specified';
+    String frequency = med['frequency']?.toString() ??
+        l?['label_unspecified'] ??
+        'Not specified';
 
     List<String> times = List<String>.from(med['times_of_day'] ?? []);
     String instructions = med['instructions']?.toString() ?? '';

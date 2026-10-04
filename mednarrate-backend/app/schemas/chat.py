@@ -22,6 +22,7 @@ class ChatSessionOut(BaseModel):
 
 class ChatMessageCreate(BaseModel):
     content: str
+    language: Optional[str] = None
 
 
 class ChatMessageOut(BaseModel):

@@ -30,7 +30,9 @@ class LabResultRow extends StatelessWidget {
         minRange != null && maxRange != null && (maxRange! > minRange!);
 
     Color statusColor = theme.colorScheme.onSurface;
-    String badgeText = translation?.uiLabels['label_not_classified']?.toUpperCase() ?? "NOT CLASSIFIED";
+    String badgeText =
+        translation?.uiLabels['label_not_classified']?.toUpperCase() ??
+            "NOT CLASSIFIED";
 
     if (flag == 'high') {
       statusColor = Colors.redAccent;
@@ -40,10 +42,12 @@ class LabResultRow extends StatelessWidget {
       badgeText = translation?.uiLabels['label_low']?.toUpperCase() ?? "LOW";
     } else if (flag == 'critical') {
       statusColor = Colors.red.shade900;
-      badgeText = translation?.uiLabels['label_critical']?.toUpperCase() ?? "CRITICAL";
+      badgeText =
+          translation?.uiLabels['label_critical']?.toUpperCase() ?? "CRITICAL";
     } else if (flag == 'normal') {
       statusColor = Colors.green;
-      badgeText = translation?.uiLabels['label_normal']?.toUpperCase() ?? "NORMAL";
+      badgeText =
+          translation?.uiLabels['label_normal']?.toUpperCase() ?? "NORMAL";
     }
 
     return InkWell(
@@ -76,7 +80,9 @@ class LabResultRow extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        unit.isNotEmpty ? unit : '${translation?.uiLabels['label_unit'] ?? 'Unit'}: -',
+                        unit.isNotEmpty
+                            ? unit
+                            : '${translation?.uiLabels['label_unit'] ?? 'Unit'}: -',
                         style: TextStyle(
                             fontSize: 12,
                             color: theme.colorScheme.onSurface

@@ -41,7 +41,8 @@ class _LabResultsTabState extends State<LabResultsTab> {
   void _showParameterDetails(
       BuildContext context, Map<String, dynamic> metric) {
     final String parameterName = metric['parameter']?.toString() ?? '';
-    final String translatedName = widget.translation?.uiLabels['param_$parameterName'] ?? parameterName;
+    final String translatedName =
+        widget.translation?.uiLabels['param_$parameterName'] ?? parameterName;
 
     showModalBottomSheet(
       context: context,
@@ -102,14 +103,17 @@ class _LabResultsTabState extends State<LabResultsTab> {
       return paramName.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
-    final defaultCat = widget.translation?.uiLabels['label_uncategorized'] ?? 'Uncategorized';
+    final defaultCat =
+        widget.translation?.uiLabels['label_uncategorized'] ?? 'Uncategorized';
     Map<String, List<Map<String, dynamic>>> grouped = {defaultCat: []};
     for (var m in filteredMetrics) {
       String cat = defaultCat;
       for (var entry in _categories.entries) {
         if (entry.value.any((v) =>
             v.toLowerCase() == m['parameter'].toString().toLowerCase())) {
-          cat = widget.translation?.uiLabels['label_cat_${entry.key.toLowerCase().replaceAll(' ', '_')}'] ?? entry.key;
+          cat = widget.translation?.uiLabels[
+                  'label_cat_${entry.key.toLowerCase().replaceAll(' ', '_')}'] ??
+              entry.key;
           break;
         }
       }
@@ -124,7 +128,9 @@ class _LabResultsTabState extends State<LabResultsTab> {
           child: TextField(
             onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
-              hintText: widget.translation?.uiLabels['label_search_parameters'] ?? AppLocalizations.of(context)!.searchParameters,
+              hintText:
+                  widget.translation?.uiLabels['label_search_parameters'] ??
+                      AppLocalizations.of(context)!.searchParameters,
               prefixIcon: const Icon(Icons.search),
               filled: true,
               fillColor: Theme.of(context).cardColor,
@@ -172,8 +178,11 @@ class _LabResultsTabState extends State<LabResultsTab> {
                     final String flag =
                         m['flag']?.toString() ?? 'not_classified';
 
-                    final String parameterName = m['parameter']?.toString() ?? '';
-                    final String translatedName = widget.translation?.uiLabels['param_$parameterName'] ?? parameterName;
+                    final String parameterName =
+                        m['parameter']?.toString() ?? '';
+                    final String translatedName =
+                        widget.translation?.uiLabels['param_$parameterName'] ??
+                            parameterName;
 
                     return LabResultRow(
                       parameter: translatedName,

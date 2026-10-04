@@ -45,3 +45,5 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_index(op.f("ix_job_executions_job_name"), table_name="job_executions")
     op.drop_table("job_executions")
+    if op.get_bind().dialect.name == "postgresql":
+        sa.Enum(name="jobstatus").drop(op.get_bind(), checkfirst=True)

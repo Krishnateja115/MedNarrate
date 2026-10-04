@@ -122,8 +122,8 @@ CRITICAL RULES:
 8. ALL patient-facing strings must be translated into {target_language}; do not leave any English text in translated fields (except the explicitly-preserved medical identifiers listed above).
 
 INPUT:
-Clinical Summary (translate fully):
-{clinical_summary}
+Clinician Summary (translate fully):
+{clinician_summary}
 
 Patient Summary (translate fully):
 {patient_summary}
@@ -183,7 +183,7 @@ No key findings identified.
 
 OUTPUT (strictly valid JSON, absolutely no markdown, every listed key MUST be populated, translated into {target_language}):
 {{
-  "clinical_summary": "<fully translated clinical summary — NO English leftover sentences except preserved identifiers, leave blank if not provided in input>",
+  "clinician_summary": "<fully translated clinician summary — NO English leftover sentences except preserved identifiers, leave blank if not provided in input>",
   "patient_summary": "<fully translated patient summary — NO English leftover sentences except preserved identifiers>",
   "abnormal_findings": [
     {{

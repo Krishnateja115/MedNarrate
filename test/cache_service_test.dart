@@ -7,6 +7,8 @@ import 'package:mednarrate/features/reports/models/report_model.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'helpers/secure_storage_mock.dart';
+
 /// Points Hive's `initFlutter()` at a real temp directory instead of asking
 /// the (unavailable in tests) platform channel for the app documents folder.
 class _FakePathProviderPlatform extends PathProviderPlatform {
@@ -19,6 +21,7 @@ class _FakePathProviderPlatform extends PathProviderPlatform {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  installSecureStorageMock();
 
   late Directory tempDir;
 

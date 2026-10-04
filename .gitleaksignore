@@ -1,0 +1,3 @@
+# Deliberately fake Google-style key used to verify log redaction.
+1491820a6233e2d06d793404f5d46d777191fd3b:mednarrate-backend/tests/test_security_phase2.py:gcp-api-key:33
+1491820a6233e2d06d793404f5d46d777191fd3b:mednarrate-backend/tests/test_security_phase2.py:gcp-api-key:35

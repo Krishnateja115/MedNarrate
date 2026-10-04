@@ -66,7 +66,7 @@ def test_image_decoding_failure(tmp_path):
     """Verify invalid image bytes raise ImageDecodeError."""
     corrupt_image_path = tmp_path / "corrupt_report.png"
     corrupt_image_path.write_bytes(b"NOT_A_REAL_PNG_IMAGE_HEADER_12345")
-    
+
     with pytest.raises(ImageDecodeError) as exc_info:
         extract_text_with_diagnostics(str(corrupt_image_path), "image")
     assert exc_info.value.failure_category == "IMAGE_DECODE_ERROR"
@@ -75,7 +75,7 @@ def test_unsupported_file_type(tmp_path):
     """Verify unsupported file format raises UnsupportedFileTypeError."""
     dummy_file = tmp_path / "report.exe"
     dummy_file.write_bytes(b"MZ123456789")
-    
+
     with pytest.raises(UnsupportedFileTypeError) as exc_info:
         extract_text_with_diagnostics(str(dummy_file), "exe")
     assert exc_info.value.failure_category == "FILE_INVALID"
@@ -91,11 +91,11 @@ def test_medical_fact_preservation_fixture():
     )
     cleaned = clean_extracted_text(ocr_text)
     labs = extract_lab_values(cleaned)
-    
+
     # Check that lab values were extracted with exact numeric fidelity
     hba1c_lab = next((val for val in labs if "hba1c" in val["test_name"].lower() or "hba1c" in val["original_name"].lower()), None)
     glucose_lab = next((val for val in labs if "glucose" in val["test_name"].lower() or "glucose" in val["original_name"].lower()), None)
-    
+
     assert hba1c_lab is not None
     assert hba1c_lab["value"] == 6.5
     assert glucose_lab is not None

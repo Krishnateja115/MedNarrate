@@ -561,4 +561,69 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get reportAnalyzedSuccessfully =>
       'रिपोर्ट का सफलतापूर्वक विश्लेषण किया गया!';
+
+  @override
+  String get statusHigh => 'उच्च';
+
+  @override
+  String get statusLow => 'निम्न';
+
+  @override
+  String get statusNormal => 'सामान्य';
+
+  @override
+  String get statusCritical => 'गंभीर';
+
+  @override
+  String get statusNotClassified => 'अवर्गीकृत';
+
+  @override
+  String get hospitalUnspecified => 'अनिर्दिष्ट';
+
+  @override
+  String get validationPassed => 'उत्तीर्ण';
+
+  @override
+  String get statusCompleted => 'पूर्ण';
+
+  @override
+  String get sectionLaboratoryResults => 'प्रयोगशाला परिणाम';
+
+  @override
+  String get sectionReportedMedications => 'सूचित दवाएं';
+
+  @override
+  String get sectionDiagnosesAndFindings => 'निदान और निष्कर्ष';
+
+  @override
+  String get sectionHistoricalComparison => 'ऐतिहासिक तुलना';
+
+  @override
+  String get sectionSourceAndValidation => 'स्रोत और सत्यापन';
+
+  @override
+  String get sectionClinicalExecutiveSummary => 'नैदानिक कार्यकारी सारांश';
+
+  @override
+  String get translationUnavailable =>
+      'अनुवाद उपलब्ध नहीं है, मूल दिखा रहा है।';
+
+  @override
+  String get translationFailedRetry =>
+      'अनुवाद विफल रहा। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get disclaimerPatient =>
+      'अस्वीकरण: मेडनैरेट रोगी सारांश केवल शैक्षिक संदर्भ प्रदान करते हैं और चिकित्सा निदान या नुस्खे का गठन नहीं करते हैं। व्यक्तिगत सलाह के लिए हमेशा अपने डॉक्टर से सलाह लें।';
+
+  @override
+  String get disclaimerSummary =>
+      'अस्वीकरण: मेडनैरेट एआई सारांश केवल सूचना के उद्देश्यों के लिए है...';
+
+  @override
+  String get disclaimerEmergency =>
+      'यह एक चिकित्सा आपात स्थिति की तरह लगता है...';
+
+  @override
+  String get disclaimerNoFindings => 'कोई मुख्य निष्कर्ष नहीं पहचाना गया।';
 }

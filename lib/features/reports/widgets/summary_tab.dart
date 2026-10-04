@@ -1,3 +1,4 @@
+import 'package:mednarrate/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../reports/models/report_model.dart';
@@ -5,7 +6,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/markdown_formatter.dart';
 import '../../../core/services/api_models.dart';
-import 'package:mednarrate/l10n/app_localizations.dart';
+import '../../../core/services/api_exception.dart';
 
 class SummaryTab extends StatefulWidget {
   final ReportModel report;
@@ -85,9 +86,11 @@ class _SummaryTabState extends State<SummaryTab> {
     final l10n = AppLocalizations.of(context)!;
     try {
       await widget.onTranslate!(selected);
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        messenger.showSnackBar(SnackBar(content: Text(l10n.translationFailed)));
+        final errorMsg =
+            (e is ApiException) ? e.message : l10n.translationFailed;
+        messenger.showSnackBar(SnackBar(content: Text(errorMsg)));
       }
     }
   }
@@ -108,11 +111,14 @@ class _SummaryTabState extends State<SummaryTab> {
     final headingPatient = _label('label_patient_report_heading',
         fallback: 'For You — Plain Language Summary');
     final headingClinical = _label('label_clinical_report_heading',
-        fallback: 'Clinical Executive Summary');
+        fallback:
+            AppLocalizations.of(context)?.sectionClinicalExecutiveSummary ??
+                'Clinical Executive Summary');
     final headingImportantFindings =
         _label('section_important_findings', fallback: 'Important Findings');
     final headingKeyClinicalFindings = _label('section_key_clinical_findings',
-        fallback: 'Key Clinical Findings');
+        fallback: AppLocalizations.of(context)?.keyFindings ??
+            'Key Clinical Findings');
     final labelNoKeyFindings = _label('label_no_key_findings',
         fallback: AppLocalizations.of(context)!.noKeyFindings);
     final expansionPatient = _label('label_key_finding_expansion_patient',
@@ -125,7 +131,7 @@ class _SummaryTabState extends State<SummaryTab> {
     final labelRetranslate =
         _label('label_retranslate', fallback: 'Retranslate');
     final disclaimerSummary = _label('label_disclaimer_summary',
-        fallback:
+        fallback: AppLocalizations.of(context)?.disclaimerSummary ??
             'Disclaimer: MedNarrate AI summary is for informational purposes only and does not replace medical advice. Always consult a qualified physician for clinical decisions.');
     final reportTypeLabel = _label('chip_report_type',
         fallback: Helpers.reportTypeLabel(report.reportType));
@@ -192,7 +198,9 @@ class _SummaryTabState extends State<SummaryTab> {
                           Icon(Icons.calendar_today,
                               size: 13, color: AppColors.primary),
                           const SizedBox(width: 4),
-                          Text(Formatters.formatDate(report.reportDate, widget.translation?.language ?? 'en'),
+                          Text(
+                              Formatters.formatDate(report.reportDate,
+                                  widget.translation?.language ?? 'en'),
                               style: const TextStyle(fontSize: 12)),
                           const SizedBox(width: 10),
                           Container(

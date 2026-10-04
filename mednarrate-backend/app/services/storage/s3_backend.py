@@ -51,8 +51,8 @@ class S3Backend(StorageBackend):
 
             await asyncio.to_thread(_upload)
 
-            # Assuming public for this implementation or returning the public URL structure.
-            return f"https://{self.bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{filename}"
+            # The application expects a provider-independent object key in the database
+            return filename
         except ClientError as e:
             raise HTTPException(
                 status_code=500, detail=f"Failed to upload to S3: {str(e)}"

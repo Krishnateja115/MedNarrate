@@ -89,8 +89,6 @@ async def create_feature_flag(
         updated_by_id=admin_ctx.user_id,
     )
     db.add(flag)
-    await db.commit()
-    await db.refresh(flag)
 
     await log_admin_action(
         db=db,
@@ -108,6 +106,9 @@ async def create_feature_flag(
             "rollout": flag.rollout_percentage,
         },
     )
+
+    await db.commit()
+    await db.refresh(flag)
 
     return {
         "message": "Feature flag created successfully",
@@ -153,7 +154,6 @@ async def update_feature_flag(
 
     flag.updated_by_id = admin_ctx.user_id
     flag.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
-    await db.commit()
 
     await log_admin_action(
         db=db,
@@ -171,6 +171,8 @@ async def update_feature_flag(
             "previous_enabled": old_enabled,
         },
     )
+
+    await db.commit()
 
     return {
         "message": "Feature flag updated successfully",
@@ -197,7 +199,6 @@ async def delete_feature_flag(
 
     flag_name = flag.name
     await db.delete(flag)
-    await db.commit()
 
     await log_admin_action(
         db=db,
@@ -211,5 +212,7 @@ async def delete_feature_flag(
         request=request,
         metadata={"name": flag_name},
     )
+
+    await db.commit()
 
     return {"message": f"Feature flag '{flag_name}' deleted successfully"}

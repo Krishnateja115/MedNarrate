@@ -13,6 +13,7 @@ class ReportModel {
   final DateTime uploadedAt;
   final List<Map<String, dynamic>> metrics;
   final String? clinicalSummary;
+  final String? translatedClinicalSummary;
   final String? aiSummary;
 
   const ReportModel({
@@ -30,6 +31,7 @@ class ReportModel {
     required this.uploadedAt,
     this.metrics = const [],
     this.clinicalSummary,
+    this.translatedClinicalSummary,
     this.aiSummary,
   });
 
@@ -48,6 +50,7 @@ class ReportModel {
     DateTime? uploadedAt,
     List<Map<String, dynamic>>? metrics,
     String? clinicalSummary,
+    String? translatedClinicalSummary,
     String? aiSummary,
   }) {
     return ReportModel(
@@ -65,6 +68,7 @@ class ReportModel {
       uploadedAt: uploadedAt ?? this.uploadedAt,
       metrics: metrics ?? this.metrics,
       clinicalSummary: clinicalSummary ?? this.clinicalSummary,
+      translatedClinicalSummary: translatedClinicalSummary ?? this.translatedClinicalSummary,
       aiSummary: aiSummary ?? this.aiSummary,
     );
   }
@@ -85,6 +89,7 @@ class ReportModel {
       "uploadedAt": uploadedAt.toIso8601String(),
       "metrics": metrics,
       "clinicalSummary": clinicalSummary,
+      "translatedClinicalSummary": translatedClinicalSummary,
       "aiSummary": aiSummary,
     };
   }
@@ -111,6 +116,7 @@ class ReportModel {
           : DateTime.now(),
       metrics: List<Map<String, dynamic>>.from(map["metrics"] ?? []),
       clinicalSummary: map["clinicalSummary"]?.toString(),
+      translatedClinicalSummary: map["translatedClinicalSummary"]?.toString(),
       aiSummary: map["aiSummary"]?.toString(),
     );
   }

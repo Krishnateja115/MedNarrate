@@ -198,7 +198,7 @@ async def list_tickets(
 
 @router.get("/{ticket_id}")
 async def get_ticket(
-    ticket_id: str,
+    ticket_id: uuid.UUID,
     admin_ctx: AdminContext = Depends(
         require_any_permission(["support.view", "support.manage"])
     ),
@@ -284,7 +284,7 @@ async def get_ticket(
 
 @router.get("/{ticket_id}/article-suggestions")
 async def suggest_help_articles(
-    ticket_id: str,
+    ticket_id: uuid.UUID,
     admin_ctx: AdminContext = Depends(
         require_any_permission(["support.view", "support.manage"])
     ),
@@ -310,7 +310,7 @@ async def suggest_help_articles(
 
 @router.post("/{ticket_id}/articles/{article_id}", status_code=201)
 async def attach_help_article(
-    ticket_id: str,
+    ticket_id: uuid.UUID,
     article_id: str,
     admin_ctx: AdminContext = Depends(require_permission("support.manage")),
     db: AsyncSession = Depends(get_db),
@@ -352,7 +352,7 @@ async def attach_help_article(
         action="SUPPORT_HELP_ARTICLE_ATTACH",
         actor_admin_id=admin_ctx.user.id,
         resource_type="SupportTicket",
-        resource_id=ticket_id,
+        resource_id=str(ticket_id),
         permission_used="support.manage",
         metadata={"article_id": article_id},
     )
@@ -362,7 +362,7 @@ async def attach_help_article(
 
 @router.delete("/{ticket_id}/articles/{article_id}", status_code=204)
 async def detach_help_article(
-    ticket_id: str,
+    ticket_id: uuid.UUID,
     article_id: str,
     admin_ctx: AdminContext = Depends(require_permission("support.manage")),
     db: AsyncSession = Depends(get_db),
@@ -384,7 +384,7 @@ async def detach_help_article(
         action="SUPPORT_HELP_ARTICLE_DETACH",
         actor_admin_id=admin_ctx.user.id,
         resource_type="SupportTicket",
-        resource_id=ticket_id,
+        resource_id=str(ticket_id),
         permission_used="support.manage",
         metadata={"article_id": article_id},
     )
@@ -393,7 +393,7 @@ async def detach_help_article(
 
 @router.post("/{ticket_id}/reply")
 async def reply_ticket(
-    ticket_id: str,
+    ticket_id: uuid.UUID,
     payload: AdminReplyPayload,
     admin_ctx: AdminContext = Depends(require_permission("support.manage")),
     db: AsyncSession = Depends(get_db),
@@ -422,7 +422,7 @@ async def reply_ticket(
         action="SUPPORT_REPLY" if not payload.is_internal else "SUPPORT_INTERNAL_NOTE",
         actor_admin_id=admin_ctx.user.id,
         resource_type="SupportTicket",
-        resource_id=ticket.id,
+        resource_id=str(ticket.id),
     )
 
     await db.commit()
@@ -431,7 +431,7 @@ async def reply_ticket(
 
 @router.patch("/{ticket_id}")
 async def update_ticket(
-    ticket_id: str,
+    ticket_id: uuid.UUID,
     payload: AdminUpdateTicketPayload,
     admin_ctx: AdminContext = Depends(require_permission("support.manage")),
     db: AsyncSession = Depends(get_db),
@@ -467,7 +467,7 @@ async def update_ticket(
             action="SUPPORT_TICKET_UPDATE",
             actor_admin_id=admin_ctx.user.id,
             resource_type="SupportTicket",
-            resource_id=ticket.id,
+            resource_id=str(ticket.id),
             metadata={"changes": changes},
         )
         await db.commit()
@@ -477,7 +477,7 @@ async def update_ticket(
 
 @router.post("/{ticket_id}/escalate")
 async def escalate_ticket(
-    ticket_id: str,
+    ticket_id: uuid.UUID,
     payload: AdminEscalatePayload,
     admin_ctx: AdminContext = Depends(require_permission("support.escalate")),
     db: AsyncSession = Depends(get_db),
@@ -524,7 +524,7 @@ async def escalate_ticket(
         action="SUPPORT_TICKET_ESCALATE",
         actor_admin_id=admin_ctx.user.id,
         resource_type="SupportTicket",
-        resource_id=ticket.id,
+        resource_id=str(ticket.id),
         metadata={"escalation_type": payload.escalation_type},
     )
     await db.commit()

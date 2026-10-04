@@ -98,6 +98,7 @@ class ReportAnalysisOut(BaseModel):
     evidence_sources: List[Dict[str, Any]] = []
     clinician_summary: Optional[str] = None
     patient_summary: Optional[str] = None
+    translated_clinician_summary: Optional[str] = None
     translated_patient_summary: Optional[str] = None
     translation_available: bool = False
     verification_status: Optional[str] = "unverified"

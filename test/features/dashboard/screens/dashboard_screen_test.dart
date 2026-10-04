@@ -9,10 +9,13 @@ import 'package:mednarrate/core/services/api_models.dart';
 import 'package:mednarrate/core/routing/routes.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
+import '../../../helpers/secure_storage_mock.dart';
+
 class MockApiService extends Mock implements ApiService {}
 
 void main() {
   setUp(() {
+    installSecureStorageMock();
     SharedPreferences.setMockInitialValues({});
   });
 

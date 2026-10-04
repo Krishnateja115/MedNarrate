@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_service.dart';
 
@@ -54,17 +55,27 @@ class ReminderModel {
   }
 }
 
-/// ReminderService — local CRUD backed by shared_preferences.
+/// ReminderService — local CRUD backed by flutter_secure_storage (medication
+/// names/dosages are health data; legacy plaintext shared_preferences values
+/// are migrated on first read and then removed).
 /// Every mutation reschedules/cancels the OS notification.
 class ReminderService {
   ReminderService._();
   static final ReminderService instance = ReminderService._();
 
   static const _key = 'reminders_list';
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   Future<List<ReminderModel>> getAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
+    String? raw = await _secureStorage.read(key: _key);
+    if (raw == null) {
+      final prefs = await SharedPreferences.getInstance();
+      raw = prefs.getString(_key);
+      if (raw != null) {
+        await _secureStorage.write(key: _key, value: raw);
+        await prefs.remove(_key);
+      }
+    }
     if (raw == null) return [];
     final list = jsonDecode(raw) as List<dynamic>;
     return list
@@ -74,8 +85,21 @@ class ReminderService {
 
   Future<void> _saveAll(List<ReminderModel> reminders) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-        _key, jsonEncode(reminders.map((e) => e.toMap()).toList()));
+    await prefs.remove(_key); // never keep a plaintext copy
+    await _secureStorage.write(
+        key: _key, value: jsonEncode(reminders.map((e) => e.toMap()).toList()));
+  }
+
+  /// Removes all locally stored reminders and cancels their notifications (logout).
+  Future<void> clearLocalData() async {
+    try {
+      for (final r in await getAll()) {
+        await NotificationService.instance.cancelReminder(r.id);
+      }
+    } catch (_) {}
+    await _secureStorage.delete(key: _key);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
   }
 
   Future<ReminderModel> add(ReminderModel reminder) async {

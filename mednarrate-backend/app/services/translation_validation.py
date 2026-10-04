@@ -1,162 +1,452 @@
 """Validate generated translations before persistence; never synthesize content."""
 
-import json
-import re
-from collections import Counter
+from __future__ import annotations
 
+import json
+import logging
+import re
+import unicodedata
+from collections import Counter
+from pathlib import Path
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 SCRIPT_RANGES = {
-    "te": (0x0C00, 0x0C7F), "ta": (0x0B80, 0x0BFF),
-    "kn": (0x0C80, 0x0CFF), "ml": (0x0D00, 0x0D7F),
-    "hi": (0x0900, 0x097F), "mr": (0x0900, 0x097F),
+    "te": (0x0C00, 0x0C7F),
+    "ta": (0x0B80, 0x0BFF),
+    "kn": (0x0C80, 0x0CFF),
+    "ml": (0x0D00, 0x0D7F),
+    "hi": (0x0900, 0x097F),
+    "mr": (0x0900, 0x097F),
     "bn": (0x0980, 0x09FF),
 }
 
+_GLOSSARY_PATH = Path(__file__).resolve().parents[2] / "data" / "glossary.json"
+try:
+    GLOSSARY: dict[str, dict[str, str]] = json.loads(
+        _GLOSSARY_PATH.read_text(encoding="utf-8")
+    ).get("terms", {})
+except (OSError, ValueError, TypeError):
+    GLOSSARY = {}
 
-def parse_translation(text: str) -> dict:
-    """Accept a JSON object, optionally fenced, but reject trailing/partial JSON."""
+
+def parse_translation(text: str) -> dict[str, Any]:
+    """Decode the first complete JSON object, including optionally fenced output."""
+    if not isinstance(text, str):
+        raise ValueError("Translation response must be text")
     raw = text.strip()
-    fence = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw)
+    fence = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw, re.IGNORECASE)
     if fence:
-        raw = fence.group(1)
+        raw = fence.group(1).strip()
     else:
-        # If no markdown fence, try to find the outermost JSON braces
-        match = re.search(r"(\{[\s\S]*\})", raw)
-        if match:
-            raw = match.group(1)
-    raw = raw.strip()
+        object_start = raw.find("{")
+        if object_start >= 0:
+            raw = raw[object_start:]
     try:
         parsed, _ = json.JSONDecoder().raw_decode(raw)
-    except json.JSONDecodeError as e:
-        with open("json_err_dump.txt", "w", encoding="utf-8") as f:
-            f.write(raw)
-        raise e
-        
+    except (json.JSONDecodeError, TypeError) as exc:
+        # Never dump a model response: it may contain protected health information.
+        raise ValueError("Translation response was not valid JSON") from exc
     if not isinstance(parsed, dict):
         raise ValueError("Translation must be a JSON object")
     return parsed
 
 
+def normalize_digits(text: str) -> str:
+    """Normalize native decimal digits (for example Devanagari) to Latin digits."""
+    return "".join(
+        str(unicodedata.decimal(char)) if unicodedata.category(char) == "Nd" else char
+        for char in text
+    )
+
+
+def get_numbers(text: str) -> Counter[float]:
+    """Extract standalone numbers while ignoring digits embedded in identifiers."""
+    matches = re.findall(
+        r"(?<![\w.])[+-]?\d+(?:[.,]\d+)*(?![\w.])", normalize_digits(text)
+    )
+    numbers: list[float] = []
+    for match in matches:
+        try:
+            numbers.append(float(match.replace(",", ".")))
+        except ValueError:
+            continue
+    return Counter(numbers)
+
+
+def preserve_numbers(source: str, translated: str) -> None:
+    """Reject added, removed, or changed standalone numeric facts."""
+    if get_numbers(source) != get_numbers(translated):
+        raise ValueError("Translation changed numeric facts")
+
+
 def require_script(text: str, language: str) -> None:
+    """Require some target-script content without rejecting medical identifiers."""
     if not isinstance(text, str) or not text.strip():
         raise ValueError("Missing translated text")
+    if language not in SCRIPT_RANGES:
+        return
     low, high = SCRIPT_RANGES[language]
-    letters = [c for c in text if c.isalpha()]
-    native = sum(low <= ord(c) <= high for c in letters)
-    # Medical reports legitimately contain many English-preserved identifiers
-    # (test names, units, dosages, dates, abbreviations like WBC/RBC/Hb).
-    # These dilute the native-script letter ratio well below 15%, even for
-    # a correct translation.  Use a 5 % floor to avoid false rejections while
-    # still catching a completely un-translated response.
+    letters = [char for char in text if char.isalpha()]
+    native = sum(low <= ord(char) <= high for char in letters)
     if not native or native / max(len(letters), 1) < 0.05:
         raise ValueError("Translation does not use the requested script")
 
 
-def _numbers(text: str) -> Counter:
-    import unicodedata
-    text = unicodedata.normalize('NFKC', text)
-    # Do not confuse digits in identifiers (B12, HbA1c) with measurements.
-    return Counter(re.findall(r"(?<![\w.])[+-]?\d+(?:[.,]\d+)*(?![\w.])", text))
+class TranslationVerifier:
+    """Security checks for truncated, malformed, or fact-changing translations."""
+
+    def __init__(self, language_thresholds: dict[str, float] | None = None) -> None:
+        self.language_thresholds = language_thresholds or {"default": 0.05}
+        self.language = ""
+        self.failures: list[dict[str, str]] = []
+
+    def verify(
+        self,
+        source: dict[str, Any],
+        translated: dict[str, Any],
+        language: str,
+        *,
+        preserve_numeric: bool = True,
+    ) -> dict[str, Any]:
+        self.language = language
+        self.failures = []
+        self._verify_dict(
+            source, translated, path="", preserve_numeric=preserve_numeric
+        )
+        return {"ok": not self.failures, "failures": self.failures}
+
+    def verify_text(
+        self,
+        source_text: str,
+        translated_text: str,
+        *,
+        item_id: str,
+        field: str,
+        preserve_numeric: bool = False,
+    ) -> list[dict[str, str]]:
+        self._check_string(
+            source_text,
+            translated_text,
+            item_id,
+            field,
+            preserve_numeric=preserve_numeric,
+        )
+        return self.failures
+
+    def _add_failure(self, item_id: str, field: str, rule: str, reason: str) -> None:
+        logger.warning(
+            "TranslationVerifier failure language=%s item=%s field=%s rule=%s",
+            self.language,
+            item_id,
+            field,
+            rule,
+        )
+        self.failures.append(
+            {"itemId": item_id, "field": field, "rule": rule, "reason": reason}
+        )
+
+    def _verify_dict(
+        self,
+        source: dict[str, Any],
+        translated: dict[str, Any],
+        path: str,
+        *,
+        preserve_numeric: bool,
+    ) -> None:
+        for key, source_value in source.items():
+            if key not in translated:
+                self._add_failure(path, key, "structure", f"Missing key {key}")
+                continue
+            translated_value = translated[key]
+            current_path = f"{path}.{key}" if path else key
+            if isinstance(source_value, dict):
+                if not isinstance(translated_value, dict):
+                    self._add_failure(
+                        path, key, "structure", f"Expected object for {key}"
+                    )
+                else:
+                    self._verify_dict(
+                        source_value,
+                        translated_value,
+                        current_path,
+                        preserve_numeric=preserve_numeric,
+                    )
+            elif isinstance(source_value, list):
+                if not isinstance(translated_value, list) or len(source_value) != len(
+                    translated_value
+                ):
+                    self._add_failure(
+                        path, key, "structure", f"List length mismatch for {key}"
+                    )
+                    continue
+                for index, (source_item, translated_item) in enumerate(
+                    zip(source_value, translated_value)
+                ):
+                    item_path = f"{current_path}[{index}]"
+                    if isinstance(source_item, dict) and isinstance(
+                        translated_item, dict
+                    ):
+                        self._verify_dict(
+                            source_item,
+                            translated_item,
+                            item_path,
+                            preserve_numeric=preserve_numeric,
+                        )
+                    elif isinstance(source_item, str) and isinstance(
+                        translated_item, str
+                    ):
+                        self._check_string(
+                            source_item,
+                            translated_item,
+                            item_path,
+                            key,
+                            preserve_numeric=preserve_numeric,
+                        )
+            elif isinstance(source_value, str):
+                if not isinstance(translated_value, str):
+                    self._add_failure(
+                        path, key, "structure", f"Expected text for {key}"
+                    )
+                else:
+                    self._check_string(
+                        source_value,
+                        translated_value,
+                        path,
+                        key,
+                        preserve_numeric=preserve_numeric,
+                    )
+
+    def _check_string(
+        self,
+        source_text: str,
+        translated_text: str,
+        item_id: str,
+        field: str,
+        *,
+        preserve_numeric: bool,
+    ) -> None:
+        if len(source_text) > 20 and len(translated_text) < len(source_text) * 0.2:
+            self._add_failure(
+                item_id, field, "length_ratio", "Translation is suspiciously short"
+            )
+        lowered = translated_text.lower()
+        for forbidden in (
+            "not verified",
+            "needs_review",
+            "todo",
+            "translation:",
+            "as an ai",
+        ):
+            if forbidden in lowered:
+                self._add_failure(
+                    item_id,
+                    field,
+                    "forbidden_content",
+                    "Translation contains model metadata",
+                )
+        if "```" in translated_text:
+            self._add_failure(
+                item_id,
+                field,
+                "forbidden_content",
+                "Translation contains markdown fences",
+            )
+        if re.search(r"\b[a-z]+_[a-z]+\b", translated_text) and field not in {
+            "test_name",
+            "parameter",
+        }:
+            self._add_failure(
+                item_id,
+                field,
+                "forbidden_content",
+                "Translation contains raw field names",
+            )
+        if translated_text.count("[") != translated_text.count(
+            "]"
+        ) or translated_text.count("(") != translated_text.count(")"):
+            self._add_failure(
+                item_id,
+                field,
+                "forbidden_content",
+                "Translation has unbalanced brackets",
+            )
+        if preserve_numeric and get_numbers(source_text) != get_numbers(
+            translated_text
+        ):
+            self._add_failure(
+                item_id, field, "numeric_integrity", "Numbers do not match source"
+            )
+        prose_fields = {
+            "clinical_summary",
+            "clinician_summary",
+            "patient_summary",
+            "explanation",
+            "implication",
+            "instructions",
+            "notes",
+        }
+        is_prose = field in prose_fields or item_id.startswith(
+            "doctor_discussion_points"
+        )
+        if is_prose and self.language in SCRIPT_RANGES:
+            low, high = SCRIPT_RANGES[self.language]
+            letters = [char for char in translated_text if char.isalpha()]
+            native = sum(low <= ord(char) <= high for char in letters)
+            threshold = self.language_thresholds.get(
+                self.language, self.language_thresholds["default"]
+            )
+            if not native or native / max(len(letters), 1) < threshold:
+                self._add_failure(
+                    item_id,
+                    field,
+                    "script_ratio",
+                    "Insufficient target-script letters in prose",
+                )
 
 
-def preserve_numbers(source: str, translated: str) -> None:
-    pass # Disabled: Translation often converts numerals to words (e.g., '1' to 'one') or includes list numbers.
+def _raise_verifier_failures(result: dict[str, Any]) -> None:
+    if result["ok"]:
+        return
+    rules = ", ".join(sorted({failure["rule"] for failure in result["failures"]}))
+    raise ValueError(f"Translation security verification failed: {rules}")
 
 
 def validate_translation(
-    parsed: dict, language: str, summary: str, findings: list,
-    medications: list, label_keys: list[str],
-) -> dict:
-    """Require complete aligned sections, native script and unchanged facts.
+    parsed: dict[str, Any],
+    language: str,
+    clinician_summary: str,
+    patient_summary: str,
+    findings: list[dict[str, Any]],
+    medications: list[dict[str, Any]],
+    label_keys: list[str],
+) -> dict[str, Any]:
+    """Validate the current schema and restore immutable clinical facts."""
+    verifier = TranslationVerifier()
+    translated_patient = parsed.get("patient_summary")
+    require_script(translated_patient, language)
+    _raise_verifier_failures(
+        verifier.verify(
+            {"patient_summary": patient_summary},
+            {"patient_summary": translated_patient},
+            language,
+            preserve_numeric=False,
+        )
+    )
 
-    This is a structural/numeric guard, not proof of linguistic equivalence.
-    Medical identifiers and dosage fields are copied from the source, not an LLM.
-    """
-    translated = parsed.get("patient_summary")
-    try:
-        require_script(translated, language)
-    except ValueError as e:
-        raise ValueError(f"patient_summary failed: {e}")
-    
-    clinician_translated = parsed.get("clinician_summary")
-    if clinician_translated:
-        try:
-            require_script(clinician_translated, language)
-        except ValueError as e:
-            raise ValueError(f"clinician_summary failed: {e}")
-            
+    translated_clinician = parsed.get("clinician_summary")
+    if clinician_summary:
+        require_script(translated_clinician, language)
+        _raise_verifier_failures(
+            verifier.verify(
+                {"clinician_summary": clinician_summary},
+                {"clinician_summary": translated_clinician},
+                language,
+                preserve_numeric=False,
+            )
+        )
+    elif translated_clinician not in (None, ""):
+        raise ValueError("Translation added a clinician summary")
+
     labels = parsed.get("ui_labels")
     if not isinstance(labels, dict):
         raise ValueError("Missing translated labels")
+    exempt_keys = {
+        "label_high",
+        "label_low",
+        "label_normal",
+        "label_critical",
+        "label_not_classified",
+        "chip_blood",
+        "chip_urine",
+        "label_rag_search_index",
+        "label_active_retriever",
+        "label_cat_cbc",
+        "label_cat_lipid_panel",
+        "label_cat_liver_function",
+        "label_cat_kidney_function",
+        "label_cat_vitamins_&_minerals",
+        "label_medical_validation",
+        "label_passed_rules",
+        "label_uncategorized",
+        "label_search_parameters",
+    }
     for key in label_keys:
-        exempt_keys = {
-            "label_high", "label_low", "label_normal", "label_critical", "label_not_classified",
-            "chip_blood", "chip_urine", "label_rag_search_index", "label_active_retriever",
-            "label_cat_cbc", "label_cat_lipid_panel", "label_cat_liver_function",
-            "label_cat_kidney_function", "label_cat_vitamins_&_minerals",
-            "label_medical_validation", "label_passed_rules", "label_uncategorized",
-            "label_search_parameters"
-        }
+        value = labels.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"Missing translated label: {key}")
         if key not in exempt_keys:
-            try:
-                require_script(labels.get(key), language)
-            except ValueError as e:
-                raise ValueError(f"Key {key} failed validation: {e}")
+            require_script(value, language)
+
     discussion = parsed.get("doctor_discussion_points")
     if not isinstance(discussion, list) or not discussion:
         raise ValueError("Missing discussion points")
-    for i, point in enumerate(discussion):
-        try:
-            require_script(point, language)
-        except ValueError as e:
-            raise ValueError(f"discussion point {i} failed: {e}")
+    for index, point in enumerate(discussion):
+        require_script(point, language)
+        verifier.failures = []
+        verifier.verify_text(
+            "",
+            point,
+            item_id=f"doctor_discussion_points[{index}]",
+            field="doctor_discussion_points",
+        )
+        if verifier.failures:
+            _raise_verifier_failures({"ok": False, "failures": verifier.failures})
 
     output_findings = parsed.get("abnormal_findings")
-    output_meds = parsed.get("medications")
+    output_medications = parsed.get("medications")
     for source, output, identifier in (
         (findings, output_findings, "test_name"),
-        (medications, output_meds, "medication_name"),
+        (medications, output_medications, "medication_name"),
     ):
         if not isinstance(output, list) or len(source) != len(output):
             raise ValueError("Translation omitted or added report entries")
         for original, result in zip(source, output):
-            if not isinstance(result, dict) or result.get(identifier) != original.get(identifier):
+            if not isinstance(result, dict) or result.get(identifier) != original.get(
+                identifier
+            ):
                 raise ValueError("Translation changed report identifiers or order")
-    for i, (original, result) in enumerate(zip(findings, output_findings)):
-        try:
-            require_script(result.get("translated_explanation"), language)
-        except ValueError as e:
-            raise ValueError(f"finding {i} explanation failed: {e}")
-        # We intentionally skip require_script for translated_test_name because tests like 'RBC' or 'HbA1c' are frequently preserved in English without translating to native scripts.
-        
-        # Keep structured values available without trusting model copies.
-        for key in ("test_name", "translated_test_name", "value", "unit", "ref_low", "ref_high", "flag"):
+
+    for index, (original, result) in enumerate(zip(findings, output_findings)):
+        explanation = result.get("translated_explanation")
+        require_script(explanation, language)
+        verifier.failures = []
+        verifier.verify_text(
+            str(original.get("explanation") or ""),
+            explanation,
+            item_id=f"abnormal_findings[{index}]",
+            field="explanation",
+        )
+        if verifier.failures:
+            _raise_verifier_failures({"ok": False, "failures": verifier.failures})
+        for key in ("test_name", "value", "unit", "ref_low", "ref_high", "flag"):
             if key in original or key in result:
-                result[key] = result.get(key) if key == "translated_test_name" else original.get(key)
-    for i, (original, result) in enumerate(zip(medications, output_meds)):
-        # Skip require_script for medication names because they are frequently preserved in English.
-        for key in ("translated_dosage", "translated_frequency", "translated_instructions"):
+                result[key] = original.get(key)
+
+    for original, result in zip(medications, output_medications):
+        for key in (
+            "translated_dosage",
+            "translated_frequency",
+            "translated_instructions",
+        ):
             if not isinstance(result.get(key), str):
                 raise ValueError("Invalid translated medication field")
-        # Dosage is a clinical fact, not free-form model output.
         dosage = str(original.get("dosage") or "")
-        if result.get("translated_dosage") != dosage:
+        if result["translated_dosage"] != dosage:
             raise ValueError("Translation changed medication dosage")
         frequency = str(original.get("frequency") or "")
         if frequency:
-            try:
-                require_script(result.get("translated_frequency"), language)
-            except ValueError as e:
-                raise ValueError(f"medication {i} frequency failed: {e}")
-            preserve_numbers(frequency, result["translated_frequency"])
-        times = result.get("translated_times_of_day")
+            require_script(result["translated_frequency"], language)
         source_times = original.get("times_of_day") or []
-        if not isinstance(times, list) or len(times) != len(source_times):
+        translated_times = result.get("translated_times_of_day")
+        if not isinstance(translated_times, list) or len(translated_times) != len(
+            source_times
+        ):
             raise ValueError("Translation changed medication timings")
-        for before, after in zip(source_times, times):
+        for before, after in zip(source_times, translated_times):
             if not isinstance(after, str):
                 raise ValueError("Invalid medication timing")
-            preserve_numbers(str(before), after)
             if re.fullmatch(r"\d{1,2}:\d{2}(?::\d{2})?", str(before)):
                 if before != after:
                     raise ValueError("Translation changed a clock time")
@@ -164,6 +454,5 @@ def validate_translation(
                 require_script(after, language)
         instructions = str(original.get("instructions") or "")
         if instructions:
-            require_script(result.get("translated_instructions"), language)
-            preserve_numbers(instructions, result["translated_instructions"])
+            require_script(result["translated_instructions"], language)
     return parsed

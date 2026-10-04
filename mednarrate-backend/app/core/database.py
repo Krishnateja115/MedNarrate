@@ -16,11 +16,12 @@ engine_kwargs = {
     "pool_pre_ping": True,
 }
 
-if not is_sqlite:
+if not is_sqlite and not is_test:
+    # QueuePool tuning; NullPool (used under pytest) rejects these arguments.
     engine_kwargs.update(
         {
-            "pool_size": 5 if not is_test else 0,
-            "max_overflow": 10 if not is_test else 0,
+            "pool_size": 5,
+            "max_overflow": 10,
             "pool_timeout": 30,
             "pool_recycle": 1800,
         }

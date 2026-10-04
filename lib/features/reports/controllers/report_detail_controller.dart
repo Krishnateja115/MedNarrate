@@ -77,6 +77,7 @@ class ReportDetailController extends ChangeNotifier {
           analysis = resAnalysis;
           report = report!.copyWith(
             aiSummary: resAnalysis.patientSummary,
+            translatedClinicalSummary: resAnalysis.translatedClinicianSummary,
             clinicalSummary: resAnalysis.clinicianSummary,
             metrics: resAnalysis.structuredLabValues.map((v) => {
               'parameter': v.testName,

@@ -19,11 +19,15 @@ class OfflineAction extends HiveObject {
   @HiveField(4)
   final DateTime createdAt;
 
+  @HiveField(5)
+  final String? userId;
+
   OfflineAction({
     required this.id,
     required this.endpoint,
     required this.method,
     required this.body,
     required this.createdAt,
+    this.userId,
   });
 }

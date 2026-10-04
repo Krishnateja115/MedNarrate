@@ -62,7 +62,7 @@ async def test_reset_password_success(client: AsyncClient, db_session):
 
     raw_token = "my_secret_token_123"
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1)
 
     db_token = PasswordResetToken(
         user_id=user.id, token_hash=token_hash, expires_at=expires_at, used=False
@@ -102,7 +102,7 @@ async def test_reset_password_used_token(client: AsyncClient, db_session):
 
     raw_token = "my_used_token_123"
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1)
 
     db_token = PasswordResetToken(
         user_id=user.id, token_hash=token_hash, expires_at=expires_at, used=True
@@ -131,7 +131,7 @@ async def test_reset_password_expired_token(client: AsyncClient, db_session):
 
     raw_token = "my_expired_token_123"
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
+    expires_at = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
 
     db_token = PasswordResetToken(
         user_id=user.id, token_hash=token_hash, expires_at=expires_at, used=False

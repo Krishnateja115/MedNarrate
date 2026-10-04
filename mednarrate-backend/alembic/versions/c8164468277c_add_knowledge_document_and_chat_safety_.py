@@ -90,4 +90,6 @@ def downgrade() -> None:
 
     op.drop_table("chat_safety_events")
     op.drop_table("knowledge_documents")
+    if op.get_bind().dialect.name == "postgresql":
+        sa.Enum(name="doclifecyclestatus").drop(op.get_bind(), checkfirst=True)
     # ### end Alembic commands ###

@@ -198,7 +198,7 @@ async def test_ticket_suggestions_and_article_linkage_are_content_grounded(
         created_by=manager.id,
     )
     ticket = SupportTicket(
-        user_id=str(customer.id),
+        user_id=customer.id,
         title="My report is stuck processing",
         description="The report processing screen has not completed. I have the report ID.",
         category=TicketCategory.report,

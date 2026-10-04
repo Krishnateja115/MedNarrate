@@ -432,11 +432,13 @@ async def test_admin_copilot_chat(
         "messages": [{"role": "user", "content": "How many active users are there?"}]
     }
 
-    res = await client.post(
-        "/api/v1/admin/copilot/chat",
-        json=payload,
-        headers={"Cookie": f"access_token={token}"},
-    )
+    from unittest.mock import patch
+    with patch("app.core.config.settings.GEMINI_API_KEY", None):
+        res = await client.post(
+            "/api/v1/admin/copilot/chat",
+            json=payload,
+            headers={"Cookie": f"access_token={token}"},
+        )
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "ok"
@@ -472,20 +474,20 @@ async def test_admin_support_tickets_endpoints(
 
     # 6. Create ticket with nullable fields
     ticket1 = SupportTicket(
-        user_id=str(dummy_user.id),
+        user_id=dummy_user.id,
         title="Nullable fields ticket",
         description="Desc",
-        assigned_admin_id=str(admin_id),
+        assigned_admin_id=admin_id,
         status=TicketStatus.new,
         priority=TicketPriority.p3,
     )
 
     # 7. Create another ticket to test multiple tickets list
     ticket2 = SupportTicket(
-        user_id=str(dummy_user.id),
+        user_id=dummy_user.id,
         title="Full ticket",
         description="Desc",
-        assigned_admin_id=str(admin_id),
+        assigned_admin_id=admin_id,
         status=TicketStatus.resolved,
         priority=TicketPriority.p1,
     )

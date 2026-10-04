@@ -1,5 +1,12 @@
 venv/
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production
+.env.production.local
+.env.bak
+!.env.example
 __pycache__/
 *.pyc
 *.db

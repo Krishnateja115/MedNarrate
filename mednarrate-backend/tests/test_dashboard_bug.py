@@ -7,7 +7,7 @@ async def run():
         # Mock admin_ctx
         class MockCtx:
             user_id = 1
-        
+
         result = await get_dashboard_summary(days=30, admin_ctx=MockCtx(), db=session)
         import json
         print(json.dumps(result, default=str, indent=2))

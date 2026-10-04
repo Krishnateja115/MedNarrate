@@ -128,3 +128,6 @@ def downgrade() -> None:
     op.drop_table("llm_diagnostic_events")
     op.drop_table("incident_events")
     op.drop_table("incidents")
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("DROP TYPE IF EXISTS incidentstatus")
+        op.execute("DROP TYPE IF EXISTS incidentseverity")

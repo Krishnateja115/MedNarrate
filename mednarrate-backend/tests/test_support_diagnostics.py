@@ -13,11 +13,24 @@ from app.models.support import (
     TicketStatus,
 )
 from app.services.support_diagnostics import build_diagnostic_snapshot
+from app.models.user import User, UserRole
 
 
 @pytest.fixture
 async def sample_ticket_with_report(db_session: AsyncSession):
-    user_id = uuid.uuid4()
+    
+    import uuid
+    u = User(
+        email=f"diag_{uuid.uuid4().hex[:8]}@test.com",
+        hashed_password="...",
+        full_name="Diag User",
+        role=UserRole.patient,
+        is_active=True
+    )
+    db_session.add(u)
+    await db_session.commit()
+    user_id = u.id
+
     report = Report(
         user_id=user_id,
         title="Diagnostic Report",
@@ -41,13 +54,13 @@ async def sample_ticket_with_report(db_session: AsyncSession):
     db_session.add(analysis)
 
     ticket = SupportTicket(
-        user_id=str(user_id),
+        user_id=user_id,
         title="Processing failed",
         description="Help, my report is stuck",
         category=TicketCategory.report,
         priority=TicketPriority.p2,
         status=TicketStatus.new,
-        related_report_id=str(report.id),
+        related_report_id=report.id,
     )
     db_session.add(ticket)
     await db_session.commit()

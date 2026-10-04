@@ -6,7 +6,7 @@ from httpx import AsyncClient
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import create_access_token
+from app.core.security import create_access_token, create_step_up_token
 from app.models.admin import (
     AdminAuditLog,
     AdminPermission,
@@ -79,8 +79,17 @@ async def admin_approver(db_session: AsyncSession):
 async def test_report(db_session: AsyncSession):
     from app.models.report import FileType, ProcessingStatus, Report, ReportType
 
+    dummy_user = User(
+        email=f"dummy_{uuid.uuid4()}@example.com",
+        hashed_password="hashed",
+        full_name="Dummy Breakglass Patient",
+        role=UserRole.patient,
+    )
+    db_session.add(dummy_user)
+    await db_session.flush()
+
     report = Report(
-        user_id=uuid.uuid4(),
+        user_id=dummy_user.id,
         title="Test Report for Breakglass",
         report_type=ReportType.other,
         report_date=datetime.now(timezone.utc).date(),
@@ -121,10 +130,11 @@ async def test_breakglass_request_lifecycle(
     assert req_resp.json()["grant"]["status"] == "requested"
 
     # 2. Approver approves access
+    app_step_up = create_step_up_token(str(admin_approver.id), admin_approver.session_version)
     app_resp = await client.post(
         f"/api/v1/admin/break-glass/grants/{grant_id}/approve",
         json={"notes": "Approved for emergency"},
-        headers={"Authorization": f"Bearer {app_token}"},
+        headers={"Authorization": f"Bearer {app_token}", "x-step-up-token": app_step_up},
     )
     assert app_resp.status_code == 200
 
@@ -188,10 +198,11 @@ async def test_breakglass_self_approval_blocked(
     grant_id = req_resp.json()["grant"]["id"]
 
     # Try to self-approve
+    req_step_up = create_step_up_token(str(admin_requester.id), admin_requester.session_version)
     app_resp = await client.post(
         f"/api/v1/admin/break-glass/grants/{grant_id}/approve",
         json={"notes": "Self approve"},
-        headers={"Authorization": f"Bearer {req_token}"},
+        headers={"Authorization": f"Bearer {req_token}", "x-step-up-token": req_step_up},
     )
     assert app_resp.status_code == 403
     assert "Self-approval is not permitted" in app_resp.json()["detail"]
@@ -238,10 +249,11 @@ async def test_sensitive_access_allowed_with_grant(
     )
     grant_id = req_resp.json()["grant"]["id"]
 
+    app_step_up = create_step_up_token(str(admin_approver.id), admin_approver.session_version)
     await client.post(
         f"/api/v1/admin/break-glass/grants/{grant_id}/approve",
         json={},
-        headers={"Authorization": f"Bearer {app_token}"},
+        headers={"Authorization": f"Bearer {app_token}", "x-step-up-token": app_step_up},
     )
 
     # Now access the sensitive endpoint

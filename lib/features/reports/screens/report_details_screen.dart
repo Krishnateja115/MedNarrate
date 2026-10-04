@@ -343,10 +343,18 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                   indicatorWeight: 3,
                   isScrollable: true,
                   tabs: [
-                    Tab(text: AppLocalizations.of(context)?.forYou ?? "For You"),
-                    Tab(text: AppLocalizations.of(context)?.clinicalView ?? "Clinical View"),
-                    Tab(text: AppLocalizations.of(context)?.labResultsTab ?? "Lab Results"),
-                    Tab(text: AppLocalizations.of(context)?.aiChat ?? "AI Chat"),
+                    Tab(
+                        text:
+                            AppLocalizations.of(context)?.forYou ?? "For You"),
+                    Tab(
+                        text: AppLocalizations.of(context)?.clinicalView ??
+                            "Clinical View"),
+                    Tab(
+                        text: AppLocalizations.of(context)?.labResultsTab ??
+                            "Lab Results"),
+                    Tab(
+                        text:
+                            AppLocalizations.of(context)?.aiChat ?? "AI Chat"),
                   ],
                 ),
         ),
