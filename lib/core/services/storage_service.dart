@@ -5,6 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_models.dart';
 
+/// Raised when the operating system cannot access the encrypted token store.
+///
+/// Tokens must never fall back to SharedPreferences on native platforms. A
+/// caller can show a recoverable setup message instead of leaving the user on
+/// a loading screen forever.
+class SecureStorageUnavailableException implements Exception {
+  SecureStorageUnavailableException(this.cause);
+
+  final PlatformException cause;
+
+  @override
+  String toString() =>
+      'SecureStorageUnavailableException: ${cause.message ?? cause.code}';
+}
+
 /// StorageService — persists auth tokens in secure storage and preferences in shared_preferences.
 class StorageService {
   StorageService._();
@@ -24,7 +39,16 @@ class StorageService {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
     aOptions: AndroidOptions(),
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+    mOptions: MacOsOptions(usesDataProtectionKeychain: true),
   );
+
+  Future<T> _withSecureStorage<T>(Future<T> Function() operation) async {
+    try {
+      return await operation();
+    } on PlatformException catch (error) {
+      throw SecureStorageUnavailableException(error);
+    }
+  }
 
   // ── Tokens (flutter_secure_storage with migration) ─────────────────────────
 
@@ -35,10 +59,14 @@ class StorageService {
 
     if (oldAccess != null || oldRefresh != null) {
       if (oldAccess != null) {
-        await _secureStorage.write(key: _keyAccess, value: oldAccess);
+        await _withSecureStorage(
+          () => _secureStorage.write(key: _keyAccess, value: oldAccess),
+        );
       }
       if (oldRefresh != null) {
-        await _secureStorage.write(key: _keyRefresh, value: oldRefresh);
+        await _withSecureStorage(
+          () => _secureStorage.write(key: _keyRefresh, value: oldRefresh),
+        );
       }
       await prefs.remove(_keyAccess);
       await prefs.remove(_keyRefresh);
@@ -52,8 +80,12 @@ class StorageService {
       await prefs.setString(_keyRefresh, refresh);
       return;
     }
-    await _secureStorage.write(key: _keyAccess, value: access);
-    await _secureStorage.write(key: _keyRefresh, value: refresh);
+    await _withSecureStorage(
+      () => _secureStorage.write(key: _keyAccess, value: access),
+    );
+    await _withSecureStorage(
+      () => _secureStorage.write(key: _keyRefresh, value: refresh),
+    );
   }
 
   Future<String?> getAccessToken() async {
@@ -62,7 +94,7 @@ class StorageService {
       return prefs.getString(_keyAccess);
     }
     await _migrateTokensIfNeeded();
-    return _secureStorage.read(key: _keyAccess);
+    return _withSecureStorage(() => _secureStorage.read(key: _keyAccess));
   }
 
   Future<String?> getRefreshToken() async {
@@ -71,13 +103,13 @@ class StorageService {
       return prefs.getString(_keyRefresh);
     }
     await _migrateTokensIfNeeded();
-    return _secureStorage.read(key: _keyRefresh);
+    return _withSecureStorage(() => _secureStorage.read(key: _keyRefresh));
   }
 
   Future<void> clearTokens() async {
     if (!kIsWeb) {
-      await _secureStorage.delete(key: _keyAccess);
-      await _secureStorage.delete(key: _keyRefresh);
+      await _withSecureStorage(() => _secureStorage.delete(key: _keyAccess));
+      await _withSecureStorage(() => _secureStorage.delete(key: _keyRefresh));
     }
     // Also clear from prefs just in case
     final prefs = await SharedPreferences.getInstance();
@@ -114,12 +146,18 @@ class StorageService {
   Future<void> cacheUserProfile(UserModel user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyCachedUser); // Remove from legacy plaintext storage
-    await _secureStorage.write(
-        key: _keyCachedUser, value: jsonEncode(user.toMap()));
+    await _withSecureStorage(
+      () => _secureStorage.write(
+        key: _keyCachedUser,
+        value: jsonEncode(user.toMap()),
+      ),
+    );
   }
 
   Future<UserModel?> getCachedProfile() async {
-    String? raw = await _secureStorage.read(key: _keyCachedUser);
+    String? raw = await _withSecureStorage(
+      () => _secureStorage.read(key: _keyCachedUser),
+    );
 
     // Migration: Check plaintext storage
     if (raw == null) {

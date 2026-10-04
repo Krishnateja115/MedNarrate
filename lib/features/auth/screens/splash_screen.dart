@@ -23,6 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _fade;
   late Animation<double> _scale;
   String? _startupError;
+  String _startupErrorTitle = 'Unable to connect';
 
   @override
   void initState() {
@@ -47,7 +48,20 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _checkAuthAndNavigate() async {
     if (!mounted) return;
 
-    final token = await StorageService.instance.getAccessToken();
+    String? token;
+    try {
+      token = await StorageService.instance.getAccessToken();
+    } on SecureStorageUnavailableException {
+      if (mounted) {
+        setState(() {
+          _startupErrorTitle = 'Secure sign-in is unavailable';
+          _startupError =
+              'MedNarrate cannot access the encrypted macOS Keychain. '
+              'Quit the app, install the latest build, and then try again.';
+        });
+      }
+      return;
+    }
     if (token != null) {
       try {
         await ApiService.instance.getMe();
@@ -101,7 +115,7 @@ class _SplashScreenState extends State<SplashScreen>
               children: [
                 const Icon(Icons.cloud_off_outlined, size: 56),
                 const SizedBox(height: 16),
-                const Text('Unable to connect',
+                Text(_startupErrorTitle,
                     style:
                         TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),

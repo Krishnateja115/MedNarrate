@@ -100,7 +100,7 @@ cp .env.example .env
 alembic upgrade head
 
 # Start development server
-uvicorn app.main:app --reload --port 8000
+python run_server.py
 ```
 
 The API will be available at `http://localhost:8000`  
