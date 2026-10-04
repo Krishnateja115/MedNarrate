@@ -75,3 +75,4 @@ tracked_files.txt
 bandit_results.json
 scratch/
 scratch*.py
+mednarrate-backend/build/
