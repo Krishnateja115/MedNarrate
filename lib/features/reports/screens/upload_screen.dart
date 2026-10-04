@@ -138,7 +138,7 @@ class _UploadScreenState extends State<UploadScreen> {
         _step = UploadStep.idle;
         _errorMessage =
             'The file chooser could not open. Close any open file dialog and try again.';
-      }
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {

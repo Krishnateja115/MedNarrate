@@ -585,13 +585,12 @@ class ApiService {
         .toList();
   }
 
-  Future<ChatMessageModel> sendChatMessage(
-      String sessionId, String content, {String? language}) async {
+  Future<ChatMessageModel> sendChatMessage(String sessionId, String content,
+      {String? language}) async {
     final body = <String, dynamic>{'content': content};
     if (language != null) body['language'] = language;
-    
-    final resp = await _post('/chat/sessions/$sessionId/messages',
-        body: body);
+
+    final resp = await _post('/chat/sessions/$sessionId/messages', body: body);
     final data = jsonDecode(resp.body) as Map<String, dynamic>;
     // Response is {message: {...}, sources: [...]}
     final msgMap = data['message'] as Map<String, dynamic>;
