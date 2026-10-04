@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import re
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,15 +22,10 @@ from app.services.scheduler import start_scheduler, stop_scheduler
 logger = logging.getLogger(__name__)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await init_db()
-    start_scheduler()
+async def _prewarm_ner_model() -> None:
+    """Warm the optional NER model without delaying authentication readiness."""
     try:
-        # Loading a Transformers model can download weights on a fresh machine.
-        # It must never prevent the API (and, consequently, session restoration)
-        # from becoming ready. The analysis path still loads the model on demand.
-        logger.info("Pre-warming NER ML model...")
+        logger.info("Pre-warming NER ML model in the background...")
         await asyncio.wait_for(
             asyncio.to_thread(get_ner_pipeline),
             timeout=settings.NER_PREWARM_TIMEOUT_SECONDS,
@@ -41,10 +36,27 @@ async def lifespan(app: FastAPI):
             "NER pre-warm timed out after %s seconds; continuing with on-demand loading.",
             settings.NER_PREWARM_TIMEOUT_SECONDS,
         )
-    except Exception as e:
-        logger.warning("Failed to pre-warm NER model at startup: %s", e)
-    yield
-    stop_scheduler()
+    except asyncio.CancelledError:
+        raise
+    except Exception as error:
+        logger.warning("Failed to pre-warm NER model in the background: %s", error)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    start_scheduler()
+    # Loading model weights may contact an unavailable network. Authentication,
+    # the admin portal, and health checks do not depend on it, so API readiness
+    # must not wait for this optional work.
+    prewarm_task = asyncio.create_task(_prewarm_ner_model())
+    try:
+        yield
+    finally:
+        prewarm_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await prewarm_task
+        stop_scheduler()
 
 
 # In production (ENVIRONMENT != 'development'), disable /docs, /redoc, and /openapi.json
