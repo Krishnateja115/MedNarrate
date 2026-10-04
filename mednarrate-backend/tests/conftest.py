@@ -47,6 +47,12 @@ if _IS_SQLITE:
 TestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
+@pytest.fixture
+def db_session_factory():
+    """Create independent sessions against the same per-test database."""
+    return TestingSessionLocal
+
+
 @pytest.fixture(scope="session")
 def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
