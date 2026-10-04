@@ -127,8 +127,6 @@ class _UploadScreenState extends State<UploadScreen> {
       }
 
       final selectedFile = file;
-      if (selectedFile == null) return;
-
       final ext = selectedFile.extension?.toLowerCase() ?? '';
       if (!_validExtensions.contains(ext)) {
         setState(() {
