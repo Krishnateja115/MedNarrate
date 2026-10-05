@@ -7,6 +7,7 @@ import '../../../core/utils/markdown_formatter.dart';
 import '../../../core/utils/report_text_structurer.dart';
 import '../models/report_model.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
+import '../../../core/services/api_exception.dart';
 
 class PatientViewTab extends StatefulWidget {
   final ReportModel report;
@@ -133,10 +134,12 @@ class _PatientViewTabState extends State<PatientViewTab> {
 
     try {
       await widget.onTranslate!(selected);
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
+        final errorMsg =
+            (e is ApiException) ? e.message : l10n.translationFailed;
         messenger.showSnackBar(
-          SnackBar(content: Text(l10n.translationFailed)),
+          SnackBar(content: Text(errorMsg)),
         );
       }
     }

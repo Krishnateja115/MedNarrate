@@ -25,7 +25,7 @@ from app.schemas.report import (
     TranslationRequest,
 )
 from app.services.analysis_pipeline import run_analysis
-from app.services.llm_client import generate_translation
+from app.services.llm_client import generate_translation_with_provider
 from app.services.translation_validation import parse_translation, validate_translation
 from app.exceptions import TranslationServiceError
 from app.services.prompts import TRANSLATION_PROMPT
@@ -391,48 +391,74 @@ async def translate_analysis(
         medications_json=json.dumps(meds_list, ensure_ascii=False),
         unique_parameters_json=json.dumps(unique_params, ensure_ascii=False),
     )
-    logger.info("Translation requested language=%s input_chars=%d", lang, len(prompt))
-    llm_res = await generate_translation(prompt)
-    if llm_res.get("provider") == "fallback":
-        raise TranslationServiceError()
-    try:
-        raw_text = llm_res.get("content", "")
-        parsed = parse_translation(raw_text)
-        validate_translation(
-            parsed,
-            lang,
-            analysis.clinician_summary or "",
-            analysis.patient_summary or "",
-            abnormal_findings_source,
-            meds_list,
-            REQUIRED_UI_LABEL_KEYS,
-        )
-    except (ValueError, TypeError, KeyError) as exc:
-        # Do not log the model response or medical data.
-        abnormal_len = (
-            len(parsed.get("abnormal_findings") or [])
-            if "parsed" in locals() and isinstance(parsed, dict)
-            else -1
-        )
+    import os
+    order_str = os.getenv("TRANSLATION_PROVIDER_ORDER", "gemini,groq_gpt,groq_qwen,deepseek,existing")
+    providers = [p.strip() for p in order_str.split(",") if p.strip()]
+    if not providers:
+        providers = ["gemini", "groq_gpt", "groq_qwen", "deepseek", "existing"]
+        
+    parsed = None
+    last_exc = None
+    used_provider = None
 
-        med_len = (
-            len(parsed.get("medications") or [])
-            if "parsed" in locals() and isinstance(parsed, dict)
-            else -1
-        )
-        logger.warning(
-            "Translation validation failed language=%s error_type=%s "
-            "src_find_len=%d out_find_len=%d src_med_len=%d out_med_len=%d",
-            lang,
-            type(exc).__name__,
-            len(abnormal_findings_source),
-            abnormal_len,
-            len(meds_list),
-            med_len,
-        )
-        raise TranslationServiceError(
-            "The translation could not be verified. Please try again."
-        ) from exc
+    for provider_name in providers:
+        logger.info("[Translation] Trying provider: %s", provider_name)
+        try:
+            llm_res = await generate_translation_with_provider(prompt, provider_name)
+            if llm_res.get("provider") == "fallback":
+                logger.warning("[Translation] %s returned internal fallback", provider_name)
+                last_exc = TranslationServiceError("Fallback provider reached")
+                continue
+                
+            raw_text = llm_res.get("content", "")
+            parsed_candidate = parse_translation(raw_text)
+            validate_translation(
+                parsed_candidate,
+                lang,
+                analysis.clinician_summary or "",
+                analysis.patient_summary or "",
+                abnormal_findings_source,
+                meds_list,
+                REQUIRED_UI_LABEL_KEYS,
+            )
+            parsed = parsed_candidate
+            used_provider = provider_name
+            logger.info("[Translation] Translation succeeded. Provider used: %s", provider_name)
+            break
+        except (ValueError, TypeError, KeyError) as exc:
+            abnormal_len = (
+                len(parsed_candidate.get("abnormal_findings") or [])
+                if "parsed_candidate" in locals() and isinstance(parsed_candidate, dict)
+                else -1
+            )
+            med_len = (
+                len(parsed_candidate.get("medications") or [])
+                if "parsed_candidate" in locals() and isinstance(parsed_candidate, dict)
+                else -1
+            )
+            logger.warning(
+                "[Translation] %s validation failed language=%s error_type=%s "
+                "src_find_len=%d out_find_len=%d src_med_len=%d out_med_len=%d. details: %s",
+                provider_name,
+                lang,
+                type(exc).__name__,
+                len(abnormal_findings_source),
+                abnormal_len,
+                len(meds_list),
+                med_len,
+                str(exc),
+            )
+            last_exc = exc
+            continue
+        except Exception as exc:
+            logger.warning("[Translation] %s failed: %s", provider_name, type(exc).__name__)
+            last_exc = exc
+            continue
+
+    if not parsed:
+        logger.error("[Translation] All providers failed. Last exception: %s", type(last_exc).__name__)
+        raise TranslationServiceError("Translation is temporarily unavailable. Please try again.")
+
     translated_summary = parsed["patient_summary"]
     translated_clinician_summary = parsed.get("clinician_summary")
     translated_findings = parsed["abnormal_findings"]

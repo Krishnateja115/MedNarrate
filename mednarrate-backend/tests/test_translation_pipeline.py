@@ -127,7 +127,7 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
             'ui_labels': {key: text for key in self.route.REQUIRED_UI_LABEL_KEYS}}
 
     async def test_post_passes_language_and_stored_body_returns_unicode(self):
-        with patch.object(self.route, 'generate_translation', new=AsyncMock(return_value={
+        with patch.object(self.route, 'generate_translation_with_provider', new=AsyncMock(return_value={
             'provider': 'dev_gemini', 'content': json.dumps(self.payload(), ensure_ascii=False)
         })) as model:
             response = await self.client.post(f'/reports/{self.report_id}/analysis/translate', json={'language': 'te'})
@@ -140,7 +140,7 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
         self.db.commit.assert_awaited_once()
 
     async def test_invalid_model_output_is_502_and_not_saved(self):
-        with patch.object(self.route, 'generate_translation', new=AsyncMock(return_value={'provider':'dev_gemini','content':'{}'})):
+        with patch.object(self.route, 'generate_translation_with_provider', new=AsyncMock(return_value={'provider':'dev_gemini','content':'{}'})):
             response = await self.client.post(f'/reports/{self.report_id}/analysis/translate', json={'language':'te'})
         self.assertEqual(response.status_code, 502)
         self.assertEqual(response.json()['code'], 'translation_service_unavailable')
@@ -148,7 +148,7 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
         self.db.commit.assert_not_awaited()
 
     async def test_english_does_not_call_model(self):
-        with patch.object(self.route, 'generate_translation', new_callable=AsyncMock) as model:
+        with patch.object(self.route, 'generate_translation_with_provider', new_callable=AsyncMock) as model:
             response = await self.client.post(f'/reports/{self.report_id}/analysis/translate', json={'language':'en'})
         self.assertEqual(response.json()['patient_summary'], self.source.patient_summary)
         model.assert_not_awaited()
@@ -160,7 +160,7 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
     async def test_failed_regeneration_preserves_existing_cache(self):
         stale = types.SimpleNamespace(schema_version=1, ui_labels={})
         self.db.execute.side_effect = [self.result(first=None), self.result(first=self.source), self.result(all=[]), self.result(first=stale)]
-        with patch.object(self.route, 'generate_translation', new=AsyncMock(side_effect=TranslationServiceError())):
+        with patch.object(self.route, 'generate_translation_with_provider', new=AsyncMock(side_effect=TranslationServiceError())):
             response = await self.client.post(f'/reports/{self.report_id}/analysis/translate', json={'language':'te'})
         self.assertEqual(response.status_code, 502)
         self.db.delete.assert_not_awaited()
