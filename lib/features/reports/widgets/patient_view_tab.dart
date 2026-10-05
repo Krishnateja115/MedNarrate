@@ -547,8 +547,10 @@ class _PatientViewTabState extends State<PatientViewTab> {
           const SizedBox(height: 14),
           const Divider(height: 1),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          Wrap(
+            alignment: WrapAlignment.spaceAround,
+            spacing: 12,
+            runSpacing: 8,
             children: [
               _buildStatChip(
                   context,
