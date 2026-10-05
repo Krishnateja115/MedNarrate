@@ -221,6 +221,22 @@ async def _execute_with_fallback(
                 
             raw_text = llm_res.get("content", "")
             parsed_candidate = parse_translation(raw_text)
+
+            # A chunk is allowed to contain only prose or parameter names. Do
+            # not let a model invent clinical entries or repeat summaries for
+            # fields that were intentionally absent from that chunk. These
+            # normalizations preserve the source-of-truth boundary before the
+            # strict verifier runs.
+            if not chunk_data["abnormal_findings"]:
+                parsed_candidate["abnormal_findings"] = []
+            if not chunk_data["medications"]:
+                parsed_candidate["medications"] = []
+            if not chunk_data["clinician_summary"]:
+                parsed_candidate["clinician_summary"] = ""
+            if not chunk_data["patient_summary"]:
+                parsed_candidate["patient_summary"] = ""
+            if not required_ui_label_keys:
+                parsed_candidate.setdefault("ui_labels", {})
             
             # Unit-level integrity validation!
             validate_func(
