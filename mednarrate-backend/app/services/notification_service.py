@@ -41,6 +41,7 @@ async def send_push_notification(
     """Sends a push notification via FCM and logs it."""
     status = "sent"
     error_message = None
+    masked_token = f"{token[:6]}…" if token and len(token) > 6 else "***"
 
     try:
         if firebase_admin._apps:
@@ -55,7 +56,11 @@ async def send_push_notification(
     except Exception as e:
         status = "failed"
         error_message = str(e)
-        logger.error(f"Error sending push notification to {token}: {e}")
+        logger.error(
+            "Error sending push notification to %s: %s",
+            masked_token,
+            type(e).__name__,
+        )
 
     # Log it
     if existing_log:
