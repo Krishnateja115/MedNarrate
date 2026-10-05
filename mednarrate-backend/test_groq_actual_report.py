@@ -12,7 +12,7 @@ async def main():
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
     async with async_session() as session:
-        res = await session.execute(text("SELECT patient_summary, clinician_summary, abnormal_findings, structured_lab_values FROM report_analyses LIMIT 1"))
+        res = await session.execute(text("SELECT patient_summary, clinician_summary, abnormal_findings, structured_lab_values FROM report_analyses WHERE report_id='1ebb5ebd-2a86-4602-a939-14489e999123'"))
         row = res.fetchone()
         
         if row:
@@ -52,8 +52,7 @@ async def main():
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": 0.2,
-                "max_tokens": 1000,
-                "response_format": {"type": "json_object"}
+                "max_tokens": 1000
             }
             headers = {
                 "Authorization": f"Bearer {api_key}",
@@ -61,11 +60,6 @@ async def main():
             }
             response = requests.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers)
             print("Status:", response.status_code)
-            if response.status_code != 200:
-                print("Response:", response.text)
-            else:
-                print("Success")
-        else:
-            print("no rows")
+            print("Response:", response.text)
 
 asyncio.run(main())

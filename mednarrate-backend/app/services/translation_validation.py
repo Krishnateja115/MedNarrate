@@ -325,15 +325,18 @@ def validate_translation(
     """Validate the current schema and restore immutable clinical facts."""
     verifier = TranslationVerifier()
     translated_patient = parsed.get("patient_summary")
-    require_script(translated_patient, language)
-    _raise_verifier_failures(
-        verifier.verify(
-            {"patient_summary": patient_summary},
-            {"patient_summary": translated_patient},
-            language,
-            preserve_numeric=False,
+    if patient_summary:
+        require_script(translated_patient, language)
+        _raise_verifier_failures(
+            verifier.verify(
+                {"patient_summary": patient_summary},
+                {"patient_summary": translated_patient},
+                language,
+                preserve_numeric=False,
+            )
         )
-    )
+    elif translated_patient not in (None, ""):
+        raise ValueError("Translation added a patient summary")
 
     translated_clinician = parsed.get("clinician_summary")
     if clinician_summary:
@@ -380,19 +383,18 @@ def validate_translation(
             require_script(value, language)
 
     discussion = parsed.get("doctor_discussion_points")
-    if not isinstance(discussion, list) or not discussion:
-        raise ValueError("Missing discussion points")
-    for index, point in enumerate(discussion):
-        require_script(point, language)
-        verifier.failures = []
-        verifier.verify_text(
-            "",
-            point,
-            item_id=f"doctor_discussion_points[{index}]",
-            field="doctor_discussion_points",
-        )
-        if verifier.failures:
-            _raise_verifier_failures({"ok": False, "failures": verifier.failures})
+    if discussion and isinstance(discussion, list):
+        for index, point in enumerate(discussion):
+            require_script(point, language)
+            verifier.failures = []
+            verifier.verify_text(
+                "",
+                point,
+                item_id=f"doctor_discussion_points[{index}]",
+                field="doctor_discussion_points",
+            )
+            if verifier.failures:
+                _raise_verifier_failures({"ok": False, "failures": verifier.failures})
 
     output_findings = parsed.get("abnormal_findings")
     output_medications = parsed.get("medications")

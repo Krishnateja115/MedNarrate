@@ -324,3 +324,52 @@ Diffed findings:
 {diffed_findings_json}
 
 Write the narrative comparison summary now:"""
+
+CHUNK_TRANSLATION_PROMPT = """You are a professional medical translator. Translate the following patient report content into {target_language}.
+Maintain a medically accurate and patient-friendly tone.
+CRITICAL RULES:
+1. DO NOT translate or modify numerical values, units, or reference ranges.
+2. Output MUST be strictly valid JSON.
+
+INPUT:
+Clinician Summary:
+{clinician_summary}
+
+Patient Summary:
+{patient_summary}
+
+Abnormal Findings JSON:
+{abnormal_findings_json}
+
+Medications JSON:
+{medications_json}
+
+Translated Parameters Needed:
+{unique_parameters_json}
+
+OUTPUT (strictly valid JSON, translated into {target_language}):
+{{
+  "clinician_summary": "<translated>",
+  "patient_summary": "<translated>",
+  "abnormal_findings": [
+    {{
+      "test_name": "<original English test name>",
+      "translated_test_name": "<translated>",
+      "translated_explanation": "<translated>"
+    }}
+  ],
+  "medications": [
+    {{
+      "medication_name": "<original English name>",
+      "translated_medication_name": "<translated>",
+      "translated_dosage": "<original English>",
+      "translated_frequency": "<translated>",
+      "translated_times_of_day": ["<translated>"],
+      "translated_instructions": "<translated>"
+    }}
+  ],
+  "translated_parameters": {{
+    "<English parameter name>": "<translated name>"
+  }}
+}}
+"""

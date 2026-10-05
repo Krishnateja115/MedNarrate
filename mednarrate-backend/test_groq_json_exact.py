@@ -12,7 +12,7 @@ async def main():
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
     async with async_session() as session:
-        res = await session.execute(text("SELECT patient_summary, clinician_summary, abnormal_findings, structured_lab_values FROM report_analyses LIMIT 1"))
+        res = await session.execute(text("SELECT patient_summary, clinician_summary, abnormal_findings, structured_lab_values FROM report_analyses WHERE report_id='1ebb5ebd2a864602a93914489e999123'"))
         row = res.fetchone()
         
         if row:
@@ -41,6 +41,9 @@ async def main():
                 unique_parameters_json=json.dumps(unique_params, ensure_ascii=False),
             )
             
+            print("Prompt length chars:", len(prompt))
+            print("Prompt tokens estimate (chars/4):", len(prompt)//4)
+            
             api_key = os.environ.get('GROQ_API_KEY')
             if not api_key:
                 from app.core.config import settings
@@ -61,10 +64,10 @@ async def main():
             }
             response = requests.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers)
             print("Status:", response.status_code)
-            if response.status_code != 200:
-                print("Response:", response.text)
-            else:
-                print("Success")
+            try:
+                print("Response:", response.json())
+            except:
+                print("Response text:", response.text)
         else:
             print("no rows")
 

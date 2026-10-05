@@ -2,6 +2,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
+from app.services.translation_planner import _build_chunks
 from app.services.prompts import TRANSLATION_PROMPT
 import json
 import os
@@ -12,7 +13,7 @@ async def main():
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
     async with async_session() as session:
-        res = await session.execute(text("SELECT patient_summary, clinician_summary, abnormal_findings, structured_lab_values FROM report_analyses LIMIT 1"))
+        res = await session.execute(text("SELECT patient_summary, clinician_summary, abnormal_findings, structured_lab_values FROM report_analyses WHERE report_id='1ebb5ebd2a864602a93914489e999123'"))
         row = res.fetchone()
         
         if row:
@@ -32,13 +33,19 @@ async def main():
                 )
             )
 
+            chunks = _build_chunks(
+                clinician_summary, patient_summary, abnormal_findings_source, [], unique_params, 4000
+            )
+            print("Total chunks:", len(chunks))
+            
+            chunk = chunks[0]
             prompt = TRANSLATION_PROMPT.format(
                 target_language='Hindi',
-                clinician_summary=clinician_summary or "",
-                patient_summary=patient_summary or "",
-                abnormal_findings_json=json.dumps(abnormal_findings_source, ensure_ascii=False),
+                clinician_summary=chunk["clinician_summary"],
+                patient_summary=chunk["patient_summary"],
+                abnormal_findings_json=json.dumps(chunk["abnormal_findings"], ensure_ascii=False),
                 medications_json="[]",
-                unique_parameters_json=json.dumps(unique_params, ensure_ascii=False),
+                unique_parameters_json=json.dumps(chunk["unique_params"], ensure_ascii=False),
             )
             
             api_key = os.environ.get('GROQ_API_KEY')
@@ -61,10 +68,10 @@ async def main():
             }
             response = requests.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers)
             print("Status:", response.status_code)
-            if response.status_code != 200:
-                print("Response:", response.text)
-            else:
-                print("Success")
+            try:
+                print("Response:", response.json())
+            except:
+                print("Response text:", response.text)
         else:
             print("no rows")
 

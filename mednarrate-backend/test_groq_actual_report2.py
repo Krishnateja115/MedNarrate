@@ -52,8 +52,7 @@ async def main():
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": 0.2,
-                "max_tokens": 1000,
-                "response_format": {"type": "json_object"}
+                "max_tokens": 1000
             }
             headers = {
                 "Authorization": f"Bearer {api_key}",
@@ -61,10 +60,7 @@ async def main():
             }
             response = requests.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers)
             print("Status:", response.status_code)
-            if response.status_code != 200:
-                print("Response:", response.text)
-            else:
-                print("Success")
+            print("Response:", response.text)
         else:
             print("no rows")
 

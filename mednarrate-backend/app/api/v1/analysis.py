@@ -404,14 +404,6 @@ async def translate_analysis(
         )
     )
 
-    prompt = TRANSLATION_PROMPT.format(
-        target_language=target_lang_name,
-        clinician_summary=analysis.clinician_summary or "",
-        patient_summary=analysis.patient_summary or "",
-        abnormal_findings_json=json.dumps(abnormal_findings_source, ensure_ascii=False),
-        medications_json=json.dumps(meds_list, ensure_ascii=False),
-        unique_parameters_json=json.dumps(unique_params, ensure_ascii=False),
-    )
     from app.core.config import settings
     order_str = getattr(settings, "TRANSLATION_PROVIDER_ORDER", "gemini,groq_gpt,groq_qwen,deepseek,existing")
     providers = [p.strip() for p in order_str.split(",") if p.strip()]
@@ -420,75 +412,40 @@ async def translate_analysis(
         
     logger.info(f"[TRANSLATION {request_id}] provider_order={','.join(providers)}")
         
-    parsed = None
-    last_exc = None
-    used_provider = None
-
-    for provider_name in providers:
-        logger.info("[Translation] Trying provider: %s", provider_name)
-        try:
-            llm_res = await generate_translation_with_provider(prompt, provider_name)
-            logger.info(f"[TRANSLATION {request_id}] {provider_name} status=200")
-            
-            if llm_res.get("provider") == "fallback":
-                logger.warning("[Translation] %s returned internal fallback", provider_name)
-                last_exc = TranslationServiceError("Fallback provider reached")
-                continue
-                
-            raw_text = llm_res.get("content", "")
-            parsed_candidate = parse_translation(raw_text)
-            
-            logger.info(f"[TRANSLATION {request_id}] validation started")
-            validate_translation(
-                parsed_candidate,
-                lang,
-                analysis.clinician_summary or "",
-                analysis.patient_summary or "",
-                abnormal_findings_source,
-                meds_list,
-                REQUIRED_UI_LABEL_KEYS,
-            )
-            logger.info(f"[TRANSLATION {request_id}] validation=PASS")
-            
-            parsed = parsed_candidate
-            used_provider = provider_name
-            logger.info(f"[TRANSLATION {request_id}] final_provider={provider_name}")
-            break
-        except (ValueError, TypeError, KeyError) as exc:
-            logger.info(f"[TRANSLATION {request_id}] validation=FAIL ({type(exc).__name__})")
-            abnormal_len = (
-                len(parsed_candidate.get("abnormal_findings") or [])
-                if "parsed_candidate" in locals() and isinstance(parsed_candidate, dict)
-                else -1
-            )
-            med_len = (
-                len(parsed_candidate.get("medications") or [])
-                if "parsed_candidate" in locals() and isinstance(parsed_candidate, dict)
-                else -1
-            )
-            logger.warning(
-                "[Translation] %s validation failed language=%s error_type=%s "
-                "src_find_len=%d out_find_len=%d src_med_len=%d out_med_len=%d. details: %s",
-                provider_name,
-                lang,
-                type(exc).__name__,
-                len(abnormal_findings_source),
-                abnormal_len,
-                len(meds_list),
-                med_len,
-                str(exc),
-            )
-            last_exc = exc
-            continue
-        except Exception as exc:
-            logger.info(f"[TRANSLATION {request_id}] {provider_name} status=ERROR ({type(exc).__name__}: {str(exc)})")
-            logger.warning("[Translation] %s failed: %s", provider_name, type(exc).__name__)
-            last_exc = exc
-            continue
-
-    if not parsed:
-        logger.error("[Translation] All providers failed. Last exception: %s", type(last_exc).__name__)
-        raise TranslationServiceError("Translation is temporarily unavailable. Please try again.")
+    from app.services.translation_planner import execute_translation_plan
+    try:
+        parsed = await execute_translation_plan(
+            target_lang_name=target_lang_name,
+            lang_code=lang,
+            clinician_summary=analysis.clinician_summary or "",
+            patient_summary=analysis.patient_summary or "",
+            abnormal_findings_source=abnormal_findings_source,
+            meds_list=meds_list,
+            unique_params=unique_params,
+            providers=providers,
+            validate_func=validate_translation,
+            required_ui_label_keys=REQUIRED_UI_LABEL_KEYS,
+            request_id=request_id
+        )
+        
+        # After full reassembly, validate the final complete payload exactly as before
+        # This guarantees full medical integrity across all chunks combined
+        logger.info(f"[TRANSLATION {request_id}] Final reassembled validation started")
+        validate_translation(
+            parsed,
+            lang,
+            analysis.clinician_summary or "",
+            analysis.patient_summary or "",
+            abnormal_findings_source,
+            meds_list,
+            REQUIRED_UI_LABEL_KEYS,
+        )
+        logger.info(f"[TRANSLATION {request_id}] Final reassembled validation=PASS")
+        
+    except Exception as exc:
+        logger.error("[Translation] Translation plan failed. Last exception: %s", type(exc).__name__)
+        logger.exception("Translation error details:")
+        raise TranslationServiceError("Translation is temporarily unavailable. Please try again.") from exc
 
     logger.info(f"[TRANSLATION {request_id}] TranslationOut=SUCCESS")
     logger.info(f"[TRANSLATION {request_id}] response_status=200")

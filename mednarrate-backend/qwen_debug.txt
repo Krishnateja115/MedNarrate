@@ -1,0 +1,17 @@
+
+--- RAW CONTENT STRUCTURE (First 200 chars) ---
+{
+  "clinician_summary": "### 1. आपकी रिपोर्ट क्या कहती है\nपैथोलॉजी परीक्षण सारांश:\nसंदर्भ के लिए, ऊपर दिए गए मान अधिकारिक हैं):\nरिपोर्ट स्थिति \nपुरुष\n25 वर्ष\n:\n:\n:\n:\nआयु\nलिंग\nरिपोर्ट किया
+--- END RAW CONTENT ---
+
+JSON Parsing: SUCCESS
+
+Top-level keys in parsed JSON:
+  - clinician_summary: str (length 1511)
+  - patient_summary: str (length 0)
+      WARNING: patient_summary is empty string
+  - abnormal_findings: list (length 0)
+  - medications: list (length 0)
+  - doctor_discussion_points: list (length 3)
+  - ui_labels: dict (keys: 78)
+  - translated_parameters: dict (keys: 0)

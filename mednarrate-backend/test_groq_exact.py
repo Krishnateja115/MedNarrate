@@ -9,10 +9,10 @@ if not api_key:
 payload = {
     "model": "openai/gpt-oss-120b",
     "messages": [
-        {"role": "user", "content": "Hello, how are you? " * 1000}
+        {"role": "user", "content": "Hello, how are you? " * 3000}
     ],
     "temperature": 0.2,
-    "max_tokens": 3000
+    "max_tokens": 1000
 }
 headers = {
     "Authorization": f"Bearer {api_key}",
@@ -20,7 +20,4 @@ headers = {
 }
 response = requests.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers)
 print("Status:", response.status_code)
-if response.status_code != 200:
-    print("Error:", response.text)
-else:
-    print("Tokens:", response.json().get('usage'))
+print("Response:", response.text)
