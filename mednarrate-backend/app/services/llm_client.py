@@ -526,7 +526,7 @@ class DeepSeekProvider(LLMProvider):
         return getattr(settings, "DEEPSEEK_API_KEY", None)
 
     def get_model_name(self) -> str:
-        return getattr(settings, "DEEPSEEK_TRANSLATION_MODEL", "deepseek-v4-flash")
+        return getattr(settings, "DEEPSEEK_TRANSLATION_MODEL", "deepseek-flash")
 
     async def health_check(self, config: dict | None = None) -> dict:
         api_key = self.get_api_key()

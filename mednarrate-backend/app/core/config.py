@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     DEEPSEEK_API_KEY: str | None = None
     GROQ_GPT_TRANSLATION_MODEL: str = "openai/gpt-oss-120b"
     GROQ_QWEN_TRANSLATION_MODEL: str = "qwen/qwen3.8-27b"
-    DEEPSEEK_TRANSLATION_MODEL: str = "deepseek-v4-flash"
+    DEEPSEEK_TRANSLATION_MODEL: str = "deepseek-flash"
 
     ENABLE_LLM_FALLBACK: bool = True
 
