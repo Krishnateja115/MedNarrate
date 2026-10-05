@@ -484,11 +484,25 @@ class GroqProvider(LLMProvider):
             messages.append({"role": "system", "content": system_instruction})
         messages.append({"role": "user", "content": prompt})
         
+        # Estimate prompt tokens (roughly chars / 4)
+        prompt_est_tokens = len(prompt) // 4
+        if system_instruction:
+            prompt_est_tokens += len(system_instruction) // 4
+            
+        # Groq context limit is 8192. We dynamically scale max_tokens to fit within limit.
+        if self.variant in ["gpt", "qwen"] and _translation_request.get():
+            safe_max_tokens = max(500, 8000 - prompt_est_tokens)
+            output_tokens = min(3000, safe_max_tokens)
+        elif _translation_request.get():
+            output_tokens = min(settings.TRANSLATION_MAX_OUTPUT_TOKENS, 3000)
+        else:
+            output_tokens = 2048
+
         payload = {
             "model": model_name,
             "messages": messages,
             "temperature": 0.2,
-            "max_tokens": settings.TRANSLATION_MAX_OUTPUT_TOKENS if _translation_request.get() else 2048,
+            "max_tokens": output_tokens,
         }
         if _translation_request.get():
             payload["response_format"] = {"type": "json_object"}
@@ -568,7 +582,7 @@ class DeepSeekProvider(LLMProvider):
             "model": model_name,
             "messages": messages,
             "temperature": 0.2,
-            "max_tokens": settings.TRANSLATION_MAX_OUTPUT_TOKENS if _translation_request.get() else 2048,
+            "max_tokens": min(settings.TRANSLATION_MAX_OUTPUT_TOKENS, 4096) if _translation_request.get() else 2048,
         }
         if _translation_request.get():
             payload["response_format"] = {"type": "json_object"}

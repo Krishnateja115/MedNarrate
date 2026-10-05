@@ -256,6 +256,19 @@ async def translate_analysis(
     db: AsyncSession = Depends(get_db),
     maintenance=Depends(check_maintenance("translation")),
 ):
+    import uuid
+    import os
+    request_id = str(uuid.uuid4())
+    logger.info(f"\n================================================\n"
+                f"MEDNARRATE TRANSLATION DEBUG REQUEST\n"
+                f"request_id={request_id}\n"
+                f"process_id={os.getpid()}\n"
+                f"report_id={id}\n"
+                f"target_language={req.language}\n"
+                f"================================================\n")
+    # ... adding logs
+    logger.info(f"[TRANSLATION {request_id}] route entered")
+    
     report = await verify_report_ownership(id, str(current_user.id), db)
 
     stmt_analysis = select(ReportAnalysis).where(ReportAnalysis.report_id == report.id)
@@ -263,7 +276,10 @@ async def translate_analysis(
     analysis = res_analysis.scalars().first()
 
     if not analysis:
+        logger.info(f"[TRANSLATION {request_id}] analysis found=false")
         raise HTTPException(status_code=404, detail="Analysis not found")
+        
+    logger.info(f"[TRANSLATION {request_id}] analysis found=true")
 
     stmt_meds = select(MedicationSchedule).where(
         MedicationSchedule.report_id == report.id
@@ -329,12 +345,15 @@ async def translate_analysis(
             ensure_ascii=False,
         ).encode("utf-8")
     ).hexdigest()
+    
+    logger.info(f"[TRANSLATION {request_id}] cache checked")
     if (
         translation is not None
         and translation.schema_version >= TRANSLATION_SCHEMA_VERSION
         and (translation.ui_labels or {}).get("_source_fingerprint")
         == source_fingerprint
     ):
+        logger.info(f"[TRANSLATION {request_id}] cache=HIT")
         cached_payload = {
             "clinician_summary": translation.clinician_summary,
             "patient_summary": translation.patient_summary,
@@ -367,6 +386,8 @@ async def translate_analysis(
                 schema_version=translation.schema_version,
                 cached=True,
             )
+            
+    logger.info(f"[TRANSLATION {request_id}] cache=MISS")
 
     unique_params = list(
         set(
@@ -397,6 +418,8 @@ async def translate_analysis(
     if not providers:
         providers = ["gemini", "groq_gpt", "groq_qwen", "deepseek", "existing"]
         
+    logger.info(f"[TRANSLATION {request_id}] provider_order={','.join(providers)}")
+        
     parsed = None
     last_exc = None
     used_provider = None
@@ -405,6 +428,8 @@ async def translate_analysis(
         logger.info("[Translation] Trying provider: %s", provider_name)
         try:
             llm_res = await generate_translation_with_provider(prompt, provider_name)
+            logger.info(f"[TRANSLATION {request_id}] {provider_name} status=200")
+            
             if llm_res.get("provider") == "fallback":
                 logger.warning("[Translation] %s returned internal fallback", provider_name)
                 last_exc = TranslationServiceError("Fallback provider reached")
@@ -412,6 +437,8 @@ async def translate_analysis(
                 
             raw_text = llm_res.get("content", "")
             parsed_candidate = parse_translation(raw_text)
+            
+            logger.info(f"[TRANSLATION {request_id}] validation started")
             validate_translation(
                 parsed_candidate,
                 lang,
@@ -421,11 +448,14 @@ async def translate_analysis(
                 meds_list,
                 REQUIRED_UI_LABEL_KEYS,
             )
+            logger.info(f"[TRANSLATION {request_id}] validation=PASS")
+            
             parsed = parsed_candidate
             used_provider = provider_name
-            logger.info("[Translation] Translation succeeded. Provider used: %s", provider_name)
+            logger.info(f"[TRANSLATION {request_id}] final_provider={provider_name}")
             break
         except (ValueError, TypeError, KeyError) as exc:
+            logger.info(f"[TRANSLATION {request_id}] validation=FAIL ({type(exc).__name__})")
             abnormal_len = (
                 len(parsed_candidate.get("abnormal_findings") or [])
                 if "parsed_candidate" in locals() and isinstance(parsed_candidate, dict)
@@ -451,6 +481,7 @@ async def translate_analysis(
             last_exc = exc
             continue
         except Exception as exc:
+            logger.info(f"[TRANSLATION {request_id}] {provider_name} status=ERROR ({type(exc).__name__}: {str(exc)})")
             logger.warning("[Translation] %s failed: %s", provider_name, type(exc).__name__)
             last_exc = exc
             continue
@@ -458,6 +489,9 @@ async def translate_analysis(
     if not parsed:
         logger.error("[Translation] All providers failed. Last exception: %s", type(last_exc).__name__)
         raise TranslationServiceError("Translation is temporarily unavailable. Please try again.")
+
+    logger.info(f"[TRANSLATION {request_id}] TranslationOut=SUCCESS")
+    logger.info(f"[TRANSLATION {request_id}] response_status=200")
 
     translated_summary = parsed["patient_summary"]
     translated_clinician_summary = parsed.get("clinician_summary")
