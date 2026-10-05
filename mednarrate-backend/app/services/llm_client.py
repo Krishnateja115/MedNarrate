@@ -424,7 +424,7 @@ class DevGeminiProvider(LLMProvider):
                 else:
                     if is_http_error:
                         logger.error(
-                            f"[LLM:DEV_GEMINI:FAIL] HTTP {status_code}"
+                            f"[LLM:DEV_GEMINI:FAIL] HTTP {status_code} response: {e.response.text}"
                         )
                         raise ValueError(
                             f"Gemini API returned HTTP {status_code}. Check backend model configuration and quota."
