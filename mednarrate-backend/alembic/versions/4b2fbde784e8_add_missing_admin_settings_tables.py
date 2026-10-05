@@ -12,8 +12,30 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def _has_table(name: str) -> bool:
+    return sa.inspect(op.get_bind()).has_table(name)
+
+
+def _has_index(table: str, index: str) -> bool:
+    if not _has_table(table):
+        return False
+    indexes = sa.inspect(op.get_bind()).get_indexes(table)
+    return any(item["name"] == index for item in indexes)
+
+
+def _create_table(name: str, *args, **kwargs) -> None:
+    # Tolerate databases whose tables were already created outside Alembic.
+    if not _has_table(name):
+        op.create_table(name, *args, **kwargs)
+
+
+def _create_index(name: str, table: str, columns: list[str], **kwargs) -> None:
+    if not _has_index(table, name):
+        op.create_index(name, table, columns, **kwargs)
+
+
 def upgrade() -> None:
-    op.create_table(
+    _create_table(
         "announcements",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("title", sa.String(), nullable=False),
@@ -28,9 +50,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["created_by_id"], ["users.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_announcements_status", "announcements", ["status"])
+    _create_index("ix_announcements_status", "announcements", ["status"])
 
-    op.create_table(
+    _create_table(
         "feature_flags",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
@@ -45,9 +67,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["updated_by_id"], ["users.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_feature_flags_name", "feature_flags", ["name"], unique=True)
+    _create_index("ix_feature_flags_name", "feature_flags", ["name"], unique=True)
 
-    op.create_table(
+    _create_table(
         "maintenance_mode",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("is_enabled", sa.Boolean(), nullable=False),
@@ -60,7 +82,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
 
-    op.create_table(
+    _create_table(
         "privacy_data_requests",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("user_id", sa.Uuid(), nullable=False),
@@ -76,10 +98,10 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_privacy_data_requests_status", "privacy_data_requests", ["status"])
-    op.create_index("ix_privacy_data_requests_user_id", "privacy_data_requests", ["user_id"])
+    _create_index("ix_privacy_data_requests_status", "privacy_data_requests", ["status"])
+    _create_index("ix_privacy_data_requests_user_id", "privacy_data_requests", ["user_id"])
 
-    op.create_table(
+    _create_table(
         "system_settings",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("key", sa.String(), nullable=False),
@@ -92,7 +114,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["updated_by_id"], ["users.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_system_settings_key", "system_settings", ["key"], unique=True)
+    _create_index("ix_system_settings_key", "system_settings", ["key"], unique=True)
 
 
 def downgrade() -> None:

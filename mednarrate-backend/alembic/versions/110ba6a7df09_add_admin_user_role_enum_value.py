@@ -19,7 +19,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'admin'")
+    # ALTER TYPE is PostgreSQL-only; SQLite (local dev) stores enums as text.
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'admin'")
 
 
 def downgrade() -> None:
