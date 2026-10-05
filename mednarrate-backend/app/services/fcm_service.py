@@ -27,12 +27,10 @@ async def send_push_notification(token: str, title: str, body: str, data: dict =
 
     masked = f"{token[:6]}…" if len(token) > 6 else "***"
     if not settings.FIREBASE_SERVICE_ACCOUNT_JSON:
-        if (settings.ENVIRONMENT or "").lower() == "production":
-            # Never report a notification as delivered when it was not actually sent.
-            logger.error("Firebase is not configured; notification to %s NOT sent.", masked)
-            return False
-        logger.info("Firebase not configured (non-production). Mock send to %s.", masked)
-        return True
+        # A development response must not claim delivery when no provider exists.
+        # Callers can still exercise the complete failure/logging path locally.
+        logger.error("Firebase is not configured; notification to %s NOT sent.", masked)
+        return False
 
     try:
         message = messaging.Message(

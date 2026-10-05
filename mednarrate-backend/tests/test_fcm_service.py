@@ -18,11 +18,11 @@ async def test_unconfigured_production_does_not_claim_delivery(monkeypatch, capl
     assert "SECRETDEVICETOKEN" not in caplog.text
 
 
-async def test_unconfigured_development_mocks_success_without_logging_token(monkeypatch, caplog):
+async def test_unconfigured_development_does_not_claim_delivery(monkeypatch, caplog):
     monkeypatch.setattr(settings, "FIREBASE_SERVICE_ACCOUNT_JSON", None, raising=False)
     monkeypatch.setattr(settings, "ENVIRONMENT", "development")
     with caplog.at_level(logging.DEBUG):
-        assert await send_push_notification(TOKEN, "t", "b") is True
+        assert await send_push_notification(TOKEN, "t", "b") is False
     assert "SECRETDEVICETOKEN" not in caplog.text
 
 
