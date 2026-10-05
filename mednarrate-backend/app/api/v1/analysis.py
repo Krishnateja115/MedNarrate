@@ -425,7 +425,8 @@ async def translate_analysis(
             providers=providers,
             validate_func=validate_translation,
             required_ui_label_keys=REQUIRED_UI_LABEL_KEYS,
-            request_id=request_id
+            request_id=request_id,
+            generate_func=generate_translation_with_provider,
         )
         
         # After full reassembly, validate the final complete payload exactly as before

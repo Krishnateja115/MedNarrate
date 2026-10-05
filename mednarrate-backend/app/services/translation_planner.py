@@ -23,7 +23,8 @@ async def execute_translation_plan(
     providers: List[str],
     validate_func: Callable,
     required_ui_label_keys: set,
-    request_id: str
+    request_id: str,
+    generate_func: Callable = generate_translation_with_provider,
 ) -> Dict[str, Any]:
     """
     Provider-independent translation planner. Splits the structured medical data into 
@@ -68,7 +69,8 @@ async def execute_translation_plan(
         
         parsed_chunk = await _execute_with_fallback(
             prompt, providers, validate_func, lang_code,
-            chunk, required_ui_label_keys if i == 0 else set(), request_id
+            chunk, required_ui_label_keys if i == 0 else set(), request_id,
+            generate_func,
         )
         
         
@@ -198,12 +200,21 @@ def _build_chunks(clinician_summary, patient_summary, abnormal_findings_source, 
         
     return chunks
 
-async def _execute_with_fallback(prompt, providers, validate_func, lang_code, chunk_data, required_ui_label_keys, request_id):
+async def _execute_with_fallback(
+    prompt,
+    providers,
+    validate_func,
+    lang_code,
+    chunk_data,
+    required_ui_label_keys,
+    request_id,
+    generate_func: Callable,
+):
     last_exc = None
     for provider_name in providers:
         logger.info(f"[TRANSLATION_PLANNER {request_id}] Trying provider: {provider_name}")
         try:
-            llm_res = await generate_translation_with_provider(prompt, provider_name)
+            llm_res = await generate_func(prompt, provider_name)
             if llm_res.get("provider") == "fallback":
                 last_exc = TranslationServiceError("Fallback provider reached without valid schema generation.")
                 continue
