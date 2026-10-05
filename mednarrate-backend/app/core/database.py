@@ -1,5 +1,6 @@
 import sys
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.pool import NullPool
@@ -37,12 +38,34 @@ Base = declarative_base()
 
 
 async def init_db():
-    """Create development tables and ensure useful starter help content exists."""
+    """Verify the migrated schema and ensure useful starter help content exists.
+
+    Metadata-driven table creation is available only when explicitly enabled
+    for a disposable local database. Normal startup fails fast when migrations
+    are missing or the database is at the wrong revision.
+    """
     import app.models  # noqa: F401 – ensures all models are registered
     from app.services.help_center_seed import seed_help_center_if_empty
 
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        if settings.AUTO_CREATE_SCHEMA:
+            await conn.run_sync(Base.metadata.create_all)
+        else:
+            try:
+                revision = (
+                    await conn.execute(text("SELECT version_num FROM alembic_version"))
+                ).scalar_one_or_none()
+            except Exception as exc:
+                raise RuntimeError(
+                    "Database migrations are not available; run 'alembic upgrade head' "
+                    "before starting MedNarrate."
+                ) from exc
+            if revision != settings.EXPECTED_SCHEMA_REVISION:
+                raise RuntimeError(
+                    "Database schema revision mismatch: "
+                    f"expected {settings.EXPECTED_SCHEMA_REVISION}, got {revision!r}. "
+                    "Run 'alembic upgrade head' before starting MedNarrate."
+                )
 
     async with AsyncSessionLocal() as session:
         await seed_help_center_if_empty(session)
@@ -51,3 +74,10 @@ async def init_db():
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
+
+
+async def get_schema_revision() -> str | None:
+    """Return the Alembic revision without exposing connection details."""
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(text("SELECT version_num FROM alembic_version"))
+        return result.scalar_one_or_none()

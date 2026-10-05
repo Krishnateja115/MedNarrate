@@ -88,6 +88,12 @@ class Settings(BaseSettings):
     # Startup must remain responsive when model weights are not already cached.
     NER_PREWARM_TIMEOUT_SECONDS: float = 10.0
 
+    # Schema creation is intentionally opt-in. Deployments must apply Alembic
+    # migrations before starting the API instead of silently creating a partial
+    # schema with SQLAlchemy metadata.
+    AUTO_CREATE_SCHEMA: bool = False
+    EXPECTED_SCHEMA_REVISION: str = "110ba6a7df09"
+
     # Backward compatibility property aliases
     @property
     def GEMINI_MODEL_NAME(self) -> str:

@@ -6,19 +6,16 @@ from sqlalchemy import Uuid as UUID
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.config import settings
 from app.core.database import Base
 
-# Helper to use JSONB on Postgres and JSON otherwise for compatibility
-_IS_PG = settings.DATABASE_URL.startswith("postgresql")
-if _IS_PG:
+# Use a dialect-aware type rather than inspecting the configured URL at import
+# time. Tests can override the engine with SQLite while the process settings
+# still point at PostgreSQL.
+_JSON_TYPE = JSON().with_variant(JSONB, "postgresql")
 
-    def _json_col():
-        return mapped_column(JSONB, default=dict)
-else:
 
-    def _json_col():
-        return mapped_column(JSON, default=dict)
+def _json_col():
+    return mapped_column(_JSON_TYPE, default=dict)
 
 
 class AdminRole(Base):

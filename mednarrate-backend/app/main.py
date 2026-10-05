@@ -232,9 +232,14 @@ async def health():
     try:
         async with AsyncSessionLocal() as session:
             await session.execute(text("SELECT 1"))
+            schema_revision = (
+                await session.execute(text("SELECT version_num FROM alembic_version"))
+            ).scalar_one_or_none()
         db_status = "up"
-    except Exception:
+    except Exception as exc:
+        logger.warning("Health database check failed: %s", type(exc).__name__)
         db_status = "down"
+        schema_revision = None
 
     status = "ok" if db_status == "up" else "degraded"
 
@@ -242,6 +247,9 @@ async def health():
         "service": "mednarrate",
         "status": status,
         "db": db_status,
+        "database_backend": settings.DATABASE_URL.split(":", 1)[0],
+        "schema_revision": schema_revision,
+        "schema_expected": settings.EXPECTED_SCHEMA_REVISION,
         "version": os.environ.get("MEDNARRATE_VERSION", "1.0.0"),
         "commit": os.environ.get("MEDNARRATE_COMMIT", "unknown"),
     }
