@@ -8,6 +8,7 @@ Create Date: 2026-09-23 21:26:18.040024
 from typing import Sequence, Union
 import sqlalchemy as sa
 from sqlalchemy.dialects import sqlite
+from sqlalchemy import inspect
 from alembic import op
 revision: str = 'ace1590fc209'
 down_revision: Union[str, None] = '2b6bb0924215'
@@ -22,9 +23,14 @@ def upgrade() -> None:
     op.create_table('support_tickets', sa.Column('id', sa.UUID(), nullable=False), sa.Column('user_id', sa.UUID(), nullable=False), sa.Column('title', sa.String(length=255), nullable=False), sa.Column('description', sa.Text(), nullable=False), sa.Column('category', sa.Enum('login', 'report', 'ai', 'chat', 'translation', 'notifications', 'medication', 'performance', 'security', 'privacy', 'other', name='ticketcategory'), nullable=False), sa.Column('priority', sa.Enum('p1', 'p2', 'p3', 'p4', name='ticketpriority'), nullable=False), sa.Column('status', sa.Enum('new', 'triaged', 'investigating', 'waiting_user', 'waiting_eng', 'resolved', 'closed', name='ticketstatus'), nullable=False), sa.Column('assigned_admin_id', sa.UUID(), nullable=True), sa.Column('related_report_id', sa.UUID(), nullable=True), sa.Column('related_request_id', sa.String(length=100), nullable=True), sa.Column('related_incident_id', sa.UUID(), nullable=True), sa.Column('created_at', sa.DateTime(), nullable=False), sa.Column('updated_at', sa.DateTime(), nullable=False), sa.Column('resolved_at', sa.DateTime(), nullable=True), sa.Column('closed_at', sa.DateTime(), nullable=True), sa.ForeignKeyConstraint(['assigned_admin_id'], ['users.id'], ondelete='SET NULL'), sa.ForeignKeyConstraint(['related_incident_id'], ['incidents.id'], ondelete='SET NULL'), sa.ForeignKeyConstraint(['related_report_id'], ['reports.id'], ondelete='SET NULL'), sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'), sa.PrimaryKeyConstraint('id'))
     op.create_table('support_ticket_events', sa.Column('id', sa.UUID(), nullable=False), sa.Column('ticket_id', sa.UUID(), nullable=False), sa.Column('event_type', sa.String(length=50), nullable=False), sa.Column('content', sa.Text(), nullable=False), sa.Column('created_at', sa.DateTime(), nullable=False), sa.ForeignKeyConstraint(['ticket_id'], ['support_tickets.id'], ondelete='CASCADE'), sa.PrimaryKeyConstraint('id'))
     op.create_table('support_ticket_messages', sa.Column('id', sa.UUID(), nullable=False), sa.Column('ticket_id', sa.UUID(), nullable=False), sa.Column('sender_id', sa.UUID(), nullable=True), sa.Column('is_internal', sa.Boolean(), nullable=False), sa.Column('content', sa.Text(), nullable=False), sa.Column('help_article_ref', sa.String(length=255), nullable=True), sa.Column('created_at', sa.DateTime(), nullable=False), sa.ForeignKeyConstraint(['sender_id'], ['users.id'], ondelete='SET NULL'), sa.ForeignKeyConstraint(['ticket_id'], ['support_tickets.id'], ondelete='CASCADE'), sa.PrimaryKeyConstraint('id'))
+    existing_columns = {
+        column["name"] for column in inspect(op.get_bind()).get_columns("report_analyses")
+    }
     with op.batch_alter_table('report_analyses', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('evidence_sources', sa.JSON(), nullable=False))
-        batch_op.add_column(sa.Column('failure_category', sa.Text(), nullable=True))
+        if "evidence_sources" not in existing_columns:
+            batch_op.add_column(sa.Column('evidence_sources', sa.JSON(), nullable=False))
+        if "failure_category" not in existing_columns:
+            batch_op.add_column(sa.Column('failure_category', sa.Text(), nullable=True))
 def downgrade() -> None:
     with op.batch_alter_table('report_analyses', schema=None) as batch_op:
         batch_op.drop_column('failure_category')
