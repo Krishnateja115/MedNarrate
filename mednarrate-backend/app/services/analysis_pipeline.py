@@ -296,17 +296,35 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         patient_summary = validation_res["patient_summary"]
         clinician_summary = validation_res["clinician_summary"]
         structured_lab_values = validation_res["structured_lab_values"]
+        grounding_failed = bool(validation_res["unsupported_claims"])
 
         # NEW LLM-based verification using MedGemma (Medical Verifier)
         # We verify the clinician_summary as it is the most critical medical output
-        verification_status = "unverified"
+        verification_status = "invalid" if grounding_failed else "unverified"
+        if grounding_failed:
+            # Never present a summary containing ungrounded numbers or diagnoses
+            # as safe output. Keep the record available for review, but make the
+            # failure explicit to every client and downstream export.
+            clinician_summary += (
+                "\n\n[WARNING: Automated grounding found unsupported medical claims. "
+                "Clinician review is required before use.]"
+            )
+            patient_summary += (
+                "\n\n[Note: This summary contains claims that could not be verified "
+                "against the uploaded report and requires clinician review.]"
+            )
+            logger.warning(
+                "[STAGE:VALIDATION:FAILED] Grounding rejected unsupported claims; "
+                "content remains explicitly unverified."
+            )
         use_verifier = await evaluate_flag(db, "experimental_medical_verifier", user_id=str(report.user_id))
         if use_verifier:
             verification_result = await verify_medical_facts(
                 clinician_summary, request_id=req_id
             )
             is_valid = verification_result["is_valid"]
-            verification_status = verification_result["verification_status"]
+            if not grounding_failed:
+                verification_status = verification_result["verification_status"]
 
             if is_valid is False:
                 # Verifier ran and detected dangerous errors
