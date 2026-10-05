@@ -405,10 +405,10 @@ async def translate_analysis(
     )
 
     from app.core.config import settings
-    order_str = getattr(settings, "TRANSLATION_PROVIDER_ORDER", "gemini,groq_gpt,groq_qwen,deepseek,existing")
+    order_str = getattr(settings, "TRANSLATION_PROVIDER_ORDER", "openai,anthropic,gemini,mistral")
     providers = [p.strip() for p in order_str.split(",") if p.strip()]
     if not providers:
-        providers = ["gemini", "groq_gpt", "groq_qwen", "deepseek", "existing"]
+        providers = ["openai", "anthropic", "gemini", "mistral"]
         
     logger.info(f"[TRANSLATION {request_id}] provider_order={','.join(providers)}")
         

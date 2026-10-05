@@ -354,7 +354,9 @@ def validate_translation(
 
     labels = parsed.get("ui_labels")
     if not isinstance(labels, dict):
-        raise ValueError("Missing translated labels")
+        if label_keys:
+            raise ValueError("Missing translated labels")
+        labels = {}
     exempt_keys = {
         "label_high",
         "label_low",

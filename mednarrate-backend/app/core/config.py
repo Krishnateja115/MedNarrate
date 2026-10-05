@@ -50,12 +50,15 @@ class Settings(BaseSettings):
     TRANSLATION_TIMEOUT_SECONDS: float = 270.0  # Includes up to 75s of 503-retry backoff
 
     # Translation Fallback Orchestrator Models
-    TRANSLATION_PROVIDER_ORDER: str = "gemini,groq_gpt,groq_qwen,deepseek,existing"
-    GROQ_API_KEY: str | None = None
-    DEEPSEEK_API_KEY: str | None = None
-    GROQ_GPT_TRANSLATION_MODEL: str = "openai/gpt-oss-120b"
-    GROQ_QWEN_TRANSLATION_MODEL: str = "qwen/qwen3.8-27b"
-    DEEPSEEK_TRANSLATION_MODEL: str = "deepseek-flash"
+    TRANSLATION_PROVIDER_ORDER: str = "openai,anthropic,gemini,mistral"
+    OPENAI_API_KEY: str | None = None
+    OPENAI_TRANSLATION_MODEL: str = "gpt-6.1-sol"
+    ANTHROPIC_API_KEY: str | None = None
+    ANTHROPIC_TRANSLATION_MODEL: str = "claude-sonnet-5-5"
+    GEMINI_API_KEY: str | None = None
+    GEMINI_TRANSLATION_MODEL: str = "gemini-3.8-flash"
+    MISTRAL_API_KEY: str | None = None
+    MISTRAL_TRANSLATION_MODEL: str = "mistral-large-2512"
 
     ENABLE_LLM_FALLBACK: bool = True
 
