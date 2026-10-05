@@ -443,9 +443,9 @@ class GroqProvider(LLMProvider):
 
     def get_model_name(self) -> str:
         if self.variant == "gpt":
-            return getattr(settings, "GROQ_GPT_TRANSLATION_MODEL", "llama-3.1-70b-versatile")
+            return getattr(settings, "GROQ_GPT_TRANSLATION_MODEL", "openai/gpt-oss-120b")
         else:
-            return getattr(settings, "GROQ_QWEN_TRANSLATION_MODEL", "qwen-2.5-32b")
+            return getattr(settings, "GROQ_QWEN_TRANSLATION_MODEL", "qwen/qwen3.8-27b")
 
     async def health_check(self, config: dict | None = None) -> dict:
         api_key = self.get_api_key()
@@ -526,7 +526,7 @@ class DeepSeekProvider(LLMProvider):
         return getattr(settings, "DEEPSEEK_API_KEY", None)
 
     def get_model_name(self) -> str:
-        return getattr(settings, "DEEPSEEK_TRANSLATION_MODEL", "deepseek-chat")
+        return getattr(settings, "DEEPSEEK_TRANSLATION_MODEL", "deepseek-v4-flash")
 
     async def health_check(self, config: dict | None = None) -> dict:
         api_key = self.get_api_key()

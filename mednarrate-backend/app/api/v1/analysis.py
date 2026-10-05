@@ -391,8 +391,8 @@ async def translate_analysis(
         medications_json=json.dumps(meds_list, ensure_ascii=False),
         unique_parameters_json=json.dumps(unique_params, ensure_ascii=False),
     )
-    import os
-    order_str = os.getenv("TRANSLATION_PROVIDER_ORDER", "gemini,groq_gpt,groq_qwen,deepseek,existing")
+    from app.core.config import settings
+    order_str = getattr(settings, "TRANSLATION_PROVIDER_ORDER", "gemini,groq_gpt,groq_qwen,deepseek,existing")
     providers = [p.strip() for p in order_str.split(",") if p.strip()]
     if not providers:
         providers = ["gemini", "groq_gpt", "groq_qwen", "deepseek", "existing"]
