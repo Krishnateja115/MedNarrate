@@ -499,6 +499,9 @@ class GroqProvider(LLMProvider):
         }
         if _translation_request.get():
             payload["response_format"] = {"type": "json_object"}
+            # Reasoning models otherwise spend max_tokens on hidden reasoning and
+            # return an empty body, which Groq reports as 400 json_validate_failed.
+            payload["reasoning_effort"] = "low" if self.variant == "gpt" else "none"
         
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
