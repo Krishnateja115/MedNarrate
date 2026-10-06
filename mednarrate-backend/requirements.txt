@@ -42,4 +42,6 @@ mypy==1.9.0
 pyotp==2.10.0
 numpy==1.26.4
 torchvision==0.19.1
+llama-cpp-python>=0.2.76
+huggingface-hub>=0.23.2
 

@@ -64,9 +64,16 @@ class ProviderTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(settings, 'GEMINI_API_KEY', 'test-key'), patch.object(settings, 'ENVIRONMENT', 'test'), patch.object(
             httpx, 'AsyncClient', side_effect=lambda **kw: client(transport=httpx.MockTransport(respond), **kw)
         ):
-            with self.assertRaises(ValueError) as error:
+            with self.assertRaises(llm_client.LLMConnectionError) as error:
                 await llm_client.DevGeminiProvider().generate('synthetic')
+        
+        # Verify provider does NOT retry internally
         self.assertEqual(len(requests), 1)
+        
+        # Verify HTTP status is preserved for planner retry orchestration
+        self.assertEqual(getattr(error.exception, 'status_code', None), 429)
+        
+        # Verify sensitive info is not leaked
         self.assertNotIn('sensitive', str(error.exception))
 
 

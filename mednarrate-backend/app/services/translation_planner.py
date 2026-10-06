@@ -272,6 +272,6 @@ async def _execute_with_fallback(
                 
                 logger.warning(f"[TRANSLATION_PLANNER {request_id}] Provider {provider_name} attempt {attempt+1} failed: {type(exc).__name__}")
                 if attempt < 1:
-                    await asyncio.sleep(1.0)
+                    await asyncio.sleep(2.0)
             
     raise TranslationServiceError(f"All providers failed for this translation unit. Last error: {type(last_exc).__name__}")

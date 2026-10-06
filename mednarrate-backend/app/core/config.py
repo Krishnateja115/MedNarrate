@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     TRANSLATION_TIMEOUT_SECONDS: float = 270.0  # Includes up to 75s of 503-retry backoff
 
     # Translation Fallback Orchestrator Models
-    TRANSLATION_PROVIDER_ORDER: str = "openai,anthropic,gemini,mistral"
+    TRANSLATION_PROVIDER_ORDER: str = "gemini,openai,mistral,local"
     OPENAI_API_KEY: str | None = None
     OPENAI_TRANSLATION_MODEL: str = "gpt-6.1-sol"
     ANTHROPIC_API_KEY: str | None = None
@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     GEMINI_TRANSLATION_MODEL: str = "gemini-3.8-flash"
     MISTRAL_API_KEY: str | None = None
     MISTRAL_TRANSLATION_MODEL: str = "mistral-large-2512"
+    LOCAL_TRANSLATION_MODEL: str = "Qwen/Qwen2.5-1.5B-Instruct"
 
     ENABLE_LLM_FALLBACK: bool = True
 
