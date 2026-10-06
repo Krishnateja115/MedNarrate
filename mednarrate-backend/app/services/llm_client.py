@@ -1060,7 +1060,7 @@ class LocalProvider(LLMProvider):
     async def generate(
         self,
         prompt: str,
-        timeout: float = 45.0,
+        timeout: float | None = None,
         request_id: str | None = None,
         system_instruction: str | None = None,
         thinking_level: str = "LOW",
@@ -1068,6 +1068,8 @@ class LocalProvider(LLMProvider):
     ) -> dict:
         import asyncio
         req_id = request_id or str(uuid.uuid4())
+        if timeout is None:
+            timeout = getattr(settings, "LOCAL_TRANSLATION_TIMEOUT_SECONDS", 120.0)
         start_time = time.time()
         
         if self._loading_failed:
@@ -1502,7 +1504,7 @@ async def generate_translation_with_provider(prompt: str, provider_name: str) ->
     token = _translation_request.set(True)
     try:
         # Bounded timeout for interactive API limits to remain responsive
-        timeout = 45.0 if provider_name == "local" else 30.0
+        timeout = getattr(settings, "LOCAL_TRANSLATION_TIMEOUT_SECONDS", 120.0) if provider_name == "local" else 30.0
         
         if provider_name == "existing":
             return await generate_with_metadata(

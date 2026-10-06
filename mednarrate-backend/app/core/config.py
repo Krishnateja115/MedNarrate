@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     MISTRAL_API_KEY: str | None = None
     MISTRAL_TRANSLATION_MODEL: str = "mistral-large-2512"
     LOCAL_TRANSLATION_MODEL: str = "Qwen/Qwen2.5-1.5B-Instruct"
+    LOCAL_TRANSLATION_TIMEOUT_SECONDS: float = 120.0
 
     ENABLE_LLM_FALLBACK: bool = True
 
