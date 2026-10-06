@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import List, Dict, Any, Callable
-from app.services.prompts import TRANSLATION_PROMPT, CHUNK_TRANSLATION_PROMPT
+from app.services.prompts import TRANSLATION_PROMPT, CHUNK_TRANSLATION_PROMPT, LOCAL_TRANSLATION_PROMPT
 from app.services.llm_client import generate_translation_with_provider
 from app.services.translation_validation import parse_translation
 from app.exceptions import TranslationServiceError
@@ -11,6 +11,16 @@ logger = logging.getLogger(__name__)
 # Conservative budget to safely fit within typical provider limits (e.g., Groq's 8000 TPM limit).
 # Using 1500 characters prevents JSON truncation issues on languages with high token-per-character ratios like Hindi
 CHUNK_MAX_CHARS = 1500
+
+def get_static_ui_labels(lang_code: str) -> dict:
+    import os, json
+    labels_file = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'report_ui_labels.json')
+    if os.path.exists(labels_file):
+        with open(labels_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data.get(lang_code, data.get('en', {}))
+    return {}
+
 
 async def execute_translation_plan(
     target_lang_name: str,
@@ -67,10 +77,21 @@ async def execute_translation_plan(
             unique_parameters_json=json.dumps(chunk["unique_params"], ensure_ascii=False),
         )
         
+        local_prompt_template = LOCAL_TRANSLATION_PROMPT if i == 0 else CHUNK_TRANSLATION_PROMPT
+        local_prompt = local_prompt_template.format(
+            target_language=target_lang_name,
+            clinician_summary=chunk["clinician_summary"],
+            patient_summary=chunk["patient_summary"],
+            abnormal_findings_json=json.dumps(chunk["abnormal_findings"], ensure_ascii=False),
+            medications_json=json.dumps(chunk["medications"], ensure_ascii=False),
+            unique_parameters_json=json.dumps(chunk["unique_params"], ensure_ascii=False),
+        )
+        
         parsed_chunk = await _execute_with_fallback(
             prompt, providers, validate_func, lang_code,
             chunk, required_ui_label_keys if i == 0 else set(), request_id,
             generate_func,
+            local_prompt=local_prompt
         )
         
         
@@ -209,6 +230,7 @@ async def _execute_with_fallback(
     required_ui_label_keys,
     request_id,
     generate_func: Callable,
+    local_prompt=None,
 ):
     import asyncio
     last_exc = None
@@ -216,13 +238,19 @@ async def _execute_with_fallback(
         logger.info(f"[TRANSLATION_PLANNER {request_id}] Trying provider: {provider_name}")
         for attempt in range(2):
             try:
-                llm_res = await generate_func(prompt, provider_name)
+                active_prompt = local_prompt if (provider_name == "local" and local_prompt) else prompt
+                llm_res = await generate_func(active_prompt, provider_name)
                 if llm_res.get("provider") == "fallback":
                     last_exc = TranslationServiceError("Fallback provider reached without valid schema generation.")
                     break
                     
                 raw_text = llm_res.get("content", "")
                 parsed_candidate = parse_translation(raw_text)
+
+                if provider_name == "local" and required_ui_label_keys:
+                    static_labels = get_static_ui_labels(lang_code)
+                    if static_labels:
+                        parsed_candidate["ui_labels"] = static_labels
 
                 if not chunk_data["abnormal_findings"]:
                     parsed_candidate["abnormal_findings"] = []
