@@ -1127,6 +1127,8 @@ class LocalProvider(LLMProvider):
                 if _translation_request.get():
                     kwargs["response_format"] = {"type": "json_object"}
 
+                nonlocal start_time
+                start_time = time.time()
                 stream = self._model.create_chat_completion(**kwargs)
                 
                 response_text = ""
