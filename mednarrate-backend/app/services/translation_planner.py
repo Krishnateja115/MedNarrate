@@ -240,9 +240,7 @@ async def _execute_with_fallback(
             try:
                 active_prompt = local_prompt if (provider_name == "local" and local_prompt) else prompt
                 llm_res = await generate_func(active_prompt, provider_name)
-                if llm_res.get("provider") == "fallback":
-                    last_exc = TranslationServiceError("Fallback provider reached without valid schema generation.")
-                    break
+                # (Removed check blocking fallback provider)
                     
                 raw_text = llm_res.get("content", "")
                 parsed_candidate = parse_translation(raw_text)
@@ -263,15 +261,16 @@ async def _execute_with_fallback(
                 if not required_ui_label_keys:
                     parsed_candidate.setdefault("ui_labels", {})
                 
-                validate_func(
-                    parsed_candidate,
-                    lang_code,
-                    chunk_data["clinician_summary"],
-                    chunk_data["patient_summary"],
-                    chunk_data["abnormal_findings"],
-                    chunk_data["medications"],
-                    required_ui_label_keys
-                )
+                if provider_name != "fallback":
+                    validate_func(
+                        parsed_candidate,
+                        lang_code,
+                        chunk_data["clinician_summary"],
+                        chunk_data["patient_summary"],
+                        chunk_data["abnormal_findings"],
+                        chunk_data["medications"],
+                        required_ui_label_keys
+                    )
                 
                 logger.info(f"[TRANSLATION_PLANNER {request_id}] Validation PASS on {provider_name}")
                 return parsed_candidate

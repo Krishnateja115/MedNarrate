@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     )
 
     # Structured translations include the report body and all UI labels.
+    TRANSLATION_PROVIDER_ORDER: str = "gemini,openai,mistral"
     TRANSLATION_MAX_OUTPUT_TOKENS: int = 16384
     TRANSLATION_TIMEOUT_SECONDS: float = 270.0  # Includes up to 75s of 503-retry backoff
 
