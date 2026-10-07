@@ -1263,9 +1263,9 @@ async def get_resolved_ai_config() -> dict:
         temperature = 0.2
 
     try:
-        max_tokens = int(settings_records.get("ai_max_tokens", "2048"))
+        max_tokens = int(settings_records.get("ai_max_tokens", str(getattr(settings, "MAX_OUTPUT_TOKENS", 2048))))
     except ValueError:
-        max_tokens = 2048
+        max_tokens = getattr(settings, "MAX_OUTPUT_TOKENS", 2048)
 
     return {
         "primary_provider": primary_provider,
