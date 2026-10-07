@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     TRANSLATION_TIMEOUT_SECONDS: float = 270.0  # Includes up to 75s of 503-retry backoff
 
     # Translation Fallback Orchestrator Models
-    TRANSLATION_PROVIDER_ORDER: str = "gemini,openai,mistral,local"
+    TRANSLATION_PROVIDER_ORDER: str = "gemini,openai,mistral"
     OPENAI_API_KEY: str | None = None
     OPENAI_TRANSLATION_MODEL: str = "gpt-6.1-sol"
     ANTHROPIC_API_KEY: str | None = None
