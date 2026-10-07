@@ -1,0 +1,41 @@
+```json
+{
+  "clinician_summary": "<fully translated clinician summary — NO English leftover sentences except preserved identifiers, leave blank if not provided in input>",
+  "patient_summary": "<fully translated patient summary — NO English leftover sentences except preserved identifiers>",
+  "abnormal_findings": [
+    {
+      "test_name": "Hemoglobin",
+      "translated_test_name": "हेमोगलाब",
+      "translated_explanation": "कमी हेमोगलाब"
+    },
+    {
+      "test_name": "Hemoglobin",
+      "translated_test_name": "हेमोगलाब",
+      "translated_explanation": "कमी हेमोगलाब"
+    },
+    {
+      "test_name": "Hemoglobin",
+      "translated_test_name": "हेमोगलाब",
+      "translated_explanation": "कमी हेमोगलाब"
+    }
+  ],
+  "medications": [
+    {
+      "medication_name": "Albuterol",
+      "translated_medication_name": "अब्लुटरोल",
+      "translated_dosage": "90 मक",
+      "translated_frequency": "प्रतिकोण 4 घंटे",
+      "translated_times_of_day": [],
+      "translated_instructions": "आइन है"
+    }
+  ],
+  "doctor_discussion_points": [
+    "कमी हेमोगलाब का सुझाव करने के लिए आपको पहचान करना चाहिए।",
+    "",
+    "अब्लुटरोल का सुझाव करने के लिए आपको पहचान करना चाहिए।"
+  ],
+  "translated_parameters": {
+    "Hemoglobin": "हेमोगलाब"
+  }
+}
+```

@@ -1,16 +1,9 @@
+import httpx
 import asyncio
-from app.core.database import AsyncSessionLocal
-from app.api.v1.admin_health import get_system_health
 
-# Create a mock AdminContext
-from app.models.user import User
-from app.core.admin_auth import AdminContext
+async def run():
+    async with httpx.AsyncClient() as client:
+        r = await client.get('http://127.0.0.1:8000/api/v1/health')
+        print(r.json())
 
-async def check():
-    async with AsyncSessionLocal() as session:
-        mock_user = User(id="00000000-0000-0000-0000-000000000000")
-        ctx = AdminContext(user=mock_user, permissions=["super_admin"])
-        result = await get_system_health(admin_ctx=ctx, db=session)
-        print(result)
-
-asyncio.run(check())
+asyncio.run(run())

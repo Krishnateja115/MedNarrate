@@ -1,0 +1,66 @@
+```json
+{
+  "clinician_summary": "<fully translated clinician summary — NO English leftover sentences except preserved identifiers, leave blank if not provided in input>",
+  "patient_summary": "<fully translated patient summary — NO English leftover sentences except preserved identifiers>",
+  "abnormal_findings": [
+    {
+      "test_name": "Hemoglobin",
+      "translated_test_name": "हेमोगल्बनिन",
+      "translated_explanation": "कमी हेमोगल्बनिन"
+    },
+    {
+      "test_name": "Hemoglobin",
+      "translated_test_name": "हेमोगल्बनिन",
+      "translated_explanation": "कमी हेमोगल्बनिन"
+    },
+    {
+      "test_name": "Hemoglobin",
+      "translated_test_name": "हेमोगल्बनिन",
+      "translated_explanation": "कमी हेमोगल्बनिन"
+    }
+  ],
+  "medications": [
+    {
+      "medication_name": "Albuterol",
+      "translated_medication_name": "अब्लैटरोल",
+      "translated_dosage": "90 मक्का",
+      "translated_frequency": "चार घंटे की अवधि",
+      "translated_times_of_day": [],
+      "translated_instructions": "आपने"
+    }
+  ],
+  "doctor_discussion_points": [
+    "कमी हेमोगल्बनिन पर आवश्यकता है। इस अवश्य कारण संबदि गुहाले और विभिन्न श्रृंखलें में जोड़ने की आवश्यकता है।",
+    "कमी हेमोगल्बनिन पर आवश्यकता है। इस अवश्य कारण संबदि गुहाले और विभिन्न श्रृंखलें में जोड़ने की आवश्यकता है।",
+    "कमी हेमोगल्बनिन पर आवश्यकता है। इस अवश्य कारण संबदि गुहाले और विभिन्न श्रृंखलें में जोड़ने की आवश्यकता है।",
+    "कमी हेमोगल्बनिन पर आवश्यकता है। इस अवश्य कारण संबदि गुहाले और विभिन्न श्रृंखलें में जोड़ने की आवश्यकता है।",
+    "कमी हेमोगल्बनिन पर आवश्यकता है। इस अवश्य कारण संबदि गुहाले और विभिन्न श्रृंखलें में जोड़ने की आवश्यकता है।",
+    "कमी हेमोगल्बनिन पर आवश्यकता है। इस अवश्य कारण संबदि गुहाले और विभिन्न श्रृंखलें में जोड़ने की आवश्यकता है।"
+  ],
+  "ui_labels": {
+    "section_report_at_a_glance": "<translated>",
+    "section_important_results": "<translated>",
+    "section_reported_medications": "<translated>",
+    "section_what_to_discuss": "<translated>",
+    "section_patient_report_info": "<translated 'Patient & Report Information'>",
+    "chip_lab_results": "<translated>",
+    "chip_medications": "<translated>",
+    "chip_noteworthy": "<translated>",
+    "chip_report_type": "<translated>",
+    "label_result": "<translated>",
+    "label_reported_range": "<translated>",
+    "label_status": "<translated>",
+    "label_dose": "<translated>",
+    "label_frequency": "<translated>",
+    "label_timing": "<translated>",
+    "label_high": "<translated>",
+    "label_low": "<translated>",
+    "label_normal": "<translated>",
+    "label_critical": "<translated>",
+    "label_not_classified": "<translated>",
+    "label_not_provided": "<translated>",
+    "label_no_lab_results": "<translated>",
+    "label_no_medications": "<translated>",
+    "label_confirm_followup": "<translated>",
+    "label_review_test_parameters": "<translated>",
+    "label_confirm_dosage_timing": "<

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # non-lab table rows in real CBC/blood reports that slip through the numeric regex.
 DEMOGRAPHIC_PATTERNS = re.compile(
     r"\b(date of birth|dob|age|gender|sex|patient|mrn|id|hospital|doctor|physician|phone|address|"
-    r"date|collection|referred|report id|pathology|signature|interpretation)\b",
+    r"date|collection|referred|report id|pathology|signature|interpretation|male|female|years|yrs|months)\b",
     re.IGNORECASE,
 )
 

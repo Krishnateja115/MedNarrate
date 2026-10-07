@@ -1,0 +1,82 @@
+```json
+{
+  "clinician_summary": "<fully translated clinician summary — NO English leftover sentences except preserved identifiers, leave blank if not provided in input>",
+  "patient_summary": "<fully translated patient summary — NO English leftover sentences except preserved identifiers>",
+  "abnormal_findings": [
+    {
+      "test_name": "Hemoglobin",
+      "translated_test_name": "हेमोबैलान",
+      "translated_explanation": "कमी के इंशोमोग्लेटर"
+    },
+    {
+      "test_name": "Hemoglobin",
+      "translated_test_name": "हेमोबैलान",
+      "translated_explanation": "कमी के इंशोमोग्लेटर"
+    },
+    {
+      "test_name": "Hemoglobin",
+      "translated_test_name": "हेमोबैलान",
+      "translated_explanation": "कमी के इंशोमोग्लेटर"
+    }
+  ],
+  "medications": [
+    {
+      "medication_name": "Albuterol",
+      "translated_medication_name": "अलबैटरोल",
+      "translated_dosage": "90 मक्का",
+      "translated_frequency": "चार घंटे की भएकर",
+      "translated_times_of_day": [],
+      "translated_instructions": "आपने अभिमुख प्रायोजक से आपले निकाला"
+    }
+  ],
+  "doctor_discussion_points": [
+    "एक बड़ी मौसम की तरह की इन्हें जुटाएं।",
+    "",
+    "अगर आपको निकाले हुए इन्हें पता है, तो ये बड़ी मौसम की तरह से जुटाएं।",
+    "अगर आपको निकाले हुए इन्हें पता है, तो ये बड़ी मौसम की तरह से जुटाएं।",
+    "यदि आपको निकाले हुए इन्हें पता है, तो ये बड़ी मौसम की तरह से जुटाएं।",
+    "यदि आपको निकाले हुए इन्हें पता है, तो ये बड़ी मौसम की तरह से जुटाएं।"
+  ],
+  "ui_labels": {
+    "section_report_at_a_glance": "<translated>",
+    "section_important_results": "<translated>",
+    "section_reported_medications": "<translated>",
+    "section_what_to_discuss": "<translated>",
+    "section_patient_report_info": "<translated 'Patient & Report Information'>",
+    "chip_lab_results": "<translated>",
+    "chip_medications": "<translated>",
+    "chip_noteworthy": "<translated>",
+    "chip_report_type": "<translated>",
+    "label_result": "<translated>",
+    "label_reported_range": "<translated>",
+    "label_status": "<translated>",
+    "label_dose": "<translated>",
+    "label_frequency": "<translated>",
+    "label_timing": "<translated>",
+    "label_high": "<translated>",
+    "label_low": "<translated>",
+    "label_normal": "<translated>",
+    "label_critical": "<translated>",
+    "label_not_classified": "<translated>",
+    "label_not_provided": "<translated>",
+    "label_no_lab_results": "<translated>",
+    "label_no_medications": "<translated>",
+    "label_confirm_followup": "<translated>",
+    "label_review_test_parameters": "<translated>",
+    "label_confirm_dosage_timing": "<translated>",
+    "label_confirm_new_medications": "<translated>",
+    "label_generated_by_gemini": "<translated>",
+    "label_generated_by_local_fallback": "<translated>",
+    "label_generated_by_ollama": "<translated>",
+    "label_generated_offline": "<translated>",
+    "label_patient_report_heading": "<translated 'For You — Plain Language Summary'>",
+    "label_clinical_report_heading": "<translated 'Clinical Executive Summary'>",
+    "section_important_findings": "<translated 'Important Findings'>",
+    "section_key_clinical_findings": "<translated 'Key Clinical Findings'>",
+    "label_no_key_findings": "<translated 'No key findings identified.'>",
+    "label_key_finding_expansion_patient": "<translated 'This result is outside the standard reference range. Please discuss this finding with your physician during your next consultation.'>",
+    "label_key_finding_expansion_clinician": "<translated 'Clinical Finding Note: Out-of-range measurement observed. Review patient history and cross-reference with baseline laboratory parameters.'>",
+    "label_source_latest_report": "<translated 'Source: Latest report'>",
+    "label_report_extracted": "<translated 'Report Extracted'>",
+    "label_translate": "<translated 'Translate'>",
+    "label_retranslate": "<translated 'Retranslate'>",

@@ -1,16 +1,17 @@
 import asyncio
-from app.services.llm_client import llm_client_instance
+import os
+from app.services.llm_client import LLMClient
+from app.core.config import settings
 
-async def run_test():
-    prompt = "Translate this text: hello"
-    provider = llm_client_instance.get_provider("dev_gemini")
-    print(f"Testing provider: {provider}")
+async def main():
+    client = LLMClient()
+    provider = client.get_provider('dev_gemini')
+    print("Testing dev_gemini provider...")
     try:
-        res = await provider.generate(prompt)
-        print("SUCCESS:", res)
+        res = await provider.generate("hello", timeout=5.0)
+        print("Success:", res)
     except Exception as e:
-        print("ERROR:")
-        import traceback
-        traceback.print_exc()
+        print("Failed:", e)
 
-asyncio.run(run_test())
+if __name__ == "__main__":
+    asyncio.run(main())
