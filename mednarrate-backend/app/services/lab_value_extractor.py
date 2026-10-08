@@ -104,151 +104,74 @@ def classify_entity_category(name: str, unit: str = "") -> str:
 VALID_SHORT_NAMES = frozenset({"ph"})
 
 
-def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
+async def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
     # Skip only for explicit imaging/radiology report types
     rt = (report_type or "").lower().strip()
     if rt in ["radiology", "mri", "xray", "ct", "ultrasound", "imaging"]:
         return []
 
-    results = []
-    for m in LAB_LINE_RE.finditer(text):
-        name = m.group("name").strip()
-        unit = (m.group("unit") or "").strip()
+    prompt = f"""From the following medical report text, extract all laboratory test results.
+The parser must strictly follow these rules:
+1. Correctly handle common laboratory formats (e.g., ALT 40 U/L) and table-style formats.
+2. Reconstruct split entries (e.g., ALT on one line, 40 on next, U/L on next).
+3. Detect when a unit appears before or after the value.
+4. Detect values embedded in strings (e.g., 40 ALT, ALT 40, ALT: 40 U/L).
+5. Prevent location names, hospital names, lab names, addresses, dates, and patient identifiers from becoming test names.
+6. A unit-only name (like U/L or %) is invalid as a test name. Treat unit-only tokens as units.
+7. Preserve decimal values exactly. Do not round.
+8. Preserve negative values, ranges, <, >, <=, and >= when they are part of the source report.
+9. Extract reference ranges without confusing them with measured values.
+10. Calculate 'normal', 'high', 'low', or 'critical' flag ONLY when a valid reference range is available. Use 'not_classified' if no reference range exists and the flag is not explicitly stated in the text.
+11. Keep test identifiers and medical abbreviations intact (e.g., ALT, AST, WBC).
+12. Do not infer a diagnosis from an isolated result.
 
-        if len(name) <= 2 and name.lower() not in VALID_SHORT_NAMES:
-            logger.debug("Skipping implausibly short candidate name.")
-            continue
+Return ONLY a valid JSON array of objects. For each lab result, extract:
+- test_name: (string) The name of the test.
+- value: (float) The measured numeric value.
+- unit: (string) The unit of measurement (empty string if none).
+- ref_low: (float or null) The lower bound of the reference range, if available.
+- ref_high: (float or null) The upper bound of the reference range, if available.
+- ref_range_str: (string or null) The original reference range string (e.g., "12 - 16 g/dL").
+- flag: (string) "normal", "high", "low", "critical", "abnormal", or "not_classified".
+- category: (string) Always "LabResult".
 
-        raw_matched_segment = m.group(0)
-        name_start = m.start("name") - m.start(0)
-        name_end_idx = name_start + len(m.group("name"))
-        value_start_idx = m.start("value") - m.start(0)
-        between = raw_matched_segment[name_end_idx:value_start_idx]
-        if between.strip() == "" and between == "":
-            logger.debug(
-                "Skipping candidate — name and value are glued together with no separator, looks like an ID code."
-            )
-            continue
+Report text:
+{text}
+"""
+    try:
+        from app.services.llm_orchestrator import extract_structured_json
+        response = await extract_structured_json(prompt)
+        response = response.strip()
+        if response.startswith("```json"):
+            response = response[7:]
+        if response.startswith("```"):
+            response = response[3:]
+        if response.endswith("```"):
+            response = response[:-3]
+        response = response.strip()
 
-        # Category-First Check: Ensure entity is genuinely a LabResult
-        category = classify_entity_category(name, unit)
-        if category != "LabResult":
-            logger.debug(f"Skipping non-lab entity categorized as {category}")
-            continue
-
-        # Known-non-lab name guard: reject specific recurring metadata rows
-        # observed in real reports that survive the regex and category filters.
-        if name.strip().lower() in KNOWN_NON_LAB_NAMES:
-            logger.debug("Skipping known non-lab row.")
-            continue
-
-        # Date-unit fragment guard: reject rows whose unit looks like a date/time
-        # fragment (e.g. value=24, unit='/06/2023 08:49 PM') from date table rows.
-        if re.search(r"\d{4}|\bam\b|\bpm\b|/\d{2}/", unit, re.IGNORECASE):
-            logger.debug("Skipping row — unit field looks like a date/time fragment.")
-            continue
-
-        # Ambiguous PCT guard: only skip PCT when its unit is clearly not a
-        # hematology unit — catches the table-column-merge bug where the
-        # next row's name ('MPV') leaks into PCT's unit field.
-        if (
-            name.strip().lower() == "pct"
-            and unit.strip()
-            and not re.match(r"^(%|fl|pg|g/dl|mg/dl)?$", unit.strip(), re.IGNORECASE)
-        ):
-            logger.debug("Skipping ambiguous 'PCT' row with implausible unit.")
-            continue
-
-        try:
-            value = float(m.group("value"))
-        except (TypeError, ValueError):
-            continue
-
-        ref_str = m.group("ref_str")
-        ref_unit = (m.group("ref_unit") or "").strip()
-        target_unit = ref_unit if ref_unit else unit
-
-        low = None
-        high = None
-        formatted_ref_str = None
-
-        if ref_str:
-            ref_clean = ref_str.strip()
-            if (
-                "-" in ref_clean
-                or "–" in ref_clean
-                or "~" in ref_clean
-                or " to " in ref_clean.lower()
-            ):
-                parts = re.split(r"[\-–~]|\bto\b", ref_clean, flags=re.IGNORECASE)
-                if len(parts) == 2:
-                    try:
-                        low = float(parts[0].strip())
-                        high = float(parts[1].strip())
-                        formatted_ref_str = f"{parts[0].strip()} - {parts[1].strip()} {target_unit}".strip()
-                    except ValueError:
-                        pass
-            elif ref_clean.startswith("<=") or ref_clean.startswith("<"):
-                val_str = ref_clean.replace("<=", "").replace("<", "").strip()
-                try:
-                    high = float(val_str)
-                    op = "<=" if ref_clean.startswith("<=") else "<"
-                    formatted_ref_str = f"{op} {val_str} {target_unit}".strip()
-                except ValueError:
-                    pass
-            elif ref_clean.startswith(">=") or ref_clean.startswith(">"):
-                val_str = ref_clean.replace(">=", "").replace(">", "").strip()
-                try:
-                    low = float(val_str)
-                    op = ">=" if ref_clean.startswith(">=") else ">"
-                    formatted_ref_str = f"{op} {val_str} {target_unit}".strip()
-                except ValueError:
-                    pass
-
-        explicit_flag = (m.group("flag") or "").lower().strip()
-        if explicit_flag in ["low", "high", "normal", "critical", "abnormal"]:
-            flag = explicit_flag
-        elif low is not None and high is not None:
-            if value < low:
-                flag = "low"
-            elif value > high:
-                flag = "high"
-            else:
-                flag = "normal"
-        elif low is not None:
-            if value < low:
-                flag = "low"
-            else:
-                flag = "normal"
-        elif high is not None:
-            if value > high:
-                flag = "high"
-            else:
-                flag = "normal"
-        else:
-            flag = "not_classified"
-
-        raw_dict = {
-            "test_name": name,
-            "value": value,
-            "unit": unit,
-            "ref_low": low,
-            "ref_high": high,
-            "flag": flag,
-            "ref_range_str": formatted_ref_str,
-            "category": "LabResult",
-        }
-        results.append(normalize_lab_value(raw_dict))
-
-    seen = set()
-    deduped_results = []
-    for r in results:
-        key = (r["test_name"].strip().lower(), r["value"])
-        if key in seen:
-            continue
-        seen.add(key)
-        deduped_results.append(r)
-    return deduped_results
+        data = json.loads(response)
+        
+        results = []
+        seen = set()
+        for raw_dict in data:
+            # Enforce non-empty test name and non-unit test name
+            test_name = raw_dict.get("test_name", "").strip()
+            if not test_name:
+                continue
+            if test_name.lower() in ["g/dl", "mg/dl", "mmol/l", "umol/l", "iu/l", "u/l", "%", "pg", "fl", "g/l", "mil/mm3", "x10^3/ul", "10^9/l", "uiu/ml", "ng/ml", "mcg/dl", "meq/l"]:
+                continue
+                
+            norm = normalize_lab_value(raw_dict)
+            key = (norm["test_name"].strip().lower(), norm["value"])
+            if key not in seen:
+                seen.add(key)
+                results.append(norm)
+                
+        return results
+    except Exception as e:
+        logger.error(f"Failed to extract lab values via LLM: {e}")
+        return []
 
 
 class MedicationScheduleModel(BaseModel):

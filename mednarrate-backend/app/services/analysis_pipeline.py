@@ -160,7 +160,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         logger.info(
             f"[STAGE:LAB_EXTRACT] req_id={req_id} Extracting structured lab parameters..."
         )
-        raw_lab_values = extract_lab_values(cleaned_text, report_type=report_type_str)
+        raw_lab_values = await extract_lab_values(cleaned_text, report_type=report_type_str)
         structured_lab_values = []
         abnormal_findings = []
 

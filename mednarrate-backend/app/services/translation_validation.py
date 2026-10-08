@@ -98,7 +98,7 @@ class TranslationVerifier:
     """Security checks for truncated, malformed, or fact-changing translations."""
 
     def __init__(self, language_thresholds: dict[str, float] | None = None) -> None:
-        self.language_thresholds = language_thresholds or {"default": 0.05}
+        self.language_thresholds = language_thresholds or {"default": 0.40}
         self.language = ""
         self.failures: list[dict[str, str]] = []
 

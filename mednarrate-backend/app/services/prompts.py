@@ -413,6 +413,8 @@ Maintain a medically accurate and patient-friendly tone.
 CRITICAL RULES:
 1. DO NOT translate or modify numerical values, units, or reference ranges.
 2. Output MUST be strictly valid JSON.
+3. Use the native Unicode script of {target_language}, never Latin transliteration.
+4. ALL text must be fully translated into {target_language}. Do not leave any sentences in English.
 
 INPUT:
 Clinician Summary:
