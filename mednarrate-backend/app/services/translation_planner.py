@@ -242,13 +242,47 @@ async def _execute_with_fallback(
                 llm_res = await generate_func(active_prompt, provider_name)
                 # (Removed check blocking fallback provider)
                     
-                raw_text = llm_res.get("content", "")
-                parsed_candidate = parse_translation(raw_text)
+                raw_text = llm_res.get("content", "") if isinstance(llm_res, dict) else llm_res
+                if isinstance(raw_text, dict):
+                    parsed_candidate = raw_text
+                else:
+                    parsed_candidate = parse_translation(str(raw_text))
 
-                if provider_name == "local" and required_ui_label_keys:
+                # Some providers wrap the requested object in a `translation`
+                # field when structured output is enabled. Decode that wrapper
+                # before validation instead of treating it as a malformed report.
+                if (
+                    isinstance(parsed_candidate, dict)
+                    and set(parsed_candidate) == {"translation"}
+                    and isinstance(parsed_candidate.get("translation"), str)
+                ):
+                    parsed_candidate = parse_translation(parsed_candidate["translation"])
+
+                if required_ui_label_keys:
                     static_labels = get_static_ui_labels(lang_code)
                     if static_labels:
-                        parsed_candidate["ui_labels"] = static_labels
+                        provider_labels = parsed_candidate.get("ui_labels") or {}
+                        parsed_candidate["ui_labels"] = {
+                            **static_labels,
+                            **{
+                                key: value
+                                for key, value in provider_labels.items()
+                                if isinstance(value, str) and value.strip()
+                            },
+                        }
+
+                # Accept the API's persisted field names as well as the prompt
+                # field names when a provider mirrors the response schema.
+                parsed_candidate.setdefault(
+                    "abnormal_findings", parsed_candidate.pop("findings_json", [])
+                )
+                parsed_candidate.setdefault(
+                    "medications", parsed_candidate.pop("medications_json", [])
+                )
+                parsed_candidate.setdefault(
+                    "doctor_discussion_points",
+                    parsed_candidate.pop("discussion_points", []),
+                )
 
                 if not chunk_data["abnormal_findings"]:
                     parsed_candidate["abnormal_findings"] = []
