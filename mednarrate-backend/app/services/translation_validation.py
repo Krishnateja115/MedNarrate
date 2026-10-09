@@ -90,7 +90,10 @@ def require_script(text: str, language: str) -> None:
     low, high = SCRIPT_RANGES[language]
     letters = [char for char in text if char.isalpha()]
     native = sum(low <= ord(char) <= high for char in letters)
-    if not native or native / max(len(letters), 1) < 0.05:
+    # Keep the direct script check consistent with TranslationVerifier. A tiny
+    # amount of native text is not a translation and lets English responses
+    # pass through as if they were translated.
+    if not native or native / max(len(letters), 1) < 0.40:
         raise ValueError("Translation does not use the requested script")
 
 
