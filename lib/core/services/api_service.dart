@@ -528,7 +528,9 @@ class ApiService {
   Future<TranslationModel> translateAnalysis(String id, String language) async {
     final resp = await _post('/reports/$id/analysis/translate',
         body: {'language': language},
-        requestTimeout: const Duration(seconds: 270));
+        // Translation providers are bounded server-side; keep the UI from
+        // waiting indefinitely if the backend cannot reach one.
+        requestTimeout: const Duration(seconds: 60));
     return TranslationModel.fromMap(
         jsonDecode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>);
   }
