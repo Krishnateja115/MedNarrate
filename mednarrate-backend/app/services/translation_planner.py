@@ -1,5 +1,7 @@
+import asyncio
 import json
 import logging
+import time
 from typing import List, Dict, Any, Callable
 from app.services.prompts import TRANSLATION_PROMPT, CHUNK_TRANSLATION_PROMPT, LOCAL_TRANSLATION_PROMPT
 from app.services.llm_client import generate_translation_with_provider
@@ -52,6 +54,7 @@ async def execute_translation_plan(
     )
     
     logger.info(f"[TRANSLATION_PLANNER {request_id}] Input split into {len(chunks)} bounded translation units.")
+    deadline = time.monotonic() + 45.0
     
     final_merged = {
         "clinician_summary": "",
@@ -91,7 +94,8 @@ async def execute_translation_plan(
             prompt, providers, validate_func, lang_code,
             chunk, required_ui_label_keys if i == 0 else set(), request_id,
             generate_func,
-            local_prompt=local_prompt
+            local_prompt=local_prompt,
+            deadline=deadline,
         )
         
         
@@ -231,17 +235,25 @@ async def _execute_with_fallback(
     request_id,
     generate_func: Callable,
     local_prompt=None,
+    deadline: float | None = None,
 ):
-    import asyncio
     last_exc = None
     for provider_name in providers:
+        if deadline is not None and time.monotonic() >= deadline:
+            break
         logger.info(f"[TRANSLATION_PLANNER {request_id}] Trying provider: {provider_name}")
         # One bounded attempt per provider keeps an unavailable provider from
         # blocking all later providers and the mobile request for minutes.
         for attempt in range(1):
             try:
                 active_prompt = local_prompt if (provider_name == "local" and local_prompt) else prompt
-                llm_res = await generate_func(active_prompt, provider_name)
+                remaining = (deadline - time.monotonic()) if deadline is not None else 30.0
+                if remaining <= 0:
+                    break
+                llm_res = await asyncio.wait_for(
+                    generate_func(active_prompt, provider_name),
+                    timeout=min(30.0, remaining),
+                )
                 # (Removed check blocking fallback provider)
                     
                 raw_text = llm_res.get("content", "") if isinstance(llm_res, dict) else llm_res
