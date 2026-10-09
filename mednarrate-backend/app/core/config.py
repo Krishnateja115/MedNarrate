@@ -48,7 +48,9 @@ class Settings(BaseSettings):
     # Structured translations include the report body and all UI labels.
     TRANSLATION_PROVIDER_ORDER: str = "gemini,openai,mistral"
     TRANSLATION_MAX_OUTPUT_TOKENS: int = 16384
-    TRANSLATION_TIMEOUT_SECONDS: float = 270.0  # Includes up to 75s of 503-retry backoff
+    # Translation requests must fail promptly when an upstream provider is
+    # unavailable; the mobile client should never remain in a loading state.
+    TRANSLATION_TIMEOUT_SECONDS: float = 45.0
 
     # Translation Fallback Orchestrator Models
     TRANSLATION_PROVIDER_ORDER: str = "gemini,openai,mistral"
@@ -61,7 +63,7 @@ class Settings(BaseSettings):
     MISTRAL_API_KEY: str | None = None
     MISTRAL_TRANSLATION_MODEL: str = "mistral-large-2512"
     LOCAL_TRANSLATION_MODEL: str = "Qwen/Qwen2.5-1.5B-Instruct"
-    LOCAL_TRANSLATION_TIMEOUT_SECONDS: float = 120.0
+    LOCAL_TRANSLATION_TIMEOUT_SECONDS: float = 30.0
 
     ENABLE_LLM_FALLBACK: bool = True
 

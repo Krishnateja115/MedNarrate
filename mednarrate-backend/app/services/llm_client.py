@@ -1564,7 +1564,7 @@ async def generate_translation_with_provider(prompt: str, provider_name: str) ->
     token = _translation_request.set(True)
     try:
         # Bounded timeout for interactive API limits to remain responsive
-        timeout = getattr(settings, "LOCAL_TRANSLATION_TIMEOUT_SECONDS", 120.0) if provider_name == "local" else 120.0
+        timeout = getattr(settings, "LOCAL_TRANSLATION_TIMEOUT_SECONDS", 30.0) if provider_name == "local" else 30.0
         
         if provider_name == "existing":
             return await generate_with_metadata(

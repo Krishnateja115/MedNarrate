@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # Conservative budget to safely fit within typical provider limits (e.g., Groq's 8000 TPM limit).
 # Using 1500 characters prevents JSON truncation issues on languages with high token-per-character ratios like Hindi
-CHUNK_MAX_CHARS = 1500
+CHUNK_MAX_CHARS = 5000
 
 def get_static_ui_labels(lang_code: str) -> dict:
     import os, json
@@ -236,7 +236,9 @@ async def _execute_with_fallback(
     last_exc = None
     for provider_name in providers:
         logger.info(f"[TRANSLATION_PLANNER {request_id}] Trying provider: {provider_name}")
-        for attempt in range(2):
+        # One bounded attempt per provider keeps an unavailable provider from
+        # blocking all later providers and the mobile request for minutes.
+        for attempt in range(1):
             try:
                 active_prompt = local_prompt if (provider_name == "local" and local_prompt) else prompt
                 llm_res = await generate_func(active_prompt, provider_name)
