@@ -276,8 +276,20 @@ class DevGeminiProvider(LLMProvider):
 
     def get_model_name(self, config: dict | None) -> str:
         if config and config.get("primary_provider") in ["gemini", "dev_gemini"] and config.get("model_name"):
-            return config["model_name"]
-        return getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash")
+            configured = str(config["model_name"]).strip()
+        else:
+            configured = str(getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash")).strip()
+
+        # The direct Gemini REST endpoint accepts Gemini model IDs. Older local
+        # settings sometimes contain a Gemma or Ollama model name, which makes
+        # every translation request wait and then fail at the wrong endpoint.
+        if not configured.startswith("gemini-"):
+            logger.warning(
+                "Unsupported Gemini API model '%s'; using gemini-2.5-flash",
+                configured,
+            )
+            return "gemini-2.5-flash"
+        return configured
 
     def _check_production_restriction(self):
         if getattr(settings, "ENVIRONMENT", "development").lower() == "production":
