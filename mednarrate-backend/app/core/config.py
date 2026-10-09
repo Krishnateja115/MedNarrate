@@ -31,7 +31,9 @@ class Settings(BaseSettings):
     ADMIN_APP_ORIGIN: str = "http://localhost:3001"
 
     # LLM Provider Architecture Configuration
-    PRIMARY_LLM_PROVIDER: str = "gemini"
+    # Vertex AI is the production-safe default. Local development can opt into
+    # dev_gemini explicitly through .env without changing application code.
+    PRIMARY_LLM_PROVIDER: str = "vertex_ai"
     PRIMARY_LLM_MODEL: str = "gemini-3.8-flash"
 
     MEDICAL_VERIFIER_PROVIDER: str = "ollama"
@@ -46,14 +48,14 @@ class Settings(BaseSettings):
     )
 
     # Structured translations include the report body and all UI labels.
-    TRANSLATION_PROVIDER_ORDER: str = "gemini,openai,mistral"
+    TRANSLATION_PROVIDER_ORDER: str = "vertex_ai,gemini,openai,mistral"
     TRANSLATION_MAX_OUTPUT_TOKENS: int = 16384
     # Translation requests must fail promptly when an upstream provider is
     # unavailable; the mobile client should never remain in a loading state.
     TRANSLATION_TIMEOUT_SECONDS: float = 45.0
 
     # Translation Fallback Orchestrator Models
-    TRANSLATION_PROVIDER_ORDER: str = "gemini,openai,mistral"
+    TRANSLATION_PROVIDER_ORDER: str = "vertex_ai,gemini,openai,mistral"
     OPENAI_API_KEY: str | None = None
     OPENAI_TRANSLATION_MODEL: str = "gpt-6.1-sol"
     ANTHROPIC_API_KEY: str | None = None
