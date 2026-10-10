@@ -245,7 +245,12 @@ class TranslationVerifier:
         *,
         preserve_numeric: bool,
     ) -> None:
-        if len(source_text) > 20 and len(translated_text) < len(source_text) * 0.2:
+        # Indic-language prose can be materially shorter than its English
+        # source without being truncated. Keep the stricter threshold for
+        # findings and labels, while allowing summary prose a smaller but
+        # still meaningful response.
+        minimum_ratio = 0.10 if field in {"clinician_summary", "patient_summary"} else 0.20
+        if len(source_text) > 20 and len(translated_text) < len(source_text) * minimum_ratio:
             self._add_failure(
                 item_id, field, "length_ratio", "Translation is suspiciously short"
             )
