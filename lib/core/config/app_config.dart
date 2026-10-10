@@ -6,7 +6,10 @@ class AppConfig {
   /// API_BASE_URL is always the backend origin (without /api/v1).
   static const String _rawApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: isLocalDevMode ? 'http://127.0.0.1:8000' : '', 
+    // Local web builds must be usable with a normal `flutter run -d chrome`
+    // command. Production builds still require an explicit HTTPS URL because
+    // validateApiBaseUrl rejects this development default in production.
+    defaultValue: 'http://127.0.0.1:8000',
   );
   
   static String get apiBaseUrl {
