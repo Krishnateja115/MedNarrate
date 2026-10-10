@@ -17,6 +17,74 @@ logger = logging.getLogger(__name__)
 _translation_request: ContextVar[bool] = ContextVar("translation_request", default=False)
 
 
+def _translation_response_schema() -> dict:
+    """Return the JSON schema used for Gemini translation responses.
+
+    Gemini's JSON MIME type alone does not guarantee that every nested value is
+    quoted.  Supplying the response schema keeps regional-language text inside
+    valid JSON, which is required by the translation planner and verifier.
+    """
+    finding = {
+        "type": "OBJECT",
+        "properties": {
+            "test_name": {"type": "STRING"},
+            "translated_test_name": {"type": "STRING"},
+            "translated_explanation": {"type": "STRING"},
+        },
+        "required": ["test_name", "translated_test_name", "translated_explanation"],
+    }
+    medication = {
+        "type": "OBJECT",
+        "properties": {
+            "medication_name": {"type": "STRING"},
+            "translated_medication_name": {"type": "STRING"},
+            "translated_dosage": {"type": "STRING"},
+            "translated_frequency": {"type": "STRING"},
+            "translated_times_of_day": {
+                "type": "ARRAY",
+                "items": {"type": "STRING"},
+            },
+            "translated_instructions": {"type": "STRING"},
+        },
+        "required": [
+            "medication_name",
+            "translated_medication_name",
+            "translated_dosage",
+            "translated_frequency",
+            "translated_times_of_day",
+            "translated_instructions",
+        ],
+    }
+    return {
+        "type": "OBJECT",
+        "properties": {
+            "clinician_summary": {"type": "STRING"},
+            "patient_summary": {"type": "STRING"},
+            "abnormal_findings": {"type": "ARRAY", "items": finding},
+            "medications": {"type": "ARRAY", "items": medication},
+            "doctor_discussion_points": {
+                "type": "ARRAY",
+                "items": {"type": "STRING"},
+            },
+            "translated_parameters": {
+                "type": "OBJECT",
+            },
+            "ui_labels": {
+                "type": "OBJECT",
+            },
+        },
+        "required": [
+            "clinician_summary",
+            "patient_summary",
+            "abnormal_findings",
+            "medications",
+            "doctor_discussion_points",
+            "translated_parameters",
+            "ui_labels",
+        ],
+    }
+
+
 class LLMConfigurationError(RuntimeError):
     """Raised when an explicit LLM provider is configured but missing credentials/configuration."""
 
@@ -367,6 +435,7 @@ class DevGeminiProvider(LLMProvider):
                     "maxOutputTokens": (settings.TRANSLATION_MAX_OUTPUT_TOKENS if _translation_request.get() else (config.get("max_tokens", settings.MAX_OUTPUT_TOKENS) if config else settings.MAX_OUTPUT_TOKENS)),
                     "temperature": config.get("temperature", 0.2) if config else 0.2,
                     **({"responseMimeType": "application/json"} if _translation_request.get() else {}),
+                    **({"responseSchema": _translation_response_schema()} if _translation_request.get() else {}),
                 },
             }
 
