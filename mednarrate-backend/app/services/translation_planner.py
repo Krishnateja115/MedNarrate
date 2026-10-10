@@ -56,7 +56,10 @@ async def execute_translation_plan(
     )
     
     logger.info(f"[TRANSLATION_PLANNER {request_id}] Input split into {len(chunks)} bounded translation units.")
-    deadline = time.monotonic() + 45.0
+    # Multilingual output can take longer when a report contains many native
+    # Unicode characters. Keep a bounded request window while allowing one
+    # validation retry for a transiently incomplete model response.
+    deadline = time.monotonic() + 90.0
     
     final_merged = {
         "clinician_summary": "",
@@ -246,9 +249,14 @@ async def _execute_with_fallback(
         logger.info(f"[TRANSLATION_PLANNER {request_id}] Trying provider: {provider_name}")
         # One bounded attempt per provider keeps an unavailable provider from
         # blocking all later providers and the mobile request for minutes.
-        for attempt in range(1):
+        for attempt in range(2):
             try:
                 active_prompt = local_prompt if (provider_name == "local" and local_prompt) else prompt
+                if attempt:
+                    active_prompt += (
+                        "\nRETRY: The previous response was incomplete. Return every input "
+                        "item in the required arrays, preserving their original order."
+                    )
                 remaining = (deadline - time.monotonic()) if deadline is not None else 30.0
                 if remaining <= 0:
                     break
