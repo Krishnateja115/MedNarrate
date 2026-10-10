@@ -236,13 +236,13 @@ async def _execute_with_fallback(
     providers,
     validate_func,
     lang_code,
-    target_lang_name,
     chunk_data,
     required_ui_label_keys,
     request_id,
     generate_func: Callable,
     local_prompt=None,
     deadline: float | None = None,
+    target_lang_name: str = "",
 ):
     last_exc = None
     for provider_name in providers:
