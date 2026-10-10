@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 import '../../../core/services/api_models.dart';
+import 'translation_parameter_name.dart';
 
 class LabResultsTab extends StatefulWidget {
   final ReportModel report;
@@ -18,25 +19,6 @@ class LabResultsTab extends StatefulWidget {
 
 class _LabResultsTabState extends State<LabResultsTab> {
   String _searchQuery = '';
-
-  /// Lab Results uses the report's metric names, while translations store the
-  /// translated names alongside the structured findings. Use both sources so
-  /// this tab remains translated even when the provider omits dynamic label
-  /// keys from `ui_labels`.
-  String _translatedParameterName(String parameterName) {
-    final fromLabels = widget.translation?.uiLabels['param_$parameterName'];
-    if (fromLabels != null && fromLabels.trim().isNotEmpty) return fromLabels;
-
-    final normalized = parameterName.trim().toLowerCase();
-    for (final finding in widget.translation?.findingsJson ?? const []) {
-      final source = finding['test_name']?.toString().trim().toLowerCase();
-      final translated = finding['translated_test_name']?.toString().trim();
-      if (source == normalized && translated != null && translated.isNotEmpty) {
-        return translated;
-      }
-    }
-    return parameterName;
-  }
 
   final Map<String, List<String>> _categories = {
     'CBC': ['Hemoglobin', 'WBC', 'RBC', 'Platelets', 'Hematocrit'],
@@ -60,7 +42,8 @@ class _LabResultsTabState extends State<LabResultsTab> {
   void _showParameterDetails(
       BuildContext context, Map<String, dynamic> metric) {
     final String parameterName = metric['parameter']?.toString() ?? '';
-    final String translatedName = _translatedParameterName(parameterName);
+    final String translatedName =
+        translatedParameterName(parameterName, widget.translation);
 
     showModalBottomSheet(
       context: context,
@@ -198,8 +181,8 @@ class _LabResultsTabState extends State<LabResultsTab> {
 
                     final String parameterName =
                         m['parameter']?.toString() ?? '';
-                    final String translatedName =
-                        _translatedParameterName(parameterName);
+                    final String translatedName = translatedParameterName(
+                        parameterName, widget.translation);
 
                     return LabResultRow(
                       parameter: translatedName,

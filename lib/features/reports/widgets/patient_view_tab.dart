@@ -8,6 +8,7 @@ import '../../../core/utils/report_text_structurer.dart';
 import '../models/report_model.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 import '../../../core/services/api_exception.dart';
+import 'translation_parameter_name.dart';
 
 class PatientViewTab extends StatefulWidget {
   final ReportModel report;
@@ -15,6 +16,7 @@ class PatientViewTab extends StatefulWidget {
   final TranslationModel? translation;
   final bool isTranslating;
   final Future<void> Function(String)? onTranslate;
+
   /// Language currently being fetched, if any (for the selector UI only).
   final String? pendingLanguage;
 
@@ -74,7 +76,8 @@ class _PatientViewTabState extends State<PatientViewTab> {
     // supersedes stale requests, so the user is never locked out.
     if (widget.onTranslate == null) return;
     final languages = _languages;
-    final current = widget.pendingLanguage ?? widget.translation?.language ?? 'en';
+    final current =
+        widget.pendingLanguage ?? widget.translation?.language ?? 'en';
     final selected = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -654,7 +657,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
             children: [
               Expanded(
                 child: Text(
-                  l?['param_${lab.testName}'] ?? lab.testName,
+                  translatedParameterName(lab.testName, widget.translation),
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,

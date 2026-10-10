@@ -5,6 +5,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/markdown_formatter.dart';
 import '../models/report_model.dart';
+import 'translation_parameter_name.dart';
 
 class ClinicalViewTab extends StatelessWidget {
   final ReportModel report;
@@ -513,8 +514,7 @@ class ClinicalViewTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                    translation?.uiLabels['param_$testName'] ?? testName,
+                child: Text(translatedParameterName(testName, translation),
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16)),
               ),
@@ -576,7 +576,8 @@ class ClinicalViewTab extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-              translation?.uiLabels['label_source_latest_report'] ?? 'Source: Uploaded report',
+              translation?.uiLabels['label_source_latest_report'] ??
+                  'Source: Uploaded report',
               style: TextStyle(
                   fontSize: 10,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
@@ -656,8 +657,7 @@ class ClinicalViewTab extends StatelessWidget {
               }
 
               return DataRow(cells: [
-                DataCell(Text(
-                    translation?.uiLabels['param_${l.testName}'] ?? l.testName,
+                DataCell(Text(translatedParameterName(l.testName, translation),
                     style: const TextStyle(fontWeight: FontWeight.w600))),
                 DataCell(Text('${l.value}')),
                 DataCell(Text(l.unit)),
