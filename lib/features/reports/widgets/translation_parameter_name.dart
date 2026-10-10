@@ -13,6 +13,11 @@ const Map<String, Map<String, String>> _commonLabNameTranslations = {
     'platelets': 'प्लेटलेट्स',
     'totalrbccount': 'कुल आरबीसी काउंट',
     'hematocritvaluehct': 'हीमाटोक्रिट मान',
+    'totalbilirubin': 'कुल बिलीरुबिन',
+    'conjugatedbilirubin': 'संयुग्मित बिलीरुबिन',
+    'unconjugatedbilirubin': 'असंयुग्मित बिलीरुबिन',
+    'deltabilirubin': 'डेल्टा बिलीरुबिन',
+    'tibc': 'कुल आयरन बाइंडिंग क्षमता',
   },
   'ta': {
     'hemoglobin': 'ஹீமோகுளோபின்',
@@ -23,6 +28,11 @@ const Map<String, Map<String, String>> _commonLabNameTranslations = {
     'platelets': 'பிளேட்லெட்டுகள்',
     'totalrbccount': 'மொத்த சிவப்பு இரத்த அணுக்களின் எண்ணிக்கை',
     'hematocritvaluehct': 'ஹீமாடோக்ரிட் மதிப்பு',
+    'totalbilirubin': 'மொத்த பிலிரூபின்',
+    'conjugatedbilirubin': 'இணைந்த பிலிரூபின்',
+    'unconjugatedbilirubin': 'இணையாத பிலிரூபின்',
+    'deltabilirubin': 'டெல்டா பிலிரூபின்',
+    'tibc': 'மொத்த இரும்பு பிணைப்பு திறன்',
   },
   'te': {
     'hemoglobin': 'హిమోగ్లోబిన్',
@@ -33,6 +43,11 @@ const Map<String, Map<String, String>> _commonLabNameTranslations = {
     'platelets': 'ప్లేట్‌లెట్లు',
     'totalrbccount': 'మొత్తం ఆర్‌బీసీ సంఖ్య',
     'hematocritvaluehct': 'హెమటోక్రిట్ విలువ',
+    'totalbilirubin': 'మొత్తం బిలిరుబిన్',
+    'conjugatedbilirubin': 'సంయుక్త బిలిరుబిన్',
+    'unconjugatedbilirubin': 'సంయుక్తం కాని బిలిరుబిన్',
+    'deltabilirubin': 'డెల్టా బిలిరుబిన్',
+    'tibc': 'మొత్తం ఐరన్ బైండింగ్ సామర్థ్యం',
   },
   'kn': {
     'hemoglobin': 'ಹಿಮೋಗ್ಲೋಬಿನ್',
@@ -43,6 +58,11 @@ const Map<String, Map<String, String>> _commonLabNameTranslations = {
     'platelets': 'ಪ್ಲೇಟ್‌ಲೆಟ್‌ಗಳು',
     'totalrbccount': 'ಒಟ್ಟು ಆರ್‌ಬಿಸಿ ಎಣಿಕೆ',
     'hematocritvaluehct': 'ಹೆಮಟೋಕ್ರಿಟ್ ಮೌಲ್ಯ',
+    'totalbilirubin': 'ಒಟ್ಟು ಬಿಲಿರುಬಿನ್',
+    'conjugatedbilirubin': 'ಸಂಯುಕ್ತ ಬಿಲಿರುಬಿನ್',
+    'unconjugatedbilirubin': 'ಸಂಯುಕ್ತವಲ್ಲದ ಬಿಲಿರುಬಿನ್',
+    'deltabilirubin': 'ಡೆಲ್ಟಾ ಬಿಲಿರುಬಿನ್',
+    'tibc': 'ಒಟ್ಟು ಕಬ್ಬಿಣ ಬಂಧನ ಸಾಮರ್ಥ್ಯ',
   },
   'ml': {
     'hemoglobin': 'ഹീമോഗ്ലോബിൻ',
@@ -53,6 +73,11 @@ const Map<String, Map<String, String>> _commonLabNameTranslations = {
     'platelets': 'പ്ലേറ്റ്ലെറ്റുകൾ',
     'totalrbccount': 'ആകെ ആർബിസി എണ്ണം',
     'hematocritvaluehct': 'ഹീമറ്റോക്രിറ്റ് മൂല്യം',
+    'totalbilirubin': 'ആകെ ബിലിറൂബിൻ',
+    'conjugatedbilirubin': 'സംയോജിത ബിലിറൂബിൻ',
+    'unconjugatedbilirubin': 'സംയോജിതമല്ലാത്ത ബിലിറൂബിൻ',
+    'deltabilirubin': 'ഡെൽറ്റ ബിലിറൂബിൻ',
+    'tibc': 'ആകെ ഇരുമ്പ് ബന്ധന ശേഷി',
   },
   'bn': {
     'hemoglobin': 'হিমোগ্লোবিন',
@@ -63,6 +88,11 @@ const Map<String, Map<String, String>> _commonLabNameTranslations = {
     'platelets': 'প্লেটলেট',
     'totalrbccount': 'মোট আরবিসি গণনা',
     'hematocritvaluehct': 'হেমাটোক্রিট মান',
+    'totalbilirubin': 'মোট বিলিরুবিন',
+    'conjugatedbilirubin': 'সংযোজিত বিলিরুবিন',
+    'unconjugatedbilirubin': 'অসংযোজিত বিলিরুবিন',
+    'deltabilirubin': 'ডেল্টা বিলিরুবিন',
+    'tibc': 'মোট আয়রন বাঁধন ক্ষমতা',
   },
   'mr': {
     'hemoglobin': 'हिमोग्लोबिन',
@@ -73,6 +103,11 @@ const Map<String, Map<String, String>> _commonLabNameTranslations = {
     'platelets': 'प्लेटलेट्स',
     'totalrbccount': 'एकूण आरबीसी संख्या',
     'hematocritvaluehct': 'हिमॅटोक्रिट मूल्य',
+    'totalbilirubin': 'एकूण बिलीरुबिन',
+    'conjugatedbilirubin': 'संयुग्मित बिलीरुबिन',
+    'unconjugatedbilirubin': 'असंयुग्मित बिलीरुबिन',
+    'deltabilirubin': 'डेल्टा बिलीरुबिन',
+    'tibc': 'एकूण लोह बांधणी क्षमता',
   },
 };
 
@@ -102,7 +137,8 @@ String translatedParameterName(
     }
   }
 
-  final language = translation?.language.toLowerCase().split(RegExp(r'[-_]')).first;
+  final language =
+      translation?.language.toLowerCase().split(RegExp(r'[-_]')).first;
   final common = _commonLabNameTranslations[language];
   final fallback = common?[normalized];
   if (fallback != null) return fallback;
