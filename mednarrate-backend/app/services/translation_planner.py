@@ -254,8 +254,11 @@ async def _execute_with_fallback(
                 active_prompt = local_prompt if (provider_name == "local" and local_prompt) else prompt
                 if attempt:
                     active_prompt += (
-                        "\nRETRY: The previous response was incomplete. Return every input "
-                        "item in the required arrays, preserving their original order."
+                        f"\nRETRY: The previous response was invalid. Translate ONLY into "
+                        f"{target_lang_name} using its native Unicode script; do not use "
+                        "Russian, English, transliteration, or any other language. "
+                        "Return every input item in the required arrays, preserving "
+                        "their original order."
                     )
                 remaining = (deadline - time.monotonic()) if deadline is not None else 30.0
                 if remaining <= 0:
@@ -344,7 +347,9 @@ async def _execute_with_fallback(
                     len(chunk_data["medications"]), med_len, str(exc)
                 )
                 last_exc = exc
-                break # Permanent: validation failure, move to next provider
+                if attempt == 0:
+                    continue
+                break # Validation failed after the bounded retry; move to next provider
                 
             except Exception as exc:
                 last_exc = exc
