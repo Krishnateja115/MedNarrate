@@ -59,7 +59,10 @@ async def execute_translation_plan(
     # Multilingual output can take longer when a report contains many native
     # Unicode characters. Keep a bounded request window while allowing one
     # validation retry for a transiently incomplete model response.
-    deadline = time.monotonic() + 90.0
+    # A full report can contain dozens of lab parameters. Each bounded chunk
+    # is translated independently, so the total request must cover the whole
+    # plan rather than the first model call only.
+    deadline = time.monotonic() + 240.0
     
     final_merged = {
         "clinician_summary": "",
@@ -267,7 +270,7 @@ async def _execute_with_fallback(
                     break
                 llm_res = await asyncio.wait_for(
                     generate_func(active_prompt, provider_name),
-                    timeout=min(30.0, remaining),
+                    timeout=min(55.0, remaining),
                 )
                 # (Removed check blocking fallback provider)
                     
