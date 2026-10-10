@@ -1,10 +1,12 @@
 import abc
+import asyncio
 from contextvars import ContextVar
 import logging
 import time
 import uuid
 
 import google.auth
+from google.auth.transport.requests import Request
 import httpx
 
 from app.core.config import settings
@@ -118,47 +120,64 @@ class VertexAIProvider(LLMProvider):
             )
 
         try:
-            import google.generativeai as genai  # Lazy import — avoids deprecation warnings at startup
+            credentials, _ = await asyncio.to_thread(
+                google.auth.default,
+                scopes=["https://www.googleapis.com/auth/cloud-platform"],
+            )
+            await asyncio.to_thread(credentials.refresh, Request())
 
-            # Try to get gemini key if Vertex logic needs it (usually it doesn't, but preserving old logic just in case)
-            gemini_key = config.get("api_key") if config else getattr(settings, "GEMINI_API_KEY", None)
-            if gemini_key and _is_valid_dev_gemini_key(gemini_key):
-                genai.configure(api_key=gemini_key.strip())
-
-            # Use basic GenerationConfig. Gemini 3 ignores temperature/topP/topK and throws errors for penalties.
             max_toks = config.get("max_tokens", settings.MAX_OUTPUT_TOKENS) if config else settings.MAX_OUTPUT_TOKENS
+            if _translation_request.get():
+                max_toks = settings.TRANSLATION_MAX_OUTPUT_TOKENS
             temp = config.get("temperature", 0.2) if config else 0.2
-
-            generation_config = genai.types.GenerationConfig(
-                max_output_tokens=(settings.TRANSLATION_MAX_OUTPUT_TOKENS if _translation_request.get() else max_toks),
-                temperature=temp,
-                **({"response_mime_type": "application/json"} if _translation_request.get() else {}),
-            )
-
             model_name = self.get_model_name(config)
-            model = genai.GenerativeModel(
-                model_name=model_name, system_instruction=system_instruction
+            url = (
+                f"https://{self.location}-aiplatform.googleapis.com/v1/"
+                f"projects/{self.project}/locations/{self.location}/"
+                f"publishers/google/models/{model_name}:generateContent"
             )
-            response = await model.generate_content_async(
-                prompt, generation_config=generation_config
-            )
-            latency_ms = int((time.time() - start_time) * 1000)
+            body = {
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "temperature": temp,
+                    "maxOutputTokens": max_toks,
+                },
+            }
+            if _translation_request.get():
+                body["generationConfig"]["responseMimeType"] = "application/json"
+            if system_instruction:
+                body["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
-            if response and response.text:
-                logger.info(
-                    f"[LLM:VERTEX_AI:SUCCESS] req_id={req_id} latency={latency_ms}ms model={model_name}"
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                response = await client.post(
+                    url,
+                    headers={"Authorization": f"Bearer {credentials.token}"},
+                    json=body,
                 )
-                return {
-                    "provider": "vertex_ai",
-                    "model": model_name,
-                    "request_success": True,
-                    "response_received": True,
-                    "error_category": None,
-                    "content": response.text.strip(),
-                    "latency_ms": latency_ms,
-                    "request_id": req_id,
-                }
-            raise ValueError("Empty text response payload received from Vertex AI.")
+            response.raise_for_status()
+            payload = response.json()
+            parts = (
+                payload.get("candidates", [{}])[0]
+                .get("content", {})
+                .get("parts", [])
+            )
+            text = "".join(str(part.get("text", "")) for part in parts).strip()
+            latency_ms = int((time.time() - start_time) * 1000)
+            if not text:
+                raise ValueError("Empty text response payload received from Vertex AI.")
+            logger.info(
+                f"[LLM:VERTEX_AI:SUCCESS] req_id={req_id} latency={latency_ms}ms model={model_name}"
+            )
+            return {
+                "provider": "vertex_ai",
+                "model": model_name,
+                "request_success": True,
+                "response_received": True,
+                "error_category": None,
+                "content": text,
+                "latency_ms": latency_ms,
+                "request_id": req_id,
+            }
         except LLMConfigurationError:
             raise
         except Exception as e:
@@ -1258,8 +1277,13 @@ async def get_resolved_ai_config() -> dict:
     except Exception as e:
         logger.error(f"Failed to fetch DB config: {e}")
 
-    primary_provider = settings_records.get("ai_primary_provider", getattr(settings, "PRIMARY_LLM_PROVIDER", "gemini"))
-    model_name = settings_records.get("ai_model_name", getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash"))
+    primary_provider = settings_records.get("ai_primary_provider", getattr(settings, "PRIMARY_LLM_PROVIDER", "vertex_ai"))
+    default_model = (
+        getattr(settings, "VERTEX_MODEL", "gemini-3.8-flash")
+        if str(primary_provider).lower() == "vertex_ai"
+        else getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash")
+    )
+    model_name = settings_records.get("ai_model_name", default_model)
     fallback_provider = settings_records.get("ai_fallback_provider", "ollama")
     raw_api_key = settings_records.get("ai_api_key", getattr(settings, "GEMINI_API_KEY", None))
     if raw_api_key:
