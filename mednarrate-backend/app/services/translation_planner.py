@@ -99,6 +99,7 @@ async def execute_translation_plan(
             prompt, providers, validate_func, lang_code,
             chunk, required_ui_label_keys if i == 0 else set(), request_id,
             generate_func,
+            target_lang_name=target_lang_name,
             local_prompt=local_prompt,
             deadline=deadline,
         )
@@ -235,6 +236,7 @@ async def _execute_with_fallback(
     providers,
     validate_func,
     lang_code,
+    target_lang_name,
     chunk_data,
     required_ui_label_keys,
     request_id,
