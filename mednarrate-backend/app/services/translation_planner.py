@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 # Conservative budget to safely fit within typical provider limits (e.g., Groq's 8000 TPM limit).
 # Using 1500 characters prevents JSON truncation issues on languages with high token-per-character ratios like Hindi
-CHUNK_MAX_CHARS = 5000
+# Keep each structured request small enough that Gemini returns every finding,
+# including languages whose Unicode text uses more output tokens than English.
+CHUNK_MAX_CHARS = 700
 
 def get_static_ui_labels(lang_code: str) -> dict:
     import os, json
