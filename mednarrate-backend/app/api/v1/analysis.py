@@ -413,6 +413,23 @@ async def translate_analysis(
     providers = [p.strip() for p in order_str.split(",") if p.strip()]
     if not providers:
         providers = ["vertex_ai", "gemini", "openai", "mistral"]
+
+    # Keep an explicitly configured primary provider first, but do not let a
+    # temporary quota/availability error turn into a hard translation outage
+    # when the fallback chain is enabled. This is especially important for
+    # local development configurations that set TRANSLATION_PROVIDER_ORDER to
+    # only `gemini` while also providing fallback credentials.
+    if getattr(settings, "ENABLE_LLM_FALLBACK", True):
+        configured_fallbacks = {
+            "vertex_ai": bool(getattr(settings, "VERTEX_PROJECT_ID", None)),
+            "openai": bool(getattr(settings, "OPENAI_API_KEY", None)),
+            "anthropic": bool(getattr(settings, "ANTHROPIC_API_KEY", None)),
+            "mistral": bool(getattr(settings, "MISTRAL_API_KEY", None)),
+            "ollama": bool(getattr(settings, "OLLAMA_URL", None)),
+        }
+        for fallback_name, is_configured in configured_fallbacks.items():
+            if is_configured and fallback_name not in providers:
+                providers.append(fallback_name)
         
     logger.info(f"[TRANSLATION {request_id}] provider_order={','.join(providers)}")
         
