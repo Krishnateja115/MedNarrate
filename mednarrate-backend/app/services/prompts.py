@@ -112,6 +112,7 @@ TRANSLATION_PROMPT = """You are a professional medical translator. Translate the
 Maintain a medically accurate, calm, and patient-friendly tone.
 
 CRITICAL RULES:
+0. You MUST translate into the exact language {target_language} (e.g. if target_language is Hindi, output text using the Devanagari script). DO NOT translate into Russian or any other language.
 1. DO NOT translate or modify any numerical values, units, reference ranges, dates, or dosages. Preserve them exactly inside translated sentences. You MUST translate full medical test names (like Haemoglobin, Platelet Count) into {target_language}.
 2. DO NOT add, remove, or invent any medical information.
 3. Translation only — not reinterpretation.
@@ -302,6 +303,7 @@ LOCAL_TRANSLATION_PROMPT = """You are a professional medical translator. Transla
 Maintain a medically accurate, calm, and patient-friendly tone.
 
 CRITICAL RULES:
+0. You MUST translate into the exact language {target_language} (e.g. if target_language is Hindi, output text using the Devanagari script). DO NOT translate into Russian or any other language.
 1. DO NOT translate or modify any numerical values, units, reference ranges, dates, or dosages. Preserve them exactly inside translated sentences. You MUST translate full medical test names (like Haemoglobin, Platelet Count) into {target_language}.
 2. DO NOT add, remove, or invent any medical information.
 3. Translation only — not reinterpretation.
@@ -411,6 +413,7 @@ Write the narrative comparison summary now:"""
 CHUNK_TRANSLATION_PROMPT = """You are a professional medical translator. Translate the following patient report content into {target_language}.
 Maintain a medically accurate and patient-friendly tone.
 CRITICAL RULES:
+0. You MUST translate into the exact language {target_language} (e.g. if target_language is Hindi, output text using the Devanagari script). DO NOT translate into Russian or any other language.
 1. DO NOT translate or modify numerical values, units, or reference ranges.
 2. Output MUST be strictly valid JSON.
 3. Use the native Unicode script of {target_language}, never Latin transliteration.

@@ -1,0 +1,73 @@
+{
+  "clinician_summary": "",
+  "patient_summary": "### 4. जानकारी उपलब्ध नहीं है\n* रिपोर्ट में **BUN/Creatinine Ratio** के लिए कोई संदर्भ सीमा प्रदान नहीं की गई है।\n\n### 5. अपने डॉक्टर से क्या चर्चा करें\n* **ब्लड शुगर प्रबंधन:** अपने **HbA1c** परिणाम **10.0%** और आपके दीर्घकालिक स्वास्थ्य के लिए इसके क्या मायने हैं, इस पर चर्चा करें।\n* **प्रोटीन का स्तर:** अपने **Globulin** स्तर **4.00 gm/dL** के बारे में पूछें।\n* **कोलेस्ट्रॉल संतुलन:** अपने **HDL** स्तर **30.00 mg/dL** और अपने \"अच्छे\" कोलेस्ट्रॉल को कैसे सुधारें, इस पर चर्चा करें।\n* **समग्र समीक्षा:** अपने डॉक्टर से सभी परिणामों की एक साथ समीक्षा करने के लिए कहें ताकि यह देखा जा सके कि वे आपके समग्र स्वास्थ्य से कैसे संबंधित हैं।\n\nयह स्पष्टीकरण जानकारी के उद्देश्यों के लिए सीधे आपके अपलोड किए गए दस्तावेज़ से लिया गया है और आपके डॉक्टर की सलाह का स्थान नहीं लेता है।\n\nअस्वीकरण: यह रिपोर्ट सारांश केवल शैक्षिक और सूचना के उद्देश्यों के लिए है और पेशेवर चिकित्सा सलाह, निदान या उपचार का विकल्प नहीं है।",
+  "abnormal_findings": [
+    {
+      "test_name": "Bun/Creatinine Ratio",
+      "translated_test_name": "यूरिया/क्रीटिनाइन अनुपात",
+      "translated_explanation": null
+    },
+    {
+      "test_name": "HDL Cholesterol",
+      "translated_test_name": "एचडीएल कोलेस्ट्रॉल",
+      "translated_explanation": null
+    },
+    {
+      "test_name": "HbA1c",
+      "translated_test_name": "एचबीए1सी",
+      "translated_explanation": null
+    }
+  ],
+  "medications": [],
+  "translated_parameters": {
+    "Creatinine": "क्रीटिनाइन",
+    "Bun/Creatinine Ratio": "यूरिया/क्रीटिनाइन अनुपात",
+    "Total Protein": "कुल प्रोटीन",
+    "T4, Total": "टी4, कुल",
+    "Vitamin B12; Cyanocobalamin": "विटामिन बी12; साइनोकोबालामीन",
+    "Urea": "यूरिया",
+    "Packed Cell Volume": "पैक्ड सेल वॉल्यूम",
+    "ALT": "एएलटी",
+    "Estimated Average Glucose": "अनुमानित औसत ग्लूकोज",
+    "Total Bilirubin": "कुल बिलीरुबिन",
+    "Ldl Cholesterol, Calculated": "एलडीएल कोलेस्ट्रॉल, गणना की गई",
+    "Mchc": "एमसीएमसी",
+    "Non-Hdl Cholesterol": "नॉन-एचडीएल कोलेस्ट्रॉल",
+    "Lymphocytes": "लिम्फोसाइट्स",
+    "WBC": "डब्लूबीसी",
+    "Potassium": "पोटैशियम",
+    "HDL Cholesterol": "एचडीएल कोलेस्ट्रॉल",
+    "Bilirubin Indirect": "बिलीरुबिन अप्रत्यक्ष",
+    "Urea Nitrogen Blood": "यूरिया नाइट्रोजन रक्त",
+    "Cholesterol": "कोलेस्ट्रॉल",
+    "Hemoglobin": "हीमोग्लोबिन",
+    "Vitamin D, 25 Hydroxy": "विटामिन डी, 25 हाइड्रॉक्सी",
+    "Fasting Glucose": "फास्टिंग ग्लूकोज",
+    "Gfr Estimated": "जीएफआर अनुमानित",
+    "Bilirubin Direct": "बिलीरुबिन प्रत्यक्ष",
+    "RBC": "आरबीसी",
+    "Sodium": "सोडियम",
+    "Monocytes": "मोनोसाइट्स",
+    "Ggtp": "जीजीटीपी",
+    "T3, Total": "टी3, कुल",
+    "Vldl Cholesterol,Calculated": "वीएलडीएल कोलेस्ट्रॉल, गणना की गई",
+    "Mcv": "एमसीवी",
+    "Albumin":्युमिन",
+    "Mch": "एमसीएस",
+    "Basophils": "बेसोफिल्स",
+    "Eosinophils": "इयोस्नोफिल्स",
+    "Triglycerides": "ट्राइग्लिसराइड्स",
+    "Chloride": "क्लोराइड",
+    "Neutrophils": "न्यूट्रोफिल्स",
+    "HbA1c": "एचबीए1सी",
+    "Red Cell Distribution Width": "रेड सेल डिस्ट्रीब्यूशन विड्थ",
+    "Segmented Neutrophils": "खंडित न्यूट्रोफिल्स",
+    "ALP": "एएलपी",
+    "Calcium, Total": "कैल्शियम, कुल",
+    "Uric Acid": "यूरिक एसिड",
+    "Platelets": "प्लेटलेट्स",
+    "AST": "एएसटी",
+    "TSH": "टीएसएच",
+    "Phosphorus": "फास्फोरस"
+  }
+}

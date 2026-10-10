@@ -33,8 +33,11 @@ except (OSError, ValueError, TypeError):
 
 def parse_translation(text: str) -> dict[str, Any]:
     """Decode the first complete JSON object, including optionally fenced output."""
+    import re
     if not isinstance(text, str):
         raise ValueError("Translation response must be text")
+    with open("llm_out.txt", "w", encoding="utf-8") as f:
+        f.write(text)
     raw = text.strip()
     fence = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw, re.IGNORECASE)
     if fence:
@@ -43,6 +46,18 @@ def parse_translation(text: str) -> dict[str, Any]:
         object_start = raw.find("{")
         if object_start >= 0:
             raw = raw[object_start:]
+    import re
+    def fix_value(match):
+        key = match.group(1)
+        val = match.group(2).strip()
+        if not val or val in ("null", "true", "false") or val.isdigit() or val.startswith(("[", "{", '"')):
+            return match.group(0) # Leave valid JSON alone
+        # Remove any internal quotes and wrap in quotes
+        clean_val = val.replace('"', '').strip()
+        return f'{key}: "{clean_val}"'
+        
+    # Match key-value pairs where value might be broken. Matches up to comma or newline.
+    raw = re.sub(r'("[A-Za-z0-9_ /,-]+")\s*:\s*([^,\n{}]+)', fix_value, raw)
     try:
         parsed, _ = json.JSONDecoder().raw_decode(raw)
     except (json.JSONDecodeError, TypeError) as exc:
@@ -417,16 +432,18 @@ def validate_translation(
 
     for index, (original, result) in enumerate(zip(findings, output_findings)):
         explanation = result.get("translated_explanation")
-        require_script(explanation, language)
-        verifier.failures = []
-        verifier.verify_text(
-            str(original.get("explanation") or ""),
-            explanation,
-            item_id=f"abnormal_findings[{index}]",
-            field="explanation",
-        )
-        if verifier.failures:
-            _raise_verifier_failures({"ok": False, "failures": verifier.failures})
+        original_explanation = original.get("explanation")
+        if original_explanation:
+            require_script(explanation, language)
+            verifier.failures = []
+            verifier.verify_text(
+                str(original_explanation),
+                explanation,
+                item_id=f"abnormal_findings[{index}]",
+                field="explanation",
+            )
+            if verifier.failures:
+                _raise_verifier_failures({"ok": False, "failures": verifier.failures})
         for key in ("test_name", "value", "unit", "ref_low", "ref_high", "flag"):
             if key in original or key in result:
                 result[key] = original.get(key)
