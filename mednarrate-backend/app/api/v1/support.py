@@ -1,6 +1,4 @@
 import uuid
-
-import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -18,13 +16,14 @@ from app.models.support import (
     TicketStatus,
 )
 from app.models.user import User
+from app.middleware.ownership import verify_report_ownership
 
 router = APIRouter()
 
 
 class SupportTicketCreate(BaseModel):
-    title: str = Field(..., max_length=255)
-    description: str
+    title: str = Field(..., min_length=3, max_length=255)
+    description: str = Field(..., min_length=10, max_length=5000)
     category: TicketCategory
     priority: TicketPriority = TicketPriority.p3
     related_report_id: Optional[str] = None
@@ -40,13 +39,20 @@ async def create_ticket(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if payload.related_report_id is not None:
+        try:
+            report_id = str(uuid.UUID(payload.related_report_id))
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail="Invalid report ID") from error
+        await verify_report_ownership(report_id, str(current_user.id), db)
+
     ticket = SupportTicket(
         user_id=current_user.id,
         title=payload.title,
         description=payload.description,
         category=payload.category,
         priority=payload.priority,
-        related_report_id=payload.related_report_id,
+        related_report_id=report_id if payload.related_report_id else None,
         status=TicketStatus.new,
     )
     db.add(ticket)

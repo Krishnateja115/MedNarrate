@@ -1,16 +1,27 @@
-from fastapi import APIRouter, Depends
+import os
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
+from starlette.background import BackgroundTask
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, verify_password
 from app.models.caregiver_profile import CaregiverProfile
 from app.models.doctor_profile import DoctorProfile
 from app.models.medical_profile import MedicalProfile
 from app.models.user import User
 from app.schemas.user import UserUpdate, UserWithProfileOut
+from app.services.account_export import build_account_archive
+from app.services.user_deletion import anonymize_and_delete_user_data
 
 router = APIRouter()
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=1)
 
 
 @router.get("/me", response_model=UserWithProfileOut)
@@ -125,10 +136,27 @@ async def update_users_me(
     return current_user_dict
 
 
-@router.delete("/me", status_code=204)
-async def delete_users_me(
+@router.get("/me/export")
+async def export_users_me(
     current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
-    await db.delete(current_user)
+    archive_path = await build_account_archive(current_user, db)
+    return FileResponse(
+        archive_path,
+        media_type="application/zip",
+        filename="MedNarrate-account-data.zip",
+        headers={"Cache-Control": "no-store"},
+        background=BackgroundTask(os.unlink, archive_path),
+    )
+
+
+@router.delete("/me", status_code=204)
+async def delete_users_me(
+    payload: DeleteAccountRequest,
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    if not verify_password(payload.password, current_user.hashed_password):
+        raise HTTPException(status_code=403, detail="Password is incorrect")
+    await anonymize_and_delete_user_data(current_user, db)
     await db.commit()
     return None
