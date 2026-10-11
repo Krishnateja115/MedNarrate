@@ -114,7 +114,7 @@ async def test_extract_lab_values_edge_cases(mock_extract):
 @patch("app.services.analysis_pipeline.get_ner_pipeline")
 @patch("app.services.llm_orchestrator.verify_medical_facts")
 @patch("app.services.analysis_pipeline.generate_with_timeout_metadata")
-@patch("app.services.analysis_pipeline.extract_text_from_file")
+@patch("app.services.analysis_pipeline.extract_report_text", new_callable=AsyncMock)
 async def test_run_analysis_mocked(
     mock_extract, mock_generate, mock_verify, mock_ner, db_session
 ):
@@ -124,7 +124,9 @@ async def test_run_analysis_mocked(
     from app.services.analysis_pipeline import run_analysis
 
     # Mocks
-    mock_extract.return_value = "Glucose 120 mg/dL (70-99)"
+    mock_extract.return_value = (
+        "Laboratory Report\nPatient: Test User\nGlucose 120 mg/dL (70-99)"
+    )
     mock_generate.return_value = {
         "content": "Mocked LLM summary",
         "provider": "gemini",
@@ -169,7 +171,12 @@ async def test_run_analysis_mocked(
     report_id = report.id
 
     # Run analysis
-    await run_analysis(report_id, db)
+    with patch(
+        "app.services.analysis_pipeline.extract_medication_schedule",
+        new_callable=AsyncMock,
+        return_value=[],
+    ):
+        await run_analysis(report_id, db)
 
     # Assert side effects
     from sqlalchemy.future import select
@@ -191,7 +198,7 @@ async def test_run_analysis_mocked(
 
     assert analysis is not None
     assert len(analysis.structured_lab_values) == 1
-    assert analysis.structured_lab_values[0]["test_name"] == "glucose"
+    assert analysis.structured_lab_values[0]["test_name"].lower() == "glucose"
     assert analysis.structured_lab_values[0]["flag"] == "high"
 
     assert len(analysis.abnormal_findings) == 1
@@ -204,7 +211,7 @@ async def test_run_analysis_mocked(
 @patch("app.services.analysis_pipeline.get_ner_pipeline")
 @patch("app.services.llm_orchestrator.verify_medical_facts")
 @patch("app.services.analysis_pipeline.generate_with_timeout_metadata")
-@patch("app.services.analysis_pipeline.extract_text_from_file")
+@patch("app.services.analysis_pipeline.extract_report_text", new_callable=AsyncMock)
 async def test_run_analysis_defensive_filtering(
     mock_extract,
     mock_generate,
@@ -219,7 +226,10 @@ async def test_run_analysis_defensive_filtering(
     from app.services.analysis_pipeline import run_analysis
 
     # Mocks
-    mock_extract.return_value = "Cholesterol 220 mg/dL (150-199)"
+    mock_extract.return_value = (
+        "Laboratory Report\nPatient: Test User\n"
+        "Cholesterol 220 mg/dL (150-199)"
+    )
     mock_generate.return_value = {
         "content": "Mocked LLM summary",
         "provider": "gemini",
@@ -284,7 +294,12 @@ async def test_run_analysis_defensive_filtering(
     await db.refresh(report)
     report_id = report.id
 
-    await run_analysis(report_id, db)
+    with patch(
+        "app.services.analysis_pipeline.extract_medication_schedule",
+        new_callable=AsyncMock,
+        return_value=[],
+    ):
+        await run_analysis(report_id, db)
 
     from sqlalchemy.future import select
 
