@@ -41,10 +41,10 @@ async def create_ticket(
 ):
     if payload.related_report_id is not None:
         try:
-            report_id = str(uuid.UUID(payload.related_report_id))
+            report_id = uuid.UUID(payload.related_report_id)
         except ValueError as error:
             raise HTTPException(status_code=422, detail="Invalid report ID") from error
-        await verify_report_ownership(report_id, str(current_user.id), db)
+        await verify_report_ownership(str(report_id), str(current_user.id), db)
 
     ticket = SupportTicket(
         user_id=current_user.id,
@@ -116,7 +116,7 @@ async def get_user_ticket(
         select(SupportTicketMessage)
         .where(
             SupportTicketMessage.ticket_id == ticket_id,
-            SupportTicketMessage.is_internal is False,
+            SupportTicketMessage.is_internal.is_(False),
         )
         .order_by(SupportTicketMessage.created_at.asc())
     )

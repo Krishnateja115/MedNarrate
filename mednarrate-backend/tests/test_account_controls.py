@@ -7,6 +7,7 @@ import zipfile
 from httpx import AsyncClient
 
 from tests.pdf_fixtures import VALID_PDF
+from app.services.storage import get_storage_backend
 
 
 async def _signup(client: AsyncClient, email: str) -> dict[str, str]:
@@ -101,3 +102,46 @@ async def test_support_report_link_must_be_owned(client: AsyncClient) -> None:
         },
     )
     assert response.status_code in (403, 404)
+
+
+async def test_support_round_trip_and_report_file_deleted(client: AsyncClient) -> None:
+    headers = await _signup(client, "support_round_trip@example.com")
+    upload = await client.post(
+        "/api/v1/reports/upload",
+        headers=headers,
+        files={"file": ("report.pdf", VALID_PDF, "application/pdf")},
+        data={"title": "My Report", "report_date": "2024-01-01", "report_type": "blood"},
+    )
+    assert upload.status_code == 201
+    report_id = upload.json()["id"]
+    storage_key = upload.json()["file_path"]
+    assert await get_storage_backend().file_exists(storage_key)
+    ticket = await client.post(
+        "/api/v1/support",
+        headers=headers,
+        json={
+            "title": "Question about result",
+            "description": "The extracted number does not match the uploaded file.",
+            "category": "AI/Analysis",
+            "related_report_id": report_id,
+        },
+    )
+    assert ticket.status_code == 201
+    ticket_id = ticket.json()["ticket_id"]
+    assert len((await client.get("/api/v1/support", headers=headers)).json()["tickets"]) == 1
+    reply = await client.post(
+        f"/api/v1/support/{ticket_id}/reply",
+        headers=headers,
+        json={"content": "I checked the original PDF."},
+    )
+    assert reply.status_code == 200
+    detail = await client.get(f"/api/v1/support/{ticket_id}", headers=headers)
+    assert detail.status_code == 200
+    assert len(detail.json()["ticket"]["messages"]) == 2
+
+    deleted = await client.request(
+        "DELETE", "/api/v1/users/me", headers=headers,
+        json={"password": "StrongP@ssword1"},
+    )
+    assert deleted.status_code == 204
+    assert not await get_storage_backend().file_exists(storage_key)
