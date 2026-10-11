@@ -941,14 +941,16 @@ class _UploadScreenState extends State<UploadScreen> {
                 child: Text(
                   _failureCategory == 'OCR_ENGINE_UNAVAILABLE'
                       ? 'Text Recognition Unavailable'
-                      : (_failureCategory == 'OCR_NO_MEANINGFUL_TEXT' ||
-                              _failureCategory == 'OCR_FAILED' ||
-                              _failureCategory == 'IMAGE_DECODE_ERROR'
-                          ? 'Unable to Read This Image'
-                          : (_failureCategory == 'PDF_EXTRACTION_ERROR' ||
-                                  _failureCategory == 'CORRUPT_PDF'
-                              ? 'Unable to Read This Document'
-                              : 'AI Analysis Unavailable')),
+                      : _failureCategory == 'NOT_MEDICAL_REPORT'
+                          ? 'This Is Not a Medical Report'
+                          : (_failureCategory == 'OCR_NO_MEANINGFUL_TEXT' ||
+                                  _failureCategory == 'OCR_FAILED' ||
+                                  _failureCategory == 'IMAGE_DECODE_ERROR'
+                              ? 'Unable to Read This Image'
+                              : (_failureCategory == 'PDF_EXTRACTION_ERROR' ||
+                                      _failureCategory == 'CORRUPT_PDF'
+                                  ? 'Unable to Read This Document'
+                                  : 'AI Analysis Unavailable')),
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
