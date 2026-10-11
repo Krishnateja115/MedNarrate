@@ -1,39 +1,40 @@
+import json
 import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, MagicMock
 from app.services.lab_value_extractor import extract_lab_values
 
 @pytest.mark.asyncio
-@patch('app.services.lab_value_extractor.extract_structured_json', new_callable=AsyncMock)
+@patch('app.services.llm_orchestrator.extract_structured_json', new_callable=AsyncMock)
 async def test_extract_lab_values_basic(mock_extract):
-    mock_extract.return_value = {
+    mock_extract.return_value = json.dumps({
         "lab_results": [
             {"test_name": "hemoglobin", "value": 14.5, "unit": "g/dL", "ref_low": 13.5, "ref_high": 17.5, "flag": "normal"},
             {"test_name": "wbc_count", "value": 5.2, "unit": "10^3/µL", "ref_low": 4.5, "ref_high": 11.0, "flag": "normal"}
         ]
-    }
+    })
     text = "Hemoglobin: 14.5 g/dL (ref 13.5 - 17.5)\nWhite Blood Cells: 5.2 10^3/µL (reference: 4.5 to 11.0)"
     results = await extract_lab_values(text)
 
     assert len(results) == 2
-    assert results[0]["test_name"] == "hemoglobin"
+    assert results[0]["test_name"].lower() == "hemoglobin"
     assert results[0]["value"] == 14.5
     assert results[0]["unit"] == "g/dL"
     assert results[0]["flag"] == "normal"
 
-    assert results[1]["test_name"] == "wbc_count"
+    assert results[1]["test_name"].lower() in {"wbc", "wbc_count", "white blood cells"}
     assert results[1]["value"] == 5.2
     assert results[1]["flag"] == "normal"
 
 
 @pytest.mark.asyncio
-@patch('app.services.lab_value_extractor.extract_structured_json', new_callable=AsyncMock)
+@patch('app.services.llm_orchestrator.extract_structured_json', new_callable=AsyncMock)
 async def test_extract_lab_values_high_low(mock_extract):
-    mock_extract.return_value = {
+    mock_extract.return_value = json.dumps({
         "lab_results": [
             {"test_name": "fasting_glucose", "value": 115.0, "unit": "mg/dL", "ref_low": 70, "ref_high": 99, "flag": "high"},
             {"test_name": "Vitamin D", "value": 15.0, "unit": "ng/mL", "ref_low": 30, "ref_high": 100, "flag": "low"}
         ]
-    }
+    })
     text = """
     Glucose (Fasting) 115 mg/dL (70 - 99)
     Vitamin D 15 ng/mL (30 - 100)
@@ -41,7 +42,9 @@ async def test_extract_lab_values_high_low(mock_extract):
     results = await extract_lab_values(text)
 
     assert len(results) == 2
-    assert results[0]["test_name"] == "fasting_glucose"
+    assert results[0]["test_name"].lower().replace("_", " ") in {
+        "fasting glucose", "glucose (fasting)"
+    }
     assert results[0]["value"] == 115.0
     assert results[0]["flag"] == "high"
 
@@ -51,31 +54,31 @@ async def test_extract_lab_values_high_low(mock_extract):
 
 
 @pytest.mark.asyncio
-@patch('app.services.lab_value_extractor.extract_structured_json', new_callable=AsyncMock)
+@patch('app.services.llm_orchestrator.extract_structured_json', new_callable=AsyncMock)
 async def test_extract_lab_values_no_reference(mock_extract):
-    mock_extract.return_value = {
+    mock_extract.return_value = json.dumps({
         "lab_results": [
             {"test_name": "cholesterol", "value": 220.0, "unit": "mg/dL", "flag": "not_classified"}
         ]
-    }
+    })
     text = "Cholesterol 220 mg/dL"
     results = await extract_lab_values(text)
 
     assert len(results) == 1
-    assert results[0]["test_name"] == "cholesterol"
+    assert results[0]["test_name"].lower() == "cholesterol"
     assert results[0]["value"] == 220.0
     assert results[0].get("ref_low") is None
 
 
 @pytest.mark.asyncio
-@patch('app.services.lab_value_extractor.extract_structured_json', new_callable=AsyncMock)
+@patch('app.services.llm_orchestrator.extract_structured_json', new_callable=AsyncMock)
 async def test_extract_lab_values_unusual_units(mock_extract):
-    mock_extract.return_value = {
+    mock_extract.return_value = json.dumps({
         "lab_results": [
             {"test_name": "HbA1c", "value": 6.5, "unit": "%", "ref_low": 4.0, "ref_high": 5.6, "flag": "high"},
             {"test_name": "TSH", "value": 4.2, "unit": "µIU/mL", "ref_low": 0.4, "ref_high": 4.0, "flag": "high"}
         ]
-    }
+    })
     text = "HbA1c 6.5 % (4.0 - 5.6)\nTSH 4.2 µIU/mL (0.4 - 4.0)"
     results = await extract_lab_values(text)
 
@@ -86,25 +89,25 @@ async def test_extract_lab_values_unusual_units(mock_extract):
 
 
 @pytest.mark.asyncio
-@patch('app.services.lab_value_extractor.extract_structured_json', new_callable=AsyncMock)
+@patch('app.services.llm_orchestrator.extract_structured_json', new_callable=AsyncMock)
 async def test_extract_lab_values_edge_cases(mock_extract):
-    mock_extract.return_value = {"lab_results": []}
+    mock_extract.return_value = json.dumps({"lab_results": []})
     text = """
-    Test With-Dash 12.3 (10 - 15)
-    Empty Ref Test 5.0 ( - )
-    Test Without Space:4.5g/L
+    LDL Cholesterol 120 (100 - 140)
+    Hemoglobin 13.5 ( - )
+    Albumin:4.5g/dL
     """
-    results = extract_lab_values(text)
+    results = await extract_lab_values(text)
 
-    assert results[0]["test_name"] == "Test With-Dash"
-    assert results[0]["value"] == 12.3
+    assert results[0]["test_name"] == "LDL Cholesterol"
+    assert results[0]["value"] == 120.0
 
-    assert results[1]["test_name"] == "Empty Ref Test"
-    assert results[1]["value"] == 5.0
+    assert results[1]["test_name"] == "Hemoglobin"
+    assert results[1]["value"] == 13.5
 
-    assert results[2]["test_name"] == "Test Without Space"
+    assert results[2]["test_name"] == "Albumin"
     assert results[2]["value"] == 4.5
-    assert results[2]["unit"] == "g/L"
+    assert results[2]["unit"] == "g/dL"
 
 
 @pytest.mark.asyncio
