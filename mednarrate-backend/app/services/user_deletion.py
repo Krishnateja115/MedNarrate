@@ -12,7 +12,7 @@ from app.models.doctor_profile import DoctorProfile
 from app.models.caregiver_profile import CaregiverProfile
 from app.models.chat import ChatSession
 from app.models.notification_log import NotificationLog
-from app.core.security import revoke_all_user_sessions, hash_token
+from app.core.security import revoke_all_user_sessions
 from app.services.file_storage import delete_file
 
 logger = logging.getLogger(__name__)

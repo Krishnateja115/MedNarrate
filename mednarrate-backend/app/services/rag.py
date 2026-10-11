@@ -18,7 +18,7 @@ import re
 import logging
 import asyncio
 import uuid
-from typing import List, Optional
+from typing import List
 
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession

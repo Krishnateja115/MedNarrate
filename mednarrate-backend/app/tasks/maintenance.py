@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from sqlalchemy import delete
 
 from app.models.password_reset_token import PasswordResetToken

@@ -433,7 +433,6 @@ class DevGeminiProvider(LLMProvider):
         _BLOCKED_FINISH_REASONS = {"SAFETY", "PROHIBITED_CONTENT"}
         _ACCEPTABLE_FINISH_REASONS = {"STOP", "RECITATION", "OTHER"}
 
-        import asyncio
         try:
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],

@@ -27,9 +27,8 @@ from app.schemas.report import (
 )
 from app.services.analysis_pipeline import run_analysis
 from app.services.llm_client import generate_translation_with_provider
-from app.services.translation_validation import parse_translation, validate_translation
+from app.services.translation_validation import validate_translation
 from app.exceptions import TranslationServiceError
-from app.services.prompts import TRANSLATION_PROMPT
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
