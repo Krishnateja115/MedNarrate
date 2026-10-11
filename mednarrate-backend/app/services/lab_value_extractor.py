@@ -367,6 +367,37 @@ def _extract_report_table(text: str) -> list[dict]:
     return results
 
 
+def _extract_simple_lab_lines(text: str) -> list[dict]:
+    """Parse unambiguous one-line results without a remote model call."""
+    results: list[dict] = []
+    seen: set[tuple[str, float]] = set()
+    for match in LAB_LINE_RE.finditer(text):
+        name = match.group("name").strip()
+        canonical = normalize_parameter_name(name)
+        if not (_looks_like_lab_name(name) or KNOWN_LAB_TESTS.search(canonical)):
+            continue
+        unit = (match.group("unit") or "").strip()
+        reference = (match.group("ref_str") or "").strip()
+        record = _sanitize_lab_record(
+            {
+                "test_name": name,
+                "original_name": name,
+                "value": match.group("value"),
+                "unit": unit,
+                "original_unit": unit,
+                "ref_range_str": reference or None,
+                "flag": match.group("flag") or "not_classified",
+            }
+        )
+        if record is None:
+            continue
+        key = (record["test_name"].lower(), record["value"])
+        if key not in seen:
+            seen.add(key)
+            results.append(record)
+    return results
+
+
 async def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
     # Skip only for explicit imaging/radiology report types
     rt = (report_type or "").lower().strip()
@@ -379,6 +410,9 @@ async def extract_lab_values(text: str, report_type: str = "blood") -> list[dict
     table_results = _extract_report_table(text)
     if table_results:
         return table_results
+    line_results = _extract_simple_lab_lines(text)
+    if line_results:
+        return line_results
 
     prompt = f"""From the following medical report text, extract all laboratory test results.
 The parser must strictly follow these rules:
