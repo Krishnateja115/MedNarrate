@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -24,7 +25,6 @@ from app.services.llm_client import (
     generate_with_metadata,
 )
 from app.services.model_registry import get_ner_pipeline
-from app.services.multilingual import translate_report_summary
 from app.services.privacy import deidentify_prompt_text
 from app.services.prompts import (
     CLINICIAN_PROMPT,
@@ -68,6 +68,32 @@ async def generate_with_timeout_metadata(
         raise
 
 
+async def generate_core_summaries(
+    clinician_prompt: str,
+    patient_prompt: str,
+    clinician_instruction: str,
+    patient_instruction: str,
+    request_id: str,
+) -> tuple[dict, dict]:
+    """Generate independent summaries concurrently without changing their content."""
+    return await asyncio.gather(
+        generate_with_timeout_metadata(
+            clinician_prompt,
+            timeout=settings.LLM_TIMEOUT_SECONDS,
+            request_id=request_id,
+            system_instruction=clinician_instruction,
+            thinking_level="HIGH",
+        ),
+        generate_with_timeout_metadata(
+            patient_prompt,
+            timeout=settings.LLM_TIMEOUT_SECONDS,
+            request_id=request_id,
+            system_instruction=patient_instruction,
+            thinking_level="HIGH",
+        ),
+    )
+
+
 async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
     if db is None:
         async with AsyncSessionLocal() as session:
@@ -94,6 +120,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         await db.commit()
 
         # 1. Text Extraction & Diagnostic Handling
+        stage_started = time.perf_counter()
         file_type_str = (
             report.file_type.value
             if hasattr(report.file_type, "value")
@@ -116,7 +143,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
 
         cleaned_text = clean_extracted_text(report.extracted_text or "")
         logger.info(
-            f"[STAGE:EXTRACTION:SUCCESS] req_id={req_id} Extracted {len(cleaned_text)} characters."
+            f"[STAGE:EXTRACTION:SUCCESS] req_id={req_id} Extracted {len(cleaned_text)} characters in {time.perf_counter() - stage_started:.2f}s."
         )
 
         # Source-aware Report Date Extraction
@@ -126,6 +153,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             await db.commit()
 
         # 2. Run NER -> entities
+        stage_started = time.perf_counter()
         logger.info(f"[STAGE:NLP] req_id={req_id} Running biomedical NER pipeline...")
         entities = []
         try:
@@ -145,7 +173,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
                         f"[STAGE:NLP:WARN] req_id={req_id} Discarding invalid entity (validation error)."
                     )
             logger.info(
-                f"[STAGE:NLP:SUCCESS] req_id={req_id} Identified {len(entities)} entities."
+                f"[STAGE:NLP:SUCCESS] req_id={req_id} Identified {len(entities)} entities in {time.perf_counter() - stage_started:.2f}s."
             )
         except asyncio.TimeoutError:
             logger.warning(
@@ -157,6 +185,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             )
 
         # 3. Extract Structured Lab Values & Abnormal Findings
+        stage_started = time.perf_counter()
         logger.info(
             f"[STAGE:LAB_EXTRACT] req_id={req_id} Extracting structured lab parameters..."
         )
@@ -185,10 +214,11 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
                 )
 
         logger.info(
-            f"[STAGE:LAB_EXTRACT:SUCCESS] req_id={req_id} Extracted {len(structured_lab_values)} lab values ({len(abnormal_findings)} abnormal)."
+            f"[STAGE:LAB_EXTRACT:SUCCESS] req_id={req_id} Extracted {len(structured_lab_values)} lab values ({len(abnormal_findings)} abnormal) in {time.perf_counter() - stage_started:.2f}s."
         )
 
         # 4. RAG Processing & Retrieval
+        stage_started = time.perf_counter()
         logger.info(
             f"[STAGE:RAG] req_id={req_id} Processing report chunks for RAG index..."
         )
@@ -204,7 +234,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
                 rag_retrieved = True
                 retrieved_chunks_count = rag_context.count("[Chunk ")
             logger.info(
-                f"[STAGE:RAG:SUCCESS] req_id={req_id} Report processed for RAG. Retrieved {retrieved_chunks_count} chunks."
+                f"[STAGE:RAG:SUCCESS] req_id={req_id} Report processed for RAG. Retrieved {retrieved_chunks_count} chunks in {time.perf_counter() - stage_started:.2f}s."
             )
         except Exception as rag_e:
             logger.warning(
@@ -250,36 +280,29 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         )
 
         # 6. LLM Generation with Request Correlation
+        stage_started = time.perf_counter()
         logger.info(
             f"[STAGE:LLM] req_id={req_id} Generating summaries via configured LLM provider..."
         )
         from app.services.llm_orchestrator import verify_medical_facts
 
         clinician_sys = "You are a specialized medical analysis AI. Strictly format your response according to the provided instructions. Do not hallucinate data. Maintain a formal, clinical tone."
-        clinician_res = await generate_with_timeout_metadata(
+        patient_sys = "You are an empathetic medical assistant. Explain medical terms clearly to a patient. Strictly follow the structure requested. Do not give direct medical advice."
+        clinician_res, patient_res = await generate_core_summaries(
             clinician_prompt,
-            timeout=settings.LLM_TIMEOUT_SECONDS,
-            request_id=req_id,
-            system_instruction=clinician_sys,
-            thinking_level="HIGH",
+            patient_prompt,
+            clinician_sys,
+            patient_sys,
+            req_id,
         )
         clinician_summary = clinician_res["content"]
-
-        patient_sys = "You are an empathetic medical assistant. Explain medical terms clearly to a patient. Strictly follow the structure requested. Do not give direct medical advice."
-        patient_res = await generate_with_timeout_metadata(
-            patient_prompt,
-            timeout=settings.LLM_TIMEOUT_SECONDS,
-            request_id=req_id,
-            system_instruction=patient_sys,
-            thinking_level="HIGH",
-        )
         patient_summary = patient_res["content"]
 
         llm_provider = clinician_res.get("provider")
         llm_model = clinician_res.get("model")
 
         logger.info(
-            f"[STAGE:LLM:SUCCESS] req_id={req_id} Generated clinician and patient summaries."
+            f"[STAGE:LLM:SUCCESS] req_id={req_id} Generated clinician and patient summaries in {time.perf_counter() - stage_started:.2f}s."
         )
 
         # 7. Medical Validation & Grounding Layer
@@ -342,14 +365,8 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
                 )
             # is_valid is True: verifier confirmed content — proceed normally
 
-        # Pre-generate translations safely
-        try:
-            await translate_report_summary(str(report.id), patient_summary, "hi", db)
-            await translate_report_summary(str(report.id), patient_summary, "te", db)
-        except Exception as tr_e:
-            logger.warning(
-                f"[STAGE:TRANSLATION:WARN] Pre-generation of translations failed: {tr_e}"
-            )
+        # Translation remains available on demand. Do not delay the first
+        # usable report on two additional remote model calls.
 
         # Extract and persist medications
         try:
