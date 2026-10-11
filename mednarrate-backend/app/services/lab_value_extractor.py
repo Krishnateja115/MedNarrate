@@ -116,7 +116,7 @@ _NUMBER_LINE_RE = re.compile(r"^[<>≤≥]?\s*[+-]?\d+(?:\.\d+)?$")
 _RANGE_RE = re.compile(
     r"^(?:(?P<low>[<>≤≥]?\s*[+-]?\d+(?:\.\d+)?)\s*(?:-|–|—|to)\s*"
     r"(?P<high>[<>≤≥]?\s*[+-]?\d+(?:\.\d+)?)|"
-    r"(?P<single>[<>≤≥])\s*(?P<bound>[+-]?\d+(?:\.\d+)?))$",
+    r"(?P<single><=|>=|[<>≤≥])\s*(?P<bound>[+-]?\d+(?:\.\d+)?))$",
     re.IGNORECASE,
 )
 _NON_LAB_NAMES = {
@@ -164,7 +164,7 @@ def _parse_range(value: str) -> tuple[Optional[float], Optional[float]]:
             re.sub(r"[^0-9.+-]", "", match.group("high"))
         )
     bound = float(match.group("bound"))
-    return (bound, None) if match.group("single") in {">", "≥"} else (None, bound)
+    return (bound, None) if match.group("single") in {">", ">=", "≥"} else (None, bound)
 
 
 def _classify_value(value: float, ref_low: Optional[float], ref_high: Optional[float], explicit: str = "") -> str:

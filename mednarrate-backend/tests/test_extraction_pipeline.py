@@ -115,10 +115,8 @@ async def test_extraction_pipeline(mock_extract):
 
 
 @pytest.mark.asyncio
-@patch('app.services.lab_value_extractor.extract_structured_json', new_callable=AsyncMock)
-async def test_one_sided_reference_ranges(mock_extract):
+async def test_one_sided_reference_ranges():
     ldl_text = "LDL Cholesterol 165 mg/dL < 100 mg/dL HIGH"
-    mock_extract.return_value = {"lab_results": [{"test_name": "LDL Cholesterol", "value": 165.0, "unit": "mg/dL", "ref_high": 100.0, "flag": "high"}]}
     labs = await extract_lab_values(ldl_text)
     assert len(labs) == 1
     ldl = labs[0]
@@ -129,7 +127,6 @@ async def test_one_sided_reference_ranges(mock_extract):
     assert ldl["flag"] == "high"
 
     vit_text = "Vitamin D 15 ng/mL < 30 ng/mL LOW"
-    mock_extract.return_value = {"lab_results": [{"test_name": "Vitamin D", "value": 15.0, "unit": "ng/mL", "ref_high": 30.0, "flag": "low"}]}
     labs = await extract_lab_values(vit_text)
     assert len(labs) == 1
     vit = labs[0]
@@ -140,7 +137,6 @@ async def test_one_sided_reference_ranges(mock_extract):
     assert vit["flag"] == "low"
 
     hdl_text = "HDL Cholesterol 65 mg/dL > 40 mg/dL NORMAL"
-    mock_extract.return_value = {"lab_results": [{"test_name": "HDL Cholesterol", "value": 65.0, "unit": "mg/dL", "ref_low": 40.0, "flag": "normal"}]}
     labs = await extract_lab_values(hdl_text)
     assert len(labs) == 1
     hdl = labs[0]
@@ -151,15 +147,22 @@ async def test_one_sided_reference_ranges(mock_extract):
     assert hdl["flag"] == "normal"
 
     ldl_lte = "LDL Cholesterol 165 mg/dL <= 100 mg/dL HIGH"
-    mock_extract.return_value = {"lab_results": [{"test_name": "LDL Cholesterol", "value": 165.0, "unit": "mg/dL", "ref_high": 100.0, "flag": "high"}]}
     labs = await extract_lab_values(ldl_lte)
     assert len(labs) == 1
     assert labs[0]["ref_high"] == 100.0
     assert labs[0]["flag"] == "high"
 
     hdl_gte = "HDL Cholesterol 65 mg/dL >= 40 mg/dL NORMAL"
-    mock_extract.return_value = {"lab_results": [{"test_name": "HDL Cholesterol", "value": 65.0, "unit": "mg/dL", "ref_low": 40.0, "flag": "normal"}]}
     labs = await extract_lab_values(hdl_gte)
     assert len(labs) == 1
     assert labs[0]["ref_low"] == 40.0
     assert labs[0]["flag"] == "normal"
+
+    # Classification must also work when the source has no explicit flag.
+    no_flag_high = await extract_lab_values("LDL Cholesterol 165 mg/dL <= 100 mg/dL")
+    assert no_flag_high[0]["ref_high"] == 100.0
+    assert no_flag_high[0]["flag"] == "high"
+
+    no_flag_normal = await extract_lab_values("HDL Cholesterol 65 mg/dL >= 40 mg/dL")
+    assert no_flag_normal[0]["ref_low"] == 40.0
+    assert no_flag_normal[0]["flag"] == "normal"
