@@ -9,6 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/routing/app_router.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/api_service.dart';
 import 'core/services/storage_service.dart';
 import 'core/services/biometric_service.dart';
 import 'core/services/cache_service.dart';
@@ -45,6 +46,15 @@ class AppLifecycleObserver extends WidgetsBindingObserver {
         }
       }
       _backgroundedAt = null;
+      try {
+        if (await StorageService.instance.getAccessToken() != null) {
+          await NotificationService.instance.refreshTimezone();
+          await NotificationService.instance.refreshPermissions();
+          await ApiService.instance.getReminders();
+        }
+      } catch (error) {
+        debugPrint('Medicine alert refresh deferred: $error');
+      }
     }
   }
 }

@@ -65,6 +65,11 @@ class _SplashScreenState extends State<SplashScreen>
     if (token != null) {
       try {
         await ApiService.instance.getMe();
+        try {
+          await ApiService.instance.getReminders();
+        } catch (_) {
+          // A temporary reminder-sync failure must not block sign-in.
+        }
         if (!mounted) return;
 
         final isBioEnabled =

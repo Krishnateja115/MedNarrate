@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/notification_service.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
 class ReminderScreen extends StatefulWidget {
@@ -22,6 +24,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
   final ApiService _apiService = ApiService.instance;
   List<Map<String, dynamic>> _reminders = [];
   bool _loading = true;
+  bool _permissionWarningShown = false;
 
   @override
   void initState() {
@@ -45,6 +48,15 @@ class _ReminderScreenState extends State<ReminderScreen> {
           _reminders = reminders;
           _loading = false;
         });
+        if (!kIsWeb &&
+            !_permissionWarningShown &&
+            !NotificationService.instance.notificationsAllowed) {
+          _permissionWarningShown = true;
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Phone notifications are off. Enable them in device settings to receive medicine alerts.'),
+          ));
+        }
       }
     } catch (e) {
       if (mounted) {

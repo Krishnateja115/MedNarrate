@@ -20,6 +20,7 @@ async def test_create_manual_reminder(client: AsyncClient, token_headers: dict):
     assert data["medication_name"] == "Test Med Manual"
     assert data["report_id"] is None
     assert "id" in data
+    assert data["created_at"]
 
 
 @pytest.mark.asyncio

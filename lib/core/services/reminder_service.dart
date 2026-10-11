@@ -145,6 +145,7 @@ class ReminderService {
       'Medicine Reminder: ${reminder.medicineName}',
       reminder.dosageNote ?? 'Time to take your medicine',
       scheduled,
+      repeatDaily: reminder.repeatDaily,
     );
   }
 }

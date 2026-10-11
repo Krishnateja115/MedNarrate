@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -46,6 +47,7 @@ class ReminderUpdate(BaseModel):
 class ReminderOut(ReminderCreate):
     id: uuid.UUID
     is_active: bool
+    created_at: datetime
 
 
 @router.post("/", response_model=ReminderOut, status_code=201)

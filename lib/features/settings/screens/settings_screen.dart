@@ -4,6 +4,8 @@ import 'package:app_settings/app_settings.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/services/api_service.dart';
+import '../../../core/services/medication_alert_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/services/biometric_service.dart';
@@ -297,12 +299,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _toggleNotifications(bool enabled) async {
     await _storageService.setNotificationsEnabled(enabled);
+    try {
+      if (enabled) {
+        await NotificationService.instance.refreshPermissions();
+      }
+      await MedicationAlertService.instance.syncCached();
+      await ApiService.instance.getReminders();
+    } catch (_) {
+      // The preference is saved; the next successful sync will apply it.
+    }
     if (!mounted) return;
     setState(() => _notificationsEnabled = enabled);
 
     if (enabled) {
-      Helpers.showSuccess(
-          context, AppLocalizations.of(context)!.notificationsEnabled);
+      if (NotificationService.instance.notificationsAllowed) {
+        Helpers.showSuccess(
+            context, AppLocalizations.of(context)!.notificationsEnabled);
+      } else {
+        Helpers.showError(context,
+            'Allow notifications in your phone settings to receive medicine alerts.');
+      }
     } else {
       Helpers.showSuccess(
           context, AppLocalizations.of(context)!.notificationsDisabled);

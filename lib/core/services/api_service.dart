@@ -12,6 +12,7 @@ import 'connectivity_service.dart';
 import 'cache_service.dart';
 import 'offline_queue_service.dart';
 import 'reminder_service.dart';
+import 'medication_alert_service.dart';
 import '../../models/cached/offline_action.dart';
 import '../../features/reports/models/report_model.dart';
 import '../../models/comparison_models.dart';
@@ -210,8 +211,18 @@ class ApiService {
     }
     final data = jsonDecode(resp.body) as Map<String, dynamic>;
     final tokens = AuthTokens.fromMap(data);
+    try {
+      await MedicationAlertService.instance.clear();
+    } catch (error) {
+      debugPrint('Could not clear previous medicine alerts: $error');
+    }
     await StorageService.instance
         .saveTokens(tokens.accessToken, tokens.refreshToken);
+    try {
+      await getReminders();
+    } catch (error) {
+      debugPrint('Will sync medicine alerts when reminders are opened: $error');
+    }
     return tokens;
   }
 
@@ -283,9 +294,12 @@ class ApiService {
     } catch (_) {}
 
     try {
-      await CacheService.instance.clearAll();
+      await MedicationAlertService.instance.clear();
     } catch (_) {}
 
+    try {
+      await CacheService.instance.clearAll();
+    } catch (_) {}
   }
 
   Future<Map<String, dynamic>> forgotPassword(String email) async {
@@ -745,13 +759,25 @@ class ApiService {
 
   Future<void> toggleMedicationSchedule(String id) async {
     await _patch('/notifications/medication-schedules/$id/toggle');
+    try {
+      await MedicationAlertService.instance.toggle(id);
+    } catch (error) {
+      debugPrint('Could not toggle local medicine alert: $error');
+    }
+    await _refreshMedicationAlerts();
   }
 
   // ─────────────────────────── Reminders ───────────────────────────────
 
   Future<List<Map<String, dynamic>>> getReminders() async {
     final resp = await _get('/reminders/');
-    return List<Map<String, dynamic>>.from(jsonDecode(resp.body));
+    final reminders = List<Map<String, dynamic>>.from(jsonDecode(resp.body));
+    try {
+      await MedicationAlertService.instance.sync(reminders);
+    } catch (error) {
+      debugPrint('Could not schedule medicine alerts: $error');
+    }
+    return reminders;
   }
 
   Future<Map<String, dynamic>> createReminder({
@@ -774,17 +800,43 @@ class ApiService {
     if (reportId != null) body['report_id'] = reportId;
 
     final resp = await _post('/reminders/', body: body);
-    return jsonDecode(resp.body) as Map<String, dynamic>;
+    final reminder = jsonDecode(resp.body) as Map<String, dynamic>;
+    try {
+      await MedicationAlertService.instance.upsert(reminder);
+    } catch (error) {
+      debugPrint('Medicine saved, but phone alert could not be set: $error');
+    }
+    return reminder;
   }
 
   Future<Map<String, dynamic>> updateReminder(
       String id, Map<String, dynamic> fields) async {
     final resp = await _patch('/reminders/$id', body: fields);
-    return jsonDecode(resp.body) as Map<String, dynamic>;
+    final reminder = jsonDecode(resp.body) as Map<String, dynamic>;
+    try {
+      await MedicationAlertService.instance.upsert(reminder);
+    } catch (error) {
+      debugPrint('Medicine updated, but phone alert could not be set: $error');
+    }
+    return reminder;
   }
 
   Future<void> deleteReminder(String id) async {
     await _delete('/reminders/$id');
+    try {
+      await MedicationAlertService.instance.remove(id);
+    } catch (error) {
+      debugPrint(
+          'Medicine deleted, but phone alert could not be cleared: $error');
+    }
+  }
+
+  Future<void> _refreshMedicationAlerts() async {
+    try {
+      await getReminders();
+    } catch (error) {
+      debugPrint('Medicine saved; alert sync will retry: $error');
+    }
   }
 
   Future<void> executeOfflineAction(OfflineAction action) async {
