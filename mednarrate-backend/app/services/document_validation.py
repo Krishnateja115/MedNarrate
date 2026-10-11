@@ -26,6 +26,12 @@ _UNRELATED_MARKERS = re.compile(
     r"account balance|curriculum vitae|resume)\b",
     re.IGNORECASE,
 )
+_LAB_RESULT_LINE = re.compile(
+    r"(?im)^[ \t]*(?:hemoglobin|haemoglobin|wbc|rbc|platelets?|"
+    r"neutrophils?|lymphocytes?|monocytes?|eosinophils?|basophils?|"
+    r"glucose|creatinine|cholesterol|tsh)[ \t]*[:\-]?[ \t]*"
+    r"\d+(?:\.\d+)?\b"
+)
 
 
 def validate_medical_document(text: str) -> None:
@@ -39,7 +45,7 @@ def validate_medical_document(text: str) -> None:
         bool(re.search(pattern, sample, re.IGNORECASE))
         for pattern in _MEDICAL_MARKERS
     )
-    if medical_signals >= 2:
+    if medical_signals >= 2 or len(_LAB_RESULT_LINE.findall(sample)) >= 2:
         return
     if _UNRELATED_MARKERS.search(sample):
         reason = "This appears to be a non-medical document."

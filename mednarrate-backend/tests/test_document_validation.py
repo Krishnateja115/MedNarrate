@@ -12,6 +12,7 @@ from app.services.text_extraction import ExtractionError
         "Radiology findings\nPatient ID 123\nImpression: no acute abnormality",
         "MRI BRAIN\nFindings: no mass effect\nImpression: normal study",
         "Patient: A\nAssessment and plan: follow up for fever",
+        "Neutrophils 50\nLymphocytes 40\nMonocytes 9",
     ],
 )
 def test_accepts_medical_documents(text: str) -> None:
