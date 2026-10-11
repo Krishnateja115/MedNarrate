@@ -10,15 +10,15 @@ class ReportPollingService {
   Stream<ReportStatus> pollReportStatus(String reportId) {
     final controller = StreamController<ReportStatus>();
     Timer? timer;
-    int ticks = 0;
-    const maxTicks = 100; // 5 minutes at 3 seconds per tick
+    bool isChecking = false;
 
     void checkStatus() async {
-      if (controller.isClosed) return;
-      
+      if (controller.isClosed || isChecking) return;
+      isChecking = true;
+
       try {
         final report = await ApiService.instance.getReport(reportId);
-        
+
         if (report.processingStatus == 'completed') {
           controller.add(ReportStatus.completed);
           timer?.cancel();
@@ -29,21 +29,14 @@ class ReportPollingService {
           controller.close();
         } else {
           controller.add(ReportStatus.processing);
-          ticks++;
-          if (ticks >= maxTicks) {
-            controller.add(ReportStatus.failed);
-            timer?.cancel();
-            controller.close();
-          }
         }
       } catch (e) {
-        // Assume failure on recurring network error after a few tries
-        ticks++;
-        if (ticks >= maxTicks) {
-          controller.add(ReportStatus.failed);
-          timer?.cancel();
-          controller.close();
+        // Keep checking; only the backend can declare analysis failure.
+        if (!controller.isClosed) {
+          controller.add(ReportStatus.processing);
         }
+      } finally {
+        isChecking = false;
       }
     }
 

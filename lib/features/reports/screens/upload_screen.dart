@@ -307,6 +307,12 @@ class _UploadScreenState extends State<UploadScreen> {
                 category: status.failureCategory);
           });
           return;
+        } else if (status.errorReason != null) {
+          setState(() => _processingStatusText =
+              'Still processing. Reconnecting to check your report...');
+        } else if (_processingStatusText.startsWith('Still processing.')) {
+          setState(() => _processingStatusText =
+              'Extracting text and analyzing report...');
         }
       }
     } on ApiException catch (e) {
@@ -363,6 +369,12 @@ class _UploadScreenState extends State<UploadScreen> {
                 category: status.failureCategory);
           });
           return;
+        } else if (status.errorReason != null) {
+          setState(() => _processingStatusText =
+              'Still processing. Reconnecting to check your report...');
+        } else if (_processingStatusText.startsWith('Still processing.')) {
+          setState(() => _processingStatusText =
+              'Extracting text and analyzing report...');
         }
       }
     } on ApiException catch (e) {
@@ -892,7 +904,7 @@ class _UploadScreenState extends State<UploadScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'This usually takes 10–20 seconds. Please wait...',
+            'You can leave this page. Your report will appear in Reports when processing finishes.',
             style: TextStyle(
                 fontSize: 13,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.60)),

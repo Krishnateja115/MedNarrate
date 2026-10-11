@@ -3,32 +3,27 @@ import '../services/api_service.dart';
 import '../services/api_models.dart';
 
 /// Polls [ApiService.getReportStatus] on [interval] and yields each [ReportStatus].
-/// Automatically stops when [processingStatus] is "completed" or "failed",
-/// or after [timeout] elapses.
+/// Stops only when the backend reports "completed" or "failed". A slow report
+/// or a temporary connection problem must not be presented as analysis failure.
 Stream<ReportStatus> pollReportStatus(
   String reportId, {
   Duration interval = const Duration(seconds: 3),
-  Duration timeout = const Duration(minutes: 2),
+  Future<ReportStatus> Function(String)? getStatus,
 }) async* {
-  final deadline = DateTime.now().add(timeout);
+  final fetchStatus = getStatus ?? ApiService.instance.getReportStatus;
 
-  while (DateTime.now().isBefore(deadline)) {
+  while (true) {
     try {
-      final status = await ApiService.instance.getReportStatus(reportId);
+      final status = await fetchStatus(reportId);
       yield status;
       if (status.processingStatus == 'completed' ||
           status.processingStatus == 'failed') {
         return;
       }
     } catch (e) {
-      // On error, yield a synthetic failed status so callers can handle it
-      yield ReportStatus(processingStatus: 'failed', errorReason: e.toString());
-      return;
+      yield ReportStatus(
+          processingStatus: 'processing', errorReason: e.toString());
     }
     await Future<void>.delayed(interval);
   }
-
-  // Timeout reached
-  yield ReportStatus(
-      processingStatus: 'failed', errorReason: 'Polling timed out after 2 minutes');
 }
