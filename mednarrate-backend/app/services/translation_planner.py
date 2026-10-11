@@ -16,16 +16,6 @@ logger = logging.getLogger(__name__)
 # including languages whose Unicode text uses more output tokens than English.
 CHUNK_MAX_CHARS = 700
 
-def get_static_ui_labels(lang_code: str) -> dict:
-    import os, json
-    labels_file = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'report_ui_labels.json')
-    if os.path.exists(labels_file):
-        with open(labels_file, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data.get(lang_code, data.get('en', {}))
-    return {}
-
-
 async def execute_translation_plan(
     target_lang_name: str,
     lang_code: str,
@@ -289,19 +279,6 @@ async def _execute_with_fallback(
                     and isinstance(parsed_candidate.get("translation"), str)
                 ):
                     parsed_candidate = parse_translation(parsed_candidate["translation"])
-
-                if required_ui_label_keys:
-                    static_labels = get_static_ui_labels(lang_code)
-                    if static_labels:
-                        provider_labels = parsed_candidate.get("ui_labels") or {}
-                        parsed_candidate["ui_labels"] = {
-                            **static_labels,
-                            **{
-                                key: value
-                                for key, value in provider_labels.items()
-                                if isinstance(value, str) and value.strip()
-                            },
-                        }
 
                 # Accept the API's persisted field names as well as the prompt
                 # field names when a provider mirrors the response schema.
