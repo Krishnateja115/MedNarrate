@@ -18,6 +18,7 @@ from app.core.rate_limit import limiter
 from app.exceptions import setup_exception_handlers
 from app.services.model_registry import get_ner_pipeline
 from app.services.scheduler import start_scheduler, stop_scheduler
+from app.services.account_deletion_page import account_deletion_page
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,12 @@ app = FastAPI(
     redoc_url="/redoc" if _is_development else None,
     openapi_url="/openapi.json" if _is_development else None,
 )
+
+
+@app.get("/account-deletion", include_in_schema=False)
+async def public_account_deletion_page():
+    """Public account-deletion path for users without the mobile app."""
+    return account_deletion_page()
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
