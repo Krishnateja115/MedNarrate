@@ -1,6 +1,6 @@
 """verification_status must be persisted by the pipeline and fail closed."""
 from datetime import date
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from sqlalchemy.future import select
@@ -31,7 +31,8 @@ async def _run(db, verifier_result, flag_enabled=True):
     ner = MagicMock()
     ner.return_value = [{"entity": "B-Test", "score": 0.99, "word": "Glucose"}]
     with patch("app.services.analysis_pipeline.get_ner_pipeline", return_value=ner), \
-         patch("app.services.analysis_pipeline.extract_text_from_file", return_value="Glucose 120 mg/dL (70-99)"), \
+         patch("app.services.analysis_pipeline.extract_report_text",
+               new=AsyncMock(return_value="Laboratory report\nPatient name: U\nGlucose 120 mg/dL (70-99)")), \
          patch("app.services.analysis_pipeline.generate_with_timeout_metadata",
                return_value={"content": "Summary", "provider": "gemini", "model": "m"}), \
          patch("app.services.llm_orchestrator.verify_medical_facts", return_value=verifier_result) as v:

@@ -59,7 +59,7 @@ async def test_status_endpoint_responsive_during_background_processing(
     app.dependency_overrides[get_db] = get_independent_db
 
     with patch(
-        "app.services.analysis_pipeline.extract_text_from_file",
+        "app.services.report_text_loader.extract_text_from_file",
         side_effect=blocking_heavy_work,
     ):
         async with db_session_factory() as analysis_db:
