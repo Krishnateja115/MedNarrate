@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core.rate_limit import limiter, SENSITIVE_LIMIT, REFRESH_LIMIT
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -60,7 +61,7 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(User).where(User.email == form_data.username)
+    stmt = select(User).where(func.lower(User.email) == form_data.username.strip().lower())
     result = await db.execute(stmt)
     user = result.scalars().first()
 

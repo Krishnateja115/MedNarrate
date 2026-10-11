@@ -52,6 +52,21 @@ async def test_login_success(client: AsyncClient):
     assert "refresh_token" in data
 
 
+async def test_login_email_is_case_insensitive(client: AsyncClient):
+    signup_response = await client.post(
+        "/api/v1/auth/signup",
+        json={"email": "case_login@example.com", "password": "StrongP@ssword1", "full_name": "Test User"},
+    )
+    assert signup_response.status_code == 201
+
+    response = await client.post(
+        "/api/v1/auth/login",
+        data={"username": "Case_Login@Example.com", "password": "StrongP@ssword1"},
+    )
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+
+
 async def test_login_wrong_password(client: AsyncClient):
     await client.post(
         "/api/v1/auth/signup",
