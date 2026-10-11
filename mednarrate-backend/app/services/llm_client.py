@@ -188,11 +188,17 @@ class VertexAIProvider(LLMProvider):
             )
 
         try:
-            credentials, _ = await asyncio.to_thread(
+            credentials, adc_project = await asyncio.to_thread(
                 google.auth.default,
                 scopes=["https://www.googleapis.com/auth/cloud-platform"],
             )
             await asyncio.to_thread(credentials.refresh, Request())
+
+            project_id = self.project or adc_project
+            if not project_id:
+                raise LLMConfigurationError(
+                    "Vertex AI project ID is unavailable from settings and credentials."
+                )
 
             max_toks = config.get("max_tokens", settings.MAX_OUTPUT_TOKENS) if config else settings.MAX_OUTPUT_TOKENS
             if _translation_request.get():
@@ -201,7 +207,7 @@ class VertexAIProvider(LLMProvider):
             model_name = self.get_model_name(config)
             url = (
                 f"https://{self.location}-aiplatform.googleapis.com/v1/"
-                f"projects/{self.project}/locations/{self.location}/"
+                f"projects/{project_id}/locations/{self.location}/"
                 f"publishers/google/models/{model_name}:generateContent"
             )
             body = {

@@ -17,25 +17,32 @@ from app.services.prompts import CLINICIAN_PROMPT
 
 # 1. Vertex AI Provider Test (Mocked ADC & Generation)
 @pytest.mark.asyncio
-async def test_vertex_ai_provider_health_and_mocked_generation():
+async def test_vertex_ai_provider_health_and_mocked_generation(monkeypatch):
     provider = VertexAIProvider()
+    monkeypatch.setattr(settings, "VERTEX_PROJECT_ID", None, raising=False)
+    credentials = MagicMock()
+    credentials.token = "dummy-test-token"
 
-    mock_resp = AsyncMock()
-    mock_resp.text = "Mocked Vertex AI Response"
-
-    with patch("google.auth.default", return_value=(MagicMock(), "test-gcp-project")):
+    with patch("google.auth.default", return_value=(credentials, "test-gcp-project")):
         health = await provider.health_check()
         assert health["provider"] == "vertex_ai"
         assert health["authenticated"] is True
 
-        with patch("google.generativeai.GenerativeModel") as mock_model_cls:
-            mock_inst = mock_model_cls.return_value
-            mock_inst.generate_content_async = AsyncMock(return_value=mock_resp)
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_response = MagicMock()
+            mock_response.raise_for_status = MagicMock()
+            mock_response.json.return_value = {
+                "candidates": [
+                    {"content": {"parts": [{"text": "Mocked Vertex AI Response"}]}}
+                ]
+            }
+            mock_post.return_value = mock_response
 
             res = await provider.generate("Test prompt", request_id="req-123")
             assert res["provider"] == "vertex_ai"
             assert res["content"] == "Mocked Vertex AI Response"
             assert res["request_id"] == "req-123"
+            assert "/projects/test-gcp-project/" in mock_post.call_args.args[0]
 
 
 # 2. Ollama Provider Test (Mocked HTTP API)
