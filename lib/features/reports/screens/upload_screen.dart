@@ -494,6 +494,24 @@ class _UploadScreenState extends State<UploadScreen> {
                     const SizedBox(height: 20),
                   ],
 
+                  if (_createdReportId == null) ...[
+                    Text(
+                      'Your document will be stored and its text processed by MedNarrate and configured AI services to create an explanation. Check important results against the original report.',
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+                        fontSize: 12,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () => context.push(Routes.privacyPolicy),
+                        child: const Text('How your data is used'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+
                   // Primary Bottom Submit Button (Hidden when failure card with contextual retry is visible)
                   if (!isReportSavedAndFailed) ...[
                     SizedBox(

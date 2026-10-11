@@ -306,6 +306,67 @@ class ApiService {
     return UserModel.fromMap(jsonDecode(resp.body) as Map<String, dynamic>);
   }
 
+  Future<Uint8List> exportAccountData() async {
+    Future<http.Response> fetch() async => http
+        .get(Uri.parse('$_baseUrl/users/me/export'), headers: await _authHeaders())
+        .timeout(const Duration(minutes: 5));
+    try {
+      final response = await _handleResponse(await fetch(), fetch);
+      return response.bodyBytes;
+    } catch (error) {
+      throw _networkException(error);
+    }
+  }
+
+  Future<void> deleteAccount(String password) async {
+    Future<http.Response> remove() async => http
+        .delete(
+          Uri.parse('$_baseUrl/users/me'),
+          headers: await _authHeaders(),
+          body: jsonEncode({'password': password}),
+        )
+        .timeout(_timeout);
+    try {
+      await _handleResponse(await remove(), remove);
+    } catch (error) {
+      throw _networkException(error);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> listSupportTickets() async {
+    final response = await _get('/support');
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    return (decoded['tickets'] as List<dynamic>)
+        .map((ticket) => ticket as Map<String, dynamic>)
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> getSupportTicket(String id) async {
+    final response = await _get('/support/$id');
+    return (jsonDecode(response.body) as Map<String, dynamic>)['ticket']
+        as Map<String, dynamic>;
+  }
+
+  Future<String> createSupportTicket({
+    required String title,
+    required String description,
+    required String category,
+    String? relatedReportId,
+  }) async {
+    final response = await _post('/support', body: {
+      'title': title,
+      'description': description,
+      'category': category,
+      if (relatedReportId != null) 'related_report_id': relatedReportId,
+    });
+    return (jsonDecode(response.body) as Map<String, dynamic>)['ticket_id']
+        .toString();
+  }
+
+  Future<void> replyToSupportTicket(String id, String content) async {
+    await _post('/support/$id/reply', body: {'content': content});
+  }
+
   Future<UserModel> updateMe({
     String? fullName,
     String? preferredLanguage,
@@ -505,6 +566,11 @@ class ApiService {
     final resp = await _get('/reports/$id');
     return ReportModel.fromMap(
         _remapReport(jsonDecode(resp.body) as Map<String, dynamic>));
+  }
+
+  Future<Uint8List> downloadOriginalReport(String id) async {
+    final response = await _get('/reports/$id/download');
+    return response.bodyBytes;
   }
 
   Future<ReportModel> patchReport(String id,

@@ -10,6 +10,8 @@ import '../../features/reports/screens/reports_screen.dart';
 import '../../features/reports/screens/upload_screen.dart';
 import '../../features/reports/screens/report_details_screen.dart';
 import '../../features/reports/screens/report_timeline_screen.dart';
+import '../../features/reports/screens/original_report_screen.dart';
+import '../../features/support/screens/support_screen.dart';
 import '../../features/ai_chat/screens/ai_chat_screen.dart';
 import '../../features/insights/screens/insights_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
@@ -147,6 +149,16 @@ class AppRouter {
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
+        path: Routes.support,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, String>?;
+          return SupportScreen(
+            reportId: extra?['reportId'],
+            reportTitle: extra?['reportTitle'],
+          );
+        },
+      ),
+      GoRoute(
         path: Routes.termsOfService,
         builder: (context, state) => const TermsOfServiceScreen(),
       ),
@@ -164,6 +176,18 @@ class AppRouter {
         builder: (context, state) {
           final reportId = state.extra as String;
           return ReportDetailsScreen(reportId: reportId);
+        },
+      ),
+
+      GoRoute(
+        path: Routes.originalReport,
+        redirect: (context, state) => state.extra == null ? Routes.reports : null,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, String>;
+          return OriginalReportScreen(
+            reportId: extra['reportId']!,
+            fileName: extra['fileName']!,
+          );
         },
       ),
 

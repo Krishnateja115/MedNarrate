@@ -71,24 +71,21 @@ class PrivacyPolicyScreen extends StatelessWidget {
               theme,
               title: '5. AI & Report Processing',
               content:
-                  'To extract laboratory metrics and plain-language summaries, report text is processed via secure API calls to Google Gemini AI models. Your data is processed strictly to generate your analysis and is not sold or used for public AI training models.',
+                  'Uploaded documents are processed by the MedNarrate backend. Text needed for analysis, chat, and translation may be sent to configured third-party AI providers. We do not sell your medical documents. AI outputs can be wrong, so compare important findings with your original report and a qualified clinician.',
             ),
 
             _buildSection(
               theme,
               title: '6. Third-Party Services',
               content:
-                  'We integrate minimal third-party providers for essential services:\n'
-                  '• FastAPI & PostgreSQL: Secure backend hosting and data persistence.\n'
-                  '• Google Gemini API: Natural language report summarization and RAG Q&A.\n'
-                  '• Sentry (Optional): Error logging to diagnose app crashes.',
+                  'MedNarrate may use a hosting and database provider, a file-storage provider, configured AI providers for report analysis or translation, and an error-monitoring provider if enabled. The final public policy must name the production providers and describe their retention terms before release.',
             ),
 
             _buildSection(
               theme,
               title: '7. Data Retention & Deletion',
               content:
-                  'You retain full control over your data. You can delete uploaded reports or request account archive/deletion directly from the Settings menu at any time.',
+                  'You can delete uploaded reports, save an account-data archive, or delete your account from Settings. The archive contains sensitive medical information, so store it securely. Account deletion removes uploaded files and personal medical data; limited non-identifying operational records may remain where necessary.',
             ),
 
             _buildSection(

@@ -13,6 +13,7 @@ class Routes {
   static const String upload = "/upload";
   static const String reportDetails = "/report-details";
   static const String reportTimeline = "/report-timeline";
+  static const String originalReport = "/original-report";
 
   static const String insights = "/insights";
 
@@ -26,6 +27,7 @@ class Routes {
   static const String medications = "/medications";
 
   static const String settings = "/settings";
+  static const String support = "/support";
   static const String termsOfService = "/terms-of-service";
   static const String privacyPolicy = "/privacy-policy";
   static const String customLicenses = "/licenses";

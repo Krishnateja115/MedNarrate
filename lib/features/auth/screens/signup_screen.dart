@@ -129,6 +129,26 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
                 SizedBox(height: 35),
+                Text(
+                  'MedNarrate explains reports but does not diagnose conditions or replace a clinician.',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    TextButton(
+                      onPressed: () => context.push(Routes.termsOfService),
+                      child: const Text('Terms of Service'),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push(Routes.privacyPolicy),
+                      child: const Text('Privacy Policy'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 PrimaryButton(
                   text: _loading ? 'Creating Account…' : 'Sign Up',
                   onPressed: _loading ? null : () { _signup(); },

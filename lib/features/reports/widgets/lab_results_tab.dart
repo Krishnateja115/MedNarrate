@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../reports/models/report_model.dart';
+import '../../../core/routing/routes.dart';
 import 'lab_result_row.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/helpers.dart';
@@ -10,8 +12,14 @@ import 'translation_parameter_name.dart';
 class LabResultsTab extends StatefulWidget {
   final ReportModel report;
   final TranslationModel? translation;
+  final List<EvidenceSource> evidenceSources;
 
-  const LabResultsTab({super.key, required this.report, this.translation});
+  const LabResultsTab({
+    super.key,
+    required this.report,
+    this.translation,
+    this.evidenceSources = const [],
+  });
 
   @override
   State<LabResultsTab> createState() => _LabResultsTabState();
@@ -44,6 +52,11 @@ class _LabResultsTabState extends State<LabResultsTab> {
     final String parameterName = metric['parameter']?.toString() ?? '';
     final String translatedName =
         translatedParameterName(parameterName, widget.translation);
+    final excerpts = widget.evidenceSources
+        .where((source) =>
+            source.finding.toLowerCase() == parameterName.toLowerCase())
+        .expand((source) => source.sources)
+        .toList();
 
     showModalBottomSheet(
       context: context,
@@ -76,14 +89,32 @@ class _LabResultsTabState extends State<LabResultsTab> {
                         .onSurface
                         .withValues(alpha: 0.7)),
               ),
+              if (excerpts.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text('Text detected in the uploaded report',
+                    style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 6),
+                for (final excerpt in excerpts)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: SelectableText(excerpt),
+                  ),
+                const Text('Check this against the original document; OCR can make mistakes.'),
+              ],
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: FilledButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.check_circle_outline_rounded),
-                  label: const Text('Close'),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.push(Routes.originalReport, extra: {
+                      'reportId': widget.report.id,
+                      'fileName': widget.report.fileName,
+                    });
+                  },
+                  icon: const Icon(Icons.description_outlined),
+                  label: const Text('View original report'),
                 ),
               ),
             ],

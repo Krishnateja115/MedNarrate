@@ -287,9 +287,47 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                       } finally {
                         if (mounted) setState(() => _exporting = false);
                       }
+                    } else if (value == 'original') {
+                      final report = _controller.report;
+                      if (report != null && mounted) {
+                        context.push(Routes.originalReport, extra: {
+                          'reportId': report.id,
+                          'fileName': report.fileName,
+                        });
+                      }
+                    } else if (value == 'report_issue') {
+                      final report = _controller.report;
+                      if (report != null && mounted) {
+                        context.push(Routes.support, extra: {
+                          'reportId': report.id,
+                          'reportTitle': report.title,
+                        });
+                      }
                     }
                   },
                   itemBuilder: (_) => [
+                    PopupMenuItem(
+                      value: 'original',
+                      child: Row(
+                        children: [
+                          Icon(Icons.description_outlined,
+                              size: 20, color: theme.colorScheme.onSurface),
+                          const SizedBox(width: 12),
+                          const Text('View original report'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'report_issue',
+                      child: Row(
+                        children: [
+                          Icon(Icons.flag_outlined,
+                              size: 20, color: theme.colorScheme.onSurface),
+                          const SizedBox(width: 12),
+                          const Text('Report an incorrect result'),
+                        ],
+                      ),
+                    ),
                     if (_controller.analysis != null) ...[
                       PopupMenuItem(
                         value: 'export_pdf',
@@ -410,6 +448,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                       LabResultsTab(
                         key: const PageStorageKey('lab_results_tab'),
                         report: _controller.report!,
+                        evidenceSources:
+                            _controller.analysis?.evidenceSources ?? const [],
                         translation: _controller.translation,
                       ),
                       AIChatTab(

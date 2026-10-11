@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:app_settings/app_settings.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/services/api_service.dart';
 import '../../../core/services/storage_service.dart';
@@ -468,12 +469,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirm != true) return;
 
     setState(() => _loading = true);
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      setState(() => _loading = false);
-      Helpers.showSuccess(context,
-          'Your medical data archive has been requested and will be sent to your registered email shortly.');
+    try {
+      final archive = await _apiService.exportAccountData();
+      if (!mounted) return;
+      await Share.shareXFiles(
+        [XFile.fromData(
+          archive,
+          mimeType: 'application/zip',
+          name: 'MedNarrate-account-data.zip',
+        )],
+        subject: 'Your MedNarrate account archive',
+      );
+    } on ApiException catch (error) {
+      if (mounted) Helpers.showError(context, error.message);
+    } catch (_) {
+      if (mounted) {
+        Helpers.showError(context, 'Could not save the archive. Please try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final password = TextEditingController();
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Delete account and medical data?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'This permanently removes your reports, medical profile, '
+                'reminders, and chat history. Export your data first if needed. '
+                'Enter your password to confirm.',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: password,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Password'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Delete account',
+                  style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+      if (password.text.isEmpty) {
+        Helpers.showError(context, 'Enter your password to confirm deletion.');
+        return;
+      }
+      setState(() => _loading = true);
+      await _apiService.deleteAccount(password.text);
+      await _apiService.logout();
+      if (mounted) context.go(Routes.login);
+    } on ApiException catch (error) {
+      if (mounted) Helpers.showError(context, error.message);
+    } catch (_) {
+      if (mounted) {
+        Helpers.showError(context, 'Could not delete the account. Please try again.');
+      }
+    } finally {
+      password.dispose();
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -887,8 +958,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: Icons.download_outlined,
                     iconColor: AppColors.secondary,
                     title: AppLocalizations.of(context)!.exportData,
-                    subtitle: 'Download your medical history',
+                    subtitle: 'Save an archive of your medical data',
                     onTap: _exportData,
+                  ),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
+                  _buildSettingsTile(
+                    icon: Icons.delete_forever_outlined,
+                    iconColor: Colors.red,
+                    title: 'Delete Account',
+                    subtitle: 'Permanently remove your account and medical data',
+                    isDestructive: true,
+                    onTap: _deleteAccount,
                   ),
                 ]),
                 _buildSettingsGroup('APP PREFERENCES', [
@@ -1117,6 +1203,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ]),
                 _buildSettingsGroup('SUPPORT & ABOUT', [
+                  _buildSettingsTile(
+                    icon: Icons.support_agent_outlined,
+                    iconColor: AppColors.primary,
+                    title: 'Contact Support',
+                    subtitle: 'Ask for help or report a problem',
+                    onTap: () => context.push(Routes.support),
+                  ),
+                  Divider(
+                      height: 1,
+                      indent: 64,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.1)),
                   _buildSettingsTile(
                     icon: Icons.help_outline,
                     iconColor: AppColors.success,
@@ -1349,7 +1449,7 @@ class _HelpCenterSheet extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: () {
                 context.pop();
-                Helpers.showSuccess(context, 'Redirecting to email client...');
+                context.push(Routes.support);
               },
               icon: const Icon(Icons.email_outlined),
               label: Text(AppLocalizations.of(context)!.contactSupport),
