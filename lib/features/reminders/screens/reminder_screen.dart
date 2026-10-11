@@ -115,6 +115,10 @@ class _ReminderScreenState extends State<ReminderScreen> {
         ),
         child: _ReminderForm(
           initialData: reminder,
+          knownMedicineNames: _reminders
+              .map((r) => r['medication_name']?.toString() ?? '')
+              .where((name) => name.isNotEmpty)
+              .toList(),
           onSaved: () {
             context.pop();
             _loadReminders();
@@ -204,115 +208,141 @@ class _ReminderScreenState extends State<ReminderScreen> {
                             color: Theme.of(context).colorScheme.outlineVariant,
                             width: 1),
                       ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 12),
-                        leading: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.08),
-                            shape: BoxShape.circle,
-                            border: Border.all(
+                      child: Column(
+                        children: [
+                          ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 12),
+                            leading: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
                                 color: Theme.of(context)
                                     .colorScheme
-                                    .outlineVariant,
-                                width: 1),
-                          ),
-                          child: Icon(Icons.medication_rounded,
-                              color: Theme.of(context).colorScheme.onSurface),
-                        ),
-                        title: Text(r['medication_name'],
-                            style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18)),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 4),
-                            Text(
-                                [
-                                  if (r['dosage'] != null &&
-                                      r['dosage'].toString().isNotEmpty)
-                                    r['dosage'],
-                                  if (r['frequency'] != null &&
-                                      r['frequency'].toString().isNotEmpty)
-                                    r['frequency'],
-                                ].join(' • '),
-                                style: TextStyle(
+                                    .onSurface
+                                    .withValues(alpha: 0.08),
+                                shape: BoxShape.circle,
+                                border: Border.all(
                                     color: Theme.of(context)
                                         .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.70))),
-                            if (r['notes'] != null &&
-                                r['notes'].toString().isNotEmpty) ...[
-                              const SizedBox(height: 2),
-                              Text(r['notes'],
-                                  style: TextStyle(
+                                        .outlineVariant,
+                                    width: 1),
+                              ),
+                              child: Icon(Icons.medication_rounded,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                            ),
+                            title: Text(r['medication_name']?.toString() ?? '',
+                                style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Text(
+                                    [
+                                      if (r['dosage'] != null &&
+                                          r['dosage'].toString().isNotEmpty)
+                                        r['dosage'],
+                                      if (r['frequency'] != null &&
+                                          r['frequency'].toString().isNotEmpty)
+                                        r['frequency'],
+                                    ].join(' • '),
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.70))),
+                                if (r['notes'] != null &&
+                                    r['notes'].toString().isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(r['notes'],
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.50),
+                                          fontStyle: FontStyle.italic)),
+                                ],
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  children: times.map((t) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange
+                                            .withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.access_time,
+                                              size: 12, color: Colors.orange),
+                                          const SizedBox(width: 4),
+                                          Text(t,
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.orange)),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                )
+                              ],
+                            ),
+                          ),
+                          Divider(
+                            height: 1,
+                            indent: 18,
+                            endIndent: 18,
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('Reminder on',
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.65))),
+                                const Spacer(),
+                                Switch(
+                                  value: isActive,
+                                  onChanged: (v) =>
+                                      _toggleReminder(r['id'], isActive),
+                                  activeThumbColor:
+                                      Theme.of(context).colorScheme.primary,
+                                ),
+                                IconButton(
+                                  tooltip: 'Edit medication',
+                                  icon: Icon(Icons.edit_outlined,
                                       color: Theme.of(context)
                                           .colorScheme
                                           .onSurface
-                                          .withValues(alpha: 0.50),
-                                      fontStyle: FontStyle.italic)),
-                            ],
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
-                              children: times.map((t) {
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Colors.orange.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.access_time,
-                                          size: 12, color: Colors.orange),
-                                      const SizedBox(width: 4),
-                                      Text(t,
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.orange)),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                            )
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Switch(
-                              value: isActive,
-                              onChanged: (v) =>
-                                  _toggleReminder(r['id'], isActive),
-                              activeThumbColor: Colors.orange,
+                                          .withValues(alpha: 0.54)),
+                                  onPressed: () => _showReminderForm(r),
+                                ),
+                                IconButton(
+                                  tooltip: 'Delete medication',
+                                  icon: const Icon(Icons.delete_outline,
+                                      color: Colors.redAccent),
+                                  onPressed: () => _deleteReminder(r['id']),
+                                ),
+                              ],
                             ),
-                            IconButton(
-                              icon: Icon(Icons.edit_outlined,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.54)),
-                              onPressed: () => _showReminderForm(r),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  color: Colors.redAccent),
-                              onPressed: () => _deleteReminder(r['id']),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     );
                   },
@@ -323,17 +353,43 @@ class _ReminderScreenState extends State<ReminderScreen> {
 
 class _ReminderForm extends StatefulWidget {
   final Map<String, dynamic>? initialData;
+  final List<String> knownMedicineNames;
   final VoidCallback onSaved;
 
-  const _ReminderForm({this.initialData, required this.onSaved});
+  const _ReminderForm({
+    this.initialData,
+    required this.knownMedicineNames,
+    required this.onSaved,
+  });
 
   @override
   State<_ReminderForm> createState() => _ReminderFormState();
 }
 
 class _ReminderFormState extends State<_ReminderForm> {
+  static const List<String> _commonMedicineNames = [
+    'Acetaminophen',
+    'Amlodipine',
+    'Amoxicillin',
+    'Aspirin',
+    'Atorvastatin',
+    'Azithromycin',
+    'Cetirizine',
+    'Doxycycline',
+    'Ibuprofen',
+    'Levothyroxine',
+    'Lisinopril',
+    'Losartan',
+    'Metformin',
+    'Omeprazole',
+    'Pantoprazole',
+    'Paracetamol',
+    'Salbutamol',
+    'Vitamin D',
+  ];
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
+  final _nameFocusNode = FocusNode();
   final _dosageCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
   final _durationCtrl = TextEditingController();
@@ -454,6 +510,7 @@ class _ReminderFormState extends State<_ReminderForm> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _nameFocusNode.dispose();
     _dosageCtrl.dispose();
     _noteCtrl.dispose();
     _durationCtrl.dispose();
@@ -462,148 +519,206 @@ class _ReminderFormState extends State<_ReminderForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              (widget.initialData == null || widget.initialData!['id'] == null)
-                  ? 'New Medication'
-                  : 'Edit Medication',
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface),
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _nameCtrl,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-              decoration: InputDecoration(
-                labelText: 'Medicine Name',
-                prefixIcon: const Icon(Icons.medication_outlined),
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              validator: (v) => v == null || v.trim().isEmpty
-                  ? 'Medicine name is required'
-                  : null,
-            ),
-            const SizedBox(height: 16),
-            Row(
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _dosageCtrl,
+                Text(
+                  (widget.initialData == null ||
+                          widget.initialData!['id'] == null)
+                      ? 'New Medication'
+                      : 'Edit Medication',
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface),
+                ),
+                const SizedBox(height: 24),
+                RawAutocomplete<String>(
+                  textEditingController: _nameCtrl,
+                  focusNode: _nameFocusNode,
+                  displayStringForOption: (name) => name,
+                  optionsBuilder: (value) {
+                    final query = value.text.trim().toLowerCase();
+                    if (query.length < 2) return const Iterable<String>.empty();
+                    final names = {
+                      ..._commonMedicineNames,
+                      ...widget.knownMedicineNames,
+                    };
+                    return names
+                        .where((name) => name.toLowerCase().contains(query))
+                        .take(8);
+                  },
+                  optionsViewBuilder: (context, onSelected, options) => Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 6,
+                      borderRadius: BorderRadius.circular(12),
+                      color: Theme.of(context).cardColor,
+                      child: SizedBox(
+                        width: MediaQuery.sizeOf(context).width - 48,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 240),
+                          child: ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: options.length,
+                            itemBuilder: (context, index) {
+                              final name = options.elementAt(index);
+                              return ListTile(
+                                dense: true,
+                                leading: const Icon(Icons.medication_outlined),
+                                title: Text(name),
+                                onTap: () => onSelected(name),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  fieldViewBuilder:
+                      (context, controller, focusNode, onSubmitted) =>
+                          TextFormField(
+                    controller: controller,
+                    focusNode: focusNode,
                     style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface),
                     decoration: InputDecoration(
-                      labelText: 'Dosage (e.g. 500mg, 1 tablet)',
+                      labelText: 'Medicine Name',
+                      prefixIcon: const Icon(Icons.medication_outlined),
                       filled: true,
                       fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14)),
                     ),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Medicine name is required'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _dosageCtrl,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Dosage (e.g. 500mg, 1 tablet)',
+                          filled: true,
+                          fillColor: Theme.of(context).cardColor,
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  initialValue: _frequency,
+                  decoration: InputDecoration(
+                    labelText: 'Frequency',
+                    filled: true,
+                    fillColor: Theme.of(context).cardColor,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                  items: _frequencies
+                      .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _frequency = v!),
+                ),
+                const SizedBox(height: 20),
+                Text('Times of Day',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ..._times.asMap().entries.map((e) {
+                      final idx = e.key;
+                      final t = e.value;
+                      return Chip(
+                        label: Text(t.format(context),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        onDeleted: () {
+                          setState(() => _times.removeAt(idx));
+                        },
+                        backgroundColor: Colors.orange.withValues(alpha: 0.15),
+                        deleteIconColor: Colors.orange,
+                      );
+                    }),
+                    ActionChip(
+                      label: const Text('Add Time'),
+                      avatar: const Icon(Icons.add, size: 16),
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                            context: context, initialTime: TimeOfDay.now());
+                        if (picked != null) {
+                          setState(() => _times.add(picked));
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                if (_times.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: Text("Please add at least one time.",
+                        style: TextStyle(color: Colors.red, fontSize: 12)),
+                  ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _noteCtrl,
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  decoration: InputDecoration(
+                    labelText: 'Additional Notes (optional)',
+                    prefixIcon: const Icon(Icons.note_alt_outlined),
+                    filled: true,
+                    fillColor: Theme.of(context).cardColor,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: (_saving || _times.isEmpty) ? null : _save,
+                    child: Text(
+                      _saving ? 'Saving…' : 'Save Medication',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _frequency,
-              decoration: InputDecoration(
-                labelText: 'Frequency',
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              items: _frequencies
-                  .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-                  .toList(),
-              onChanged: (v) => setState(() => _frequency = v!),
-            ),
-            const SizedBox(height: 20),
-            Text('Times of Day',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ..._times.asMap().entries.map((e) {
-                  final idx = e.key;
-                  final t = e.value;
-                  return Chip(
-                    label: Text(t.format(context),
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    onDeleted: () {
-                      setState(() => _times.removeAt(idx));
-                    },
-                    backgroundColor: Colors.orange.withValues(alpha: 0.15),
-                    deleteIconColor: Colors.orange,
-                  );
-                }),
-                ActionChip(
-                  label: const Text('Add Time'),
-                  avatar: const Icon(Icons.add, size: 16),
-                  onPressed: () async {
-                    final picked = await showTimePicker(
-                        context: context, initialTime: TimeOfDay.now());
-                    if (picked != null) {
-                      setState(() => _times.add(picked));
-                    }
-                  },
-                ),
-              ],
-            ),
-            if (_times.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 8.0),
-                child: Text("Please add at least one time.",
-                    style: TextStyle(color: Colors.red, fontSize: 12)),
-              ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _noteCtrl,
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-              decoration: InputDecoration(
-                labelText: 'Additional Notes (optional)',
-                prefixIcon: const Icon(Icons.note_alt_outlined),
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                ),
-                onPressed: (_saving || _times.isEmpty) ? null : _save,
-                child: Text(
-                  _saving ? 'Saving…' : 'Save Medication',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -21,7 +21,7 @@ class DashboardStatisticsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 18),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(22),
@@ -45,7 +45,7 @@ class DashboardStatisticsCard extends StatelessWidget {
                 size: 24,
               ),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             Text(
               value,
               style: TextStyle(
@@ -54,15 +54,19 @@ class DashboardStatisticsCard extends StatelessWidget {
                 fontSize: 24,
               ),
             ),
-            SizedBox(height: 5),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.60),
+            const SizedBox(height: 5),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                title,
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.60),
+                ),
               ),
             ),
           ],

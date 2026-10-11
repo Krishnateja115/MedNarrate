@@ -497,25 +497,27 @@ class _UploadScreenState extends State<UploadScreen> {
                         onPressed: (isProcessing || _selectedFile == null)
                             ? null
                             : _uploadAndAnalyze,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            if (isProcessing) ...[
-                              const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2.5, color: Colors.white),
-                              ),
-                              const SizedBox(width: 12),
-                            ],
                             Text(
                               isProcessing
-                                  ? _processingStatusText
+                                  ? 'Processing report…'
                                   : 'Upload & Analyze',
+                              textAlign: TextAlign.center,
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.bold),
                             ),
+                            if (isProcessing)
+                              const Positioned(
+                                right: 12,
+                                child: SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2.5),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -670,8 +672,8 @@ class _UploadScreenState extends State<UploadScreen> {
           onPressed: _isPickingFile ? null : _pickFile,
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.all(24),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             side: BorderSide(
                 color: theme.colorScheme.primary.withValues(alpha: 0.40),
                 width: 1.5),
@@ -683,7 +685,9 @@ class _UploadScreenState extends State<UploadScreen> {
                   color: theme.colorScheme.primary, size: 32),
               const SizedBox(height: 10),
               Text(
-                _isPickingFile ? 'Opening file chooser…' : 'Choose a file to analyze',
+                _isPickingFile
+                    ? 'Opening file chooser…'
+                    : 'Choose a file to analyze',
                 style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -880,6 +884,7 @@ class _UploadScreenState extends State<UploadScreen> {
           const SizedBox(height: 20),
           Text(
             _processingStatusText,
+            textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,

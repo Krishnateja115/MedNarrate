@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/routing/routes.dart';
@@ -33,7 +34,11 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(
+      length: 4,
+      vsync: this,
+      animationDuration: const Duration(milliseconds: 180),
+    );
     _controller.init(widget.reportId ?? widget.report!.id, widget.report);
     _controller.addListener(_onStateChanged);
   }
@@ -357,6 +362,10 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                   indicatorColor: theme.colorScheme.primary,
                   indicatorWeight: 3,
                   isScrollable: true,
+                  overlayColor:
+                      const WidgetStatePropertyAll(Colors.transparent),
+                  splashFactory: NoSplash.splashFactory,
+                  dividerColor: theme.colorScheme.outlineVariant,
                   tabs: [
                     Tab(
                         text:
@@ -379,6 +388,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                 ? _buildNotFoundState(context)
                 : TabBarView(
                     controller: _tabController,
+                    dragStartBehavior: DragStartBehavior.down,
+                    physics: const PageScrollPhysics(),
                     children: [
                       PatientViewTab(
                         key: const PageStorageKey('patient_view_tab'),

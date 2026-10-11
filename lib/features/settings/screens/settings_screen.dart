@@ -1014,6 +1014,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       value: _notificationsEnabled,
                       onChanged: _toggleNotifications,
                       activeThumbColor: AppColors.primary,
+                      activeTrackColor:
+                          AppColors.primary.withValues(alpha: 0.18),
+                      inactiveThumbColor: Theme.of(context).colorScheme.outline,
+                      inactiveTrackColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      trackOutlineColor:
+                          const WidgetStatePropertyAll(Colors.transparent),
                     ),
                     onTap: () => _toggleNotifications(!_notificationsEnabled),
                   ),
