@@ -20,6 +20,7 @@ from app.services.lab_value_extractor import (
     extract_medication_schedule,
 )
 from app.services.document_validation import validate_medical_document
+from app.services.evidence_sources import build_lab_evidence_sources
 from app.services.report_text_loader import extract_report_text
 from app.services.provisional_lab_ranges import add_provisional_ranges
 from app.services.llm_client import (
@@ -417,7 +418,9 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         analysis.structured_lab_values = structured_lab_values
         analysis.entities = entities
         analysis.abnormal_findings = abnormal_findings
-        analysis.evidence_sources = []
+        analysis.evidence_sources = build_lab_evidence_sources(
+            cleaned_text, structured_lab_values
+        )
         analysis.clinician_summary = clinician_summary
         analysis.verification_status = verification_status
         analysis.patient_summary = patient_summary
