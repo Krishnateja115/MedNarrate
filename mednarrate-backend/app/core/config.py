@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import Literal
 
 
 class Settings(BaseSettings):
@@ -97,6 +98,9 @@ class Settings(BaseSettings):
     MAX_RETRIES: int = 2
     # Startup must remain responsive when model weights are not already cached.
     NER_PREWARM_TIMEOUT_SECONDS: float = 10.0
+    # "worker" persists processing jobs in PostgreSQL for a separate worker.
+    # In-process FastAPI background tasks are suitable for development only.
+    ANALYSIS_EXECUTION_MODE: Literal["background", "worker"] = "background"
 
     # Schema creation is intentionally opt-in. Deployments must apply Alembic
     # migrations before starting the API instead of silently creating a partial
@@ -124,6 +128,10 @@ class Settings(BaseSettings):
                 raise ValueError("JWT_SECRET must be configured with a strong, non-default value for production.")
             if self.DATABASE_URL.startswith("sqlite"):
                 raise ValueError("SQLite databases are not supported in production. Please configure a PostgreSQL DATABASE_URL.")
+            if self.ANALYSIS_EXECUTION_MODE != "worker":
+                raise ValueError(
+                    "Production report analysis requires ANALYSIS_EXECUTION_MODE=worker."
+                )
 
     # Storage Configuration
     STORAGE_BACKEND: str = "local"

@@ -39,6 +39,7 @@ def _probe(**env):
         JWT_SECRET="x" * 40,
         PYTHONPATH=str(BACKEND),
         RATE_LIMIT_ENABLED="false",
+        ANALYSIS_EXECUTION_MODE="worker",
     )
     base.update(env)
     r = subprocess.run([sys.executable, "-c", PROBE], capture_output=True, text=True, cwd=BACKEND, env=base, timeout=120)

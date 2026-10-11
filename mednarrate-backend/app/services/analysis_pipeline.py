@@ -20,6 +20,7 @@ from app.services.lab_value_extractor import (
     extract_medication_schedule,
 )
 from app.services.document_validation import validate_medical_document
+from app.services.report_text_loader import extract_report_text
 from app.services.provisional_lab_ranges import add_provisional_ranges
 from app.services.llm_client import (
     LLMConfigurationError,
@@ -39,7 +40,6 @@ from app.services.report_date_extractor import extract_report_date
 from app.services.text_extraction import (
     ExtractionError,
     clean_extracted_text,
-    extract_text_from_file,
 )
 from app.services.validation import validate_and_ground_analysis
 from app.services.feature_flags import evaluate_flag
@@ -138,9 +138,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             f"[STAGE:EXTRACTION] req_id={req_id} Processing file: {report.file_path} ({file_type_str})"
         )
         if not report.extracted_text or len(report.extracted_text.strip()) == 0:
-            extracted = await asyncio.to_thread(
-                extract_text_from_file, report.file_path, file_type_str
-            )
+            extracted = await extract_report_text(report.file_path, file_type_str)
             report.extracted_text = extracted
 
         cleaned_text = clean_extracted_text(report.extracted_text or "")

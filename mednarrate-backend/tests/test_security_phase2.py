@@ -9,6 +9,7 @@ def production_settings(**overrides):
         "JWT_SECRET": "a_very_secure_test_secret_12345!@#",
         "DATABASE_URL": "postgresql://user:pass@localhost/db",
         "CORS_ORIGINS": ["https://app.mednarrate.test"],
+        "ANALYSIS_EXECUTION_MODE": "worker",
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.core.security import get_current_user
 from app.core.maintenance import check_maintenance
 from app.middleware.ownership import verify_report_ownership
@@ -155,7 +156,8 @@ async def process_report(
     report.processing_status = ProcessingStatus.processing
     await db.commit()
 
-    background_tasks.add_task(run_analysis, report.id)
+    if settings.ANALYSIS_EXECUTION_MODE == "background":
+        background_tasks.add_task(run_analysis, report.id)
 
     return {"processing_status": "processing"}
 
