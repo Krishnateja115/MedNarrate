@@ -307,6 +307,8 @@ class LabValue {
   final double? refHigh;
   final String flag;
   final String category;
+  final String? referenceSource;
+  final String? referenceSourceUrl;
 
   const LabValue({
     required this.testName,
@@ -317,6 +319,8 @@ class LabValue {
     this.refHigh,
     required this.flag,
     this.category = 'LabResult',
+    this.referenceSource,
+    this.referenceSourceUrl,
   });
 
   factory LabValue.fromMap(Map<String, dynamic> map) {
@@ -340,6 +344,8 @@ class LabValue {
               : null),
       flag: map['flag'] as String? ?? 'not_classified',
       category: map['category'] as String? ?? 'LabResult',
+      referenceSource: map['reference_source'] as String?,
+      referenceSourceUrl: map['reference_source_url'] as String?,
     );
   }
 }

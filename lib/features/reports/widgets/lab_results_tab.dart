@@ -191,6 +191,8 @@ class _LabResultsTabState extends State<LabResultsTab> {
                       minRange: minR,
                       maxRange: maxR,
                       flag: flag,
+                      isProvisional:
+                          m['reference_source'] == 'general_provisional',
                       translation: widget.translation,
                       onTap: () => _showParameterDetails(context, m),
                     );

@@ -64,6 +64,8 @@ class LabValue(BaseModel):
     original_unit: str
     ref_low: Optional[float] = None
     ref_high: Optional[float] = None
+    reference_source: Optional[str] = None
+    reference_source_url: Optional[str] = None
     flag: str = Field(
         default="not_classified", pattern="^(normal|low|high|critical|not_classified)$"
     )

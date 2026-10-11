@@ -20,6 +20,7 @@ from app.services.lab_value_extractor import (
     extract_medication_schedule,
 )
 from app.services.document_validation import validate_medical_document
+from app.services.provisional_lab_ranges import add_provisional_ranges
 from app.services.llm_client import (
     LLMConfigurationError,
     LLMConnectionError,
@@ -200,7 +201,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
                 valid_lab = LabValue(**lab).model_dump()
                 structured_lab_values.append(valid_lab)
 
-                if valid_lab["flag"] != "normal":
+                if valid_lab["flag"] not in {"normal", "not_classified"}:
                     try:
                         valid_abnormal = AbnormalFinding(**lab).model_dump()
                         abnormal_findings.append(valid_abnormal)
@@ -249,6 +250,11 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         user_stmt = select(User).where(User.id == report.user_id)
         user_result = await db.execute(user_stmt)
         user = user_result.scalars().first()
+        structured_lab_values = add_provisional_ranges(
+            structured_lab_values,
+            user.date_of_birth if user else None,
+            report.report_date,
+        )
         user_role = (
             (user.role.value if hasattr(user.role, "value") else str(user.role))
             if user
@@ -260,7 +266,14 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
 
         structured_values_json = json.dumps(structured_lab_values, indent=2)
 
-        clinician_prompt = CLINICIAN_PROMPT.format(
+        provisional_instruction = (
+            "Any lab value with reference_source=general_provisional uses a "
+            "published general range, not a range supplied by the patient's "
+            "laboratory. Clearly label that comparison as provisional; do not "
+            "treat it as a diagnosis or a critical result.\n\n"
+        )
+
+        clinician_prompt = provisional_instruction + CLINICIAN_PROMPT.format(
             report_type=report_type_str,
             structured_values_json=structured_values_json,
             extracted_text=deidentified_text,
@@ -271,7 +284,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             user_role, ROLE_INSTRUCTIONS["patient"]
         )
         examples = get_examples_text()
-        patient_prompt = PATIENT_PROMPT.format(
+        patient_prompt = provisional_instruction + PATIENT_PROMPT.format(
             report_type=report_type_str,
             extracted_text=deidentified_text,
             structured_values_json=structured_values_json,

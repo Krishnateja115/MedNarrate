@@ -9,7 +9,7 @@ import '../../../core/services/api_models.dart';
 class ReportDetailController extends ChangeNotifier {
   final ApiService _apiService = ApiService.instance;
   final StorageService _storageService = StorageService.instance;
-  
+
   ReportModel? report;
   ReportAnalysisModel? analysis;
   ComparePreviousResult? comparison;
@@ -23,6 +23,7 @@ class ReportDetailController extends ChangeNotifier {
   String? translationLanguage;
   int _translationRequest = 0;
   String? _pendingLanguage;
+
   /// Translations already loaded during this screen session, keyed by language.
   /// Display-only memo: switching back to a loaded language re-uses it instead
   /// of showing a blocking spinner. Nothing here is persisted or modified.
@@ -35,15 +36,17 @@ class ReportDetailController extends ChangeNotifier {
   String get displayLanguage => translation?.language ?? 'en';
   final Future<TranslationModel> Function(String, String) _translateAnalysis;
 
-  ReportDetailController({Future<TranslationModel> Function(String, String)? translateAnalysis})
-      : _translateAnalysis = translateAnalysis ?? ApiService.instance.translateAnalysis;
+  ReportDetailController(
+      {Future<TranslationModel> Function(String, String)? translateAnalysis})
+      : _translateAnalysis =
+            translateAnalysis ?? ApiService.instance.translateAnalysis;
 
   @override
   void dispose() {
     _disposed = true;
     super.dispose();
   }
-  
+
   Future<void> init(String reportId, ReportModel? initialReport) async {
     final profMode = await _storageService.getProfessionalMode();
     if (_disposed) return;
@@ -67,7 +70,9 @@ class ReportDetailController extends ChangeNotifier {
 
       // Poll if report is currently processing or uploaded
       int attempts = 0;
-      while ((r.processingStatus == 'processing' || r.processingStatus == 'uploaded') && attempts < 15) {
+      while ((r.processingStatus == 'processing' ||
+              r.processingStatus == 'uploaded') &&
+          attempts < 15) {
         await Future.delayed(const Duration(seconds: 2));
         if (_disposed) return;
         attempts++;
@@ -89,16 +94,20 @@ class ReportDetailController extends ChangeNotifier {
             aiSummary: resAnalysis.patientSummary,
             translatedClinicalSummary: resAnalysis.translatedClinicianSummary,
             clinicalSummary: resAnalysis.clinicianSummary,
-            metrics: resAnalysis.structuredLabValues.map((v) => {
-              'parameter': v.testName,
-              'test_name': v.testName,
-              'value': v.value,
-              'unit': v.unit,
-              'ref_low': v.refLow,
-              'ref_high': v.refHigh,
-              'flag': v.flag,
-              'category': v.category,
-            }).toList(),
+            metrics: resAnalysis.structuredLabValues
+                .map((v) => {
+                      'parameter': v.testName,
+                      'test_name': v.testName,
+                      'value': v.value,
+                      'unit': v.unit,
+                      'ref_low': v.refLow,
+                      'ref_high': v.refHigh,
+                      'flag': v.flag,
+                      'category': v.category,
+                      'reference_source': v.referenceSource,
+                      'reference_source_url': v.referenceSourceUrl,
+                    })
+                .toList(),
           );
           try {
             final comp = await _apiService.comparePrevious(reportId);
@@ -173,11 +182,13 @@ class ReportDetailController extends ChangeNotifier {
     try {
       final t = await _translateAnalysis(report!.id, languageCode);
       if (_disposed) return;
-      final valid = t.language == languageCode && t.patientSummary.trim().isNotEmpty;
+      final valid =
+          t.language == languageCode && t.patientSummary.trim().isNotEmpty;
       if (valid) _loadedTranslations[t.language] = t;
       if (request != _translationRequest) return;
       if (!valid) {
-        throw const ApiException(502, 'Translation returned an unexpected language or empty report.');
+        throw const ApiException(502,
+            'Translation returned an unexpected language or empty report.');
       }
       translation = t;
       translationLanguage = t.language;

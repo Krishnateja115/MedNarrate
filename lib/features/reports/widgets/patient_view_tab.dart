@@ -604,6 +604,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
     final theme = Theme.of(context);
     final flag = lab.flag.toLowerCase();
     final l = translation?.uiLabels;
+    final isProvisional = lab.referenceSource == 'general_provisional';
 
     Color flagColor = Colors.grey;
     String flagLabel = l?['label_not_classified'] ?? 'Not classified';
@@ -671,7 +672,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  flagLabel,
+                  isProvisional ? '$flagLabel · provisional' : flagLabel,
                   style: TextStyle(
                       color: flagColor,
                       fontWeight: FontWeight.bold,
@@ -698,17 +699,26 @@ class _PatientViewTabState extends State<PatientViewTab> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${l?['label_reported_range'] ?? 'Reported range'}: $rangeText',
+            '${isProvisional ? 'General comparison range' : (l?['label_reported_range'] ?? 'Reported range')}: $rangeText',
             style: TextStyle(
                 fontSize: 13,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
           ),
           const SizedBox(height: 2),
           Text(
-            '${l?['label_status'] ?? 'Status'}: $flagLabel',
+            '${l?['label_status'] ?? 'Status'}: $flagLabel${isProvisional ? ' (provisional)' : ''}',
             style: TextStyle(
                 fontSize: 12, fontWeight: FontWeight.w600, color: flagColor),
           ),
+          if (isProvisional) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Based on a published general range, not this lab’s range. Confirm with your clinician. Source: ${lab.referenceSourceUrl ?? 'MedlinePlus'}',
+              style: TextStyle(
+                  fontSize: 11,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.65)),
+            ),
+          ],
           if (hasRange) ...[
             const SizedBox(height: 10),
             ClipRRect(

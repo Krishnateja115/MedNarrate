@@ -8,6 +8,7 @@ class LabResultRow extends StatelessWidget {
   final double? minRange;
   final double? maxRange;
   final String flag;
+  final bool isProvisional;
   final TranslationModel? translation;
   final VoidCallback onTap;
 
@@ -19,6 +20,7 @@ class LabResultRow extends StatelessWidget {
     this.minRange,
     this.maxRange,
     this.flag = 'not_classified',
+    this.isProvisional = false,
     this.translation,
     required this.onTap,
   });
@@ -49,6 +51,7 @@ class LabResultRow extends StatelessWidget {
       badgeText =
           translation?.uiLabels['label_normal']?.toUpperCase() ?? "NORMAL";
     }
+    if (isProvisional) badgeText = '$badgeText · PROVISIONAL';
 
     return InkWell(
       onTap: onTap,
@@ -130,7 +133,9 @@ class LabResultRow extends StatelessWidget {
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      hasRange ? '$minRange - $maxRange' : 'No ref range',
+                      hasRange
+                          ? '$minRange - $maxRange${isProvisional ? ' (general)' : ''}'
+                          : 'No ref range',
                       style: TextStyle(
                           fontSize: 12,
                           color: theme.colorScheme.onSurface

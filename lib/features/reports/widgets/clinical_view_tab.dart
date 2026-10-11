@@ -628,6 +628,9 @@ class ClinicalViewTab extends StatelessWidget {
               if (l.refLow != null && l.refHigh != null) {
                 ref = '${l.refLow} – ${l.refHigh}';
               }
+              if (l.referenceSource == 'general_provisional') {
+                ref = '$ref (general, provisional)';
+              }
               String flagStr = translation?.uiLabels['label_not_classified']
                       ?.toUpperCase() ??
                   "NOT_CLASSIFIED";
@@ -648,6 +651,9 @@ class ClinicalViewTab extends StatelessWidget {
                 flagStr =
                     translation?.uiLabels['label_normal']?.toUpperCase() ??
                         "NORMAL";
+              }
+              if (l.referenceSource == 'general_provisional') {
+                flagStr = '$flagStr · PROVISIONAL';
               }
               if (originalFlag == 'CRITICAL') {
                 c = Colors.red.shade900;
