@@ -201,6 +201,9 @@ class _UploadScreenState extends State<UploadScreen> {
     if (cat == 'FILE_INVALID' || cat == 'EMPTY_FILE') {
       return 'The uploaded file is empty or formatted improperly.';
     }
+    if (cat == 'NOT_MEDICAL_REPORT') {
+      return 'This does not appear to be a medical report. Please upload a clearer report or clinical document.';
+    }
     if (cat == 'LLM_UNAVAILABLE' ||
         cat == 'LLM_GENERATION_ERROR' ||
         cat == 'LLM_NOT_CONFIGURED') {

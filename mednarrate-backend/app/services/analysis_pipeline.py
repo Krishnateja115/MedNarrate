@@ -19,6 +19,7 @@ from app.services.lab_value_extractor import (
     extract_lab_values,
     extract_medication_schedule,
 )
+from app.services.document_validation import validate_medical_document
 from app.services.llm_client import (
     LLMConfigurationError,
     LLMConnectionError,
@@ -142,6 +143,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             report.extracted_text = extracted
 
         cleaned_text = clean_extracted_text(report.extracted_text or "")
+        validate_medical_document(cleaned_text)
         logger.info(
             f"[STAGE:EXTRACTION:SUCCESS] req_id={req_id} Extracted {len(cleaned_text)} characters in {time.perf_counter() - stage_started:.2f}s."
         )
