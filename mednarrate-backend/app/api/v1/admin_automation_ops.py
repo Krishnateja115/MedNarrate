@@ -134,7 +134,7 @@ async def list_medications(
     limit = clamp_limit(limit)
     stmt = select(MedicationSchedule)
     if active_only:
-        stmt = stmt.where(MedicationSchedule.is_active is True)
+        stmt = stmt.where(MedicationSchedule.is_active.is_(True))
 
     # Count
     count_stmt = select(func.count()).select_from(stmt.subquery())
