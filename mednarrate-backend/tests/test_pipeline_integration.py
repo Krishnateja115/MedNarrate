@@ -27,9 +27,9 @@ def test_source_aware_date_extractor():
     assert extracted != date(1985, 5, 12)  # DOB must NOT be chosen
 
 
-def test_medical_validation_disclaimer():
+async def test_medical_validation_disclaimer():
     extracted_text = "Glucose: 105 mg/dL (Ref: 70-99) [HIGH]"
-    labs = extract_lab_values(extracted_text)
+    labs = await extract_lab_values(extracted_text)
 
     res = validate_and_ground_analysis(
         extracted_text=extracted_text,

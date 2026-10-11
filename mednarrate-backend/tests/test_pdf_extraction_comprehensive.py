@@ -106,7 +106,7 @@ def test_scanned_pdf_ocr_unavailable(tmp_path, monkeypatch):
             extract_text_with_diagnostics(str(pdf_path), "pdf")
         assert exc_info.value.failure_category in ["OCR_UNAVAILABLE", "OCR_ENGINE_UNAVAILABLE"]
 
-def test_fictional_report_end_to_end(tmp_path, monkeypatch):
+async def test_fictional_report_end_to_end(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
 
     report_filename = "MedNarrate_Fictional_Medical_Report_1.pdf"
@@ -139,7 +139,7 @@ def test_fictional_report_end_to_end(tmp_path, monkeypatch):
     assert diagnostics["extraction_method"] == "pymupdf"
 
     # 3. Lab Extraction
-    labs = extract_lab_values(text)
+    labs = await extract_lab_values(text)
     assert len(labs) >= 3
     test_names = [val["original_name"].lower() for val in labs]
     assert any("hemoglobin" in n for n in test_names)

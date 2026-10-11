@@ -80,7 +80,7 @@ def test_unsupported_file_type(tmp_path):
         extract_text_with_diagnostics(str(dummy_file), "exe")
     assert exc_info.value.failure_category == "FILE_INVALID"
 
-def test_medical_fact_preservation_fixture():
+async def test_medical_fact_preservation_fixture():
     """Fixture test verifying HbA1c, Glucose, and Metformin facts are preserved."""
     ocr_text = (
         "PATIENT REPORT\n"
@@ -90,7 +90,7 @@ def test_medical_fact_preservation_fixture():
         "Metformin: 500 mg twice daily"
     )
     cleaned = clean_extracted_text(ocr_text)
-    labs = extract_lab_values(cleaned)
+    labs = await extract_lab_values(cleaned)
 
     # Check that lab values were extracted with exact numeric fidelity
     hba1c_lab = next((val for val in labs if "hba1c" in val["test_name"].lower() or "hba1c" in val["original_name"].lower()), None)

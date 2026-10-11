@@ -90,7 +90,7 @@ async def test_cross_report_contamination_protection():
     assert "240" not in summary_b
     assert "Platelets" in summary_b or "250" in summary_b
 
-def test_medication_extraction_preserves_dose_and_frequency():
+async def test_medication_extraction_preserves_dose_and_frequency():
     """Verify medication names, doses, and frequencies are correctly formatted without floating values."""
     ocr_text = (
         "CURRENT MEDICATIONS:\n"
@@ -98,7 +98,7 @@ def test_medication_extraction_preserves_dose_and_frequency():
         "2. Amlodipine 5 mg once daily at 8:00 AM\n"
         "3. Atorvastatin 10 mg once daily"
     )
-    labs = extract_lab_values(ocr_text)
+    labs = await extract_lab_values(ocr_text)
 
     # Ensure medication frequencies like "Once daily" are not treated as independent numerical lab values
     lab_names = [val["test_name"].lower() for val in labs]
