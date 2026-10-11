@@ -232,6 +232,14 @@ async def get_report_analysis(
     pref_lang = current_user.preferred_language or "en"
     analysis_out = ReportAnalysisOut.model_validate(analysis)
     analysis_out.medications = meds_list
+    if not analysis_out.evidence_sources and report.extracted_text:
+        # Older completed reports predate persisted source excerpts. Derive
+        # literal matches on read without changing their saved analysis.
+        from app.services.evidence_sources import build_lab_evidence_sources
+
+        analysis_out.evidence_sources = build_lab_evidence_sources(
+            report.extracted_text, analysis.structured_lab_values or []
+        )
 
     if pref_lang != "en":
         stmt_trans = select(AnalysisTranslation).where(
