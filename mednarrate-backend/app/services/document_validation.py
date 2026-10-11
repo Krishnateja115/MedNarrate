@@ -11,11 +11,14 @@ _MEDICAL_MARKERS = (
     r"bilirubin|hba1c|glucose|cholesterol|tsh)\b",
     r"\b(?:lab(?:oratory)?|pathology|radiology|diagnostic)\s+"
     r"(?:report|results?|findings?|test)\b",
+    r"\b(?:mri|ct scan|computed tomography|ultrasound|sonography|"
+    r"x[ -]?ray|echocardiogram|electrocardiogram|ecg|ekg)\b",
     r"\b(?:clinical findings?|impression|diagnosis|discharge summary|"
-    r"prescription|medical history|treatment plan)\b",
+    r"prescription|medical history|treatment plan|assessment and plan)\b",
     r"\b(?:reference range|ref\.?(?:erence)? interval|specimen|"
     r"sample collected|result\s+unit)\b",
-    r"\b(?:patient name|patient id|mrn|consultant|referring physician)\b",
+    r"\b(?:patient(?: name| id)?\s*:|mrn\b|consultant\b|"
+    r"referring physician\b)",
 )
 _UNRELATED_MARKERS = re.compile(
     r"\b(?:invoice|tax invoice|receipt|purchase order|tracking number|"

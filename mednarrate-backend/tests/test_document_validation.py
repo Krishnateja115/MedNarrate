@@ -10,6 +10,8 @@ from app.services.text_extraction import ExtractionError
         "Laboratory report\nPatient name: A\nHemoglobin 13.4 g/dL\nReference range 12-16",
         "Discharge summary\nPatient name: A\nDiagnosis: pneumonia\nTreatment plan: follow up",
         "Radiology findings\nPatient ID 123\nImpression: no acute abnormality",
+        "MRI BRAIN\nFindings: no mass effect\nImpression: normal study",
+        "Patient: A\nAssessment and plan: follow up for fever",
     ],
 )
 def test_accepts_medical_documents(text: str) -> None:
