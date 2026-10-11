@@ -105,12 +105,17 @@ class _AppLockScreenState extends State<AppLockScreen> {
   }
 
   Future<void> _logout() async {
+    var sessionCleared = false;
     try {
-      await ApiService.instance.logout();
-    } catch (_) {}
-    await StorageService.instance.clearTokens();
-    if (mounted) {
-      context.go(Routes.login);
+      await ApiService.instance.logout(onSessionCleared: () {
+        sessionCleared = true;
+        if (mounted) context.go(Routes.login);
+      });
+    } catch (_) {
+      if (!sessionCleared) {
+        await StorageService.instance.clearTokens();
+        if (mounted) context.go(Routes.login);
+      }
     }
   }
 

@@ -238,12 +238,16 @@ class ApiService {
     );
   }
 
-  Future<void> logout() async {
+  Future<void> logout({VoidCallback? onSessionCleared}) async {
     final refreshToken = await StorageService.instance.getRefreshToken();
     String? deviceToken;
     try {
-      if (!kIsWeb) {
-        deviceToken = await FirebaseMessaging.instance.getToken();
+      if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS)) {
+        deviceToken = await FirebaseMessaging.instance
+            .getToken()
+            .timeout(const Duration(seconds: 2));
       }
     } catch (_) {}
 
@@ -253,9 +257,17 @@ class ApiService {
         if (deviceToken != null) {
           body['device_token'] = deviceToken;
         }
-        await _post('/auth/logout', body: body);
+        await _post('/auth/logout',
+            body: body,
+            allowRefresh: false,
+            requestTimeout: const Duration(seconds: 5));
       } catch (_) {}
     }
+
+    // The account must be signed out before optional local cleanup can delay
+    // navigation away from a protected screen.
+    await StorageService.instance.clearTokens();
+    onSessionCleared?.call();
 
     // Privacy: Clear all locally cached user data
     try {
@@ -274,7 +286,6 @@ class ApiService {
       await CacheService.instance.clearAll();
     } catch (_) {}
 
-    await StorageService.instance.clearTokens();
   }
 
   Future<Map<String, dynamic>> forgotPassword(String email) async {

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_models.dart';
 import '../../../core/services/api_service.dart';
@@ -88,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logout() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.logOutTitle,
             style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         content: Text(AppLocalizations.of(context)!.logOutConfirm,
@@ -100,10 +101,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Theme.of(context).cardColor,
         actions: [
           TextButton(
-              onPressed: () => context.pop(false),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
-            onPressed: () => context.pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(AppLocalizations.of(context)!.logOut,
                 style: TextStyle(color: Colors.redAccent)),
           ),
@@ -113,11 +114,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirm != true) return;
     // Full logout: revokes the session server-side and wipes tokens, cached
     // profile/report data, the account's offline queue and local reminders.
+    var sessionCleared = false;
     try {
-      await ApiService.instance.logout();
-    } catch (_) {}
-    await StorageService.instance.clearTokens();
-    if (mounted) context.go(Routes.login);
+      await ApiService.instance.logout(onSessionCleared: () {
+        sessionCleared = true;
+        AppRouter.router.go(Routes.login);
+      });
+    } catch (_) {
+      if (!sessionCleared) {
+        await StorageService.instance.clearTokens();
+        AppRouter.router.go(Routes.login);
+      }
+    }
   }
 
   Future<void> _updateRole(String role) async {
