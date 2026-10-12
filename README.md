@@ -41,9 +41,10 @@ for the target environment.
 
 ## Automated checks
 
-- Backend: `cd mednarrate-backend && pytest -q`
-- Flutter: `flutter analyze --no-fatal-infos && flutter test`
-- Admin: `cd mednarrate-admin && npm run lint && npm run typecheck && npm test -- --ci`
+The [testing guide](TESTING.md) lists the local commands and the automated
+release gate. CI exercises PostgreSQL migrations and HTTP access checks,
+Flutter tests and an iPhone simulator, admin unit and Chromium browser tests,
+the production build, Docker checks, and security scans.
 
 Live AI-provider tests are opt-in with `RUN_LIVE_LLM_TESTS=1` and require valid
 credentials. Do not put patient reports or secrets in test fixtures or Git.
