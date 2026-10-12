@@ -33,11 +33,8 @@ except (OSError, ValueError, TypeError):
 
 def parse_translation(text: str) -> dict[str, Any]:
     """Decode the first complete JSON object, including optionally fenced output."""
-    import re
     if not isinstance(text, str):
         raise ValueError("Translation response must be text")
-    with open("llm_out.txt", "w", encoding="utf-8") as f:
-        f.write(text)
     raw = text.strip()
     fence = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw, re.IGNORECASE)
     if fence:
@@ -46,8 +43,7 @@ def parse_translation(text: str) -> dict[str, Any]:
         object_start = raw.find("{")
         if object_start >= 0:
             raw = raw[object_start:]
-    import re
-    def fix_value(match):
+    def fix_value(match: re.Match[str]) -> str:
         key = match.group(1)
         val = match.group(2).strip()
         if not val or val in ("null", "true", "false") or val.isdigit() or val.startswith(("[", "{", '"')):

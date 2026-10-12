@@ -1,5 +1,12 @@
 import pytest
-from app.services.translation_validation import TranslationVerifier
+from app.services.translation_validation import TranslationVerifier, parse_translation
+
+
+def test_parse_translation_does_not_write_patient_content(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    result = parse_translation('{"clinical_summary": "Sensitive patient detail"}')
+    assert result == {"clinical_summary": "Sensitive patient detail"}
+    assert list(tmp_path.iterdir()) == []
 
 def test_script_check_mostly_english():
     verifier = TranslationVerifier()
