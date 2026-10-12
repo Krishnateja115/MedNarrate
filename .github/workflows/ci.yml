@@ -5,6 +5,7 @@ on:
     branches: [main, develop, security-hardening]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -108,6 +109,25 @@ jobs:
           alembic downgrade base
           alembic upgrade head
 
+      - name: Start migrated API for HTTP smoke test
+        env:
+          DATABASE_URL: postgresql+asyncpg://mednarrate:mednarrate_pass@localhost:5432/mednarrate_db
+          ANALYSIS_EXECUTION_MODE: worker
+          RATE_LIMIT_ENABLED: "false"
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/mednarrate-api-smoke.log 2>&1 &
+          echo $! > /tmp/mednarrate-api-smoke.pid
+
+      - name: Exercise real HTTP auth and isolation
+        run: python scripts/smoke_http.py --require-migrations
+
+      - name: Stop HTTP smoke server
+        if: always()
+        run: |
+          if [ -f /tmp/mednarrate-api-smoke.pid ]; then
+            kill "$(cat /tmp/mednarrate-api-smoke.pid)" || true
+          fi
+
       - name: Create isolated test database
         env:
           PGPASSWORD: mednarrate_pass
@@ -142,6 +162,36 @@ jobs:
       - name: Test
         run: flutter test --reporter expanded
 
+  mobile-simulator:
+    name: Mobile UI (iPhone simulator)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.x"
+          channel: "stable"
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Boot available iPhone simulator
+        id: simulator
+        run: |
+          DEVICE=$(xcrun simctl list -j devices available | python3 -c 'import json,sys; groups=json.load(sys.stdin)["devices"].values(); d=next(d for group in groups for d in group if d["name"].startswith("iPhone") and d["isAvailable"]); print(d["udid"] + ":" + d["state"])')
+          DEVICE_ID=${DEVICE%%:*}
+          DEVICE_STATE=${DEVICE#*:}
+          if [ "$DEVICE_STATE" != "Booted" ]; then
+            xcrun simctl boot "$DEVICE_ID"
+          fi
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          echo "id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Test native mobile auth flow
+        run: flutter test integration_test/mobile_auth_smoke_test.dart -d "${{ steps.simulator.outputs.id }}"
+
   # ─── Admin portal (Next.js) ──────────────────────────────────────────────
   admin-frontend:
     name: Admin (lint, typecheck, test, build)
@@ -165,6 +215,30 @@ jobs:
       - run: npm run build
         env:
           MEDNARRATE_API_PROXY_URL: https://api.example.com
+
+  admin-browser:
+    name: Admin UI (Chromium)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mednarrate-admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mednarrate-admin/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: admin-browser-failures
+          path: |
+            mednarrate-admin/test-results
+            mednarrate-admin/playwright-report
 
   # ─── Docker image checks ─────────────────────────────────────────────────
   docker:
@@ -239,3 +313,37 @@ jobs:
         with:
           name: pip-audit-report
           path: pip-audit.txt
+
+  release-gate:
+    name: Automated release gate
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - backend
+      - backend-postgres
+      - flutter
+      - mobile-simulator
+      - admin-frontend
+      - admin-browser
+      - docker
+      - secret-scan
+      - dependency-audit-js
+    env:
+      BACKEND: ${{ needs.backend.result }}
+      POSTGRES: ${{ needs.backend-postgres.result }}
+      FLUTTER: ${{ needs.flutter.result }}
+      MOBILE: ${{ needs.mobile-simulator.result }}
+      ADMIN: ${{ needs.admin-frontend.result }}
+      BROWSER: ${{ needs.admin-browser.result }}
+      DOCKER: ${{ needs.docker.result }}
+      SECRETS: ${{ needs.secret-scan.result }}
+      NPM_AUDIT: ${{ needs.dependency-audit-js.result }}
+    steps:
+      - name: Require every automated check to pass
+        run: |
+          for result in "$BACKEND" "$POSTGRES" "$FLUTTER" "$MOBILE" "$ADMIN" "$BROWSER" "$DOCKER" "$SECRETS" "$NPM_AUDIT"; do
+            if [ "$result" != "success" ]; then
+              echo "A required check finished with: $result"
+              exit 1
+            fi
+          done
