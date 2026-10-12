@@ -13,7 +13,7 @@ if (releaseKeystoreFile.exists()) {
 }
 
 android {
-    namespace = "com.example.mednarrate"
+    namespace = "com.mednarrate.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.mednarrate"
+        applicationId = "com.mednarrate.app"
 
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion

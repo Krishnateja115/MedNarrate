@@ -18,10 +18,10 @@ successful local build with an example URL is not a deployable package.
 
 ## Configure before deployment
 
-1. **Identity and domains:** Choose the permanent Android application ID,
-   Apple bundle ID, API domain, and admin portal domain. Register the domains
-   and certificates. Replace the current `com.example.mednarrate` IDs before
-   uploading to an app store or registering Firebase apps.
+1. **Identity and domains:** The permanent Android application ID and Apple
+   bundle ID are `com.mednarrate.app`. Register this identifier with the app
+   stores and Firebase if remote push is required. Choose the API and admin
+   portal domains, then register their domains and certificates.
 2. **Backend:** Provision managed PostgreSQL, shared object storage, an API
    service, and an independent analysis worker. Put `DATABASE_URL`,
    `JWT_SECRET`, `ENVIRONMENT=production`, `ANALYSIS_EXECUTION_MODE=worker`,
