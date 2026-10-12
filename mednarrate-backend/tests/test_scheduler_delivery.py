@@ -6,6 +6,7 @@ import pytest
 
 from app.models.medication_schedule import MedicationSchedule
 from app.models.push_token import PushToken
+from app.core.config import settings
 from app.services import scheduler as reminder_scheduler
 
 
@@ -82,3 +83,25 @@ async def test_inactive_reminder_is_not_sent(
     await reminder_scheduler.check_medication_reminders()
 
     assert sent == []
+
+
+def test_production_rejects_server_reminders_without_user_timezones(monkeypatch):
+    monkeypatch.setattr(settings, "ENVIRONMENT", "production")
+    monkeypatch.setattr(settings, "CORS_ORIGINS", ["https://app.example.com"])
+    monkeypatch.setattr(settings, "JWT_SECRET", "x" * 40)
+    monkeypatch.setattr(
+        settings,
+        "DATABASE_URL",
+        "postgresql+asyncpg://user:password@localhost/mednarrate",
+    )
+    monkeypatch.setattr(settings, "ANALYSIS_EXECUTION_MODE", "worker")
+    monkeypatch.setattr(settings, "SERVER_MEDICATION_PUSH_ENABLED", True)
+
+    with pytest.raises(ValueError, match="per-user timezone"):
+        settings.validate_production_security()
+
+
+def test_server_scheduler_stays_off_when_mobile_alerts_are_primary(monkeypatch):
+    monkeypatch.setattr(settings, "SERVER_MEDICATION_PUSH_ENABLED", False)
+    reminder_scheduler.start_scheduler()
+    assert reminder_scheduler.scheduler.running is False
