@@ -219,6 +219,11 @@ class ApiService {
     await StorageService.instance
         .saveTokens(tokens.accessToken, tokens.refreshToken);
     try {
+      await getMe();
+    } catch (error) {
+      debugPrint('Profile cache will refresh after login: $error');
+    }
+    try {
       await getReminders();
     } catch (error) {
       debugPrint('Will sync medicine alerts when reminders are opened: $error');
@@ -317,7 +322,10 @@ class ApiService {
 
   Future<UserModel> getMe() async {
     final resp = await _get('/users/me');
-    return UserModel.fromMap(jsonDecode(resp.body) as Map<String, dynamic>);
+    final user = UserModel.fromMap(jsonDecode(resp.body) as Map<String, dynamic>);
+    await StorageService.instance.cacheUserProfile(user);
+    await CacheService.instance.initialize(userId: user.id);
+    return user;
   }
 
   Future<Uint8List> exportAccountData() async {
@@ -570,6 +578,8 @@ class ApiService {
       if (e is TimeoutException ||
           e is SocketException ||
           e is http.ClientException) {
+        final cached = CacheService.instance.getCachedReports();
+        if (cached.isNotEmpty) return cached;
         throw _networkException(e);
       }
       throw ApiException(500, 'Failed to parse reports: $e');
@@ -577,9 +587,16 @@ class ApiService {
   }
 
   Future<ReportModel> getReport(String id) async {
+    if (!ConnectivityService.instance.isOnline) {
+      final cached = CacheService.instance.getCachedReport(id);
+      if (cached != null) return cached;
+      throw const ApiException(0, 'This report is not available offline.');
+    }
     final resp = await _get('/reports/$id');
-    return ReportModel.fromMap(
+    final report = ReportModel.fromMap(
         _remapReport(jsonDecode(resp.body) as Map<String, dynamic>));
+    await CacheService.instance.saveReport(report);
+    return report;
   }
 
   Future<Uint8List> downloadOriginalReport(String id) async {
@@ -599,6 +616,7 @@ class ApiService {
 
   Future<void> deleteReport(String id) async {
     await _delete('/reports/$id');
+    await CacheService.instance.removeReport(id);
   }
 
   Future<void> processReport(String id, {bool force = false}) async {
@@ -611,9 +629,16 @@ class ApiService {
   }
 
   Future<ReportAnalysisModel> getReportAnalysis(String id) async {
+    if (!ConnectivityService.instance.isOnline) {
+      final cached = CacheService.instance.getCachedAnalysis(id);
+      if (cached != null) return ReportAnalysisModel.fromMap(cached);
+      throw const ApiException(0, 'This analysis is not available offline.');
+    }
     final resp = await _get('/reports/$id/analysis');
-    return ReportAnalysisModel.fromMap(
-        jsonDecode(resp.body) as Map<String, dynamic>);
+    final data = jsonDecode(resp.body) as Map<String, dynamic>;
+    final analysis = ReportAnalysisModel.fromMap(data);
+    await CacheService.instance.saveAnalysis(id, data);
+    return analysis;
   }
 
   Future<TranslationModel> translateAnalysis(String id, String language) async {
@@ -663,8 +688,14 @@ class ApiService {
   }
 
   Future<List<ChatSessionModel>> listChatSessions() async {
+    if (!ConnectivityService.instance.isOnline) {
+      return CacheService.instance.getCachedChatSessions()
+          .map((item) => ChatSessionModel.fromMap(item as Map<String, dynamic>))
+          .toList();
+    }
     final resp = await _get('/chat/sessions');
     final list = jsonDecode(resp.body) as List<dynamic>;
+    await CacheService.instance.saveChatSessions(list);
     return list
         .map((e) => ChatSessionModel.fromMap(e as Map<String, dynamic>))
         .toList();
@@ -672,9 +703,15 @@ class ApiService {
 
   Future<List<ChatMessageModel>> getChatMessages(String sessionId,
       {int limit = 20, int offset = 0}) async {
+    if (!ConnectivityService.instance.isOnline) {
+      return CacheService.instance.getCachedChatMessages(sessionId)
+          .map((item) => ChatMessageModel.fromMap(item as Map<String, dynamic>))
+          .toList();
+    }
     final resp = await _get(
         '/chat/sessions/$sessionId/messages?limit=$limit&offset=$offset');
     final list = jsonDecode(resp.body) as List<dynamic>;
+    if (offset == 0) await CacheService.instance.saveChatMessages(sessionId, list);
     return list
         .map((e) => ChatMessageModel.fromMap(e as Map<String, dynamic>))
         .toList();
@@ -682,6 +719,9 @@ class ApiService {
 
   Future<ChatMessageModel> sendChatMessage(String sessionId, String content,
       {String? language}) async {
+    if (!ConnectivityService.instance.isOnline) {
+      throw const ApiException(0, 'Chat requires a connection. Saved messages remain available offline.');
+    }
     final body = <String, dynamic>{'content': content};
     if (language != null) body['language'] = language;
 
@@ -690,6 +730,11 @@ class ApiService {
     // Response is {message: {...}, sources: [...]}
     final msgMap = data['message'] as Map<String, dynamic>;
     msgMap['sources'] = data['sources'] ?? [];
+    try {
+      await getChatMessages(sessionId);
+    } catch (error) {
+      debugPrint('Chat cache will refresh later: $error');
+    }
     return ChatMessageModel.fromMap(msgMap);
   }
 

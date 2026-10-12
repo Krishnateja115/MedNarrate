@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_models.dart';
 import '../../../core/services/api_exception.dart';
+import '../../../core/services/connectivity_service.dart';
 import '../../../core/utils/helpers.dart';
 
 class AIChatScreen extends StatefulWidget {
@@ -46,9 +47,16 @@ class _AIChatScreenState extends State<AIChatScreen> {
           _sessionId = session.id;
         }
       } else {
-        // Create a general session
-        final session = await ApiService.instance.createChatSession();
-        _sessionId = session.id;
+        if (!ConnectivityService.instance.isOnline) {
+          final sessions = await ApiService.instance.listChatSessions();
+          if (sessions.isEmpty) {
+            throw const ApiException(0, 'No saved chat is available offline.');
+          }
+          _sessionId = sessions.first.id;
+        } else {
+          final session = await ApiService.instance.createChatSession();
+          _sessionId = session.id;
+        }
       }
       await _loadMessages();
     } on ApiException catch (e) {

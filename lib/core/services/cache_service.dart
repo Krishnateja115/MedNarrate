@@ -130,6 +130,14 @@ class CacheService {
     );
   }
 
+  Future<void> removeReport(String reportId) async {
+    final details = _readMap('report_details')..remove(reportId);
+    await _reportsBox.delete(reportId);
+    await _metadataBox.put('report_details', jsonEncode(details));
+    await _metadataBox.delete('analysis:$reportId');
+    await _metadataBox.delete('lab_values:$reportId');
+  }
+
   bool isReportCacheStale() {
     final cachedAtStr = _metadataBox.get('reports_cached_at') as String?;
     if (cachedAtStr == null) return true;
