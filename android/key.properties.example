@@ -1,0 +1,5 @@
+# Copy to android/key.properties and keep the real file outside Git.
+storePassword=replace-with-keystore-password
+keyPassword=replace-with-key-password
+keyAlias=release
+storeFile=/absolute/path/to/release-keystore.jks

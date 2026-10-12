@@ -1,296 +1,49 @@
-# 🏥 MedNarrate — AI Medical Report Analysis
-
-MedNarrate is a full-stack AI-powered application that helps patients and clinicians understand complex medical lab reports through plain-language summaries, trend analysis, RAG-based Q&A, and multilingual support.
-
----
-
-## 📋 Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-- [Tech Stack](#tech-stack)
-- [Features](#features)
-- [Getting Started](#getting-started)
-  - [Backend (FastAPI)](#backend-fastapi)
-  - [Flutter App](#flutter-app)
-  - [Docker Deployment](#docker-deployment)
-- [Environment Variables](#environment-variables)
-- [API Endpoints](#api-endpoints)
-- [Running Tests](#running-tests)
-- [CI/CD](#cicd)
-- [Project Structure](#project-structure)
-
----
-
-## Architecture Overview
-
-```
-┌────────────────────────────────┐     ┌─────────────────────────────┐
-│      Flutter Mobile App        │────▶│     FastAPI Backend (Python) │
-│  (Reports, Chat, Insights)     │◀────│  Auth · Reports · Analysis   │
-└────────────────────────────────┘     │  RAG · Notifications         │
-                                       └──────────┬──────────────────┘
-                                                  │
-                                    ┌─────────────▼─────────────┐
-                                    │   PostgreSQL / SQLite      │
-                                    │   (prod / test)           │
-                                    └───────────────────────────┘
-```
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Mobile | Flutter 3.x (Dart) |
-| Backend | Python 3.11 + FastAPI |
-| Database | PostgreSQL 16 (prod) / SQLite (testing) |
-| Auth | JWT (access + refresh tokens, bcrypt hashes) |
-| AI | Google Gemini 1.5 Flash (summaries) |
-| NLP | HuggingFace Transformers (NER pipeline) |
-| RAG | BM25 + Gemini Embedding (text-embedding-004) |
-| OCR | PyMuPDF / google_mlkit_text_recognition |
-| Storage | Local filesystem (Docker volume) |
-| CI/CD | GitHub Actions |
-
----
-
-## Features
-
-- 📄 **PDF/Image Report Upload** — secure upload with magic-byte validation and UUID file naming
-- 🤖 **AI Analysis Pipeline** — NER → lab value extraction → Gemini summaries (clinician + patient)
-- 💊 **Medication Scheduling** — AI-extracted medication reminders with local notifications
-- 🌐 **Multilingual** — patient summaries translated to Hindi (`hi`) and Telugu (`te`)
-- 💬 **RAG Chat** — per-report chat sessions with BM25 / semantic retrieval
-- 📊 **Health Insights** — cross-report trend charts with fl_chart
-- 🔐 **Security** — refresh token rotation, ownership middleware, rate-limiting (slowapi), security headers
-- 📴 **Offline Mode** — cached reports via Hive with connectivity banner
-- 🔑 **Biometric Auth** — local_auth fingerprint / face unlock
-- 🌍 **Professional Mode** — role-aware prompts for doctors vs. patients
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.11+
-- Flutter SDK 3.22+
-- PostgreSQL 16 (for production) or Docker
-
----
-
-### Backend (FastAPI)
-
-```bash
-cd mednarrate-backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy and configure environment
-cp .env.example .env
-# Edit .env with your DATABASE_URL, SECRET_KEY, GEMINI_API_KEY
-
-# Run database migrations
-alembic upgrade head
-
-# Start development server
-python run_server.py
-```
-
-`run_server.py` applies the checked-in Alembic migrations automatically in
-development, so the desktop app and admin portal stay on the same local schema
-after an update. If an older local database reports the removed revision
-`0d9c40325c4d`, run this one-time, data-preserving repair before starting it:
-
-```bash
-python scripts/repair_local_sqlite_history.py
-```
-
-The API will be available at `http://localhost:8000`  
-Interactive docs: `http://localhost:8000/docs`
-
----
-
-### Flutter App
-
-```bash
-# From the project root
-flutter pub get
-
-# Run on device/emulator
-flutter run
-
-# Build release APK
-flutter build apk --release
-```
-
----
-
-### Docker Deployment
-
-```bash
-cd mednarrate-backend
-
-# Copy and configure environment
-cp .env.example .env
-# Edit DATABASE_URL (use the Docker service name 'db'), SECRET_KEY, GEMINI_API_KEY
-
-# Start all services
-docker compose up --build -d
-
-# View logs
-docker compose logs -f backend
-
-# Run migrations inside container
-docker compose exec backend alembic upgrade head
-```
-
----
-
-## Environment Variables
-
-Create `mednarrate-backend/.env` based on:
-
-```env
-# Database
-DATABASE_URL=postgresql+asyncpg://mednarrate:mednarrate_pass@localhost:5432/mednarrate_db
-
-# JWT Auth
-SECRET_KEY=your-secret-key-min-32-chars
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# AI
-GEMINI_API_KEY=your-gemini-api-key
-
-# Storage
-UPLOAD_DIR=uploads
-
-# App
-ENVIRONMENT=development   # production | development | test
-MAX_UPLOAD_SIZE_MB=10
-```
-
----
-
-## API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/v1/auth/signup` | Register new user |
-| `POST` | `/api/v1/auth/login` | Login → access + refresh tokens |
-| `POST` | `/api/v1/auth/refresh` | Rotate refresh token |
-| `POST` | `/api/v1/auth/logout` | Revoke refresh token |
-| `GET`  | `/api/v1/auth/me` | Get current user profile |
-| `POST` | `/api/v1/reports/upload` | Upload medical report (PDF/image) |
-| `GET`  | `/api/v1/reports` | List reports (paginated) |
-| `GET`  | `/api/v1/reports/{id}` | Get report details |
-| `PATCH`| `/api/v1/reports/{id}` | Update report metadata |
-| `DELETE`| `/api/v1/reports/{id}` | Delete report + file |
-| `GET`  | `/api/v1/reports/{id}/analysis` | Get AI analysis |
-| `POST` | `/api/v1/chat/session` | Create chat session |
-| `POST` | `/api/v1/chat/message` | Send message to RAG chat |
-| `GET`  | `/api/v1/notifications/medications` | List medication schedules |
-| `GET`  | `/health` | Health check |
-
----
-
-## Running Tests
-
-### Backend
-
-```bash
-cd mednarrate-backend
-source venv/bin/activate
-
-# All tests (uses SQLite in-memory)
-PYTHONPATH=. pytest -v
-
-# With coverage
-PYTHONPATH=. pytest --cov=app --cov-report=term-missing
-```
-
-**Test suites:**
-- `test_auth.py` — signup, login, token rotation, logout
-- `test_reports.py` — upload, list, patch, delete, ownership
-- `test_analysis.py` — lab value extraction, pipeline mocking, defensive filtering
-- `test_rag.py` — chat session creation and ownership
-- `test_chat_safety.py` — emergency routing, diagnosis safety checks
-- `test_normalization.py` — lab value unit normalization
-- `test_extraction_pipeline.py` — end-to-end extraction flow
-
-### Flutter
-
-```bash
-# From project root
-flutter test test/medication_card_test.dart \
-              test/biometric_service_test.dart \
-              test/insights_screen_test.dart \
-              test/offline_banner_test.dart
-```
-
----
-
-## CI/CD
-
-GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push/PR to `main` and `develop`:
-
-1. **Backend Tests** — Python 3.11, pytest with SQLite in-memory DB
-2. **Flutter Tests** — Flutter 3.22, `flutter analyze` + widget/unit tests
-3. **Docker Build** — validates the Dockerfile builds successfully
-
----
-
-## Project Structure
-
-```
-mednarrate/
-├── lib/                          # Flutter app
-│   ├── core/
-│   │   ├── services/             # API, auth, biometric, cache, connectivity
-│   │   ├── constants/            # App-wide constants
-│   │   └── theme/                # Dark/light theme
-│   ├── features/
-│   │   ├── auth/                 # Login, signup screens
-│   │   ├── reports/              # Upload, list, detail, analysis tabs
-│   │   ├── insights/             # Multi-report comparison & charts
-│   │   ├── chat/                 # RAG chat sessions
-│   │   ├── reminders/            # Medication schedules
-│   │   └── dashboard/            # Home dashboard
-│   └── shared/widgets/           # Reusable UI components
-├── test/                         # Flutter unit & widget tests
-├── mednarrate-backend/           # FastAPI backend
-│   ├── app/
-│   │   ├── api/v1/               # API route handlers
-│   │   ├── core/                 # Config, DB, security
-│   │   ├── models/               # SQLAlchemy ORM models
-│   │   ├── schemas/              # Pydantic request/response models
-│   │   └── services/             # Business logic (analysis, RAG, storage)
-│   ├── alembic/                  # Database migrations
-│   ├── tests/                    # Pytest test suite
-│   ├── Dockerfile
-│   └── docker-compose.yml
-└── .github/workflows/ci.yml      # GitHub Actions CI/CD
-```
-
----
-
-
-## Security & Operations Notes
-
-- **Secrets**: never commit `.env`. Copy `mednarrate-backend/.env.example` and set `JWT_SECRET` (strong, non-default) and, in production, a PostgreSQL `DATABASE_URL`. Production (`ENVIRONMENT=production`) refuses to start with wildcard CORS, a weak JWT secret or SQLite.
-- **API docs**: `/docs`, `/redoc` and `/openapi.json` are only served when `ENVIRONMENT=development`.
-- **Reverse proxy**: `X-Forwarded-For` is ignored unless `TRUSTED_PROXY=true` (set it only behind a proxy that overwrites the header). Rate limits and audit logs use the resolved client IP.
-- **Rate limiting**: one shared limiter (`app/core/rate_limit.py`) protects signup, login, MFA, refresh and password reset (`RATE_LIMIT_SENSITIVE`, default `5/minute`) plus a global default (`RATE_LIMIT_DEFAULT`). Counters are in-memory per process; set `RATE_LIMIT_STORAGE_URI` (e.g. Redis) for multi-worker deployments.
-- **Medical verifier / translation**: verifier timeouts, errors and malformed output are stored as `unverified`-class statuses (never `verified`). A failed translation raises an error instead of returning English as if translated.
-- **RAG privacy**: report text and queries are always de-identified before embedding, independent of `LLM_SEND_MODE`.
-- **Account deletion** anonymizes the `users` row (kept for audit/referential integrity) and deletes the user's reports, files (failures create `OrphanFile` records), tokens, MFA challenges, profiles, chats and RAG chunks.
-- **Mobile**: tokens, the Hive encryption key, cached profile and reminders live in `flutter_secure_storage`; the offline queue is encrypted, owned per user, and wiped on logout.
-- **Tests**: `cd mednarrate-backend && PYTHONPATH=. pytest` (SQLite). To run on PostgreSQL, point `DATABASE_URL` at an empty database with the `vector` extension, e.g. `postgresql+asyncpg://user:pass@localhost/mednarrate_test`.
+# MedNarrate
+
+MedNarrate helps people review medical reports with a Flutter app, a FastAPI
+service, and a staff admin portal. AI results are informational and must be
+checked against the source report and a qualified clinician.
+
+## Components
+
+- `lib/`, `android/`, `ios/`, `macos/`, `windows/`: Flutter client. Reports and
+  chat can be read from an encrypted account-scoped cache when offline. New
+  report uploads can be queued in encrypted local storage and retried online.
+- `mednarrate-backend/`: FastAPI, PostgreSQL, Alembic, report analysis worker,
+  file storage, and admin APIs.
+- `mednarrate-admin/`: Next.js admin portal.
+- `mednarrate-admin-desktop/`: Tauri package for the admin portal.
+
+## Local development
+
+Use Python 3.11 and Flutter 3.47 or a compatible stable release. Configure the
+backend from `mednarrate-backend/.env.example` using a local `.env` file. The
+required secret is named `JWT_SECRET`. Apply migrations with
+`cd mednarrate-backend && alembic upgrade head`, then start the API with
+`python run_server.py`. Set up an AI provider before testing report analysis.
+
+From the repository root, run `flutter pub get` and `flutter run`. On Android
+emulators the local backend defaults to `10.0.2.2:8000`; other devices need an
+explicit `--dart-define=API_BASE_URL=...`.
+
+For the admin portal, run `cd mednarrate-admin && npm ci && npm run dev`. It
+listens on port 3001 and proxies `/api/v1` to the local backend by default.
+
+## Production release
+
+Read [RELEASE_READINESS.md](RELEASE_READINESS.md) before deployment. Production
+requires PostgreSQL migrations, an independent analysis worker, shared file
+storage, configured AI credentials, a public HTTPS API, and a protected admin
+origin. A release Flutter build refuses a local or non-HTTPS API URL. The admin
+build refuses a missing API proxy URL. Mobile package IDs, signing credentials,
+provider configuration, privacy terms, and live device checks must be completed
+for the target environment.
+
+## Automated checks
+
+- Backend: `cd mednarrate-backend && pytest -q`
+- Flutter: `flutter analyze --no-fatal-infos && flutter test`
+- Admin: `cd mednarrate-admin && npm run lint && npm run typecheck && npm test -- --ci`
+
+Live AI-provider tests are opt-in with `RUN_LIVE_LLM_TESTS=1` and require valid
+credentials. Do not put patient reports or secrets in test fixtures or Git.
