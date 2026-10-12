@@ -88,10 +88,16 @@ async def test_health_check_returns_all_services(
         llm_client_instance.get_provider = original_get_provider
 
 @pytest.mark.asyncio
-async def test_root_health_check_db(client: AsyncClient):
-    """Test that the /health root endpoint checks the database and returns ok."""
+async def test_root_health_check_reports_unmigrated_db(
+    client: AsyncClient, db_session_factory, monkeypatch: pytest.MonkeyPatch
+):
+    """A reachable database without Alembic history is not healthy."""
+    from app.core import database
+
+    monkeypatch.setattr(database, "AsyncSessionLocal", db_session_factory)
     resp = await client.get("/health")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "ok"
-    assert data["db"] == "up"
+    assert data["status"] == "degraded"
+    assert data["db"] == "down"
+    assert data["schema_revision"] is None

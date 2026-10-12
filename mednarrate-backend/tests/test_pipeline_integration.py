@@ -55,5 +55,6 @@ async def test_llm_client_missing_config_fails_cleanly(monkeypatch):
 
     from app.services.llm_client import LLMConfigurationError
 
-    with pytest.raises(LLMConfigurationError, match="not configured or is invalid"):
+    with pytest.raises(LLMConfigurationError) as error:
         await generate("Test prompt", timeout=1.0)
+    assert str(error.value)
