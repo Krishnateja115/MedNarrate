@@ -223,6 +223,21 @@ class ApiService {
     } catch (error) {
       debugPrint('Profile cache will refresh after login: $error');
     }
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      try {
+        final deviceToken = await FirebaseMessaging.instance.getToken();
+        if (deviceToken != null) {
+          await registerPushToken(
+            deviceToken,
+            defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
+          );
+        }
+      } catch (error) {
+        debugPrint('Push token registration deferred: $error');
+      }
+    }
     try {
       await getReminders();
     } catch (error) {

@@ -10,10 +10,6 @@ import 'package:timezone/timezone.dart' as tz;
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  NotificationService.instance.showLocalNotification(
-    message.notification?.title ?? 'Notification',
-    message.notification?.body ?? '',
-  );
 }
 
 class NotificationService {
@@ -28,7 +24,13 @@ class NotificationService {
   bool _exactAlarmsAllowed = false;
   bool _exactPermissionChecked = false;
   bool get notificationsAllowed => _notificationsAllowed;
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  VoidCallback? onOpenMedications;
+
+  void _openMedications() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      onOpenMedications?.call();
+    });
+  }
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -46,7 +48,7 @@ class NotificationService {
       await _localNotificationsPlugin.initialize(
         initializationSettings,
         onDidReceiveNotificationResponse: (details) {
-          navigatorKey.currentState?.pushNamed('/medications');
+          _openMedications();
         },
       );
       await refreshPermissions();
@@ -79,6 +81,9 @@ class NotificationService {
 
         // Setup message handlers
         _setupMessageHandlers();
+        if (await FirebaseMessaging.instance.getInitialMessage() != null) {
+          _openMedications();
+        }
       }
     } catch (e) {
       debugPrint("Firebase init failed: $e");
@@ -126,9 +131,7 @@ class NotificationService {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      if (navigatorKey.currentState != null) {
-        navigatorKey.currentState!.pushNamed('/medications');
-      }
+      _openMedications();
     });
   }
 

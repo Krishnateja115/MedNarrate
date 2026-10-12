@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/routing/app_router.dart';
+import 'core/routing/routes.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/api_service.dart';
 import 'core/services/storage_service.dart';
@@ -224,6 +225,8 @@ Future<void> _runBootSequence() async {
 
     // Proceed to app init
     WidgetsBinding.instance.addObserver(AppLifecycleObserver());
+    NotificationService.instance.onOpenMedications =
+        () => AppRouter.router.go(Routes.medications);
     await NotificationService.instance.initialize();
     try {
       final profile = await StorageService.instance.getCachedProfile();
