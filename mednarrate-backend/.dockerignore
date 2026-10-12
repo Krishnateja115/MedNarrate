@@ -33,6 +33,15 @@ scratch2.py
 pytest_output*.txt
 test_out.json
 *.log
+groq_resp.txt
+llm_out*.txt
+qwen_capture_*.json
+qwen_debug.txt
+capture_qwen*.py
+debug_*.py
+temp_*.py
+parser_fix*.py
+run_*diagnostic.py
 check_*.py
 test_*.py
 fix_migration.py

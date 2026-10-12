@@ -48,6 +48,9 @@ and tested against real uploads.
   worker only the storage/database permissions they need.
 - Configure the chosen AI provider and authentication; check API quotas and
   per-report cost. The worker needs the same secrets as the API.
+- The production image omits the optional local GGUF runtime. Install
+  `requirements-local-llm.txt` only in an environment that explicitly uses the
+  local translation provider; Vertex AI deployments do not need it.
 - Add monitoring for queued reports, stage durations, failed reports, worker
   restarts, database saturation and AI-provider failures. Configure backups and
   retention for patient data.

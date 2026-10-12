@@ -1,0 +1,4 @@
+# Install this only when using the optional local GGUF translation provider.
+-r requirements.txt
+llama-cpp-python>=0.2.76
+huggingface-hub>=0.23.2
