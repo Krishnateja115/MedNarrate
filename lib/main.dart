@@ -13,6 +13,8 @@ import 'core/services/api_service.dart';
 import 'core/services/storage_service.dart';
 import 'core/services/biometric_service.dart';
 import 'core/services/cache_service.dart';
+import 'core/services/offline_queue_service.dart';
+import 'core/services/connectivity_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/app_config.dart';
 
@@ -224,9 +226,12 @@ Future<void> _runBootSequence() async {
     WidgetsBinding.instance.addObserver(AppLifecycleObserver());
     await NotificationService.instance.initialize();
     try {
-      await CacheService.instance.initialize();
+      final profile = await StorageService.instance.getCachedProfile();
+      await CacheService.instance.initialize(userId: profile?.id ?? 'guest');
+      await OfflineQueueService.instance.initialize();
+      await ConnectivityService.instance.initialize();
     } catch (e) {
-      debugPrint("CacheService init error: $e");
+      debugPrint("Offline services init error: $e");
     }
 
     final savedThemeMode = await StorageService.instance.getThemeMode();

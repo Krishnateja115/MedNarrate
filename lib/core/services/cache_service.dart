@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../features/reports/models/report_model.dart';
 import '../../models/cached/cached_report.dart';
@@ -65,6 +66,10 @@ class CacheService {
     }
     await _reportsBox.clear(); // Clear existing to remove deleted reports
     await _reportsBox.putAll(entries);
+    await _metadataBox.put(
+      'report_details',
+      jsonEncode({for (final report in reports) report.id: report.toMap()}),
+    );
     await _metadataBox.put('reports_cached_at', DateTime.now().toIso8601String());
   }
 
@@ -72,7 +77,13 @@ class CacheService {
     final list = _reportsBox.values.toList()
       ..sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
     
-    return list.map((c) => ReportModel(
+    final details = _readMap('report_details');
+    return list.map((c) {
+      final detail = details[c.id];
+      if (detail is Map) {
+        return ReportModel.fromMap(Map<String, dynamic>.from(detail));
+      }
+      return ReportModel(
       id: c.id,
       title: c.title,
       hospital: '',
@@ -85,7 +96,38 @@ class CacheService {
       processingStatus: 'completed',
       isFavourite: false,
       uploadedAt: c.uploadedAt,
-    )).toList();
+      );
+    }).toList();
+  }
+
+  ReportModel? getCachedReport(String reportId) {
+    final detail = _readMap('report_details')[reportId];
+    if (detail is Map) {
+      return ReportModel.fromMap(Map<String, dynamic>.from(detail));
+    }
+    for (final report in getCachedReports()) {
+      if (report.id == reportId) return report;
+    }
+    return null;
+  }
+
+  Future<void> saveReport(ReportModel report) async {
+    final details = _readMap('report_details');
+    details[report.id] = report.toMap();
+    await _metadataBox.put('report_details', jsonEncode(details));
+    await _reportsBox.put(
+      report.id,
+      CachedReport(
+        id: report.id,
+        userId: _currentUserId,
+        title: report.title,
+        reportType: report.reportType,
+        uploadedAt: report.uploadedAt,
+        status: report.processingStatus,
+        summaryText: report.extractedText,
+        reportDate: report.reportDate,
+      ),
+    );
   }
 
   bool isReportCacheStale() {
@@ -96,23 +138,61 @@ class CacheService {
   }
 
   Future<void> saveLabValues(String reportId, List<dynamic> labValues) async {
-    // For brevity, skipping full lab value conversion here.
-    // Similar to saveReports.
+    await _metadataBox.put('lab_values:$reportId', jsonEncode(labValues));
   }
 
   List<dynamic> getCachedLabValues(String reportId) {
-    return _labValuesBox.values.where((c) => c.reportId == reportId).toList();
+    return _readList('lab_values:$reportId');
   }
 
   Future<void> saveChatMessages(String sessionId, List<dynamic> messages) async {
-    // Similar to saveReports
+    await _metadataBox.put('chat_messages:$sessionId', jsonEncode(messages));
   }
 
   List<dynamic> getCachedChatMessages(String sessionId) {
-    return _chatMessagesBox.values
-        .where((m) => m.sessionId == sessionId)
-        .toList()
-        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return _readList('chat_messages:$sessionId');
+  }
+
+  Future<void> saveChatSessions(List<dynamic> sessions) async {
+    await _metadataBox.put('chat_sessions', jsonEncode(sessions));
+  }
+
+  List<dynamic> getCachedChatSessions() => _readList('chat_sessions');
+
+  Future<void> saveAnalysis(String reportId, Map<String, dynamic> analysis) async {
+    await _metadataBox.put('analysis:$reportId', jsonEncode(analysis));
+    final values = analysis['structured_lab_values'];
+    if (values is List) await saveLabValues(reportId, values);
+  }
+
+  Map<String, dynamic>? getCachedAnalysis(String reportId) {
+    final data = _metadataBox.get('analysis:$reportId');
+    if (data is! String) return null;
+    try {
+      return Map<String, dynamic>.from(jsonDecode(data) as Map);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Map<String, dynamic> _readMap(String key) {
+    final data = _metadataBox.get(key);
+    if (data is! String) return {};
+    try {
+      return Map<String, dynamic>.from(jsonDecode(data) as Map);
+    } catch (_) {
+      return {};
+    }
+  }
+
+  List<dynamic> _readList(String key) {
+    final data = _metadataBox.get(key);
+    if (data is! String) return [];
+    try {
+      return List<dynamic>.from(jsonDecode(data) as List);
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<void> clearAll() async {
@@ -123,8 +203,7 @@ class CacheService {
   }
 
   int getCacheSizeBytes() {
-    // Approximate by string length of JSON equivalent or file size.
-    // For now, return a placeholder.
-    return 1024 * 1024; // 1 MB
+    return [..._reportsBox.values, ..._metadataBox.values]
+        .fold<int>(0, (size, value) => size + utf8.encode(value.toString()).length);
   }
 }
