@@ -102,4 +102,38 @@ void main() {
     expect(CacheService.instance.getCachedReports(), isEmpty);
     expect(CacheService.instance.isReportCacheStale(), isTrue);
   });
+
+  test('saved report details remain available for offline report opening', () async {
+    final report = buildReport('offline-detail', DateTime(2026, 1, 1));
+    await CacheService.instance.saveReport(report);
+
+    final cached = CacheService.instance.getCachedReport(report.id);
+    expect(cached, isNotNull);
+    expect(cached!.title, report.title);
+    expect(cached.extractedText, report.extractedText);
+  });
+
+  test('analysis and chat records survive encrypted cache round trips', () async {
+    final analysis = <String, dynamic>{
+      'patient_summary': 'A patient summary',
+      'structured_lab_values': [
+        {'test_name': 'Hemoglobin', 'value': 10.2, 'unit': 'g/dL'}
+      ],
+    };
+    final message = <String, dynamic>{
+      'id': 'message-1',
+      'chat_session_id': 'session-1',
+      'role': 'assistant',
+      'content': 'Discuss this with your doctor.',
+      'created_at': '2026-01-01T00:00:00Z',
+      'sources': <Map<String, dynamic>>[],
+    };
+    await CacheService.instance.saveAnalysis('report-1', analysis);
+    await CacheService.instance.saveChatMessages('session-1', [message]);
+
+    expect(CacheService.instance.getCachedAnalysis('report-1'), analysis);
+    expect(CacheService.instance.getCachedLabValues('report-1'), isNotEmpty);
+    expect(CacheService.instance.getCachedChatMessages('session-1'), [message]);
+    expect(CacheService.instance.getCacheSizeBytes(), greaterThan(0));
+  });
 }

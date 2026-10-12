@@ -607,11 +607,19 @@ class ApiService {
       if (cached != null) return cached;
       throw const ApiException(0, 'This report is not available offline.');
     }
-    final resp = await _get('/reports/$id');
-    final report = ReportModel.fromMap(
-        _remapReport(jsonDecode(resp.body) as Map<String, dynamic>));
-    await CacheService.instance.saveReport(report);
-    return report;
+    try {
+      final resp = await _get('/reports/$id');
+      final report = ReportModel.fromMap(
+          _remapReport(jsonDecode(resp.body) as Map<String, dynamic>));
+      await CacheService.instance.saveReport(report);
+      return report;
+    } on ApiException catch (error) {
+      if (error.statusCode == 0) {
+        final cached = CacheService.instance.getCachedReport(id);
+        if (cached != null) return cached;
+      }
+      rethrow;
+    }
   }
 
   Future<Uint8List> downloadOriginalReport(String id) async {
@@ -649,11 +657,19 @@ class ApiService {
       if (cached != null) return ReportAnalysisModel.fromMap(cached);
       throw const ApiException(0, 'This analysis is not available offline.');
     }
-    final resp = await _get('/reports/$id/analysis');
-    final data = jsonDecode(resp.body) as Map<String, dynamic>;
-    final analysis = ReportAnalysisModel.fromMap(data);
-    await CacheService.instance.saveAnalysis(id, data);
-    return analysis;
+    try {
+      final resp = await _get('/reports/$id/analysis');
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final analysis = ReportAnalysisModel.fromMap(data);
+      await CacheService.instance.saveAnalysis(id, data);
+      return analysis;
+    } on ApiException catch (error) {
+      if (error.statusCode == 0) {
+        final cached = CacheService.instance.getCachedAnalysis(id);
+        if (cached != null) return ReportAnalysisModel.fromMap(cached);
+      }
+      rethrow;
+    }
   }
 
   Future<TranslationModel> translateAnalysis(String id, String language) async {
@@ -708,12 +724,21 @@ class ApiService {
           .map((item) => ChatSessionModel.fromMap(item as Map<String, dynamic>))
           .toList();
     }
-    final resp = await _get('/chat/sessions');
-    final list = jsonDecode(resp.body) as List<dynamic>;
-    await CacheService.instance.saveChatSessions(list);
-    return list
-        .map((e) => ChatSessionModel.fromMap(e as Map<String, dynamic>))
-        .toList();
+    try {
+      final resp = await _get('/chat/sessions');
+      final list = jsonDecode(resp.body) as List<dynamic>;
+      await CacheService.instance.saveChatSessions(list);
+      return list
+          .map((e) => ChatSessionModel.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } on ApiException catch (error) {
+      if (error.statusCode == 0) {
+        return CacheService.instance.getCachedChatSessions()
+            .map((e) => ChatSessionModel.fromMap(e as Map<String, dynamic>))
+            .toList();
+      }
+      rethrow;
+    }
   }
 
   Future<List<ChatMessageModel>> getChatMessages(String sessionId,
@@ -723,13 +748,24 @@ class ApiService {
           .map((item) => ChatMessageModel.fromMap(item as Map<String, dynamic>))
           .toList();
     }
-    final resp = await _get(
-        '/chat/sessions/$sessionId/messages?limit=$limit&offset=$offset');
-    final list = jsonDecode(resp.body) as List<dynamic>;
-    if (offset == 0) await CacheService.instance.saveChatMessages(sessionId, list);
-    return list
-        .map((e) => ChatMessageModel.fromMap(e as Map<String, dynamic>))
-        .toList();
+    try {
+      final resp = await _get(
+          '/chat/sessions/$sessionId/messages?limit=$limit&offset=$offset');
+      final list = jsonDecode(resp.body) as List<dynamic>;
+      if (offset == 0) {
+        await CacheService.instance.saveChatMessages(sessionId, list);
+      }
+      return list
+          .map((e) => ChatMessageModel.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } on ApiException catch (error) {
+      if (error.statusCode == 0) {
+        return CacheService.instance.getCachedChatMessages(sessionId)
+            .map((e) => ChatMessageModel.fromMap(e as Map<String, dynamic>))
+            .toList();
+      }
+      rethrow;
+    }
   }
 
   Future<ChatMessageModel> sendChatMessage(String sessionId, String content,
