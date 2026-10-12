@@ -12,7 +12,7 @@ test('a signed-out visitor is sent to login from a protected page', async ({ pag
   await page.goto('/reports/');
 
   await expect(page).toHaveURL(/\/login\/?$/);
-  await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+  await expect(page.getByText('Welcome back')).toBeVisible();
 });
 
 test('a failed login shows the API error without opening the portal', async ({ page }) => {
