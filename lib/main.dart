@@ -215,6 +215,7 @@ Future<void> _ensureBackendRunningOnWindows() async {
 
 Future<void> _runBootSequence() async {
   try {
+    if (kReleaseMode) AppConfig.apiBaseUrl;
     if (!kIsWeb) {
       if (Platform.isMacOS) {
         await _ensureBackendRunningOnMacOS();

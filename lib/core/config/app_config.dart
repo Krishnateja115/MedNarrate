@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 class AppConfig {
-  static const bool isLocalDevMode = bool.fromEnvironment('LOCAL_DEV_MODE', defaultValue: kDebugMode);
+  static const bool isLocalDevMode = !kReleaseMode &&
+      bool.fromEnvironment('LOCAL_DEV_MODE', defaultValue: kDebugMode);
 
   /// API_BASE_URL is always the backend origin (without /api/v1).
   static const String _rawApiBaseUrl = String.fromEnvironment(
@@ -21,18 +22,24 @@ class AppConfig {
         url == 'http://127.0.0.1:8000') {
       return 'http://10.0.2.2:8000';
     }
-    return validateApiBaseUrl(environment, url);
+    return validateApiBaseUrl(kReleaseMode ? 'production' : environment, url);
   }
 
   static String get apiRoot => '$apiBaseUrl/api/v1';
 
   static String validateApiBaseUrl(String env, String url) {
     if (env == 'production') {
-      if (url.isEmpty) {
-        throw StateError('Production deployment requires a real backend URL. Pass --dart-define=API_BASE_URL=https://... at build time.');
-      }
-      if (url.startsWith('http://')) {
-        throw StateError('Production environment MUST use HTTPS for apiBaseUrl.');
+      final uri = Uri.tryParse(url);
+      if (uri == null ||
+          uri.scheme != 'https' ||
+          uri.host.isEmpty ||
+          uri.host == 'localhost' ||
+          uri.host == '127.0.0.1' ||
+          uri.host == '10.0.2.2') {
+        throw StateError(
+          'Production requires a public HTTPS API URL. Pass '
+          '--dart-define=API_BASE_URL=https://your-api-domain at build time.',
+        );
       }
     }
     return url;
@@ -45,7 +52,7 @@ class AppConfig {
   
   static const String environment = String.fromEnvironment(
     'ENVIRONMENT',
-    defaultValue: 'development',
+    defaultValue: kReleaseMode ? 'production' : 'development',
   );
   
   static const String sentryDsn = String.fromEnvironment(
