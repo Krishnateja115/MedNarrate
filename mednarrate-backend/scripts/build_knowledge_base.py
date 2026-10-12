@@ -11,7 +11,10 @@ KB_INDEX = os.path.join(os.path.dirname(__file__), "..", "data", "kb_index")
 def build_kb():
     print("Building Knowledge Base...")
     os.makedirs(KB_INDEX, exist_ok=True)
-    client = chromadb.PersistentClient(path=KB_INDEX)
+    client = chromadb.PersistentClient(
+        path=KB_INDEX,
+        settings=chromadb.Settings(anonymized_telemetry=False),
+    )
 
     collection = client.get_or_create_collection("medical_knowledge")
 

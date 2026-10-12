@@ -32,7 +32,10 @@ logger = logging.getLogger(__name__)
 KB_INDEX = os.path.join(os.path.dirname(__file__), "..", "..", "data", "kb_index")
 try:
     import chromadb
-    chroma_client = chromadb.PersistentClient(path=KB_INDEX)
+    chroma_client = chromadb.PersistentClient(
+        path=KB_INDEX,
+        settings=chromadb.Settings(anonymized_telemetry=False),
+    )
     kb_collection = chroma_client.get_or_create_collection("medical_knowledge")
 except Exception as _chroma_init_err:
     logger.warning("Could not initialize ChromaDB: %s", _chroma_init_err)
