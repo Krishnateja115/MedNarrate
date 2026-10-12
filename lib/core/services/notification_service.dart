@@ -26,7 +26,7 @@ class NotificationService {
   bool get notificationsAllowed => _notificationsAllowed;
   VoidCallback? onOpenMedications;
 
-  void _openMedications() {
+  void openMedications() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       onOpenMedications?.call();
     });
@@ -48,7 +48,7 @@ class NotificationService {
       await _localNotificationsPlugin.initialize(
         initializationSettings,
         onDidReceiveNotificationResponse: (details) {
-          _openMedications();
+          openMedications();
         },
       );
       await refreshPermissions();
@@ -82,7 +82,7 @@ class NotificationService {
         // Setup message handlers
         _setupMessageHandlers();
         if (await FirebaseMessaging.instance.getInitialMessage() != null) {
-          _openMedications();
+          openMedications();
         }
       }
     } catch (e) {
@@ -131,7 +131,7 @@ class NotificationService {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      _openMedications();
+      openMedications();
     });
   }
 
