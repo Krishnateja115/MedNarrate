@@ -163,6 +163,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test -- --ci
       - run: npm run build
+        env:
+          MEDNARRATE_API_PROXY_URL: https://api.example.com
 
   # ─── Docker image checks ─────────────────────────────────────────────────
   docker:

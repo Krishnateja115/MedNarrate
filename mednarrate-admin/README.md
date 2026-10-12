@@ -12,7 +12,7 @@ elsewhere. Open `http://localhost:3001`.
 ## Production web deployment
 
 Set `MEDNARRATE_API_PROXY_URL` to the internal HTTPS API origin before running
-`npm run build` and `npm run start`. The browser uses the same-origin `/api/v1`
+`npm run build` and `npm run start`. The build fails if it is missing. The browser uses the same-origin `/api/v1`
 proxy, so secure cookies stay first-party. Configure the backend's
 `ADMIN_APP_ORIGIN` and `CORS_ORIGINS` for the deployed portal origin.
 
