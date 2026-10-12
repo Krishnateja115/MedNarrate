@@ -91,7 +91,7 @@ async def toggle_medication_schedule(
     status = "activated" if schedule.is_active else "deactivated"
     return GenericResponse(success=True, message=f"Schedule {status}")
 
-from app.services.notification_scheduler import scheduler
+from app.services.scheduler import scheduler
 
 @router.get("/health")
 async def check_scheduler_health():

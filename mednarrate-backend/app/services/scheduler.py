@@ -21,10 +21,9 @@ async def check_medication_reminders():
     now = datetime.now(timezone.utc)
     try:
         async with AsyncSessionLocal() as session:
-            # Fetch due schedules (simplified for mock purposes)
-            # In a real app we would check active=True and time matching
+            # Fetch active schedules and match their configured reminder times.
             stmt = select(MedicationSchedule).where(
-                MedicationSchedule.is_active is True
+                MedicationSchedule.is_active.is_(True)
             )
             result = await session.execute(stmt)
             schedules = result.scalars().all()
@@ -51,7 +50,7 @@ async def check_medication_reminders():
                             tokens = token_res.scalars().all()
                             for t in tokens:
                                 await send_push_notification(
-                                    t.token,
+                                    t.device_token,
                                     "Medication Reminder",
                                     f"It's time to take {schedule.medication_name} ({schedule.dosage})",
                                     {
