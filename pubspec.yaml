@@ -13,11 +13,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  cupertino_icons: ^1.0.8
-
   # Fonts
-  google_fonts: ^6.3.1
-
   # File Picker
   file_picker: ^10.3.2
   # Native desktop file selection (used on macOS for report uploads)
@@ -67,8 +63,6 @@ dependencies:
 
   # SVG support for illustrations
   # Path utilities
-  path: ^1.9.1
-
   # Forgot password token (secure random)
   firebase_core: ^4.13.0
   firebase_messaging: ^16.5.0
@@ -78,8 +72,6 @@ dependencies:
   connectivity_plus: ^7.3.1
   local_auth: ^3.0.2
   flutter_timezone: ^5.1.0
-  dio: ^5.11.0
-  sentry_flutter: ^9.30.0
   audioplayers: ^6.8.1
   web: ^1.1.0
   flutter_secure_storage: ^10.3.4

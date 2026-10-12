@@ -55,11 +55,6 @@ class AppConfig {
     defaultValue: kReleaseMode ? 'production' : 'development',
   );
   
-  static const String sentryDsn = String.fromEnvironment(
-    'SENTRY_DSN',
-    defaultValue: '',
-  );
-
   static const String appVersion = String.fromEnvironment(
     'APP_VERSION',
     defaultValue: '1.0.0',
