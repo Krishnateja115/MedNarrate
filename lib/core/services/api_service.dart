@@ -497,7 +497,7 @@ class ApiService {
       );
       await OfflineQueueService.instance.enqueueAction(action);
       // Return a temporary cached report
-      return ReportModel(
+      final queuedReport = ReportModel(
         id: action.id,
         title: title,
         hospital: hospital ?? '',
@@ -511,6 +511,8 @@ class ApiService {
         isFavourite: false,
         uploadedAt: DateTime.now(),
       );
+      await CacheService.instance.saveReport(queuedReport);
+      return queuedReport;
     }
 
     Future<http.Response> doUpload() async {
@@ -949,7 +951,7 @@ class ApiService {
     if (action.method == 'POST_MULTIPART') {
       final encoded = action.body['file_base64'] as String?;
       final bytes = encoded == null ? null : base64Decode(encoded);
-      await uploadReport(
+      final uploaded = await uploadReport(
         file: PlatformFile(
             name: action.body['file_name'],
             size: bytes?.length ?? 0,
@@ -960,6 +962,8 @@ class ApiService {
         reportType: action.body['report_type'],
         hospital: action.body['hospital'],
       );
+      await CacheService.instance.removeReport(action.id);
+      await CacheService.instance.saveReport(uploaded);
     } else if (action.method == 'POST') {
       await _post(action.endpoint, body: action.body);
     } else if (action.method == 'PATCH') {
