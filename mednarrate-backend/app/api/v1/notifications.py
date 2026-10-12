@@ -92,10 +92,12 @@ async def toggle_medication_schedule(
     return GenericResponse(success=True, message=f"Schedule {status}")
 
 from app.services.scheduler import scheduler
+from app.core.config import settings
 
 @router.get("/health")
 async def check_scheduler_health():
     return {
+        "enabled": settings.SERVER_MEDICATION_PUSH_ENABLED,
         "scheduler_running": scheduler.running,
         "jobs_count": len(scheduler.get_jobs()) if scheduler.running else 0
     }

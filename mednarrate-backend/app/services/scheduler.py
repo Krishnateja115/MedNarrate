@@ -6,6 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import select
 
 from app.core.database import AsyncSessionLocal
+from app.core.config import settings
 from app.models.job_execution import JobExecution, JobStatus
 from app.models.medication_schedule import MedicationSchedule
 from app.models.push_token import PushToken
@@ -91,6 +92,11 @@ async def check_medication_reminders():
 
 
 def start_scheduler():
+    if not settings.SERVER_MEDICATION_PUSH_ENABLED:
+        logger.info("Server medication push disabled; mobile alerts remain active.")
+        return
+    if scheduler.running:
+        return
     scheduler.add_job(
         check_medication_reminders, "cron", minute="*", id="medication_reminders"
     )
@@ -99,8 +105,9 @@ def start_scheduler():
 
 
 def stop_scheduler():
-    scheduler.shutdown()
-    logger.info("Stopped medication reminder scheduler.")
+    if scheduler.running:
+        scheduler.shutdown()
+        logger.info("Stopped medication reminder scheduler.")
 
 
 def get_all_jobs():

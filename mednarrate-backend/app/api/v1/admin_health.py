@@ -175,13 +175,14 @@ async def get_system_health(
     try:
         is_running = scheduler.running
         job_count = len(scheduler.get_jobs()) if is_running else 0
+        enabled = settings.SERVER_MEDICATION_PUSH_ENABLED
         health_status["services"]["scheduler"] = _service_entry(
-            "healthy" if is_running else "stopped",
+            "healthy" if is_running else ("disabled" if not enabled else "stopped"),
             timestamp,
-            error_summary=None if is_running else "APScheduler is not running",
-            details={"active_jobs": job_count} if is_running else None,
+            error_summary=None if is_running or not enabled else "APScheduler is not running",
+            details={"active_jobs": job_count, "enabled": enabled},
         )
-        if not is_running:
+        if enabled and not is_running:
             # Scheduler stopped is degraded, not down — API still serves requests
             if health_status["status"] == "healthy":
                 health_status["status"] = "degraded"

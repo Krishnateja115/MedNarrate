@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     RATE_LIMIT_SENSITIVE: str = "5/minute"
     RATE_LIMIT_REFRESH: str = "30/minute"
     FIREBASE_SERVICE_ACCOUNT_JSON: str | None = None
+    # Mobile medicine alerts are scheduled in the user's local timezone.
+    # Server-side UTC reminders are opt-in for development only.
+    SERVER_MEDICATION_PUSH_ENABLED: bool = False
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_MB: int = 25
     # Parser complexity budgets enforced at the upload boundary.
@@ -131,6 +134,11 @@ class Settings(BaseSettings):
             if self.ANALYSIS_EXECUTION_MODE != "worker":
                 raise ValueError(
                     "Production report analysis requires ANALYSIS_EXECUTION_MODE=worker."
+                )
+            if self.SERVER_MEDICATION_PUSH_ENABLED:
+                raise ValueError(
+                    "Server medication push requires per-user timezone scheduling; "
+                    "use the mobile local-alert path in production."
                 )
 
     # Storage Configuration
