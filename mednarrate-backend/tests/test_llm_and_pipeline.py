@@ -1,3 +1,5 @@
+import asyncio
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -178,9 +180,12 @@ def test_adversarial_validation_altered_numeric_value():
     assert "99.9" in res["unsupported_claims"]
 
 
-# 10. Optional Live Gemini Test (if credentials available)
+# 10. Optional live Gemini test. Run explicitly to avoid contacting an external
+# provider during the deterministic unit and integration suite.
 @pytest.mark.asyncio
 async def test_live_gemini_generation_if_credentials_available():
+    if os.environ.get("RUN_LIVE_LLM_TESTS") != "1":
+        pytest.skip("Set RUN_LIVE_LLM_TESTS=1 to run external provider tests.")
     key = settings.GEMINI_API_KEY
     if not key or not key.strip() or key in ["your_gemini_api_key_here", "placeholder"]:
         pytest.skip(
@@ -192,7 +197,10 @@ async def test_live_gemini_generation_if_credentials_available():
 
         genai.configure(api_key=key.strip())
         model = genai.GenerativeModel(settings.GEMINI_MODEL)
-        resp = await model.generate_content_async("Reply with the single word: OK")
+        resp = await asyncio.wait_for(
+            model.generate_content_async("Reply with the single word: OK"),
+            timeout=20,
+        )
         assert resp and resp.text
         assert "OK" in resp.text or len(resp.text) > 0
     except Exception as e:
