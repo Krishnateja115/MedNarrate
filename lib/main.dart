@@ -229,14 +229,10 @@ Future<void> _runBootSequence() async {
     NotificationService.instance.onOpenMedications =
         () => AppRouter.router.go(Routes.medications);
     await NotificationService.instance.initialize();
-    try {
-      final profile = await StorageService.instance.getCachedProfile();
-      await CacheService.instance.initialize(userId: profile?.id ?? 'guest');
-      await OfflineQueueService.instance.initialize();
-      await ConnectivityService.instance.initialize();
-    } catch (e) {
-      debugPrint("Offline services init error: $e");
-    }
+    final profile = await StorageService.instance.getCachedProfile();
+    await CacheService.instance.initialize(userId: profile?.id ?? 'guest');
+    await OfflineQueueService.instance.initialize();
+    await ConnectivityService.instance.initialize();
 
     final savedThemeMode = await StorageService.instance.getThemeMode();
     themeModeNotifier.value = savedThemeMode;

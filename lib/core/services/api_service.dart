@@ -470,6 +470,14 @@ class ApiService {
       // Queued work is owned by the signed-in account so it can never run for another one.
       final owner = await StorageService.instance.getCachedProfile();
       if (owner == null) throw const UnauthorizedException();
+      final bytes = file.bytes ??
+          (file.path != null ? await File(file.path!).readAsBytes() : null);
+      if (bytes == null) {
+        throw const ApiException(0, 'This file cannot be saved for offline upload. Select a local file.');
+      }
+      if (bytes.length > 25 * 1024 * 1024) {
+        throw const ApiException(413, 'The report must be 25 MB or smaller.');
+      }
       final action = OfflineAction(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         userId: owner.id,
@@ -480,7 +488,9 @@ class ApiService {
           'report_date': reportDate,
           'report_type': reportType,
           'hospital': hospital ?? '',
-          'file_path': file.path ?? '',
+          // Hive encrypts the queue. Save bytes rather than a temporary picker
+          // path, which may disappear before the device reconnects.
+          'file_base64': base64Encode(bytes),
           'file_name': file.name,
         },
         createdAt: DateTime.now(),
@@ -937,11 +947,14 @@ class ApiService {
 
   Future<void> executeOfflineAction(OfflineAction action) async {
     if (action.method == 'POST_MULTIPART') {
+      final encoded = action.body['file_base64'] as String?;
+      final bytes = encoded == null ? null : base64Decode(encoded);
       await uploadReport(
         file: PlatformFile(
             name: action.body['file_name'],
-            size: 0,
-            path: action.body['file_path']),
+            size: bytes?.length ?? 0,
+            bytes: bytes,
+            path: encoded == null ? action.body['file_path'] as String? : null),
         title: action.body['title'],
         reportDate: action.body['report_date'],
         reportType: action.body['report_type'],
