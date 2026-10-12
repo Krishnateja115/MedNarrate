@@ -27,9 +27,7 @@ class NotificationService {
   VoidCallback? onOpenMedications;
 
   void openMedications() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      onOpenMedications?.call();
-    });
+    onOpenMedications?.call();
   }
 
   Future<void> initialize() async {
