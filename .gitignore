@@ -34,6 +34,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.kotlin/
 
 # Secrets and environment-specific configuration
 .env
