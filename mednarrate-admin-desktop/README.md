@@ -1,7 +1,12 @@
-# Tauri + Vanilla
+# MedNarrate Admin Desktop
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Javascript.
+This Tauri wrapper packages the static admin portal. Install dependencies in
+`mednarrate-admin` and this directory before building.
 
-## Recommended IDE Setup
+Set `NEXT_PUBLIC_API_BASE_URL` to the public HTTPS origin of the deployed
+MedNarrate API, then run `npm run build:desktop:mac` or
+`npm run build:desktop:win`. The build rejects a missing or non-HTTPS origin.
+The API must allow the Tauri origins in its CORS configuration and serve over
+HTTPS. Sign and notarize distribution packages before release.
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+See the root `DESKTOP_BUILD.md` for platform prerequisites and signing steps.

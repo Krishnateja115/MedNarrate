@@ -1,36 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MedNarrate Admin Portal
 
-## Getting Started
+The admin portal is a Next.js application for MedNarrate staff. It uses
+HTTP-only session cookies and the FastAPI admin endpoints.
 
-First, run the development server:
+## Development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Run `npm ci`, then `npm run dev`. The default development API proxy points to
+`http://127.0.0.1:8000`; set `MEDNARRATE_API_PROXY_URL` if the API runs
+elsewhere. Open `http://localhost:3001`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Production web deployment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Set `MEDNARRATE_API_PROXY_URL` to the internal HTTPS API origin before running
+`npm run build` and `npm run start`. The browser uses the same-origin `/api/v1`
+proxy, so secure cookies stay first-party. Configure the backend's
+`ADMIN_APP_ORIGIN` and `CORS_ORIGINS` for the deployed portal origin.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Desktop package
 
-## Learn More
+The Tauri wrapper in `../mednarrate-admin-desktop` exports this portal as
+static assets. Its build requires `NEXT_PUBLIC_API_BASE_URL` to be the public
+HTTPS API origin.
 
-To learn more about Next.js, take a look at the following resources:
+## Checks
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Run `npm run lint`, `npm run typecheck`, `npm test -- --ci`, and
+`npm run build` before release.

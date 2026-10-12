@@ -5,7 +5,7 @@
   "identifier": "com.mednarrate.admin",
   "build": {
     "frontendDist": "../../mednarrate-admin/out",
-    "beforeBuildCommand": "cd ../mednarrate-admin && TAURI_ENV=true NEXT_PUBLIC_API_BASE_URL=https://api.mednarrate.com npm run build"
+    "beforeBuildCommand": "cd ../mednarrate-admin && node -e \"const u=process.env.NEXT_PUBLIC_API_BASE_URL; if (!u || !u.startsWith('https://')) { console.error('Set NEXT_PUBLIC_API_BASE_URL to the production HTTPS API origin'); process.exit(1) }\" && TAURI_ENV=true npm run build"
   },
   "app": {
     "withGlobalTauri": true,
@@ -19,7 +19,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'none'; script-src 'self' 'unsafe-inline' http://localhost:*; connect-src 'self' http://localhost:* ws://localhost:* https://api.mednarrate.com; img-src 'self' data: https://*; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src 'none'; object-src 'none';"
+      "csp": "default-src 'none'; script-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src 'none'; object-src 'none';"
     }
   },
   "bundle": {
