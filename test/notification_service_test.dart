@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mednarrate/core/services/notification_service.dart';
 
@@ -11,11 +12,12 @@ void main() {
   });
 
   testWidgets('notification tap invokes the configured router callback', (tester) async {
+    await tester.pumpWidget(const SizedBox());
     var calls = 0;
     NotificationService.instance.onOpenMedications = () => calls++;
 
     NotificationService.instance.openMedications();
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
 
     expect(calls, 1);
     NotificationService.instance.onOpenMedications = null;
