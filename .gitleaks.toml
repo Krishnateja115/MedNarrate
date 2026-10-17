@@ -1,0 +1,13 @@
+# Extends the default gitleaks rules. Only the deliberately fake credentials used by
+# the unit tests are allowed; every other finding still fails the Secret Scan.
+title = "MedNarrate gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake credentials used to test redaction and provider selection"
+regexes = [
+  '''sk-abcdefghijklmnop1234''',
+  '''AIzaSyFAKEKEYFAKEKEYFAKEKEYFAKEKEY12345''',
+]
