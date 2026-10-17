@@ -1,0 +1,97 @@
+{
+ "description": "Each query is relevant to every passage of data/knowledge that contains the answer string. Passages are the paragraphs the knowledge-base ingest script indexes.",
+ "queries": [
+  {
+   "query": "What is the normal hemoglobin range for men?",
+   "answer_contains": "13.5 to 17.5 g/dL"
+  },
+  {
+   "query": "My white cell count is low, what does that mean?",
+   "answer_contains": "leukopenia"
+  },
+  {
+   "query": "What is a normal blood sugar after an overnight fast?",
+   "answer_contains": "70 and 99 mg/dL"
+  },
+  {
+   "query": "Is my fasting sugar of 105 prediabetes?",
+   "answer_contains": "100 and 125 mg/dL"
+  },
+  {
+   "query": "What cholesterol level is ideal?",
+   "answer_contains": "below 200 mg/dL"
+  },
+  {
+   "query": "Normal creatinine for women?",
+   "answer_contains": "0.59 to 1.04"
+  },
+  {
+   "query": "Which test shows kidney waste filtering problems?",
+   "answer_contains": "Creatinine is a waste product"
+  },
+  {
+   "query": "What is a normal TSH value?",
+   "answer_contains": "0.4 to 4.0 mIU/L"
+  },
+  {
+   "query": "Which enzymes show liver damage and what is the normal limit?",
+   "answer_contains": "below 40 U/L"
+  },
+  {
+   "query": "Normal vitamin D level?",
+   "answer_contains": "20 ng/mL or above"
+  },
+  {
+   "query": "How many platelets should I have?",
+   "answer_contains": "150,000 to 450,000"
+  },
+  {
+   "query": "Normal potassium range?",
+   "answer_contains": "3.6 to 5.2 mmol/L"
+  },
+  {
+   "query": "What is the normal sodium level?",
+   "answer_contains": "135 to 145 mEq/L"
+  },
+  {
+   "query": "Normal total calcium in blood?",
+   "answer_contains": "8.5 to 10.2 mg/dL"
+  },
+  {
+   "query": "What is the normal BUN?",
+   "answer_contains": "7 to 20 mg/dL"
+  },
+  {
+   "query": "Normal specific gravity of urine?",
+   "answer_contains": "1.005 to 1.030"
+  },
+  {
+   "query": "What is a normal urine pH?",
+   "answer_contains": "4.6 to 8.0"
+  },
+  {
+   "query": "What does protein in my urine suggest?",
+   "answer_contains": "proteinuria"
+  },
+  {
+   "query": "Why would there be sugar in urine?",
+   "answer_contains": "glycosuria"
+  },
+  {
+   "query": "What do ketones in urine mean?",
+   "answer_contains": "burning fat for energy"
+  },
+  {
+   "query": "What does bilirubin in urine indicate?",
+   "answer_contains": "liver disease or bile duct obstruction"
+  },
+  {
+   "query": "Are nitrites in urine a sign of infection?",
+   "answer_contains": "bacterial urinary tract infection"
+  },
+  {
+   "query": "What does a positive leukocyte esterase mean?",
+   "answer_contains": "inflammation or infection in the urinary tract"
+  }
+ ]
+}

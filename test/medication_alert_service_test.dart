@@ -54,4 +54,24 @@ void main() {
     expect(
         planMedicationAlerts([expired, reminder(duration: 0)], now), isEmpty);
   });
+
+  test('AM/PM times extracted from reports are scheduled', () {
+    final alerts = planMedicationAlerts([
+      reminder(times: ['08:00 AM', '8:30 pm', '09.15 a.m.']),
+    ], now);
+    expect(alerts.map((alert) => alert.when), [
+      DateTime(2026, 10, 11, 20, 30),
+      DateTime(2026, 10, 12, 8),
+      DateTime(2026, 10, 12, 9, 15),
+    ]);
+  });
+
+  test('parseClockTime handles edge cases', () {
+    expect(parseClockTime('12:00 AM'), [0, 0]);
+    expect(parseClockTime('12:30 PM'), [12, 30]);
+    expect(parseClockTime('20:00:00'), [20, 0]);
+    expect(parseClockTime('3'), isNull);
+    expect(parseClockTime('13:00 PM'), isNull);
+    expect(parseClockTime('after breakfast'), isNull);
+  });
 }

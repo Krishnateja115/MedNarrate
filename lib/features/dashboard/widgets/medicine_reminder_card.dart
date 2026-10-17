@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/reminder_service.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class MedicineReminderCard extends StatelessWidget {
   final List<ReminderModel> reminders;
@@ -65,7 +66,7 @@ class MedicineReminderCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    "Today's Medicine",
+                    AppLocalizations.of(context)!.todaysMedicine,
                     style: TextStyle(
                       color: theme.colorScheme.onSurface,
                       fontSize: 18,
@@ -78,7 +79,7 @@ class MedicineReminderCard extends StatelessWidget {
                 IconButton(
                   onPressed: onAddTap,
                   icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.orange),
-                  tooltip: "Add Medicine",
+                  tooltip: AppLocalizations.of(context)!.addMedicine,
                 ),
             ],
           ),
@@ -106,7 +107,7 @@ class MedicineReminderCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      "No medicines added yet",
+                      AppLocalizations.of(context)!.noMedicinesYet,
                       style: TextStyle(
                         color: theme.colorScheme.onSurface,
                         fontSize: 16,
@@ -115,7 +116,7 @@ class MedicineReminderCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Add a medication or upload a report containing medication information.",
+                      AppLocalizations.of(context)!.addMedicationHint,
                       style: TextStyle(
                         color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
                         fontSize: 13,
@@ -132,7 +133,7 @@ class MedicineReminderCard extends StatelessWidget {
                         ),
                         onPressed: onAddTap,
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text("Add a Medication"),
+                        label: Text(AppLocalizations.of(context)!.addMedicine),
                       ),
                     ],
                   ],
@@ -144,12 +145,14 @@ class MedicineReminderCard extends StatelessWidget {
             if (hasReportedMeds) ...[
               Row(
                 children: [
-                  Text(
-                    "Medications from Latest Report",
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      AppLocalizations.of(context)!.medicationsFromLatestReport,
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -160,7 +163,7 @@ class MedicineReminderCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      "Reported",
+                      AppLocalizations.of(context)!.reportedBadge,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -172,12 +175,12 @@ class MedicineReminderCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               ...reportedMedications.map((med) {
-                final name = med['medication_name'] ?? med['name'] ?? 'Medication';
+                final name = med['medication_name'] ?? med['name'] ?? AppLocalizations.of(context)!.medicationLabel;
                 final dosage = med['dosage'] as String?;
                 final frequency = med['frequency'] as String?;
                 final times = med['times_of_day'] as List<dynamic>? ?? [];
 
-                String timingStr = times.isNotEmpty ? times.join(', ') : 'Timing: Not specified';
+                String timingStr = times.isNotEmpty ? times.join(', ') : AppLocalizations.of(context)!.timingNotSpecified;
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
@@ -227,7 +230,7 @@ class MedicineReminderCard extends StatelessWidget {
                         IconButton(
                           onPressed: () => onConfirmTap!(med),
                           icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-                          tooltip: "Confirm to Schedule",
+                          tooltip: AppLocalizations.of(context)!.confirmToSchedule,
                         ),
                     ],
                   ),
@@ -239,7 +242,7 @@ class MedicineReminderCard extends StatelessWidget {
             if (hasManualMeds) ...[
               if (hasReportedMeds) const SizedBox(height: 14),
               Text(
-                "My Confirmed Schedule",
+                AppLocalizations.of(context)!.myConfirmedSchedule,
                 style: TextStyle(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   fontSize: 13.5,

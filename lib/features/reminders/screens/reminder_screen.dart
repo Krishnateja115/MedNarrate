@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/display_labels.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/notification_service.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
@@ -52,9 +53,8 @@ class _ReminderScreenState extends State<ReminderScreen> {
             !_permissionWarningShown &&
             !NotificationService.instance.notificationsAllowed) {
           _permissionWarningShown = true;
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text(
-                'Phone notifications are off. Enable them in device settings to receive medicine alerts.'),
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context)!.reminderNotificationsOff),
           ));
         }
       }
@@ -62,7 +62,8 @@ class _ReminderScreenState extends State<ReminderScreen> {
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load reminders: $e')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!.failedToLoadReminders('$e'))),
         );
       }
     }
@@ -94,7 +95,8 @@ class _ReminderScreenState extends State<ReminderScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete reminder: $e')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!.failedToDeleteReminder('$e'))),
         );
       }
     }
@@ -107,7 +109,8 @@ class _ReminderScreenState extends State<ReminderScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update status: $e')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!.failedToUpdateStatus('$e'))),
         );
       }
     }
@@ -260,7 +263,9 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                         r['dosage'],
                                       if (r['frequency'] != null &&
                                           r['frequency'].toString().isNotEmpty)
-                                        r['frequency'],
+                                        frequencyLabel(
+                                            AppLocalizations.of(context)!,
+                                            r['frequency'].toString()),
                                     ].join(' • '),
                                     style: TextStyle(
                                         color: Theme.of(context)
@@ -322,7 +327,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('Reminder on',
+                                Text(AppLocalizations.of(context)!.reminderOn,
                                     style: TextStyle(
                                         color: Theme.of(context)
                                             .colorScheme
@@ -337,7 +342,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                       Theme.of(context).colorScheme.primary,
                                 ),
                                 IconButton(
-                                  tooltip: 'Edit medication',
+                                  tooltip: AppLocalizations.of(context)!.editMedication,
                                   icon: Icon(Icons.edit_outlined,
                                       color: Theme.of(context)
                                           .colorScheme
@@ -346,7 +351,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                   onPressed: () => _showReminderForm(r),
                                 ),
                                 IconButton(
-                                  tooltip: 'Delete medication',
+                                  tooltip: AppLocalizations.of(context)!.deleteMedication,
                                   icon: const Icon(Icons.delete_outline,
                                       color: Colors.redAccent),
                                   onPressed: () => _deleteReminder(r['id']),
@@ -513,7 +518,8 @@ class _ReminderFormState extends State<_ReminderForm> {
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving reminder: $e')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!.errorSavingReminder('$e'))),
         );
       }
     }
@@ -547,8 +553,8 @@ class _ReminderFormState extends State<_ReminderForm> {
                 Text(
                   (widget.initialData == null ||
                           widget.initialData!['id'] == null)
-                      ? 'New Medication'
-                      : 'Edit Medication',
+                      ? AppLocalizations.of(context)!.newMedication
+                      : AppLocalizations.of(context)!.editMedicationTitle,
                   style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -606,7 +612,7 @@ class _ReminderFormState extends State<_ReminderForm> {
                     style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface),
                     decoration: InputDecoration(
-                      labelText: 'Medicine Name',
+                      labelText: AppLocalizations.of(context)!.medicineNameLabel,
                       prefixIcon: const Icon(Icons.medication_outlined),
                       filled: true,
                       fillColor: Theme.of(context).cardColor,
@@ -614,7 +620,7 @@ class _ReminderFormState extends State<_ReminderForm> {
                           borderRadius: BorderRadius.circular(14)),
                     ),
                     validator: (v) => v == null || v.trim().isEmpty
-                        ? 'Medicine name is required'
+                        ? AppLocalizations.of(context)!.medicineNameRequired
                         : null,
                   ),
                 ),
@@ -627,7 +633,7 @@ class _ReminderFormState extends State<_ReminderForm> {
                         style: TextStyle(
                             color: Theme.of(context).colorScheme.onSurface),
                         decoration: InputDecoration(
-                          labelText: 'Dosage (e.g. 500mg, 1 tablet)',
+                          labelText: AppLocalizations.of(context)!.dosageLabel,
                           filled: true,
                           fillColor: Theme.of(context).cardColor,
                           border: OutlineInputBorder(
@@ -641,19 +647,22 @@ class _ReminderFormState extends State<_ReminderForm> {
                 DropdownButtonFormField<String>(
                   initialValue: _frequency,
                   decoration: InputDecoration(
-                    labelText: 'Frequency',
+                    labelText: AppLocalizations.of(context)!.frequencyLabel,
                     filled: true,
                     fillColor: Theme.of(context).cardColor,
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
                   items: _frequencies
-                      .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                      .map((f) => DropdownMenuItem(
+                      value: f,
+                      child: Text(
+                          frequencyLabel(AppLocalizations.of(context)!, f))))
                       .toList(),
                   onChanged: (v) => setState(() => _frequency = v!),
                 ),
                 const SizedBox(height: 20),
-                Text('Times of Day',
+                Text(AppLocalizations.of(context)!.timesOfDay,
                     style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.bold)),
@@ -677,7 +686,7 @@ class _ReminderFormState extends State<_ReminderForm> {
                       );
                     }),
                     ActionChip(
-                      label: const Text('Add Time'),
+                      label: Text(AppLocalizations.of(context)!.addTime),
                       avatar: const Icon(Icons.add, size: 16),
                       onPressed: () async {
                         final picked = await showTimePicker(
@@ -690,10 +699,10 @@ class _ReminderFormState extends State<_ReminderForm> {
                   ],
                 ),
                 if (_times.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Text("Please add at least one time.",
-                        style: TextStyle(color: Colors.red, fontSize: 12)),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(AppLocalizations.of(context)!.addAtLeastOneTime,
+                        style: const TextStyle(color: Colors.red, fontSize: 12)),
                   ),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -701,7 +710,7 @@ class _ReminderFormState extends State<_ReminderForm> {
                   style:
                       TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
-                    labelText: 'Additional Notes (optional)',
+                    labelText: AppLocalizations.of(context)!.additionalNotesOptional,
                     prefixIcon: const Icon(Icons.note_alt_outlined),
                     filled: true,
                     fillColor: Theme.of(context).cardColor,
@@ -722,7 +731,9 @@ class _ReminderFormState extends State<_ReminderForm> {
                     ),
                     onPressed: (_saving || _times.isEmpty) ? null : _save,
                     child: Text(
-                      _saving ? 'Saving…' : 'Save Medication',
+                      _saving
+                          ? AppLocalizations.of(context)!.saving
+                          : AppLocalizations.of(context)!.saveMedication,
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),

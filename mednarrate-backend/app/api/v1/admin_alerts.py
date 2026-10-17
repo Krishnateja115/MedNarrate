@@ -19,7 +19,7 @@ router = APIRouter()
 _acknowledged_alerts = set()
 
 
-from app.core.admin_auth import AdminContext, require_any_permission
+from app.core.admin_auth import require_any_permission
 
 @router.get("")
 async def get_admin_alerts(

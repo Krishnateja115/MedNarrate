@@ -19,6 +19,11 @@ class ConnectivityService {
   Future<void> initialize() async {
     final result = await _connectivity.checkConnectivity();
     _updateStatus(result);
+    // Actions queued while offline in a previous session must also sync when
+    // the app starts online; the listener below only fires on a *change*.
+    if (_isOnline) {
+      unawaited(drainQueue());
+    }
 
     _connectivity.onConnectivityChanged.listen(_updateStatus);
   }
@@ -41,7 +46,26 @@ class ConnectivityService {
     }
   }
 
+  bool _draining = false;
+
+  /// Replays queued offline actions for the signed-in user. Safe to call at any
+  /// time: it no-ops while offline or when a drain is already running.
+  Future<void> drainQueue() => _drainQueueForCurrentUser();
+
   Future<void> _drainQueueForCurrentUser() async {
+    if (!_isOnline || _draining) return;
+    _draining = true;
+    try {
+      await _drainQueueInner();
+    } catch (_) {
+      // Best effort: the queue is retried on the next connectivity change,
+      // app start or login.
+    } finally {
+      _draining = false;
+    }
+  }
+
+  Future<void> _drainQueueInner() async {
     String? userId;
     try {
       userId = (await StorageService.instance.getCachedProfile())?.id;

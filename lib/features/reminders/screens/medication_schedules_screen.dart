@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/app_l10n.dart';
+import '../../../core/l10n/display_labels.dart';
 import '../../../core/services/api_service.dart';
 import '../../../shared/widgets/glassmorphism_card.dart';
 import '../models/medication_schedule_model.dart';
@@ -36,7 +38,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = "Failed to load schedules: $e";
+        _error = appL10n.failedToLoadSchedules('$e');
       });
     } finally {
       setState(() {
@@ -74,7 +76,8 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update schedule: $e')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context)!.failedToUpdateSchedule('$e'))),
         );
       }
     } finally {
@@ -236,7 +239,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                '${schedule.frequency ?? 'Scheduled'} (${schedule.timesOfDay.join(', ')})',
+                                '${schedule.frequency != null ? frequencyLabel(AppLocalizations.of(context)!, schedule.frequency!) : AppLocalizations.of(context)!.freqScheduled} (${schedule.timesOfDay.join(', ')})',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: Colors.grey.shade700,
                                   decoration: schedule.isActive ? null : TextDecoration.lineThrough,
@@ -255,7 +258,7 @@ class _MedicationSchedulesScreenState extends State<MedicationSchedulesScreen> {
                               const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
                               const SizedBox(width: 8),
                               Text(
-                                'For ${schedule.durationDays} days',
+                                AppLocalizations.of(context)!.forDaysCount(schedule.durationDays!),
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: Colors.grey.shade700,
                                   decoration: schedule.isActive ? null : TextDecoration.lineThrough,

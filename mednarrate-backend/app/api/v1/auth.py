@@ -33,7 +33,8 @@ router = APIRouter()
 async def signup(
     request: Request, signup_data: SignupRequest, db: AsyncSession = Depends(get_db)
 ):
-    stmt = select(User).where(User.email == signup_data.email)
+    email = signup_data.email.strip().lower()
+    stmt = select(User).where(func.lower(User.email) == email)
     result = await db.execute(stmt)
     existing_user = result.scalars().first()
 
@@ -42,7 +43,7 @@ async def signup(
 
     hashed_password = hash_password(signup_data.password)
     new_user = User(
-        email=signup_data.email,
+        email=email,
         hashed_password=hashed_password,
         full_name=signup_data.full_name,
     )
@@ -190,7 +191,7 @@ async def login(
     }
 
 from pydantic import BaseModel
-from typing import Optional
+
 
 class StepUpRequest(BaseModel):
     password: str

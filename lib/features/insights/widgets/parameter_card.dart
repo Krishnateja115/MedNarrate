@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_l10n.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
@@ -72,7 +73,9 @@ class ParameterCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             
-            // Reference Range
+            // Reference Range (hidden when the report gave none)
+            if (comparison.referenceRange.trim().isNotEmpty &&
+                comparison.referenceRange.trim() != '-')
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -80,7 +83,7 @@ class ParameterCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Normal: ${comparison.referenceRange} ${comparison.unit}',
+                appL10n.insightsNormalRange(comparison.referenceRange, comparison.unit),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -184,7 +187,7 @@ class ParameterCard extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
-                    DateFormat('MMM d').format(date),
+                    DateFormat('MMM d', appLanguageCode).format(date),
                     style: const TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 );
@@ -284,7 +287,7 @@ class ParameterCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            DateFormat('MMM d, yyyy').format(values.first.date),
+            DateFormat('MMM d, yyyy', appLanguageCode).format(values.first.date),
             style: const TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 16),

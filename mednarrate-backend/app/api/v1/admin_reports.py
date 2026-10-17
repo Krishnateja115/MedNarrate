@@ -24,6 +24,8 @@ from sqlalchemy import String, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import AdminContext, require_permission, validate_access_grant
+from app.core.config import settings
+from app.core.csv_safety import csv_safe_row
 from app.core.database import get_db
 from app.models.report import ProcessingStatus, Report, ReportType
 from app.models.report_analysis import ReportAnalysis
@@ -75,7 +77,7 @@ async def export_reports_csv(
         tickets = (await db.execute(stmt)).scalars().all()
         writer.writerow(["Ticket ID", "Subject", "Status", "Priority", "User ID", "Created At"])
         for t in tickets:
-            writer.writerow([str(t.id), t.subject, t.status.value if t.status else "", t.priority.value if t.priority else "", str(t.user_id), t.created_at.isoformat() if t.created_at else ""])
+            writer.writerow(csv_safe_row([str(t.id), t.subject, t.status.value if t.status else "", t.priority.value if t.priority else "", str(t.user_id), t.created_at.isoformat() if t.created_at else ""]))
 
     elif domain == "users":
         stmt = select(User).order_by(desc(User.created_at))
@@ -87,20 +89,20 @@ async def export_reports_csv(
         users = (await db.execute(stmt)).scalars().all()
         writer.writerow(["User ID", "Email", "Full Name", "Role", "Is Active", "Created At"])
         for u in users:
-            writer.writerow([str(u.id), u.email, u.full_name, u.role.value if u.role else "", u.is_active, u.created_at.isoformat() if u.created_at else ""])
+            writer.writerow(csv_safe_row([str(u.id), u.email, u.full_name, u.role.value if u.role else "", u.is_active, u.created_at.isoformat() if u.created_at else ""]))
 
     elif domain == "ai_failures":
         from app.models.report_analysis import ReportAnalysis
-        stmt = select(ReportAnalysis).where(ReportAnalysis.status == "failed").order_by(desc(ReportAnalysis.created_at))
+        stmt = select(ReportAnalysis).where(ReportAnalysis.error_reason.is_not(None)).order_by(desc(ReportAnalysis.created_at))
         if start_dt:
             stmt = stmt.where(ReportAnalysis.created_at >= start_dt)
         if end_dt:
             stmt = stmt.where(ReportAnalysis.created_at <= end_dt)
 
         analyses = (await db.execute(stmt)).scalars().all()
-        writer.writerow(["Analysis ID", "Report ID", "Error Message", "Error Reason", "Failure Category", "LLM Provider", "Created At"])
+        writer.writerow(["Analysis ID", "Report ID", "Error Reason", "Failure Category", "LLM Provider", "Created At"])
         for a in analyses:
-            writer.writerow([str(a.id), str(a.report_id), a.error_message, a.error_reason, a.failure_category, a.llm_provider, a.created_at.isoformat() if a.created_at else ""])
+            writer.writerow(csv_safe_row([str(a.id), str(a.report_id), a.error_reason, a.failure_category, a.llm_provider, a.created_at.isoformat() if a.created_at else ""]))
     else:
         raise HTTPException(status_code=400, detail="Invalid export domain")
 
@@ -342,6 +344,18 @@ async def get_report_sensitive_content(
     }
 
 
+def _requeue_status() -> ProcessingStatus:
+    """Status that makes a reset report actually get re-analysed.
+
+    The durable worker only claims reports in ``processing``; resetting to
+    ``uploaded`` (fine for background/dev mode, where the user re-triggers
+    /process) would leave the report idle forever in worker mode.
+    """
+    if settings.ANALYSIS_EXECUTION_MODE == "worker":
+        return ProcessingStatus.processing
+    return ProcessingStatus.uploaded
+
+
 @router.post("/{report_id}/actions/retry")
 async def retry_report(
     request: Request,
@@ -365,7 +379,8 @@ async def retry_report(
         raise HTTPException(status_code=400, detail="Cannot retry a completed report")
 
     previous_status = report.processing_status.value
-    report.processing_status = ProcessingStatus.uploaded
+    new_status = _requeue_status()
+    report.processing_status = new_status
 
     # Audit within same transaction as status change
     await log_admin_action(
@@ -377,7 +392,7 @@ async def retry_report(
         permission_used="reports.manage",
         result="success",
         request=request,
-        metadata={"previous_status": previous_status, "new_status": "uploaded"},
+        metadata={"previous_status": previous_status, "new_status": new_status.value},
     )
 
     # Single commit: status change + audit
@@ -386,7 +401,7 @@ async def retry_report(
     return {
         "status": "ok",
         "message": "Report retry initiated",
-        "new_status": "uploaded",
+        "new_status": new_status.value,
     }
 
 
@@ -423,7 +438,8 @@ async def reprocess_report(
     if analysis:
         await db.delete(analysis)
 
-    report.processing_status = ProcessingStatus.uploaded
+    new_status = _requeue_status()
+    report.processing_status = new_status
 
     # Audit within same transaction
     await log_admin_action(
@@ -435,7 +451,7 @@ async def reprocess_report(
         permission_used="reports.manage",
         result="success",
         request=request,
-        metadata={"analysis_deleted": had_analysis, "new_status": "uploaded"},
+        metadata={"analysis_deleted": had_analysis, "new_status": new_status.value},
     )
 
     # Single commit: all mutations + audit

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../l10n/app_l10n.dart';
 import 'notification_service.dart';
 import 'secure_storage_config.dart';
 import 'storage_service.dart';
@@ -14,6 +15,33 @@ class MedicationAlert {
   final bool repeatDaily;
 
   const MedicationAlert(this.when, this.title, this.body, this.repeatDaily);
+}
+
+final RegExp _clockPattern = RegExp(
+  r'^\s*(\d{1,2})(?:[:.](\d{2}))?(?::\d{2})?\s*([ap])?\.?\s*(?:m\.?)?\s*$',
+  caseSensitive: false,
+);
+
+/// Parses "08:00", "8:00 AM", "8 pm", "08.30 a.m." or "20:00:00" into
+/// `[hour24, minute]`, or null when [raw] is not a clock time. Report-extracted
+/// schedules may use AM/PM; reminders created in the app use 24-hour HH:MM.
+List<int>? parseClockTime(String raw) {
+  final match = _clockPattern.firstMatch(raw);
+  if (match == null) return null;
+  var hour = int.parse(match.group(1)!);
+  final minuteText = match.group(2);
+  final minute = minuteText == null ? 0 : int.parse(minuteText);
+  final meridiem = match.group(3)?.toLowerCase();
+  // A bare number ("3") is a count, not a time of day.
+  if (minuteText == null && meridiem == null) return null;
+  if (minute > 59) return null;
+  if (meridiem != null) {
+    if (hour < 1 || hour > 12) return null;
+    hour = hour % 12 + (meridiem == 'p' ? 12 : 0);
+  } else if (hour > 23) {
+    return null;
+  }
+  return [hour, minute];
 }
 
 /// Converts the account's medicine schedules into phone-local alert times.
@@ -33,8 +61,8 @@ List<MedicationAlert> planMedicationAlerts(
     final name = reminder['medication_name']?.toString().trim() ?? '';
     if (name.isEmpty) continue;
     final dosage = reminder['dosage']?.toString().trim() ?? '';
-    final title = 'Medicine Reminder: $name';
-    final body = dosage.isEmpty ? 'Time to take your medicine' : dosage;
+    final title = appL10n.medAlertTitle(name);
+    final body = dosage.isEmpty ? appL10n.medAlertBody : dosage;
     final duration = reminder['duration_days'] as int?;
     final createdRaw = reminder['created_at']?.toString();
     final created = createdRaw == null
@@ -53,18 +81,10 @@ List<MedicationAlert> planMedicationAlerts(
     final rawTimes = reminder['times_of_day'];
     if (rawTimes is! List) continue;
     for (final rawTime in rawTimes) {
-      final parts = rawTime.toString().split(':');
-      if (parts.length != 2) continue;
-      final hour = int.tryParse(parts[0]);
-      final minute = int.tryParse(parts[1]);
-      if (hour == null ||
-          minute == null ||
-          hour < 0 ||
-          hour > 23 ||
-          minute < 0 ||
-          minute > 59) {
-        continue;
-      }
+      final parsed = parseClockTime(rawTime.toString());
+      if (parsed == null) continue;
+      final hour = parsed[0];
+      final minute = parsed[1];
       if (end == null) {
         var next = DateTime(today.year, today.month, today.day, hour, minute);
         if (!next.isAfter(now)) {

@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/routing/routes.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,7 +25,9 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _fade;
   late Animation<double> _scale;
   String? _startupError;
-  String _startupErrorTitle = 'Unable to connect';
+  // True when the OS secure store (macOS Keychain) cannot be opened. The wording is
+  // chosen in build() so it follows the app language.
+  bool _secureStorageUnavailable = false;
 
   @override
   void initState() {
@@ -54,10 +58,8 @@ class _SplashScreenState extends State<SplashScreen>
     } on SecureStorageUnavailableException {
       if (mounted) {
         setState(() {
-          _startupErrorTitle = 'Secure sign-in is unavailable';
-          _startupError =
-              'MedNarrate cannot access the encrypted macOS Keychain. '
-              'Quit the app, install the latest build, and then try again.';
+          _secureStorageUnavailable = true;
+          _startupError = appL10n.startupKeychainMessage;
         });
       }
       return;
@@ -110,6 +112,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     if (_startupError != null) {
+      final l10n = AppLocalizations.of(context)!;
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Center(
@@ -120,20 +123,29 @@ class _SplashScreenState extends State<SplashScreen>
               children: [
                 const Icon(Icons.cloud_off_outlined, size: 56),
                 const SizedBox(height: 16),
-                Text(_startupErrorTitle,
+                Text(
+                    _secureStorageUnavailable
+                        ? l10n.startupSecureSignInUnavailable
+                        : l10n.startupUnableToConnect,
                     style:
                         TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
-                Text(_startupError!, textAlign: TextAlign.center),
+                Text(
+                  _secureStorageUnavailable
+                      ? l10n.startupKeychainMessage
+                      : _startupError!,
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 22),
                 ElevatedButton.icon(
                   onPressed: () => setState(() {
                     _startupError = null;
+                    _secureStorageUnavailable = false;
                     Timer(const Duration(milliseconds: 100),
                         _checkAuthAndNavigate);
                   }),
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
+                  label: Text(l10n.retry),
                 ),
               ],
             ),
@@ -175,7 +187,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 SizedBox(height: 8),
                 Text(
-                  AppStrings.appTagline,
+                  AppLocalizations.of(context)!.appTagline,
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColors.textSecondary,

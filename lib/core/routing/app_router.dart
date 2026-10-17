@@ -23,6 +23,7 @@ import '../../features/settings/screens/settings_screen.dart';
 import '../../features/settings/screens/terms_of_service_screen.dart';
 import '../../features/settings/screens/privacy_policy_screen.dart';
 import '../../features/settings/screens/licenses_screen.dart';
+import '../../features/settings/screens/ai_models_screen.dart';
 import '../../features/navigation/screens/main_navigation_screen.dart';
 import 'routes.dart';
 
@@ -169,6 +170,10 @@ class AppRouter {
       GoRoute(
         path: Routes.customLicenses,
         builder: (context, state) => const CustomLicensesScreen(),
+      ),
+      GoRoute(
+        path: Routes.aiModels,
+        builder: (context, state) => const AiModelsScreen(),
       ),
       GoRoute(
         path: Routes.reportDetails,

@@ -30,7 +30,7 @@ class SupportTicketCreate(BaseModel):
 
 
 class SupportTicketReply(BaseModel):
-    content: str
+    content: str = Field(..., min_length=1, max_length=5000)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

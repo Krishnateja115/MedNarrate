@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 /// HealthScoreCard — now accepts real computed data.
 /// Score is computed as: (normal lab values / total lab values) * 100
@@ -21,11 +22,11 @@ class HealthScoreCard extends StatelessWidget {
     return Color(0xFFE53935);
   }
 
-  String get _scoreLabel {
-    if (totalLabValues == 0) return 'No lab data yet';
-    if (score >= 80) return 'Looking Good';
-    if (score >= 60) return 'Some Attention Needed';
-    return 'Consult Your Doctor';
+  String _scoreLabel(BuildContext context) {
+    if (totalLabValues == 0) return AppLocalizations.of(context)!.noLabDataYet;
+    if (score >= 80) return AppLocalizations.of(context)!.scoreLookingGood;
+    if (score >= 60) return AppLocalizations.of(context)!.scoreAttentionNeeded;
+    return AppLocalizations.of(context)!.scoreConsultDoctor;
   }
 
   @override
@@ -45,7 +46,7 @@ class HealthScoreCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Health Score',
+                  AppLocalizations.of(context)!.healthScore,
                   style: TextStyle(
                       color: Theme.of(context)
                           .colorScheme
@@ -75,7 +76,7 @@ class HealthScoreCard extends StatelessWidget {
                       ),
                 SizedBox(height: 4),
                 Text(
-                  _scoreLabel,
+                  _scoreLabel(context),
                   style: TextStyle(
                       color: Theme.of(context)
                           .colorScheme
@@ -86,7 +87,7 @@ class HealthScoreCard extends StatelessWidget {
                 if (totalLabValues > 0) ...[
                   SizedBox(height: 10),
                   Text(
-                    '$abnormalCount abnormal / $totalLabValues total values',
+                    AppLocalizations.of(context)!.abnormalOfTotal(abnormalCount, totalLabValues),
                     style: TextStyle(
                         color: Theme.of(context)
                             .colorScheme

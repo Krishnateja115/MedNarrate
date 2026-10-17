@@ -1,0 +1,466 @@
+{
+ "description": "Hand-labelled synthetic clinical sentences (written for this project). 'label' is null where the exact label of the model's tag set was not fixed by the annotator; those spans count for detection only.",
+ "items": [
+  {
+   "text": "A 45-year-old male presented with chest pain and shortness of breath.",
+   "entities": [
+    {
+     "text": "45-year-old",
+     "label": "Age"
+    },
+    {
+     "text": "male",
+     "label": "Sex"
+    },
+    {
+     "text": "chest pain",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "shortness of breath",
+     "label": "Sign_symptom"
+    }
+   ]
+  },
+  {
+   "text": "The patient has type 2 diabetes mellitus and takes metformin 500 mg twice daily.",
+   "entities": [
+    {
+     "text": "type 2 diabetes mellitus",
+     "label": "Disease_disorder"
+    },
+    {
+     "text": "metformin",
+     "label": "Medication"
+    },
+    {
+     "text": "500 mg",
+     "label": "Dosage"
+    },
+    {
+     "text": "twice daily",
+     "label": "Frequency"
+    }
+   ]
+  },
+  {
+   "text": "She was diagnosed with hypertension two years ago and started amlodipine 5 mg once daily.",
+   "entities": [
+    {
+     "text": "hypertension",
+     "label": "Disease_disorder"
+    },
+    {
+     "text": "two years ago",
+     "label": null
+    },
+    {
+     "text": "amlodipine",
+     "label": "Medication"
+    },
+    {
+     "text": "5 mg",
+     "label": "Dosage"
+    },
+    {
+     "text": "once daily",
+     "label": "Frequency"
+    }
+   ]
+  },
+  {
+   "text": "A 62-year-old woman complained of fever, cough and fatigue for three days.",
+   "entities": [
+    {
+     "text": "62-year-old",
+     "label": "Age"
+    },
+    {
+     "text": "woman",
+     "label": "Sex"
+    },
+    {
+     "text": "fever",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "cough",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "fatigue",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "three days",
+     "label": "Duration"
+    }
+   ]
+  },
+  {
+   "text": "Chest X-ray showed pneumonia in the right lower lobe.",
+   "entities": [
+    {
+     "text": "Chest X-ray",
+     "label": "Diagnostic_procedure"
+    },
+    {
+     "text": "pneumonia",
+     "label": "Disease_disorder"
+    },
+    {
+     "text": "right lower lobe",
+     "label": "Biological_structure"
+    }
+   ]
+  },
+  {
+   "text": "The patient was prescribed amoxicillin 500 mg three times daily for seven days.",
+   "entities": [
+    {
+     "text": "amoxicillin",
+     "label": "Medication"
+    },
+    {
+     "text": "500 mg",
+     "label": "Dosage"
+    },
+    {
+     "text": "three times daily",
+     "label": "Frequency"
+    },
+    {
+     "text": "seven days",
+     "label": "Duration"
+    }
+   ]
+  },
+  {
+   "text": "He reported severe headache and nausea after taking ibuprofen.",
+   "entities": [
+    {
+     "text": "headache",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "nausea",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "ibuprofen",
+     "label": "Medication"
+    }
+   ]
+  },
+  {
+   "text": "MRI of the brain revealed no evidence of tumor.",
+   "entities": [
+    {
+     "text": "MRI",
+     "label": "Diagnostic_procedure"
+    },
+    {
+     "text": "brain",
+     "label": "Biological_structure"
+    },
+    {
+     "text": "tumor",
+     "label": "Disease_disorder"
+    }
+   ]
+  },
+  {
+   "text": "A 30-year-old man with asthma uses a salbutamol inhaler as needed.",
+   "entities": [
+    {
+     "text": "30-year-old",
+     "label": "Age"
+    },
+    {
+     "text": "man",
+     "label": "Sex"
+    },
+    {
+     "text": "asthma",
+     "label": "Disease_disorder"
+    },
+    {
+     "text": "salbutamol",
+     "label": "Medication"
+    }
+   ]
+  },
+  {
+   "text": "Ultrasound of the abdomen showed fatty liver.",
+   "entities": [
+    {
+     "text": "Ultrasound",
+     "label": "Diagnostic_procedure"
+    },
+    {
+     "text": "abdomen",
+     "label": "Biological_structure"
+    },
+    {
+     "text": "fatty liver",
+     "label": "Disease_disorder"
+    }
+   ]
+  },
+  {
+   "text": "The patient underwent appendectomy and recovered without complications.",
+   "entities": [
+    {
+     "text": "appendectomy",
+     "label": "Therapeutic_procedure"
+    }
+   ]
+  },
+  {
+   "text": "She has a history of anemia.",
+   "entities": [
+    {
+     "text": "anemia",
+     "label": "Disease_disorder"
+    }
+   ]
+  },
+  {
+   "text": "A 55-year-old male has high blood pressure and high cholesterol.",
+   "entities": [
+    {
+     "text": "55-year-old",
+     "label": "Age"
+    },
+    {
+     "text": "male",
+     "label": "Sex"
+    },
+    {
+     "text": "high blood pressure",
+     "label": null
+    },
+    {
+     "text": "high cholesterol",
+     "label": null
+    }
+   ]
+  },
+  {
+   "text": "Patient complains of abdominal pain and vomiting since yesterday.",
+   "entities": [
+    {
+     "text": "abdominal pain",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "vomiting",
+     "label": "Sign_symptom"
+    }
+   ]
+  },
+  {
+   "text": "ECG showed atrial fibrillation and the patient was started on warfarin.",
+   "entities": [
+    {
+     "text": "ECG",
+     "label": "Diagnostic_procedure"
+    },
+    {
+     "text": "atrial fibrillation",
+     "label": "Disease_disorder"
+    },
+    {
+     "text": "warfarin",
+     "label": "Medication"
+    }
+   ]
+  },
+  {
+   "text": "He was given paracetamol 650 mg every six hours for fever.",
+   "entities": [
+    {
+     "text": "paracetamol",
+     "label": "Medication"
+    },
+    {
+     "text": "650 mg",
+     "label": "Dosage"
+    },
+    {
+     "text": "every six hours",
+     "label": "Frequency"
+    },
+    {
+     "text": "fever",
+     "label": "Sign_symptom"
+    }
+   ]
+  },
+  {
+   "text": "A 28-year-old female with migraine takes sumatriptan 50 mg when needed.",
+   "entities": [
+    {
+     "text": "28-year-old",
+     "label": "Age"
+    },
+    {
+     "text": "female",
+     "label": "Sex"
+    },
+    {
+     "text": "migraine",
+     "label": "Disease_disorder"
+    },
+    {
+     "text": "sumatriptan",
+     "label": "Medication"
+    },
+    {
+     "text": "50 mg",
+     "label": "Dosage"
+    }
+   ]
+  },
+  {
+   "text": "CT scan of the chest ruled out pulmonary embolism.",
+   "entities": [
+    {
+     "text": "CT scan",
+     "label": "Diagnostic_procedure"
+    },
+    {
+     "text": "chest",
+     "label": "Biological_structure"
+    },
+    {
+     "text": "pulmonary embolism",
+     "label": "Disease_disorder"
+    }
+   ]
+  },
+  {
+   "text": "The child had a rash and a sore throat for two days.",
+   "entities": [
+    {
+     "text": "rash",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "sore throat",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "two days",
+     "label": "Duration"
+    }
+   ]
+  },
+  {
+   "text": "He has been taking atorvastatin 20 mg at night for high cholesterol.",
+   "entities": [
+    {
+     "text": "atorvastatin",
+     "label": "Medication"
+    },
+    {
+     "text": "20 mg",
+     "label": "Dosage"
+    },
+    {
+     "text": "high cholesterol",
+     "label": null
+    }
+   ]
+  },
+  {
+   "text": "Biopsy of the skin lesion confirmed melanoma.",
+   "entities": [
+    {
+     "text": "Biopsy",
+     "label": "Diagnostic_procedure"
+    },
+    {
+     "text": "skin",
+     "label": "Biological_structure"
+    },
+    {
+     "text": "melanoma",
+     "label": "Disease_disorder"
+    }
+   ]
+  },
+  {
+   "text": "A 71-year-old man reported dizziness and swelling in both legs.",
+   "entities": [
+    {
+     "text": "71-year-old",
+     "label": "Age"
+    },
+    {
+     "text": "man",
+     "label": "Sex"
+    },
+    {
+     "text": "dizziness",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "swelling",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "legs",
+     "label": "Biological_structure"
+    }
+   ]
+  },
+  {
+   "text": "Insulin glargine 10 units was given once daily to the patient.",
+   "entities": [
+    {
+     "text": "Insulin glargine",
+     "label": "Medication"
+    },
+    {
+     "text": "10 units",
+     "label": "Dosage"
+    },
+    {
+     "text": "once daily",
+     "label": "Frequency"
+    }
+   ]
+  },
+  {
+   "text": "Colonoscopy revealed ulcerative colitis.",
+   "entities": [
+    {
+     "text": "Colonoscopy",
+     "label": "Diagnostic_procedure"
+    },
+    {
+     "text": "ulcerative colitis",
+     "label": "Disease_disorder"
+    }
+   ]
+  },
+  {
+   "text": "She denied any fever or cough but had mild back pain.",
+   "entities": [
+    {
+     "text": "fever",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "cough",
+     "label": "Sign_symptom"
+    },
+    {
+     "text": "back pain",
+     "label": "Sign_symptom"
+    }
+   ]
+  }
+ ]
+}

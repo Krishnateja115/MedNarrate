@@ -15,6 +15,7 @@ import 'reminder_service.dart';
 import 'medication_alert_service.dart';
 import '../../models/cached/offline_action.dart';
 import '../../features/reports/models/report_model.dart';
+import '../../features/settings/models/model_performance.dart';
 import '../../models/comparison_models.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -243,6 +244,8 @@ class ApiService {
     } catch (error) {
       debugPrint('Will sync medicine alerts when reminders are opened: $error');
     }
+    // Replay anything this account queued while offline.
+    unawaited(ConnectivityService.instance.drainQueue());
     return tokens;
   }
 
@@ -456,6 +459,64 @@ class ApiService {
     final resp = await _patch('/users/me', body: body);
     return UserModel.fromMap(jsonDecode(resp.body) as Map<String, dynamic>);
   }
+
+  // ───────────────────── AI models & explainability ─────────────────────
+
+  /// Measured scores for every model plus worked explainability examples.
+  Future<ModelPerformanceReport> getModelPerformance() async {
+    final resp = await _get('/ml/model-performance');
+    return ModelPerformanceReport.fromMap(
+        jsonDecode(resp.body) as Map<String, dynamic>);
+  }
+
+  // ─────────────────────────── Voice input ─────────────────────────────
+
+  /// Whether the server offers voice input. Any failure counts as "not
+  /// available" so the chat box simply shows no microphone.
+  Future<SpeechStatus> speechStatus() async {
+    try {
+      final resp = await _get('/speech/status');
+      return SpeechStatus.fromMap(jsonDecode(resp.body) as Map<String, dynamic>);
+    } catch (_) {
+      return const SpeechStatus.disabled();
+    }
+  }
+
+  /// Uploads one recording and returns what was said (empty when nothing
+  /// intelligible was heard). The file is not kept on the server.
+  Future<SpeechResult> transcribeAudio(String filePath,
+      {String? language}) async {
+    if (!ConnectivityService.instance.isOnline) {
+      throw const ApiException(
+          0, 'Voice input needs an internet connection. You can still type.');
+    }
+
+    Future<http.Response> doUpload() async {
+      final token = await StorageService.instance.getAccessToken();
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_baseUrl/speech/transcribe'),
+      );
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      if (language != null && language.isNotEmpty) {
+        request.fields['language'] = language;
+      }
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      final streamed = await request.send().timeout(_speechTimeout);
+      return await http.Response.fromStream(streamed);
+    }
+
+    try {
+      final resp = await _handleResponse(await doUpload(), doUpload);
+      return SpeechResult.fromMap(jsonDecode(resp.body) as Map<String, dynamic>);
+    } catch (error) {
+      throw _networkException(error);
+    }
+  }
+
+  static const Duration _speechTimeout = Duration(seconds: 60);
 
   // ─────────────────────────── Reports ─────────────────────────────────
 
@@ -788,7 +849,10 @@ class ApiService {
     final body = <String, dynamic>{'content': content};
     if (language != null) body['language'] = language;
 
-    final resp = await _post('/chat/sessions/$sessionId/messages', body: body);
+    // An answer may need several providers in turn; the server gives up after
+    // 75 s, so wait a little longer than that before reporting a timeout.
+    final resp = await _post('/chat/sessions/$sessionId/messages',
+        body: body, requestTimeout: const Duration(seconds: 90));
     final data = jsonDecode(resp.body) as Map<String, dynamic>;
     // Response is {message: {...}, sources: [...]}
     final msgMap = data['message'] as Map<String, dynamic>;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_l10n.dart';
 import '../../core/services/connectivity_service.dart';
 
 class OfflineBanner extends StatefulWidget {
@@ -90,14 +91,18 @@ class _OfflineBannerState extends State<OfflineBanner> with SingleTickerProvider
               size: 16,
             ),
             const SizedBox(width: 8),
-            Text(
-              _showingReconnected 
-                  ? "Back online! Refreshing..." 
-                  : "You're offline. Viewing cached data.",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+            Flexible(
+              child: Text(
+                _showingReconnected 
+                    ? appL10n.offlineBackOnline
+                    : appL10n.offlineViewingCached,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],

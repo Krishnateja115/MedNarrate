@@ -41,7 +41,7 @@ class UploadCard extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(
-              "Tap here to upload a new medical report for analysis",
+              AppLocalizations.of(context)!.uploadCardHint,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Theme.of(context)

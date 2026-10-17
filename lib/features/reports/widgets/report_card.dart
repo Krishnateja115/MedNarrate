@@ -25,10 +25,10 @@ class ReportCard extends StatelessWidget {
       onShare!();
     } else {
       final text =
-          'MedNarrate Medical Report: ${report.title}\nHospital: ${report.hospital}\nDate: ${report.reportDate.toLocal().toString().split(" ").first}\nType: ${report.reportType}';
+          AppLocalizations.of(context)!.shareReportText(report.title, report.hospital, report.reportDate.toLocal().toString().split(" ").first, report.reportType);
       Share.share(text);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sharing report details...')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.sharingReportDetails)),
       );
     }
   }
@@ -180,7 +180,7 @@ class ReportCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      "Analyze",
+                      AppLocalizations.of(context)!.analyze,
                       style: TextStyle(
                         color: theme.colorScheme.onSurface,
                         fontSize: 14,
@@ -202,7 +202,7 @@ class ReportCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      "Share",
+                      AppLocalizations.of(context)!.share,
                       style: TextStyle(
                         color: theme.colorScheme.onSurface,
                         fontSize: 14,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_l10n.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
@@ -66,7 +67,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: Text(
-                    "Track your progress over time",
+                    appL10n.insightsTrackProgress,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
@@ -143,6 +144,14 @@ class _InsightsScreenState extends State<InsightsScreen> {
                   ),
                 ),
 
+              // Nothing in common between the chosen reports
+              if (_controller.comparisonResult != null &&
+                  !_controller.isLoading &&
+                  _controller.comparisonResult!.comparisons.isEmpty)
+                SliverToBoxAdapter(
+                  child: _buildNothingInCommon(context),
+                ),
+
               // Overall Summary Section
               if (_controller.comparisonResult != null && !_controller.isLoading)
                 SliverToBoxAdapter(
@@ -172,13 +181,13 @@ class _InsightsScreenState extends State<InsightsScreen> {
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
-              children: const [
-                Icon(Icons.insert_chart_outlined, size: 48, color: Colors.grey),
-                SizedBox(height: 16),
+              children: [
+                const Icon(Icons.insert_chart_outlined, size: 48, color: Colors.grey),
+                const SizedBox(height: 16),
                 Text(
-                  'No reports available for comparison.',
+                  appL10n.insightsNoReports,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 16),
                 ),
               ],
             ),
@@ -193,7 +202,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Text(
-            'Select Reports (Max 5)',
+            appL10n.insightsSelectReports,
             style: Theme.of(context).textTheme.titleSmall,
           ),
         ),
@@ -237,7 +246,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        DateFormat('MMM d').format(report.reportDate),
+                        DateFormat('MMM d', appLanguageCode).format(report.reportDate),
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                         maxLines: 1,
@@ -287,6 +296,41 @@ class _InsightsScreenState extends State<InsightsScreen> {
     return Icons.description;
   }
 
+  Widget _buildNothingInCommon(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: GlassmorphismCard(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Icon(Icons.compare_arrows_rounded,
+                  size: 40,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+              const SizedBox(height: 12),
+              Text(
+                appL10n.insightsNoCommonTitle,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                appL10n.insightsNoCommonBody,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  height: 1.4,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildOverallSummary(BuildContext context) {
     final comps = _controller.comparisonResult!.comparisons;
     final significantChanges = comps.where((c) {
@@ -306,7 +350,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "What changed since your last report?",
+                appL10n.insightsWhatChanged,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),

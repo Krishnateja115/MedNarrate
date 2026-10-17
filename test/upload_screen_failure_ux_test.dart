@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mednarrate/features/reports/screens/upload_screen.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 void main() {
   testWidgets('UploadScreen renders clean initial state without error card', (WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: UploadScreen(),
       ),
     );

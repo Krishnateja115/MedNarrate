@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_l10n.dart';
 
 class CustomLicensesScreen extends StatefulWidget {
   const CustomLicensesScreen({super.key});
@@ -53,7 +54,7 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Open Source Licenses'),
+        title: Text(appL10n.licensesTitle),
         elevation: 0,
       ),
       body: _loading
@@ -117,7 +118,7 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
                         controller: _searchController,
                         onChanged: (val) => setState(() => _searchQuery = val),
                         decoration: InputDecoration(
-                          hintText: 'Search packages...',
+                          hintText: appL10n.licensesSearchHint,
                           prefixIcon:
                               const Icon(Icons.search_rounded, size: 20),
                           suffixIcon: _searchQuery.isNotEmpty
@@ -151,7 +152,7 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
                   child: filteredPackages.isEmpty
                       ? Center(
                           child: Text(
-                            'No licenses match "$_searchQuery"',
+                            appL10n.licensesNoMatch(_searchQuery),
                             style: TextStyle(
                               color: theme.colorScheme.onSurface
                                   .withValues(alpha: 0.6),
@@ -177,7 +178,9 @@ class _CustomLicensesScreenState extends State<CustomLicensesScreen> {
                                 ),
                               ),
                               subtitle: Text(
-                                '$count ${count == 1 ? 'license' : 'licenses'}',
+                                count == 1
+                                    ? appL10n.licensesCountOne
+                                    : appL10n.licensesCountMany(count),
                                 style: TextStyle(
                                   color: theme.colorScheme.onSurface
                                       .withValues(alpha: 0.6),
@@ -251,7 +254,7 @@ class _PackageLicenseDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'License ${index + 1} of ${entries.length}',
+                    appL10n.licensesIndexOf(index + 1, entries.length),
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontSize: 13,

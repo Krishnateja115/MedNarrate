@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/services/api_service.dart';
@@ -18,6 +19,10 @@ import '../../../core/utils/report_polling.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 import 'reports_screen.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
+
+/// What the progress card says. Kept as a value (not a ready-made sentence) so the
+/// text always follows the current app language.
+enum _ProcessingNote { uploading, uploadingMedical, extracting, reconnecting, retrying }
 
 enum UploadStep {
   idle, // Initial state: Form ready, no file selected
@@ -50,7 +55,23 @@ class _UploadScreenState extends State<UploadScreen> {
   String? _errorMessage;
   String? _failureCategory;
   String? _createdReportId;
-  String _processingStatusText = 'Uploading report...';
+  _ProcessingNote _processingNote = _ProcessingNote.uploading;
+
+  String get _processingStatusText {
+    final l10n = appL10n;
+    switch (_processingNote) {
+      case _ProcessingNote.uploading:
+        return l10n.uploadStatusUploadingReport;
+      case _ProcessingNote.uploadingMedical:
+        return l10n.uploadStatusUploadingMedical;
+      case _ProcessingNote.extracting:
+        return l10n.uploadStatusExtracting;
+      case _ProcessingNote.reconnecting:
+        return l10n.uploadStatusReconnecting;
+      case _ProcessingNote.retrying:
+        return l10n.uploadStatusRetrying;
+    }
+  }
 
   static const _maxSizeMb = 25;
   static const _validExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
@@ -105,8 +126,8 @@ class _UploadScreenState extends State<UploadScreen> {
       } else {
         // file_picker's macOS dialog can fail to appear without returning an
         // error. Use Flutter's native macOS selector for report files instead.
-        const typeGroup = file_selector.XTypeGroup(
-          label: 'Medical reports',
+        final typeGroup = file_selector.XTypeGroup(
+          label: appL10n.fileChooserTypeLabel,
           extensions: _validExtensions,
           uniformTypeIdentifiers: <String>[
             'com.adobe.pdf',
@@ -116,7 +137,7 @@ class _UploadScreenState extends State<UploadScreen> {
         );
         final selected = await file_selector.openFile(
           acceptedTypeGroups: <file_selector.XTypeGroup>[typeGroup],
-          confirmButtonText: 'Choose Report',
+          confirmButtonText: appL10n.fileChooserConfirm,
         );
         if (selected == null) return;
         file = PlatformFile(
@@ -131,7 +152,7 @@ class _UploadScreenState extends State<UploadScreen> {
       final ext = selectedFile.extension?.toLowerCase() ?? '';
       if (!_validExtensions.contains(ext)) {
         setState(() {
-          _errorMessage = 'Only PDF, JPG, JPEG, and PNG files are supported.';
+          _errorMessage = appL10n.uploadOnlyTypes;
           _step = UploadStep.idle;
         });
         return;
@@ -140,8 +161,8 @@ class _UploadScreenState extends State<UploadScreen> {
       final sizeMb = (selectedFile.size) / (1024 * 1024);
       if (sizeMb > _maxSizeMb) {
         setState(() {
-          _errorMessage =
-              'File must be smaller than ${Formatters.formatFileSize(_maxSizeMb * 1024 * 1024)}.';
+          _errorMessage = appL10n.uploadFileTooLarge(
+              Formatters.formatFileSize(_maxSizeMb * 1024 * 1024));
           _step = UploadStep.idle;
         });
         return;
@@ -168,15 +189,13 @@ class _UploadScreenState extends State<UploadScreen> {
       if (!mounted) return;
       setState(() {
         _step = UploadStep.idle;
-        _errorMessage =
-            'The file chooser could not open. Close any open file dialog and try again.';
+        _errorMessage = appL10n.uploadChooserFailed;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _step = UploadStep.idle;
-        _errorMessage =
-            'The selected file could not be read. Please choose it again from Finder.';
+        _errorMessage = appL10n.uploadFileUnreadable;
       });
     } finally {
       if (mounted) setState(() => _isPickingFile = false);
@@ -186,43 +205,43 @@ class _UploadScreenState extends State<UploadScreen> {
   String _sanitizeError(String? rawError, {String? category}) {
     final cat = category ?? _failureCategory;
     if (cat == 'OCR_ENGINE_UNAVAILABLE') {
-      return 'The report was uploaded successfully, but text recognition is not available on this server.';
+      return appL10n.uploadErrOcrUnavailable;
     }
     if (cat == 'OCR_NO_MEANINGFUL_TEXT' ||
         cat == 'OCR_FAILED' ||
         cat == 'IMAGE_DECODE_ERROR') {
-      return 'The image was uploaded successfully, but readable medical text could not be extracted from it. Please upload a clearer scan or image.';
+      return appL10n.uploadErrImageUnreadable;
     }
     if (cat == 'PDF_EXTRACTION_ERROR' ||
         cat == 'CORRUPT_PDF' ||
         cat == 'UNREADABLE_PDF') {
-      return 'Unable to extract text from this PDF document. The file may be scanned or unreadable.';
+      return appL10n.uploadErrPdfUnreadable;
     }
     if (cat == 'FILE_INVALID' || cat == 'EMPTY_FILE') {
-      return 'The uploaded file is empty or formatted improperly.';
+      return appL10n.uploadErrFileEmpty;
     }
     if (cat == 'NOT_MEDICAL_REPORT') {
-      return 'This does not appear to be a medical report. Please upload a clearer report or clinical document.';
+      return appL10n.uploadErrNotMedical;
     }
     if (cat == 'LLM_UNAVAILABLE' ||
         cat == 'LLM_GENERATION_ERROR' ||
         cat == 'LLM_NOT_CONFIGURED') {
-      return 'Your report was uploaded and text was extracted, but AI analysis could not be completed right now.';
+      return appL10n.uploadErrAiUnavailableExtracted;
     }
 
     if (rawError == null || rawError.trim().isEmpty) {
-      return 'Your report was uploaded successfully, but AI analysis could not be completed right now.';
+      return appL10n.uploadErrAiUnavailable;
     }
     final lower = rawError.toLowerCase();
     if (lower.contains('ocr engine') ||
         lower.contains('tesseract ocr engine is unavailable') ||
         lower.contains('not available on this server')) {
-      return 'The report was uploaded successfully, but text recognition is not available on this server.';
+      return appL10n.uploadErrOcrUnavailable;
     }
     if (lower.contains('unable to read') ||
         lower.contains('could not extract') ||
         lower.contains('ocr')) {
-      return 'The image was uploaded successfully, but readable medical text could not be extracted from it. Please upload a clearer scan or image.';
+      return appL10n.uploadErrImageUnreadable;
     }
     if (lower.contains('gemini_api_key') ||
         lower.contains('ollama_url') ||
@@ -234,17 +253,17 @@ class _UploadScreenState extends State<UploadScreen> {
         lower.contains('provider credentials') ||
         lower.contains('model') ||
         lower.contains('gemini')) {
-      return 'Your report was uploaded and text was extracted, but AI analysis could not be completed right now.';
+      return appL10n.uploadErrAiUnavailableExtracted;
     }
     if (lower.contains('socketexception') ||
         lower.contains('connection') ||
         lower.contains('network')) {
-      return 'Unable to connect to the server. Please check your network connection.';
+      return appL10n.uploadErrNetwork;
     }
     if (lower.contains('unauthorized') ||
         lower.contains('401') ||
         lower.contains('session')) {
-      return 'Your session has expired. Please sign in again.';
+      return appL10n.uploadErrSession;
     }
     return rawError;
   }
@@ -252,14 +271,14 @@ class _UploadScreenState extends State<UploadScreen> {
   Future<void> _uploadAndAnalyze() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedFile == null) {
-      setState(() => _errorMessage = 'Please select a report file first.');
+      setState(() => _errorMessage = appL10n.selectReportFileFirst);
       return;
     }
 
     setState(() {
       _step = UploadStep.uploading;
       _errorMessage = null;
-      _processingStatusText = 'Uploading medical report...';
+      _processingNote = _ProcessingNote.uploadingMedical;
     });
 
     final targetDate = _reportDate ?? DateTime.now();
@@ -282,7 +301,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
       setState(() {
         _step = UploadStep.processing;
-        _processingStatusText = 'Extracting text and analyzing report...';
+        _processingNote = _ProcessingNote.extracting;
       });
 
       await ApiService.instance.processReport(report.id);
@@ -311,11 +330,9 @@ class _UploadScreenState extends State<UploadScreen> {
           });
           return;
         } else if (status.errorReason != null) {
-          setState(() => _processingStatusText =
-              'Still processing. Reconnecting to check your report...');
-        } else if (_processingStatusText.startsWith('Still processing.')) {
-          setState(() => _processingStatusText =
-              'Extracting text and analyzing report...');
+          setState(() => _processingNote = _ProcessingNote.reconnecting);
+        } else if (_processingNote == _ProcessingNote.reconnecting) {
+          setState(() => _processingNote = _ProcessingNote.extracting);
         }
       }
     } on ApiException catch (e) {
@@ -342,7 +359,7 @@ class _UploadScreenState extends State<UploadScreen> {
     setState(() {
       _step = UploadStep.processing;
       _errorMessage = null;
-      _processingStatusText = 'Retrying AI analysis...';
+      _processingNote = _ProcessingNote.retrying;
     });
 
     try {
@@ -373,11 +390,9 @@ class _UploadScreenState extends State<UploadScreen> {
           });
           return;
         } else if (status.errorReason != null) {
-          setState(() => _processingStatusText =
-              'Still processing. Reconnecting to check your report...');
-        } else if (_processingStatusText.startsWith('Still processing.')) {
-          setState(() => _processingStatusText =
-              'Extracting text and analyzing report...');
+          setState(() => _processingNote = _ProcessingNote.reconnecting);
+        } else if (_processingNote == _ProcessingNote.reconnecting) {
+          setState(() => _processingNote = _ProcessingNote.extracting);
         }
       }
     } on ApiException catch (e) {
@@ -401,6 +416,7 @@ class _UploadScreenState extends State<UploadScreen> {
     final isProcessing =
         _step == UploadStep.uploading || _step == UploadStep.processing;
     final loc = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isReportSavedAndFailed =
         _step == UploadStep.failed && _createdReportId != null;
 
@@ -409,7 +425,7 @@ class _UploadScreenState extends State<UploadScreen> {
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        title: Text(loc?.uploadReport ?? 'Upload Medical Report'),
+        title: Text(l10n.uploadReport),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -429,10 +445,10 @@ class _UploadScreenState extends State<UploadScreen> {
                   TextFormField(
                     controller: _titleCtrl,
                     style: TextStyle(color: theme.colorScheme.onSurface),
-                    decoration: _inputDec('Report Title *', Icons.title_rounded,
-                        hint: 'e.g. Annual Blood Test'),
+                    decoration: _inputDec(l10n.reportTitleReq, Icons.title_rounded,
+                        hint: l10n.reportTitleHint),
                     validator: (v) => v == null || v.trim().isEmpty
-                        ? 'Title is required'
+                        ? l10n.titleRequired
                         : null,
                   ),
                   const SizedBox(height: 16),
@@ -441,9 +457,9 @@ class _UploadScreenState extends State<UploadScreen> {
                   TextFormField(
                     controller: _hospitalCtrl,
                     style: TextStyle(color: theme.colorScheme.onSurface),
-                    decoration: _inputDec('Hospital / Clinic (optional)',
+                    decoration: _inputDec(l10n.hospitalClinicOptional,
                         Icons.local_hospital_outlined,
-                        hint: 'e.g. City General Hospital'),
+                        hint: l10n.hospitalHint),
                   ),
                   const SizedBox(height: 16),
 
@@ -496,7 +512,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
                   if (_createdReportId == null) ...[
                     Text(
-                      'Your document will be stored and its text processed by MedNarrate and configured AI services to create an explanation. Check important results against the original report.',
+                      l10n.uploadDataNotice,
                       style: TextStyle(
                         color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
                         fontSize: 12,
@@ -506,7 +522,7 @@ class _UploadScreenState extends State<UploadScreen> {
                       alignment: Alignment.centerLeft,
                       child: TextButton(
                         onPressed: () => context.push(Routes.privacyPolicy),
-                        child: const Text('How your data is used'),
+                        child: Text(l10n.howDataIsUsed),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -535,8 +551,8 @@ class _UploadScreenState extends State<UploadScreen> {
                           children: [
                             Text(
                               isProcessing
-                                  ? 'Processing report…'
-                                  : 'Upload & Analyze',
+                                  ? l10n.processingReportEllipsis
+                                  : l10n.uploadAndAnalyze,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.bold),
@@ -592,7 +608,7 @@ class _UploadScreenState extends State<UploadScreen> {
         ),
         const SizedBox(height: 6),
         Text(
-          'PDF, JPG, JPEG, or PNG · Max 25 MB',
+          loc?.uploadFormatsHint ?? 'PDF, JPG, JPEG, or PNG · Max 25 MB',
           style: TextStyle(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.54),
               fontSize: 13),
@@ -607,7 +623,7 @@ class _UploadScreenState extends State<UploadScreen> {
       initialValue: _reportType,
       dropdownColor: theme.cardColor,
       style: TextStyle(color: theme.colorScheme.onSurface),
-      decoration: _inputDec('Report Type', Icons.category_outlined),
+      decoration: _inputDec(AppLocalizations.of(context)!.reportType, Icons.category_outlined),
       items: _reportTypes
           .map((t) => DropdownMenuItem(
                 value: t,
@@ -622,7 +638,7 @@ class _UploadScreenState extends State<UploadScreen> {
   Widget _buildDatePickerTile(ThemeData theme) {
     final dateDisplay = _customDateSelected && _reportDate != null
         ? Formatters.formatDate(_reportDate!)
-        : 'Auto-detect from document';
+        : AppLocalizations.of(context)!.autoDetectFromDocument;
 
     return GestureDetector(
       onTap: () async {
@@ -657,7 +673,7 @@ class _UploadScreenState extends State<UploadScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Report Date',
+                  Text(AppLocalizations.of(context)!.reportDateLabel,
                       style: TextStyle(
                           fontSize: 11,
                           color: theme.colorScheme.onSurface
@@ -700,7 +716,7 @@ class _UploadScreenState extends State<UploadScreen> {
     if (_selectedFile == null) {
       return Semantics(
         button: true,
-        label: 'Choose a file to analyze',
+        label: AppLocalizations.of(context)!.chooseFileToAnalyze,
         child: OutlinedButton(
           onPressed: _isPickingFile ? null : _pickFile,
           style: OutlinedButton.styleFrom(
@@ -719,8 +735,8 @@ class _UploadScreenState extends State<UploadScreen> {
               const SizedBox(height: 10),
               Text(
                 _isPickingFile
-                    ? 'Opening file chooser…'
-                    : 'Choose a file to analyze',
+                    ? AppLocalizations.of(context)!.openingFileChooser
+                    : AppLocalizations.of(context)!.chooseFileToAnalyze,
                 style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -728,7 +744,7 @@ class _UploadScreenState extends State<UploadScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Supports PDF, JPG, JPEG, PNG (up to 25 MB)',
+                AppLocalizations.of(context)!.supportsFormatsUpTo,
                 style: TextStyle(
                     fontSize: 12,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.54)),
@@ -802,7 +818,9 @@ class _UploadScreenState extends State<UploadScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        isReportUploaded ? 'Report uploaded' : 'File Ready',
+                        isReportUploaded
+                            ? AppLocalizations.of(context)!.reportUploadedBadge
+                            : AppLocalizations.of(context)!.fileReadyBadge,
                         style: const TextStyle(
                             color: Colors.green,
                             fontSize: 10,
@@ -817,7 +835,7 @@ class _UploadScreenState extends State<UploadScreen> {
           IconButton(
             icon: const Icon(Icons.close_rounded, color: Colors.grey),
             onPressed: _clearFile,
-            tooltip: 'Remove file',
+            tooltip: AppLocalizations.of(context)!.removeFile,
           ),
         ],
       ),
@@ -842,7 +860,7 @@ class _UploadScreenState extends State<UploadScreen> {
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
-                    'Step 1: Upload Completed',
+                    AppLocalizations.of(context)!.step1UploadCompleted,
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -877,9 +895,9 @@ class _UploadScreenState extends State<UploadScreen> {
                                 (_failureCategory ?? '').contains('IMAGE') ||
                                 (_failureCategory ?? '').contains('PDF') ||
                                 (_failureCategory ?? '').contains('FILE')
-                            ? 'Step 2: Text Extraction Failed'
-                            : 'Step 2: AI Analysis Unavailable')
-                        : 'Step 2: Processing AI Analysis',
+                            ? AppLocalizations.of(context)!.step2TextExtractionFailed
+                            : AppLocalizations.of(context)!.step2AiUnavailable)
+                        : AppLocalizations.of(context)!.step2ProcessingAi,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -925,7 +943,7 @@ class _UploadScreenState extends State<UploadScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'You can leave this page. Your report will appear in Reports when processing finishes.',
+            AppLocalizations.of(context)!.canLeavePageNotice,
             style: TextStyle(
                 fontSize: 13,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.60)),
@@ -958,17 +976,17 @@ class _UploadScreenState extends State<UploadScreen> {
               Expanded(
                 child: Text(
                   _failureCategory == 'OCR_ENGINE_UNAVAILABLE'
-                      ? 'Text Recognition Unavailable'
+                      ? AppLocalizations.of(context)!.failTitleOcrUnavailable
                       : _failureCategory == 'NOT_MEDICAL_REPORT'
-                          ? 'This Is Not a Medical Report'
+                          ? AppLocalizations.of(context)!.failTitleNotMedical
                           : (_failureCategory == 'OCR_NO_MEANINGFUL_TEXT' ||
                                   _failureCategory == 'OCR_FAILED' ||
                                   _failureCategory == 'IMAGE_DECODE_ERROR'
-                              ? 'Unable to Read This Image'
+                              ? AppLocalizations.of(context)!.failTitleImage
                               : (_failureCategory == 'PDF_EXTRACTION_ERROR' ||
                                       _failureCategory == 'CORRUPT_PDF'
-                                  ? 'Unable to Read This Document'
-                                  : 'AI Analysis Unavailable')),
+                                  ? AppLocalizations.of(context)!.failTitleDocument
+                                  : AppLocalizations.of(context)!.failTitleAi)),
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -994,7 +1012,7 @@ class _UploadScreenState extends State<UploadScreen> {
                 FilledButton.icon(
                   onPressed: isProcessing ? null : _retryAnalysis,
                   icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('Retry AI Analysis'),
+                  label: Text(AppLocalizations.of(context)!.retryAiAnalysis),
                   style: FilledButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: Colors.white,
@@ -1005,7 +1023,7 @@ class _UploadScreenState extends State<UploadScreen> {
               OutlinedButton.icon(
                 onPressed: isProcessing ? null : _clearFile,
                 icon: const Icon(Icons.upload_file_rounded, size: 18),
-                label: const Text('Upload Another Report'),
+                label: Text(AppLocalizations.of(context)!.uploadAnotherReport),
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),

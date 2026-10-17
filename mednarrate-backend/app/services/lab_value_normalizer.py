@@ -100,8 +100,72 @@ LAB_PARAMETER_ALIASES = {
 }
 
 
+_ACRONYMS = {
+    "mcv", "mch", "mchc", "rdw", "cv", "sd", "mpv", "pdw", "pct", "hct", "rbc", "wbc",
+    "alt", "ast", "alp", "ggt", "ggtp", "ldl", "hdl", "vldl", "tsh", "bun", "egfr",
+    "hba1c", "crp", "esr", "inr", "pt", "aptt", "psa", "t3", "t4", "ft3", "ft4", "hb",
+    "hgb", "plt", "tlc", "dlc", "sgot", "sgpt", "ck", "ldh", "gfr", "mg", "na", "k",
+}
+
+
 def normalize_parameter_name(raw_name: str) -> str:
     """Maps variant spellings to canonical names."""
     # Clean up spaces, punctuation, and lowercase
     cleaned = re.sub(r"[^a-zA-Z0-9\s]", "", raw_name).strip().lower()
-    return LAB_PARAMETER_ALIASES.get(cleaned, raw_name.title())
+    alias = LAB_PARAMETER_ALIASES.get(cleaned)
+    if alias:
+        return alias
+    # Keep medical acronyms upper-case ("MCV", "RDW-CV") instead of "Mcv".
+    words = []
+    for word in raw_name.split():
+        pieces = word.split("-")
+        fixed = [
+            piece.upper() if piece.lower() in _ACRONYMS else piece.title()
+            for piece in pieces
+        ]
+        words.append("-".join(fixed))
+    return " ".join(words)
+
+
+# Extra spellings that mean the same test. Used ONLY to line up the same test
+# across different reports (trend / comparison); stored names are never changed.
+_COMPARISON_ALIASES = {
+    "total rbc count": "RBC",
+    "total red blood cell count": "RBC",
+    "total rbc": "RBC",
+    "total leucocyte count": "WBC",
+    "leucocyte count": "WBC",
+    "total wbc count": "WBC",
+    "total white blood cell count": "WBC",
+    "mean corpuscular volume": "MCV",
+    "mean cell volume": "MCV",
+    "mean corpuscular hemoglobin": "MCH",
+    "mean corpuscular haemoglobin": "MCH",
+    "mean cell hemoglobin": "MCH",
+    "mean corpuscular hemoglobin concentration": "MCHC",
+    "mean corpuscular haemoglobin concentration": "MCHC",
+    "mean cell hemoglobin concentration": "MCHC",
+    "rdw": "RDW-CV",
+    "rdw cv": "RDW-CV",
+    "rdwcv": "RDW-CV",
+    "hematocrit": "Hematocrit",
+    "haematocrit": "Hematocrit",
+    "hct": "Hematocrit",
+    "pcv": "Hematocrit",
+    "packed cell volume": "Hematocrit",
+}
+
+
+def comparison_name(raw_name: str) -> str:
+    """Canonical name used to match the same test in different reports.
+
+    "rbc_count", "Total RBC Count" and "RBC" all give "RBC"; "Mean Corpuscular
+    Volume" and "MCV" both give "MCV".
+    """
+    spaced = re.sub(r"\s+", " ", raw_name.replace("_", " ")).strip()
+    cleaned = re.sub(r"[^a-zA-Z0-9\s]", "", spaced).strip().lower()
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    alias = _COMPARISON_ALIASES.get(cleaned)
+    if alias:
+        return alias
+    return normalize_parameter_name(spaced)

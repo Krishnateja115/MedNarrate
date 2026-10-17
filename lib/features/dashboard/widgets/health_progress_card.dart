@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class HealthProgressCard extends StatelessWidget {
   final int totalReportsCount;
@@ -67,7 +68,7 @@ class HealthProgressCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                "Health Progress",
+                AppLocalizations.of(context)!.healthProgress,
                 style: TextStyle(
                   color: theme.colorScheme.onSurface,
                   fontSize: 18,
@@ -116,7 +117,7 @@ class HealthProgressCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  "No health progress yet",
+                  AppLocalizations.of(context)!.noHealthProgressYet,
                   style: TextStyle(
                     color: theme.colorScheme.onSurface,
                     fontSize: 16.5,
@@ -126,7 +127,7 @@ class HealthProgressCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "Upload a medical report to start tracking your health progress.",
+                  AppLocalizations.of(context)!.uploadToTrackProgress,
                   style: TextStyle(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
                     fontSize: 13.5,
@@ -139,10 +140,10 @@ class HealthProgressCard extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: onUploadTap,
                     icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text(
-                      "Upload Report",
+                    label: Text(
+                      AppLocalizations.of(context)!.uploadReport,
                       style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
@@ -187,19 +188,21 @@ class HealthProgressCard extends StatelessWidget {
                   size: 20,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  "Latest report analyzed",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: theme.colorScheme.onSurface,
+                Flexible(
+                  child: Text(
+                    AppLocalizations.of(context)!.latestReportAnalyzed,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              "Historical trend tracking will become available when additional comparable reports are uploaded.",
+              AppLocalizations.of(context)!.historicalTrendPending,
               style: TextStyle(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
                 fontSize: 13.5,
@@ -211,7 +214,7 @@ class HealthProgressCard extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onUploadTap,
                 icon: const Icon(Icons.upload_file_rounded, size: 16),
-                label: const Text("Upload Another Report"),
+                label: Text(AppLocalizations.of(context)!.uploadAnotherReport),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: BorderSide(
@@ -231,11 +234,11 @@ class HealthProgressCard extends StatelessWidget {
 
     // STATE 3: Multi-report comparison with real numbers
     final int diff = currentScore! - previousScore!;
-    String trendLabel = "Stable";
+    String trendLabel = AppLocalizations.of(context)!.trendStable;
     if (diff > 0) {
-      trendLabel = "Increased since previous report";
+      trendLabel = AppLocalizations.of(context)!.trendIncreased;
     } else if (diff < 0) {
-      trendLabel = "Decreased since previous report";
+      trendLabel = AppLocalizations.of(context)!.trendDecreased;
     }
 
     return Column(
@@ -244,29 +247,35 @@ class HealthProgressCard extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "Reports Compared: $completedReportsCount",
-              style: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+            Expanded(
+              child: Text(
+                AppLocalizations.of(context)!.reportsComparedCount(completedReportsCount),
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                trendLabel,
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+            const SizedBox(width: 8),
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  trendLabel,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -284,7 +293,7 @@ class HealthProgressCard extends StatelessWidget {
             children: [
               Column(
                 children: [
-                  Text("Previous",
+                  Text(AppLocalizations.of(context)!.previous,
                       style: TextStyle(
                           fontSize: 12,
                           color: theme.colorScheme.onSurface
@@ -302,7 +311,7 @@ class HealthProgressCard extends StatelessWidget {
               ),
               Column(
                 children: [
-                  Text("Current",
+                  Text(AppLocalizations.of(context)!.current,
                       style: TextStyle(
                           fontSize: 12,
                           color: theme.colorScheme.onSurface

@@ -4,6 +4,7 @@ import '../../reports/models/report_model.dart';
 import '../../../core/routing/routes.dart';
 import 'lab_result_row.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/report_ui_labels.dart';
 import '../../../core/utils/helpers.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 import '../../../core/services/api_models.dart';
@@ -47,6 +48,16 @@ class _LabResultsTabState extends State<LabResultsTab> {
     ],
   };
 
+  /// "What is {name}?" - the translated template carries a {name} placeholder
+  /// because word order differs between languages; older cached translations
+  /// stored just "What is", so both forms are supported.
+  String _whatIsText(String name) {
+    final template = effectiveReportUiLabels(widget.translation)['label_what_is'];
+    if (template == null || template.trim().isEmpty) return 'What is $name?';
+    if (template.contains('{name}')) return template.replaceAll('{name}', name);
+    return '$template $name?';
+  }
+
   void _showParameterDetails(
       BuildContext context, Map<String, dynamic> metric) {
     final String parameterName = metric['parameter']?.toString() ?? '';
@@ -60,10 +71,13 @@ class _LabResultsTabState extends State<LabResultsTab> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) {
-        return Padding(
+        return SingleChildScrollView(
+          child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -74,7 +88,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
                       fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Text(
-                '${widget.translation?.uiLabels['label_what_is'] ?? 'What is'} $translatedName?',
+                _whatIsText(translatedName),
                 style: TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
@@ -82,7 +96,8 @@ class _LabResultsTabState extends State<LabResultsTab> {
               ),
               const SizedBox(height: 4),
               Text(
-                'This measures ${metric['parameter']} in your medical document. Always consult your physician for interpretation.',
+                AppLocalizations.of(context)!
+                    .labMeasuresDesc('${metric['parameter']}'),
                 style: TextStyle(
                     color: Theme.of(context)
                         .colorScheme
@@ -91,7 +106,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
               ),
               if (excerpts.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                Text('Text detected in the uploaded report',
+                Text(AppLocalizations.of(context)!.textDetectedInReport,
                     style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 6),
                 for (final excerpt in excerpts)
@@ -99,7 +114,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
                     padding: const EdgeInsets.only(bottom: 6),
                     child: SelectableText(excerpt),
                   ),
-                const Text('Check this against the original document; OCR can make mistakes.'),
+                Text(AppLocalizations.of(context)!.checkAgainstOriginalOcr),
               ],
               const SizedBox(height: 24),
               SizedBox(
@@ -114,10 +129,11 @@ class _LabResultsTabState extends State<LabResultsTab> {
                     });
                   },
                   icon: const Icon(Icons.description_outlined),
-                  label: const Text('View original report'),
+                  label: Text(AppLocalizations.of(context)!.viewOriginalReport),
                 ),
               ),
             ],
+          ),
           ),
         );
       },
@@ -136,14 +152,14 @@ class _LabResultsTabState extends State<LabResultsTab> {
     }).toList();
 
     final defaultCat =
-        widget.translation?.uiLabels['label_uncategorized'] ?? 'Uncategorized';
+        effectiveReportUiLabels(widget.translation)['label_uncategorized'] ?? 'Uncategorized';
     Map<String, List<Map<String, dynamic>>> grouped = {defaultCat: []};
     for (var m in filteredMetrics) {
       String cat = defaultCat;
       for (var entry in _categories.entries) {
         if (entry.value.any((v) =>
             v.toLowerCase() == m['parameter'].toString().toLowerCase())) {
-          cat = widget.translation?.uiLabels[
+          cat = effectiveReportUiLabels(widget.translation)[
                   'label_cat_${entry.key.toLowerCase().replaceAll(' ', '_')}'] ??
               entry.key;
           break;
@@ -161,7 +177,7 @@ class _LabResultsTabState extends State<LabResultsTab> {
             onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
               hintText:
-                  widget.translation?.uiLabels['label_search_parameters'] ??
+                  effectiveReportUiLabels(widget.translation)['label_search_parameters'] ??
                       AppLocalizations.of(context)!.searchParameters,
               prefixIcon: const Icon(Icons.search),
               filled: true,

@@ -1,0 +1,22 @@
+{
+ "description": "Sentences are spoken with the computer's own text-to-speech voice, so they are clean audio and the word error rate is an optimistic bound. Add real recordings to improve realism.",
+ "english": [
+  "What does my low hemoglobin mean",
+  "Is my cholesterol level normal",
+  "Explain my blood sugar report",
+  "Why is my white blood cell count high",
+  "Do I need to see a doctor about my kidney test",
+  "What is a platelet count",
+  "Show me my last blood test result",
+  "Can you explain the thyroid result",
+  "What foods help with iron deficiency",
+  "How often should I check my blood pressure"
+ ],
+ "hindi": [
+  "मेरा हीमोग्लोबिन कम क्यों है",
+  "मेरी शुगर की रिपोर्ट समझाइए",
+  "क्या मेरा कोलेस्ट्रॉल सामान्य है",
+  "मुझे डॉक्टर को कब दिखाना चाहिए",
+  "मेरे खून की जांच का नतीजा बताइए"
+ ]
+}

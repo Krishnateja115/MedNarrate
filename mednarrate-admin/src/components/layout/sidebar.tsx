@@ -24,7 +24,8 @@ import {
   Sliders,
   Radio,
   Clock,
-  PieChart
+  PieChart,
+  BrainCircuit
 } from 'lucide-react';
 
 const NAV_GROUPS = [
@@ -44,6 +45,7 @@ const NAV_GROUPS = [
     items: [
       { name: 'Admin Copilot', href: '/admin-copilot', icon: Bot, permissions: ['dashboard.view'] },
       { name: 'AI Operations', href: '/ai-ops', icon: Bot, permissions: ['ai.view', 'ai.manage'] },
+      { name: 'Model Performance & XAI', href: '/model-performance', icon: BrainCircuit, permissions: ['ai.view', 'ai.manage'] },
       { name: 'Chat Operations', href: '/chat-ops', icon: MessageSquare, permissions: ['chat.view'] },
       { name: 'RAG Knowledge Ops', href: '/rag-ops', icon: Database, permissions: ['rag.view'] },
       { name: 'Automation Jobs', href: '/automation-ops', icon: Clock, permissions: ['automation.view'] },

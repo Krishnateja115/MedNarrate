@@ -1,0 +1,170 @@
+Name
+:
+Mr Dummy 
+Patient ID
+:
+PN2
+Age/Gender
+:
+20/Male
+Report ID
+:
+RE1
+Referred By
+:
+Self
+Collection Date :
+24/06/2023 08:49 PM
+Phone No.
+:
+Report Date
+:
+24/06/2023 09:02 PM
+HAEMATOLOGY
+COMPLETE BLOOD COUNT (CBC)
+TEST DESCRIPTION
+RESULT
+REF. RANGE
+UNIT
+Haemoglobin 
+15
+13 - 17
+g/dL
+Total Leucocyte Count 
+5000
+4000 - 10000
+/cumm
+Differential Leucocyte Count
+Neutrophils
+50
+40 - 80
+%
+Lymphocytes
+40
+20 - 40
+%
+Eosinophils
+1
+1 - 6
+%
+Monocytes
+9
+2 - 10
+%
+Basophils
+0.00
+0 - 1
+%
+Absolute Leucocyte Count
+Absolute Neutrophils
+2500.00
+2000 - 7000
+/cumm
+Absolute Lymphocytes
+2000.00
+1000 - 3000
+/cumm
+Absolute Eosinophils
+50.00
+20 - 500
+/cumm
+Absolute Monocytes
+450.00
+200 - 1000
+/cumm
+RBC Indices
+RBC Count
+5
+4.5 - 5.5
+Million/cumm
+MCV
+80.00
+81 - 101
+fL
+MCH
+30.00
+27 - 32
+pg
+MCHC
+37.50
+31.5 - 34.5
+g/dL
+Hct
+40
+40 - 50
+%
+RDW-CV
+12
+11.6 - 14.0
+%
+RDW-SD
+40
+39 - 46
+fL
+Platelets Indices
+Platelet Count
+300000
+150000 - 410000
+/cumm
+PCT
+35
+MPV
+8
+7.5 - 11.5
+fL
+PDW
+9
+Interpretation:
+CBC Test Parameter
+General Interpretation
+Dr. Dummy
+MD Pathology
+1 / 2
+
+Name
+:
+Mr Dummy 
+Patient ID
+:
+PN2
+Age/Gender
+:
+20/Male
+Report ID
+:
+RE1
+Referred By
+:
+Self
+Collection Date :
+24/06/2023 08:49 PM
+Phone No.
+:
+Report Date
+:
+24/06/2023 09:02 PM
+White Blood Cell Count (WBC)
+High count may indicate infection or in;ammationw lok count 
+may indicate a keavened immune system
+Red Blood Cell Count (RBC)
+Lok count may indicate anemiaw high count may indicate 
+dehydration or other medical conditions
+Hemoglobin (Hb)
+Lok le~els may indicate anemia
+Hematocrit (Hct)
+Lok le~els may indicate anemiaw high le~els may indicate 
+dehydration or other medical conditions
+Platelet Count
+Lok count may indicate a bleeding disorderw high count may 
+indicate a clotting disorder
+Mean Corpuscular Volume (MCV)
+High MCV may indicate anemia caused by a ~itamin de?ciency or other medical condition
+Mean Corpuscular Hemoglobin (MCH)
+High MCH may indicate anemia caused by a ~itamin de?ciency or other medical condition
+Mean Corpuscular Hemoglobin Concentration (MCHC)
+Lok MCHC may indicate anemia caused by a ~itamin de?-
+ciency or other medical condition
+@@End of report@@
+Dr. Dummy
+MD Pathology
+2 / 2

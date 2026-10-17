@@ -619,17 +619,1684 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get disclaimerPatient =>
-      'ಹಕ್ಕುತ್ಯಾಗ: ಮೆಡ್‌ನರೇಟ್ ರೋಗಿಗಳ ಸಾರಾಂಶಗಳು ಶೈಕ್ಷಣಿಕ ಸಂದರ್ಭವನ್ನು ಮಾತ್ರ ಒದಗಿಸುತ್ತವೆ...';
+      'ಹಕ್ಕು ನಿರಾಕರಣೆ: MedNarrate ರೋಗಿಯ ಸಾರಾಂಶಗಳು ಶೈಕ್ಷಣಿಕ ಮಾಹಿತಿಗಾಗಿ ಮಾತ್ರ; ಅವು ವೈದ್ಯಕೀಯ ರೋಗನಿರ್ಣಯ ಅಥವಾ ಔಷಧಿ ಚೀಟಿ ಅಲ್ಲ. ವೈಯಕ್ತಿಕ ಸಲಹೆಗಾಗಿ ಯಾವಾಗಲೂ ನಿಮ್ಮ ವೈದ್ಯರನ್ನು ಸಂಪರ್ಕಿಸಿ.';
 
   @override
   String get disclaimerSummary =>
-      'ಹಕ್ಕುತ್ಯಾಗ: ಮೆಡ್‌ನರೇಟ್ ಎಐ ಸಾರಾಂಶವು ಮಾಹಿತಿ ಉದ್ದೇಶಗಳಿಗಾಗಿ ಮಾತ್ರ...';
+      'ಹಕ್ಕು ನಿರಾಕರಣೆ: MedNarrate AI ಸಾರಾಂಶ ಮಾಹಿತಿ ಉದ್ದೇಶಕ್ಕಾಗಿ ಮಾತ್ರ; ಇದು ವೈದ್ಯಕೀಯ ಸಲಹೆಗೆ ಪರ್ಯಾಯವಲ್ಲ. ವೈದ್ಯಕೀಯ ನಿರ್ಧಾರಗಳಿಗೆ ಯಾವಾಗಲೂ ಅರ್ಹ ವೈದ್ಯರನ್ನು ಸಂಪರ್ಕಿಸಿ.';
 
   @override
   String get disclaimerEmergency =>
-      'ಇದು ವೈದ್ಯಕೀಯ ತುರ್ತುಸ್ಥಿತಿಯಂತೆ ತೋರುತ್ತದೆ...';
+      'ಇದು ವೈದ್ಯಕೀಯ ತುರ್ತು ಪರಿಸ್ಥಿತಿಯಂತೆ ಕಾಣುತ್ತದೆ. ದಯವಿಟ್ಟು ತಕ್ಷಣ ನಿಮ್ಮ ಸ್ಥಳೀಯ ತುರ್ತು ಸೇವೆಗೆ (112 ಅಥವಾ 911 ಮುಂತಾದ) ಕರೆ ಮಾಡಿ ಅಥವಾ ಹತ್ತಿರದ ತುರ್ತು ಚಿಕಿತ್ಸಾ ವಿಭಾಗಕ್ಕೆ ಹೋಗಿ.';
 
   @override
   String get disclaimerNoFindings =>
       'ಯಾವುದೇ ಪ್ರಮುಖ ಆವಿಷ್ಕಾರಗಳನ್ನು ಗುರುತಿಸಲಾಗಿಲ್ಲ.';
+
+  @override
+  String get healthProgress => 'ಆರೋಗ್ಯ ಪ್ರಗತಿ';
+
+  @override
+  String get noHealthProgressYet => 'ಇನ್ನೂ ಆರೋಗ್ಯ ಪ್ರಗತಿ ಇಲ್ಲ';
+
+  @override
+  String get uploadToTrackProgress =>
+      'ನಿಮ್ಮ ಆರೋಗ್ಯ ಪ್ರಗತಿಯನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ವೈದ್ಯಕೀಯ ವರದಿಯನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.';
+
+  @override
+  String get latestReportAnalyzed => 'ಇತ್ತೀಚಿನ ವರದಿಯನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗಿದೆ';
+
+  @override
+  String get historicalTrendPending =>
+      'ಹೋಲಿಸಬಹುದಾದ ಇನ್ನಷ್ಟು ವರದಿಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿದಾಗ ಹಿಂದಿನ ಪ್ರವೃತ್ತಿಯ ಟ್ರ್ಯಾಕಿಂಗ್ ಲಭ್ಯವಾಗುತ್ತದೆ.';
+
+  @override
+  String get uploadAnotherReport => 'ಮತ್ತೊಂದು ವರದಿಯನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ';
+
+  @override
+  String get trendStable => 'ಸ್ಥಿರ';
+
+  @override
+  String get trendIncreased => 'ಹಿಂದಿನ ವರದಿಗಿಂತ ಹೆಚ್ಚಾಗಿದೆ';
+
+  @override
+  String get trendDecreased => 'ಹಿಂದಿನ ವರದಿಗಿಂತ ಕಡಿಮೆಯಾಗಿದೆ';
+
+  @override
+  String reportsComparedCount(int count) {
+    return 'ಹೋಲಿಸಿದ ವರದಿಗಳು: $count';
+  }
+
+  @override
+  String get previous => 'ಹಿಂದಿನ';
+
+  @override
+  String get current => 'ಪ್ರಸ್ತುತ';
+
+  @override
+  String get todaysMedicine => 'ಇಂದಿನ ಔಷಧಿ';
+
+  @override
+  String get addMedicine => 'ಔಷಧಿ ಸೇರಿಸಿ';
+
+  @override
+  String get noMedicinesYet => 'ಇನ್ನೂ ಔಷಧಿಗಳನ್ನು ಸೇರಿಸಿಲ್ಲ';
+
+  @override
+  String get addMedicationHint =>
+      'ಔಷಧಿಯನ್ನು ಸೇರಿಸಿ ಅಥವಾ ಔಷಧಿ ಮಾಹಿತಿ ಇರುವ ವರದಿಯನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.';
+
+  @override
+  String get medicationsFromLatestReport => 'ಇತ್ತೀಚಿನ ವರದಿಯ ಔಷಧಿಗಳು';
+
+  @override
+  String get reportedBadge => 'ವರದಿಯಲ್ಲಿದೆ';
+
+  @override
+  String get medicationLabel => 'ಔಷಧಿ';
+
+  @override
+  String get timingNotSpecified => 'ಸಮಯ: ನಿರ್ದಿಷ್ಟಪಡಿಸಿಲ್ಲ';
+
+  @override
+  String get confirmToSchedule => 'ವೇಳಾಪಟ್ಟಿಗೆ ದೃಢೀಕರಿಸಿ';
+
+  @override
+  String get myConfirmedSchedule => 'ನಾನು ದೃಢೀಕರಿಸಿದ ವೇಳಾಪಟ್ಟಿ';
+
+  @override
+  String get darkModeEnabled => 'ಡಾರ್ಕ್ ಮೋಡ್ ಆನ್ ಆಗಿದೆ';
+
+  @override
+  String get lightModeEnabled => 'ಲೈಟ್ ಮೋಡ್ ಆನ್ ಆಗಿದೆ';
+
+  @override
+  String get goodMorning => 'ಶುಭೋದಯ ☀️';
+
+  @override
+  String get goodAfternoon => 'ಶುಭ ಮಧ್ಯಾಹ್ನ 🌤️';
+
+  @override
+  String get goodEvening => 'ಶುಭ ಸಂಜೆ 🌙';
+
+  @override
+  String get switchToLightMode => 'ಲೈಟ್ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ';
+
+  @override
+  String get switchToDarkMode => 'ಡಾರ್ಕ್ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ';
+
+  @override
+  String get disableNotifications => 'ಅಧಿಸೂಚನೆಗಳನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಿ';
+
+  @override
+  String get enableNotifications => 'ಅಧಿಸೂಚನೆಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಿ';
+
+  @override
+  String get noLabDataYet => 'ಇನ್ನೂ ಲ್ಯಾಬ್ ಡೇಟಾ ಇಲ್ಲ';
+
+  @override
+  String get scoreLookingGood => 'ಚೆನ್ನಾಗಿದೆ';
+
+  @override
+  String get scoreAttentionNeeded => 'ಸ್ವಲ್ಪ ಗಮನ ಬೇಕು';
+
+  @override
+  String get scoreConsultDoctor => 'ನಿಮ್ಮ ವೈದ್ಯರನ್ನು ಸಂಪರ್ಕಿಸಿ';
+
+  @override
+  String get healthScore => 'ಆರೋಗ್ಯ ಸ್ಕೋರ್';
+
+  @override
+  String abnormalOfTotal(int abnormalCount, int totalLabValues) {
+    return '$abnormalCount ಅಸಾಮಾನ್ಯ / ಒಟ್ಟು $totalLabValues ಮೌಲ್ಯಗಳು';
+  }
+
+  @override
+  String get defaultUserName => 'ಬಳಕೆದಾರ';
+
+  @override
+  String get dashboardLoadError =>
+      'ನಿಮ್ಮ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get tryAgain => 'ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ';
+
+  @override
+  String get noReportsYet => 'ಇನ್ನೂ ವರದಿಗಳಿಲ್ಲ';
+
+  @override
+  String get recentReportsEmptyHint =>
+      'ನಿಮ್ಮ ಇತ್ತೀಚಿನ ವೈದ್ಯಕೀಯ ವರದಿಗಳನ್ನು ಸೇರಿಸಿದ ನಂತರ ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ.';
+
+  @override
+  String get todaysHealthTip => 'ಇಂದಿನ ಆರೋಗ್ಯ ಸಲಹೆ';
+
+  @override
+  String get reportsFilterAll => 'ಎಲ್ಲಾ';
+
+  @override
+  String get uploadFirstReportButton => 'ನಿಮ್ಮ ಮೊದಲ ವರದಿಯನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ';
+
+  @override
+  String get startingReportAnalysis => 'ವರದಿ ವಿಶ್ಲೇಷಣೆ ಪ್ರಾರಂಭವಾಗುತ್ತಿದೆ...';
+
+  @override
+  String analysisRequestFailed(String error) {
+    return 'ವಿಶ್ಲೇಷಣೆ ವಿನಂತಿ ವಿಫಲವಾಗಿದೆ: $error';
+  }
+
+  @override
+  String unableToDeleteReportWithMessage(String message) {
+    return 'ವರದಿಯನ್ನು ಅಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ: $message';
+  }
+
+  @override
+  String get unableToDeleteReport =>
+      'ವರದಿಯನ್ನು ಅಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get searchReportsHint => 'ವರದಿಗಳನ್ನು ಹುಡುಕಿ...';
+
+  @override
+  String get analyze => 'ವಿಶ್ಲೇಷಿಸಿ';
+
+  @override
+  String get share => 'ಹಂಚಿಕೊಳ್ಳಿ';
+
+  @override
+  String get sharingReportDetails => 'ವರದಿಯ ವಿವರಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಲಾಗುತ್ತಿದೆ...';
+
+  @override
+  String shareReportText(
+      String title, String hospital, String date, String kind) {
+    return 'MedNarrate ವೈದ್ಯಕೀಯ ವರದಿ: $title\nಆಸ್ಪತ್ರೆ: $hospital\nದಿನಾಂಕ: $date\nವಿಧ: $kind';
+  }
+
+  @override
+  String get uploadCardHint =>
+      'ವಿಶ್ಲೇಷಣೆಗಾಗಿ ಹೊಸ ವೈದ್ಯಕೀಯ ವರದಿಯನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಲು ಇಲ್ಲಿ ಟ್ಯಾಪ್ ಮಾಡಿ';
+
+  @override
+  String get biometricMobileOnly =>
+      'ಬಯೋಮೆಟ್ರಿಕ್ ಆ್ಯಪ್ ಲಾಕ್ ಮೊಬೈಲ್ ಆ್ಯಪ್‌ನಲ್ಲಿ (Android / iOS) ಲಭ್ಯವಿದೆ';
+
+  @override
+  String get biometricProtected => 'ಸಾಧನದ ಬಯೋಮೆಟ್ರಿಕ್ ದೃಢೀಕರಣದಿಂದ ರಕ್ಷಿಸಲಾಗಿದೆ';
+
+  @override
+  String get biometricUseFingerprint =>
+      'ಅಪ್ಲಿಕೇಶನ್ ರಕ್ಷಿಸಲು ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಅಥವಾ Face ID ಬಳಸಿ';
+
+  @override
+  String get biometricSetUpFirst =>
+      'ಮೊದಲು ಸಾಧನದ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಅಥವಾ Face ID ಹೊಂದಿಸಿ';
+
+  @override
+  String get biometricNotAvailable =>
+      'ಈ ಸಾಧನದಲ್ಲಿ ಬಯೋಮೆಟ್ರಿಕ್ ದೃಢೀಕರಣ ಲಭ್ಯವಿಲ್ಲ';
+
+  @override
+  String get biometricNotAvailableMsg =>
+      'ಈ ಸಾಧನದಲ್ಲಿ ಬಯೋಮೆಟ್ರಿಕ್ ದೃಢೀಕರಣ ಲಭ್ಯವಿಲ್ಲ.';
+
+  @override
+  String get biometricSetUpFirstMsg =>
+      'ದಯವಿಟ್ಟು ಮೊದಲು ನಿಮ್ಮ ಸಾಧನದ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಅಥವಾ Face ID ಹೊಂದಿಸಿ.';
+
+  @override
+  String get biometricEnabledOk =>
+      'ಬಯೋಮೆಟ್ರಿಕ್ ಆ್ಯಪ್ ಲಾಕ್ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ರಿಯಗೊಂಡಿದೆ.';
+
+  @override
+  String get biometricDisabledOk => 'ಬಯೋಮೆಟ್ರಿಕ್ ಆ್ಯಪ್ ಲಾಕ್ ನಿಷ್ಕ್ರಿಯಗೊಂಡಿದೆ.';
+
+  @override
+  String get authCancelled => 'ದೃಢೀಕರಣ ರದ್ದುಗೊಂಡಿದೆ.';
+
+  @override
+  String get biometricFailedRetry =>
+      'ಬಯೋಮೆಟ್ರಿಕ್ ದೃಢೀಕರಣ ವಿಫಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get biometricManageNeedsDevice =>
+      'ಬಯೋಮೆಟ್ರಿಕ್ ನಿರ್ವಹಣೆಗೆ ನಿಜವಾದ Android ಅಥವಾ iOS ಮೊಬೈಲ್ ಸಾಧನ ಬೇಕು.';
+
+  @override
+  String get biometricChangeCancelled => 'ಬಯೋಮೆಟ್ರಿಕ್ ಬದಲಾವಣೆ ರದ್ದುಗೊಂಡಿದೆ.';
+
+  @override
+  String get biometricAuthFailedUnchanged =>
+      'ದೃಢೀಕರಣ ವಿಫಲವಾಗಿದೆ. ನಿಮ್ಮ ಬಯೋಮೆಟ್ರಿಕ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಬದಲಾಯಿಸಲಾಗಿಲ್ಲ.';
+
+  @override
+  String get biometricWebNotSupported =>
+      'ಬಯೋಮೆಟ್ರಿಕ್ ಆ್ಯಪ್ ಲಾಕ್‌ಗೆ ನಿಜವಾದ Android ಅಥವಾ iOS ಮೊಬೈಲ್ ಸಾಧನ ಬೇಕು. ಇದು ವೆಬ್ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಲಭ್ಯವಿಲ್ಲ.';
+
+  @override
+  String get changeDeviceBiometrics => 'ಸಾಧನದ ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ಬದಲಿಸಿ';
+
+  @override
+  String get biometricVerifiedBody =>
+      'ಪ್ರಸ್ತುತ ಬಯೋಮೆಟ್ರಿಕ್ ಯಶಸ್ವಿಯಾಗಿ ಪರಿಶೀಲಿಸಲಾಗಿದೆ!\n\nಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಅಥವಾ Face ID ಸೇರಿಸಲು ಅಥವಾ ನವೀಕರಿಸಲು, ನಿಮ್ಮ ಮೊಬೈಲ್ ಸಾಧನದ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ನಿರ್ವಹಿಸಿ:';
+
+  @override
+  String get openDeviceSecuritySettings =>
+      'ಸಾಧನದ ಭದ್ರತಾ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ';
+
+  @override
+  String get done => 'ಮುಗಿದಿದೆ';
+
+  @override
+  String get close => 'ಮುಚ್ಚಿ';
+
+  @override
+  String get notificationsAllowInSettings =>
+      'ಔಷಧಿ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಪಡೆಯಲು ನಿಮ್ಮ ಫೋನ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಅಧಿಸೂಚನೆಗಳನ್ನು ಅನುಮತಿಸಿ.';
+
+  @override
+  String get themeSystemDefault => 'ಸಿಸ್ಟಮ್ ಡೀಫಾಲ್ಟ್';
+
+  @override
+  String get soundCrystalChime => 'ಕ್ರಿಸ್ಟಲ್ ಚೈಮ್';
+
+  @override
+  String get soundWarmChord => 'ವಾರ್ಮ್ ಕಾರ್ಡ್';
+
+  @override
+  String get soundNatureDrop => 'ನೇಚರ್ ಡ್ರಾಪ್';
+
+  @override
+  String get archiveCouldNotSave =>
+      'ಆರ್ಕೈವ್ ಉಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get archiveShareSubject => 'ನಿಮ್ಮ MedNarrate ಖಾತೆ ಆರ್ಕೈವ್';
+
+  @override
+  String get deleteAccountTitle => 'ಖಾತೆ ಮತ್ತು ವೈದ್ಯಕೀಯ ಡೇಟಾವನ್ನು ಅಳಿಸಬೇಕೇ?';
+
+  @override
+  String get deleteAccountBody =>
+      'ಇದು ನಿಮ್ಮ ವರದಿಗಳು, ವೈದ್ಯಕೀಯ ಪ್ರೊಫೈಲ್, ಜ್ಞಾಪನೆಗಳು ಮತ್ತು ಚಾಟ್ ಇತಿಹಾಸವನ್ನು ಶಾಶ್ವತವಾಗಿ ತೆಗೆದುಹಾಕುತ್ತದೆ. ಅಗತ್ಯವಿದ್ದರೆ ಮೊದಲು ನಿಮ್ಮ ಡೇಟಾವನ್ನು ರಫ್ತು ಮಾಡಿ. ದೃಢೀಕರಿಸಲು ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.';
+
+  @override
+  String get deleteAccount => 'ಖಾತೆ ಅಳಿಸಿ';
+
+  @override
+  String get passwordRequiredForDeletion =>
+      'ಅಳಿಸುವಿಕೆಯನ್ನು ದೃಢೀಕರಿಸಲು ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.';
+
+  @override
+  String get deleteAccountFailed =>
+      'ಖಾತೆಯನ್ನು ಅಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get copyrightNotice =>
+      '© 2026 MedNarrate\nಎಲ್ಲಾ ಹಕ್ಕುಗಳನ್ನು ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.';
+
+  @override
+  String get viewLicenses => 'ಪರವಾನಗಿಗಳನ್ನು ವೀಕ್ಷಿಸಿ';
+
+  @override
+  String get updateBasicProfile => 'ನಿಮ್ಮ ಮೂಲ ಪ್ರೊಫೈಲ್ ವಿವರಗಳನ್ನು ನವೀಕರಿಸಿ';
+
+  @override
+  String get biometricAppLock => 'ಬಯೋಮೆಟ್ರಿಕ್ ಆ್ಯಪ್ ಲಾಕ್';
+
+  @override
+  String get biometricMobileOnlyDot =>
+      'ಬಯೋಮೆಟ್ರಿಕ್ ಆ್ಯಪ್ ಲಾಕ್ ಮೊಬೈಲ್ ಸಾಧನದಲ್ಲಿ (Android / iOS) ಚಲಾಯಿಸಿದಾಗ ಲಭ್ಯವಿದೆ.';
+
+  @override
+  String get changeBiometric => 'ಬಯೋಮೆಟ್ರಿಕ್ ಬದಲಿಸಿ';
+
+  @override
+  String get reverifyBiometric =>
+      'ಮರುಪರಿಶೀಲಿಸಿ ಮತ್ತು ಸಾಧನದ ಬಯೋಮೆಟ್ರಿಕ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ನಿರ್ವಹಿಸಿ';
+
+  @override
+  String get saveArchive => 'ನಿಮ್ಮ ವೈದ್ಯಕೀಯ ಡೇಟಾದ ಆರ್ಕೈವ್ ಉಳಿಸಿ';
+
+  @override
+  String get deleteAccountSubtitle =>
+      'ನಿಮ್ಮ ಖಾತೆ ಮತ್ತು ವೈದ್ಯಕೀಯ ಡೇಟಾವನ್ನು ಶಾಶ್ವತವಾಗಿ ತೆಗೆದುಹಾಕಿ';
+
+  @override
+  String get appPreferencesSection => 'ಅಪ್ಲಿಕೇಶನ್ ಆದ್ಯತೆಗಳು';
+
+  @override
+  String get theme => 'ಥೀಮ್';
+
+  @override
+  String get themeDark => 'ಡಾರ್ಕ್ ಮೋಡ್';
+
+  @override
+  String get professionalModeHint =>
+      'ರೋಗಿಗೆ ಸರಳವಾದ ಸಾರಾಂಶಗಳ ಬದಲು ಕ್ಲಿನಿಕಲ್ ಸಾರಾಂಶಗಳನ್ನು ತೋರಿಸಿ';
+
+  @override
+  String get metricUnitsShort => 'ಮೆಟ್ರಿಕ್ (kg, cm, °C)';
+
+  @override
+  String get imperialUnitsShort => 'ಇಂಪೀರಿಯಲ್ (lbs, in, °F)';
+
+  @override
+  String get pushNotifications => 'ಪುಶ್ ಅಧಿಸೂಚನೆಗಳು';
+
+  @override
+  String get soonBadge => 'ಶೀಘ್ರದಲ್ಲೇ';
+
+  @override
+  String get healthAppSyncDesc =>
+      'ನಿಮ್ಮ ವೈಟಲ್ಸ್ ಮತ್ತು ಚಟುವಟಿಕೆಯ ಡೇಟಾವನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಪಡೆಯಲು Apple Health ಮತ್ತು Google Fit ಜೊತೆ ಸಿಂಕ್ ಮಾಡಿ.';
+
+  @override
+  String get connectedDevicesDesc =>
+      'ರೀಡಿಂಗ್‌ಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ನಿಮ್ಮ ವೇರಬಲ್‌ಗಳು, ಗ್ಲುಕೋಮೀಟರ್‌ಗಳು ಮತ್ತು ರಕ್ತದೊತ್ತಡ ಮಾನಿಟರ್‌ಗಳನ್ನು ಸಂಪರ್ಕಿಸಿ.';
+
+  @override
+  String get askHelpReport => 'ಸಹಾಯ ಕೇಳಿ ಅಥವಾ ಸಮಸ್ಯೆಯನ್ನು ವರದಿ ಮಾಡಿ';
+
+  @override
+  String get faqUploadQ => 'ವೈದ್ಯಕೀಯ ವರದಿಯನ್ನು ಹೇಗೆ ಅಪ್‌ಲೋಡ್ ಮಾಡುವುದು?';
+
+  @override
+  String get faqUploadA =>
+      'ಹೋಮ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲಿ \"+\" ಬಟನ್ ಒತ್ತಿ ವರದಿಯನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಬಹುದು. ನಾವು PDF ದಾಖಲೆಗಳು ಮತ್ತು ಚಿತ್ರಗಳನ್ನು (JPG/PNG) ಬೆಂಬಲಿಸುತ್ತೇವೆ.';
+
+  @override
+  String get faqSecureQ => 'ನನ್ನ ವೈದ್ಯಕೀಯ ಡೇಟಾ ಸುರಕ್ಷಿತವೇ?';
+
+  @override
+  String get faqSecureA =>
+      'ಹೌದು. MedNarrate ನಿಮ್ಮ ಡೇಟಾವನ್ನು ರವಾನೆಯ ಸಮಯದಲ್ಲಿ ಮತ್ತು ಸಂಗ್ರಹದಲ್ಲಿರುವಾಗ ಎರಡೂ ಸಂದರ್ಭಗಳಲ್ಲಿ ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡುತ್ತದೆ. ನಿಮ್ಮ ಸಾಧನದಲ್ಲಿ ವೈದ್ಯಕೀಯ ಇತಿಹಾಸವನ್ನು ರಕ್ಷಿಸಲು ಬಯೋಮೆಟ್ರಿಕ್ ಆ್ಯಪ್ ಲಾಕ್ ಕೂಡ ಒದಗಿಸುತ್ತೇವೆ.';
+
+  @override
+  String get faqAiQ => 'AI ವಿಶ್ಲೇಷಣೆ ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ?';
+
+  @override
+  String get faqAiA =>
+      'MedNarrate ಸುಧಾರಿತ ಕ್ಲಿನಿಕಲ್ AI ಮಾದರಿಗಳನ್ನು ಬಳಸಿ ಸಂಕೀರ್ಣ ವೈದ್ಯಕೀಯ ಪದಗಳನ್ನು ಹೊರತೆಗೆದು, ಸಂಕ್ಷೇಪಿಸಿ, ರೋಗಿಗೆ ಸುಲಭವಾದ ರೂಪದಲ್ಲಿ ವಿವರಿಸುತ್ತದೆ.';
+
+  @override
+  String get faqShareQ => 'ನನ್ನ ವರದಿಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಬಹುದೇ?';
+
+  @override
+  String get faqShareA =>
+      'ಹೌದು, ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಪರದೆಯಿಂದ ನಿಮ್ಮ ಡೇಟಾವನ್ನು ರಫ್ತು ಮಾಡಬಹುದು ಅಥವಾ ವರದಿ ವಿವರಗಳ ಪರದೆಯ ಹಂಚಿಕೆ ಬಟನ್ ಬಳಸಿ ಪ್ರತ್ಯೇಕ ವರದಿಗಳನ್ನು ನೇರವಾಗಿ ಹಂಚಿಕೊಳ್ಳಬಹುದು.';
+
+  @override
+  String get rolePatient => 'ರೋಗಿ';
+
+  @override
+  String get roleDoctor => 'ವೈದ್ಯ';
+
+  @override
+  String get relDaughter => 'ಮಗಳು';
+
+  @override
+  String get relSon => 'ಮಗ';
+
+  @override
+  String get relSpouse => 'ಸಂಗಾತಿ';
+
+  @override
+  String get relParent => 'ಪೋಷಕರು';
+
+  @override
+  String get relGuardian => 'ಪಾಲಕರು';
+
+  @override
+  String get relSibling => 'ಒಡಹುಟ್ಟಿದವರು';
+
+  @override
+  String get relRelative => 'ಸಂಬಂಧಿ';
+
+  @override
+  String get relProfessionalCaregiver => 'ವೃತ್ತಿಪರ ಆರೈಕೆದಾರ';
+
+  @override
+  String get couldNotSwitchProfile =>
+      'ಪ್ರೊಫೈಲ್ ಬದಲಾಯಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get fullNameRequired => 'ಪೂರ್ಣ ಹೆಸರು ಅಗತ್ಯ.';
+
+  @override
+  String get fullNameInvalidLetters => 'ಪೂರ್ಣ ಹೆಸರಿನಲ್ಲಿ ಮಾನ್ಯ ಅಕ್ಷರಗಳಿರಬೇಕು.';
+
+  @override
+  String get nameLettersSpacesOnly =>
+      'ಹೆಸರಿನಲ್ಲಿ ಅಕ್ಷರಗಳು ಮತ್ತು ಖಾಲಿ ಜಾಗಗಳು ಮಾತ್ರ ಇರಬಹುದು.';
+
+  @override
+  String get dobInvalidFormat =>
+      'ಅಮಾನ್ಯ ಸ್ವರೂಪ. YYYY-MM-DD ಬಳಸಿ (ಉದಾ. 2006-05-20)';
+
+  @override
+  String get dobYearMin => 'ವರ್ಷ 1900 ಅಥವಾ ನಂತರದ್ದಾಗಿರಬೇಕು';
+
+  @override
+  String dobInvalidMonth(int month) {
+    return 'ಅಮಾನ್ಯ ತಿಂಗಳು ($month). 01 ರಿಂದ 12 ರ ನಡುವೆ ಇರಬೇಕು';
+  }
+
+  @override
+  String dobFebLeap(int year) {
+    return 'ಫೆಬ್ರವರಿ $year (ಅಧಿಕ ವರ್ಷ) ರಲ್ಲಿ 29 ದಿನಗಳು ಮಾತ್ರ ಇರುತ್ತವೆ';
+  }
+
+  @override
+  String dobFebDays(int year) {
+    return 'ಫೆಬ್ರವರಿ $year ರಲ್ಲಿ 28 ದಿನಗಳು ಮಾತ್ರ ಇರುತ್ತವೆ';
+  }
+
+  @override
+  String dobMonthDays(int month, int maxDays) {
+    return 'ತಿಂಗಳು $month ರಲ್ಲಿ $maxDays ದಿನಗಳು ಮಾತ್ರ ಇರುತ್ತವೆ';
+  }
+
+  @override
+  String get dobFuture => 'ಜನ್ಮ ದಿನಾಂಕ ಭವಿಷ್ಯದಲ್ಲಿ ಇರಬಾರದು';
+
+  @override
+  String get doctorPersonalDetails => 'ವೈದ್ಯರ ವೈಯಕ್ತಿಕ ವಿವರಗಳು';
+
+  @override
+  String get doctorFullNameReq => 'ವೈದ್ಯರ ಪೂರ್ಣ ಹೆಸರು *';
+
+  @override
+  String get professionalInformation => 'ವೃತ್ತಿಪರ ಮಾಹಿತಿ';
+
+  @override
+  String get medicalSpecialtyReq => 'ವೈದ್ಯಕೀಯ ವಿಶೇಷತೆ *';
+
+  @override
+  String get qualificationsLabel => 'ಅರ್ಹತೆಗಳು (ಉದಾ. MBBS, MD) *';
+
+  @override
+  String get licenseLabel => 'ವೈದ್ಯಕೀಯ ಪರವಾನಗಿ / ನೋಂದಣಿ ಸಂಖ್ಯೆ *';
+
+  @override
+  String get yearsExperienceLabel => 'ಅನುಭವದ ವರ್ಷಗಳು *';
+
+  @override
+  String get hospitalOrgLabel => 'ಆಸ್ಪತ್ರೆ / ಕ್ಲಿನಿಕ್ / ಸಂಸ್ಥೆ';
+
+  @override
+  String get professionalAddressLabel => 'ವೃತ್ತಿಪರ ವಿಳಾಸ';
+
+  @override
+  String get specialtyRequired => 'ವೈದ್ಯಕೀಯ ವಿಶೇಷತೆ ಅಗತ್ಯ.';
+
+  @override
+  String get qualificationsRequired => 'ಅರ್ಹತೆಗಳು ಅಗತ್ಯ.';
+
+  @override
+  String get licenseRequired => 'ವೈದ್ಯಕೀಯ ಪರವಾನಗಿ / ನೋಂದಣಿ ಸಂಖ್ಯೆ ಅಗತ್ಯ.';
+
+  @override
+  String get yearsExperienceInvalid =>
+      'ದಯವಿಟ್ಟು ಸರಿಯಾದ ಅನುಭವದ ವರ್ಷಗಳನ್ನು ನಮೂದಿಸಿ (0 - 70).';
+
+  @override
+  String get caregiverPersonalDetails => 'ಆರೈಕೆದಾರರ ವೈಯಕ್ತಿಕ ವಿವರಗಳು';
+
+  @override
+  String get caregiverFullNameReq => 'ಆರೈಕೆದಾರರ ಪೂರ್ಣ ಹೆಸರು *';
+
+  @override
+  String get caregiverInformation => 'ಆರೈಕೆದಾರರ ಮಾಹಿತಿ';
+
+  @override
+  String get relationshipToPatientReq => 'ರೋಗಿಯೊಂದಿಗಿನ ಸಂಬಂಧ *';
+
+  @override
+  String get caregivingRoleLabel => 'ಆರೈಕೆಯ ಪಾತ್ರ (ಉದಾ. ಮುಖ್ಯ ಆರೈಕೆದಾರ)';
+
+  @override
+  String get supportedPatientNameOpt => 'ಬೆಂಬಲಿತ ರೋಗಿಯ ಹೆಸರು (ಐಚ್ಛಿಕ)';
+
+  @override
+  String get employerOrgOpt => 'ಉದ್ಯೋಗದಾತ / ಸಂಸ್ಥೆ (ಐಚ್ಛಿಕ)';
+
+  @override
+  String get relationshipRequired => 'ರೋಗಿಯೊಂದಿಗಿನ ಸಂಬಂಧ ಅಗತ್ಯ.';
+
+  @override
+  String get doctorAccount => 'ವೈದ್ಯರ ಖಾತೆ';
+
+  @override
+  String get caregiverAccount => 'ಆರೈಕೆದಾರರ ಖಾತೆ';
+
+  @override
+  String get viewEditProfessionalDetails =>
+      'ನಿಮ್ಮ ವೃತ್ತಿಪರ/ವೈಯಕ್ತಿಕ ವಿವರಗಳನ್ನು ವೀಕ್ಷಿಸಿ ಮತ್ತು ಸಂಪಾದಿಸಿ';
+
+  @override
+  String get professionalInfoSubtitle =>
+      'ವಿಶೇಷತೆ, ಅರ್ಹತೆಗಳು ಮತ್ತು ನೋಂದಣಿ ವಿವರಗಳು';
+
+  @override
+  String get caregiverInfoSubtitle => 'ಆರೈಕೆಯ ಪಾತ್ರ ಮತ್ತು ಬೆಂಬಲಿತ ರೋಗಿಯ ಮಾಹಿತಿ';
+
+  @override
+  String get noProfessionalInfo =>
+      'ಇನ್ನೂ ವೃತ್ತಿಪರ ಮಾಹಿತಿ ಸೇರಿಸಿಲ್ಲ. ನಿಮ್ಮ ವೈದ್ಯರ ಪ್ರೊಫೈಲ್ ಪೂರ್ಣಗೊಳಿಸಲು ವೃತ್ತಿಪರ ಮಾಹಿತಿ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ.';
+
+  @override
+  String get doctorProfileSummary => 'ವೈದ್ಯರ ಪ್ರೊಫೈಲ್ ಸಾರಾಂಶ';
+
+  @override
+  String specialtyLine(String value) {
+    return 'ವಿಶೇಷತೆ: $value';
+  }
+
+  @override
+  String qualificationsLine(String value) {
+    return 'ಅರ್ಹತೆಗಳು: $value';
+  }
+
+  @override
+  String registrationLine(String value) {
+    return 'ನೋಂದಣಿ ಸಂಖ್ಯೆ: $value';
+  }
+
+  @override
+  String experienceLine(String years) {
+    return 'ಅನುಭವ: $years ವರ್ಷಗಳು';
+  }
+
+  @override
+  String hospitalLine(String value) {
+    return 'ಆಸ್ಪತ್ರೆ: $value';
+  }
+
+  @override
+  String get noCaregiverInfo =>
+      'ಇನ್ನೂ ಆರೈಕೆದಾರರ ಮಾಹಿತಿ ಸೇರಿಸಿಲ್ಲ. ನಿಮ್ಮ ಪ್ರೊಫೈಲ್ ಪೂರ್ಣಗೊಳಿಸಲು ಆರೈಕೆದಾರರ ಮಾಹಿತಿ ಮೇಲೆ ಟ್ಯಾಪ್ ಮಾಡಿ.';
+
+  @override
+  String get caregiverProfileSummary => 'ಆರೈಕೆದಾರರ ಪ್ರೊಫೈಲ್ ಸಾರಾಂಶ';
+
+  @override
+  String relationshipLine(String value) {
+    return 'ರೋಗಿಯೊಂದಿಗಿನ ಸಂಬಂಧ: $value';
+  }
+
+  @override
+  String caregivingRoleLine(String value) {
+    return 'ಆರೈಕೆಯ ಪಾತ್ರ: $value';
+  }
+
+  @override
+  String supportingPatientLine(String value) {
+    return 'ಬೆಂಬಲಿಸುವ ರೋಗಿ: $value';
+  }
+
+  @override
+  String organizationLine(String value) {
+    return 'ಸಂಸ್ಥೆ: $value';
+  }
+
+  @override
+  String get invalidBloodGroup =>
+      'ಅಮಾನ್ಯ ರಕ್ತದ ಗುಂಪು. ಮಾನ್ಯ ಆಯ್ಕೆಗಳು: A+, A-, B+, B-, AB+, AB-, O+, O-';
+
+  @override
+  String fieldOnlySpecialChars(String fieldName) {
+    return '$fieldName ನಲ್ಲಿ ವಿಶೇಷ ಚಿಹ್ನೆಗಳು ಮಾತ್ರ ಇರಬಾರದು.';
+  }
+
+  @override
+  String fieldNotProvided(String field) {
+    return '$field ಒದಗಿಸಲಾಗಿಲ್ಲ.';
+  }
+
+  @override
+  String get medicalInfoIncomplete =>
+      'ಕೆಲವು ವೈದ್ಯಕೀಯ ಮಾಹಿತಿ ಅಪೂರ್ಣವಾಗಿದೆ. ನೀವು ಇದನ್ನು ನಂತರ ನವೀಕರಿಸಬಹುದು.';
+
+  @override
+  String get medicalInfoSaved => 'ವೈದ್ಯಕೀಯ ಮಾಹಿತಿ ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ.';
+
+  @override
+  String get medicalInfoSaveFailed => 'ವೈದ್ಯಕೀಯ ಮಾಹಿತಿಯನ್ನು ಉಳಿಸಲು ವಿಫಲವಾಗಿದೆ';
+
+  @override
+  String get emergencyNameRequired =>
+      'ದಯವಿಟ್ಟು ತುರ್ತು ಸಂಪರ್ಕದ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.';
+
+  @override
+  String get emergencyNameInvalid => 'ಅಕ್ಷರಗಳಿರುವ ಮಾನ್ಯ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.';
+
+  @override
+  String get invalidIndianMobile =>
+      'ದಯವಿಟ್ಟು 10 ಅಂಕಿಯ ಮಾನ್ಯ ಭಾರತೀಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ.';
+
+  @override
+  String get emergencyContactSaved => 'ತುರ್ತು ಸಂಪರ್ಕ ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ.';
+
+  @override
+  String get emergencyContactSaveFailed =>
+      'ತುರ್ತು ಸಂಪರ್ಕವನ್ನು ಉಳಿಸಲು ವಿಫಲವಾಗಿದೆ.';
+
+  @override
+  String get enterEmailAddress => 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಮೇಲ್ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ.';
+
+  @override
+  String get fillAllFields => 'ದಯವಿಟ್ಟು ಎಲ್ಲಾ ಕ್ಷೇತ್ರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.';
+
+  @override
+  String get passwordRules =>
+      'ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ 8 ಅಕ್ಷರಗಳಿರಬೇಕು ಮತ್ತು ಒಂದು ದೊಡ್ಡ ಅಕ್ಷರ, ಒಂದು ಚಿಕ್ಕ ಅಕ್ಷರ, ಒಂದು ಸಂಖ್ಯೆ ಮತ್ತು ಒಂದು ವಿಶೇಷ ಚಿಹ್ನೆ ಇರಬೇಕು.';
+
+  @override
+  String get passwordResetSuccess =>
+      'ಪಾಸ್‌ವರ್ಡ್ ಯಶಸ್ವಿಯಾಗಿ ಮರುಹೊಂದಿಸಲಾಗಿದೆ! ದಯವಿಟ್ಟು ಲಾಗಿನ್ ಮಾಡಿ.';
+
+  @override
+  String get setNewPassword => 'ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ ಹೊಂದಿಸಿ';
+
+  @override
+  String get enterResetTokenAndPassword =>
+      'ಕೆಳಗೆ ರೀಸೆಟ್ ಟೋಕನ್ ಮತ್ತು ನಿಮ್ಮ ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ.';
+
+  @override
+  String get enterEmailForResetCode =>
+      'ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ, ನಾವು ನಿಮಗೆ ರೀಸೆಟ್ ಕೋಡ್ ಅನ್ನು ಇಮೇಲ್ ಮಾಡುತ್ತೇವೆ.';
+
+  @override
+  String get resetToken => 'ರೀಸೆಟ್ ಟೋಕನ್';
+
+  @override
+  String get newPassword => 'ಹೊಸ ಪಾಸ್‌ವರ್ಡ್';
+
+  @override
+  String get passwordsDoNotMatch => 'ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ';
+
+  @override
+  String get confirmYourPassword => 'ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ';
+
+  @override
+  String get passwordIsRequired => 'ಪಾಸ್‌ವರ್ಡ್ ಅಗತ್ಯ';
+
+  @override
+  String get medicalDisclaimerShort =>
+      'MedNarrate ವರದಿಗಳನ್ನು ವಿವರಿಸುತ್ತದೆ, ಆದರೆ ರೋಗನಿರ್ಣಯ ಮಾಡುವುದಿಲ್ಲ ಮತ್ತು ವೈದ್ಯರಿಗೆ ಪರ್ಯಾಯವಲ್ಲ.';
+
+  @override
+  String get emailRequired => 'ಇಮೇಲ್ ಅಗತ್ಯ';
+
+  @override
+  String get emailInvalid => 'ಮಾನ್ಯ ಇಮೇಲ್ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ';
+
+  @override
+  String get passwordMin8 => 'ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ 8 ಅಕ್ಷರಗಳಿರಬೇಕು';
+
+  @override
+  String get passwordNeedsLetter => 'ಪಾಸ್‌ವರ್ಡ್‌ನಲ್ಲಿ ಒಂದು ಅಕ್ಷರ ಇರಬೇಕು';
+
+  @override
+  String get passwordNeedsDigit => 'ಪಾಸ್‌ವರ್ಡ್‌ನಲ್ಲಿ ಒಂದು ಅಂಕಿ ಇರಬೇಕು';
+
+  @override
+  String get thisField => 'ಈ ಕ್ಷೇತ್ರ';
+
+  @override
+  String fieldRequired(String fieldName) {
+    return '$fieldName ಅಗತ್ಯ';
+  }
+
+  @override
+  String get unlockReason => 'MedNarrate ಅನ್‌ಲಾಕ್ ಮಾಡಲು ದೃಢೀಕರಿಸಿ';
+
+  @override
+  String get biometricCancelled => 'ಬಯೋಮೆಟ್ರಿಕ್ ದೃಢೀಕರಣ ರದ್ದುಗೊಂಡಿದೆ.';
+
+  @override
+  String get biometricBrowserUnsupported =>
+      'ಈ ಬ್ರೌಸರ್ ಬಯೋಮೆಟ್ರಿಕ್ ದೃಢೀಕರಣವನ್ನು ಬೆಂಬಲಿಸುವುದಿಲ್ಲ.';
+
+  @override
+  String get tooManyAttempts30 =>
+      'ಹಲವು ಪ್ರಯತ್ನಗಳು. ದಯವಿಟ್ಟು 30 ಸೆಕೆಂಡುಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String tooManyAttemptsSeconds(int seconds) {
+    return 'ಹಲವು ಪ್ರಯತ್ನಗಳು. ದಯವಿಟ್ಟು $seconds ಸೆಕೆಂಡುಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+  }
+
+  @override
+  String get recordsLocked => 'ನಿಮ್ಮ ದಾಖಲೆಗಳು ಲಾಕ್ ಆಗಿವೆ';
+
+  @override
+  String get authenticateToContinue => 'ಮುಂದುವರಿಸಲು ದೃಢೀಕರಿಸಿ';
+
+  @override
+  String get unlockWithBiometrics => 'ಬಯೋಮೆಟ್ರಿಕ್ಸ್‌ನೊಂದಿಗೆ ಅನ್‌ಲಾಕ್ ಮಾಡಿ';
+
+  @override
+  String get forgotPrompt => 'ಮರೆತಿರಾ? ';
+
+  @override
+  String get startupUnableToConnect => 'ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ';
+
+  @override
+  String get startupSecureSignInUnavailable => 'ಸುರಕ್ಷಿತ ಸೈನ್-ಇನ್ ಲಭ್ಯವಿಲ್ಲ';
+
+  @override
+  String get startupKeychainMessage =>
+      'MedNarrate ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿದ macOS Keychain ಅನ್ನು ಪ್ರವೇಶಿಸಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ. ಆ್ಯಪ್ ಮುಚ್ಚಿ, ಇತ್ತೀಚಿನ ಬಿಲ್ಡ್ ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿ, ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get onbTitle1 => 'ವೈದ್ಯಕೀಯ ವರದಿಗಳನ್ನು\nಅರ್ಥಮಾಡಿಕೊಳ್ಳಿ';
+
+  @override
+  String get onbBody1 =>
+      'ಯಾವುದೇ ವೈದ್ಯಕೀಯ ವರದಿಯನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ; ಪ್ರತಿ ವೈದ್ಯಕೀಯ ಪದವನ್ನು AI ಸರಳ ಭಾಷೆಯಲ್ಲಿ ವಿವರಿಸುತ್ತದೆ.';
+
+  @override
+  String get onbTitle2 => 'AI ಆರೋಗ್ಯ\nಸಹಾಯಕ';
+
+  @override
+  String get onbBody2 =>
+      'ನೀವು ಅಪ್‌ಲೋಡ್ ಮಾಡಿದ ವರದಿಗಳ ಬಗ್ಗೆ ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಿ, ಸ್ಪಷ್ಟ ಮತ್ತು ಸುಲಭವಾಗಿ ಅರ್ಥವಾಗುವ ವಿವರಣೆಗಳನ್ನು ಪಡೆಯಿರಿ.';
+
+  @override
+  String get onbTitle3 => 'ಔಷಧಿ\nಜ್ಞಾಪನೆಗಳು';
+
+  @override
+  String get onbBody3 =>
+      'ನಿಮ್ಮ ಔಷಧಿಗಳನ್ನು ಎಂದಿಗೂ ತಪ್ಪಿಸಿಕೊಳ್ಳಬೇಡಿ. ನಿಮ್ಮ ಪ್ರಿಸ್ಕ್ರಿಪ್ಷನ್‌ಗಳ ಆಧಾರದ ಮೇಲೆ ಬುದ್ಧಿವಂತ ಜ್ಞಾಪನೆಗಳನ್ನು ಪಡೆಯಿರಿ.';
+
+  @override
+  String get onbTitle4 => 'ನಿಮ್ಮ ಆರೋಗ್ಯವನ್ನು\nಟ್ರ್ಯಾಕ್ ಮಾಡಿ';
+
+  @override
+  String get onbBody4 =>
+      'ಆರೋಗ್ಯದ ಪ್ರವೃತ್ತಿಗಳನ್ನು ಗಮನಿಸಿ, ವರದಿಗಳನ್ನು ಹೋಲಿಸಿ ಮತ್ತು ಕಾಲಾನಂತರ ನಿಮ್ಮ ಪ್ರಗತಿಯನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಿ.';
+
+  @override
+  String get skip => 'ಬಿಟ್ಟುಬಿಡಿ';
+
+  @override
+  String get getStarted => 'ಪ್ರಾರಂಭಿಸಿ';
+
+  @override
+  String get continueLabel => 'ಮುಂದುವರಿಸಿ';
+
+  @override
+  String get appTagline => 'AI ವೈದ್ಯಕೀಯ ವರದಿ ಸಹಾಯಕ';
+
+  @override
+  String get uploadStatusUploadingReport => 'ವರದಿ ಅಪ್‌ಲೋಡ್ ಆಗುತ್ತಿದೆ...';
+
+  @override
+  String get uploadStatusUploadingMedical =>
+      'ವೈದ್ಯಕೀಯ ವರದಿ ಅಪ್‌ಲೋಡ್ ಆಗುತ್ತಿದೆ...';
+
+  @override
+  String get uploadStatusExtracting =>
+      'ಪಠ್ಯವನ್ನು ಹೊರತೆಗೆದು ವರದಿಯನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ...';
+
+  @override
+  String get uploadStatusReconnecting =>
+      'ಇನ್ನೂ ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿದೆ. ನಿಮ್ಮ ವರದಿಯನ್ನು ಪರಿಶೀಲಿಸಲು ಮತ್ತೆ ಸಂಪರ್ಕಿಸಲಾಗುತ್ತಿದೆ...';
+
+  @override
+  String get uploadStatusRetrying =>
+      'AI ವಿಶ್ಲೇಷಣೆಯನ್ನು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತಿದೆ...';
+
+  @override
+  String get fileChooserTypeLabel => 'ವೈದ್ಯಕೀಯ ವರದಿಗಳು';
+
+  @override
+  String get fileChooserConfirm => 'ವರದಿಯನ್ನು ಆಯ್ಕೆಮಾಡಿ';
+
+  @override
+  String get uploadOnlyTypes =>
+      'PDF, JPG, JPEG ಮತ್ತು PNG ಫೈಲ್‌ಗಳನ್ನು ಮಾತ್ರ ಬೆಂಬಲಿಸಲಾಗುತ್ತದೆ.';
+
+  @override
+  String uploadFileTooLarge(String size) {
+    return 'ಫೈಲ್ $size ಗಿಂತ ಚಿಕ್ಕದಾಗಿರಬೇಕು.';
+  }
+
+  @override
+  String get uploadChooserFailed =>
+      'ಫೈಲ್ ಆಯ್ಕೆಕಾರ ತೆರೆಯಲಿಲ್ಲ. ತೆರೆದಿರುವ ಫೈಲ್ ಸಂವಾದವನ್ನು ಮುಚ್ಚಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get uploadFileUnreadable =>
+      'ಆಯ್ಕೆ ಮಾಡಿದ ಫೈಲ್ ಅನ್ನು ಓದಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು Finder ನಿಂದ ಮತ್ತೆ ಆಯ್ಕೆಮಾಡಿ.';
+
+  @override
+  String get uploadErrOcrUnavailable =>
+      'ವರದಿ ಯಶಸ್ವಿಯಾಗಿ ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ, ಆದರೆ ಈ ಸರ್ವರ್‌ನಲ್ಲಿ ಪಠ್ಯ ಗುರುತಿಸುವಿಕೆ ಲಭ್ಯವಿಲ್ಲ.';
+
+  @override
+  String get uploadErrImageUnreadable =>
+      'ಚಿತ್ರ ಯಶಸ್ವಿಯಾಗಿ ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ, ಆದರೆ ಅದರಿಂದ ಓದಬಹುದಾದ ವೈದ್ಯಕೀಯ ಪಠ್ಯವನ್ನು ಹೊರತೆಗೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸ್ಪಷ್ಟವಾದ ಸ್ಕ್ಯಾನ್ ಅಥವಾ ಚಿತ್ರವನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.';
+
+  @override
+  String get uploadErrPdfUnreadable =>
+      'ಈ PDF ದಾಖಲೆಯಿಂದ ಪಠ್ಯವನ್ನು ಹೊರತೆಗೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಫೈಲ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ್ದಾಗಿರಬಹುದು ಅಥವಾ ಓದಲಾಗದಂತಿರಬಹುದು.';
+
+  @override
+  String get uploadErrFileEmpty =>
+      'ಅಪ್‌ಲೋಡ್ ಮಾಡಿದ ಫೈಲ್ ಖಾಲಿಯಾಗಿದೆ ಅಥವಾ ಸರಿಯಾದ ಸ್ವರೂಪದಲ್ಲಿಲ್ಲ.';
+
+  @override
+  String get uploadErrNotMedical =>
+      'ಇದು ವೈದ್ಯಕೀಯ ವರದಿಯಂತೆ ಕಾಣುತ್ತಿಲ್ಲ. ದಯವಿಟ್ಟು ಹೆಚ್ಚು ಸ್ಪಷ್ಟವಾದ ವರದಿ ಅಥವಾ ಕ್ಲಿನಿಕಲ್ ದಾಖಲೆಯನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.';
+
+  @override
+  String get uploadErrAiUnavailableExtracted =>
+      'ನಿಮ್ಮ ವರದಿ ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ ಮತ್ತು ಪಠ್ಯ ಹೊರತೆಗೆಯಲಾಗಿದೆ, ಆದರೆ ಈಗ AI ವಿಶ್ಲೇಷಣೆ ಪೂರ್ಣಗೊಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.';
+
+  @override
+  String get uploadErrAiUnavailable =>
+      'ನಿಮ್ಮ ವರದಿ ಯಶಸ್ವಿಯಾಗಿ ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ, ಆದರೆ ಈಗ AI ವಿಶ್ಲೇಷಣೆ ಪೂರ್ಣಗೊಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.';
+
+  @override
+  String get uploadErrNetwork =>
+      'ಸರ್ವರ್‌ಗೆ ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ನೆಟ್‌ವರ್ಕ್ ಸಂಪರ್ಕವನ್ನು ಪರಿಶೀಲಿಸಿ.';
+
+  @override
+  String get uploadErrSession =>
+      'ನಿಮ್ಮ ಸೆಶನ್ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಸೈನ್ ಇನ್ ಮಾಡಿ.';
+
+  @override
+  String get selectReportFileFirst =>
+      'ದಯವಿಟ್ಟು ಮೊದಲು ವರದಿ ಫೈಲ್ ಅನ್ನು ಆಯ್ಕೆಮಾಡಿ.';
+
+  @override
+  String get reportTitleReq => 'ವರದಿಯ ಶೀರ್ಷಿಕೆ *';
+
+  @override
+  String get reportTitleHint => 'ಉದಾ. ವಾರ್ಷಿಕ ರಕ್ತ ಪರೀಕ್ಷೆ';
+
+  @override
+  String get titleRequired => 'ಶೀರ್ಷಿಕೆ ಅಗತ್ಯ';
+
+  @override
+  String get hospitalClinicOptional => 'ಆಸ್ಪತ್ರೆ / ಕ್ಲಿನಿಕ್ (ಐಚ್ಛಿಕ)';
+
+  @override
+  String get hospitalHint => 'ಉದಾ. ಸಿಟಿ ಜನರಲ್ ಆಸ್ಪತ್ರೆ';
+
+  @override
+  String get uploadDataNotice =>
+      'ನಿಮ್ಮ ದಾಖಲೆಯನ್ನು ಸಂಗ್ರಹಿಸಲಾಗುತ್ತದೆ ಮತ್ತು ವಿವರಣೆಯನ್ನು ರಚಿಸಲು ಅದರ ಪಠ್ಯವನ್ನು MedNarrate ಮತ್ತು ಕಾನ್ಫಿಗರ್ ಮಾಡಿದ AI ಸೇವೆಗಳು ಪ್ರಕ್ರಿಯೆಗೊಳಿಸುತ್ತವೆ. ಮುಖ್ಯ ಫಲಿತಾಂಶಗಳನ್ನು ಮೂಲ ವರದಿಯೊಂದಿಗೆ ಹೋಲಿಸಿ ಪರಿಶೀಲಿಸಿ.';
+
+  @override
+  String get howDataIsUsed => 'ನಿಮ್ಮ ಡೇಟಾವನ್ನು ಹೇಗೆ ಬಳಸಲಾಗುತ್ತದೆ';
+
+  @override
+  String get processingReportEllipsis => 'ವರದಿ ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿದೆ…';
+
+  @override
+  String get uploadFormatsHint => 'PDF, JPG, JPEG ಅಥವಾ PNG · ಗರಿಷ್ಠ 25 MB';
+
+  @override
+  String get reportDateLabel => 'ವರದಿಯ ದಿನಾಂಕ';
+
+  @override
+  String get autoDetectFromDocument => 'ದಾಖಲೆಯಿಂದ ಸ್ವಯಂ ಪತ್ತೆಹಚ್ಚಿ';
+
+  @override
+  String get chooseFileToAnalyze => 'ವಿಶ್ಲೇಷಣೆಗಾಗಿ ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ';
+
+  @override
+  String get openingFileChooser => 'ಫೈಲ್ ಆಯ್ಕೆಕಾರ ತೆರೆಯುತ್ತಿದೆ…';
+
+  @override
+  String get supportsFormatsUpTo => 'PDF, JPG, JPEG, PNG ಬೆಂಬಲಿತ (25 MB ವರೆಗೆ)';
+
+  @override
+  String get reportUploadedBadge => 'ವರದಿ ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ';
+
+  @override
+  String get fileReadyBadge => 'ಫೈಲ್ ಸಿದ್ಧ';
+
+  @override
+  String get removeFile => 'ಫೈಲ್ ತೆಗೆದುಹಾಕಿ';
+
+  @override
+  String get step1UploadCompleted => 'ಹಂತ 1: ಅಪ್‌ಲೋಡ್ ಪೂರ್ಣಗೊಂಡಿದೆ';
+
+  @override
+  String get step2TextExtractionFailed =>
+      'ಹಂತ 2: ಪಠ್ಯ ಹೊರತೆಗೆಯುವಿಕೆ ವಿಫಲವಾಗಿದೆ';
+
+  @override
+  String get step2AiUnavailable => 'ಹಂತ 2: AI ವಿಶ್ಲೇಷಣೆ ಲಭ್ಯವಿಲ್ಲ';
+
+  @override
+  String get step2ProcessingAi => 'ಹಂತ 2: AI ವಿಶ್ಲೇಷಣೆ ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿದೆ';
+
+  @override
+  String get canLeavePageNotice =>
+      'ನೀವು ಈ ಪುಟವನ್ನು ಬಿಟ್ಟು ಹೋಗಬಹುದು. ಪ್ರಕ್ರಿಯೆ ಮುಗಿದ ನಂತರ ನಿಮ್ಮ ವರದಿ \"ವರದಿಗಳು\" ವಿಭಾಗದಲ್ಲಿ ಕಾಣಿಸುತ್ತದೆ.';
+
+  @override
+  String get failTitleOcrUnavailable => 'ಪಠ್ಯ ಗುರುತಿಸುವಿಕೆ ಲಭ್ಯವಿಲ್ಲ';
+
+  @override
+  String get failTitleNotMedical => 'ಇದು ವೈದ್ಯಕೀಯ ವರದಿ ಅಲ್ಲ';
+
+  @override
+  String get failTitleImage => 'ಈ ಚಿತ್ರವನ್ನು ಓದಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ';
+
+  @override
+  String get failTitleDocument => 'ಈ ದಾಖಲೆಯನ್ನು ಓದಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ';
+
+  @override
+  String get failTitleAi => 'AI ವಿಶ್ಲೇಷಣೆ ಲಭ್ಯವಿಲ್ಲ';
+
+  @override
+  String get retryAiAnalysis => 'AI ವಿಶ್ಲೇಷಣೆಯನ್ನು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ';
+
+  @override
+  String get reminderNotificationsOff =>
+      'ಫೋನ್ ಅಧಿಸೂಚನೆಗಳು ಆಫ್ ಆಗಿವೆ. ಔಷಧಿ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಪಡೆಯಲು ಸಾಧನ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಅವುಗಳನ್ನು ಆನ್ ಮಾಡಿ.';
+
+  @override
+  String failedToLoadReminders(String error) {
+    return 'ಜ್ಞಾಪನೆಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ: $error';
+  }
+
+  @override
+  String failedToDeleteReminder(String error) {
+    return 'ಜ್ಞಾಪನೆಯನ್ನು ಅಳಿಸಲು ವಿಫಲವಾಗಿದೆ: $error';
+  }
+
+  @override
+  String failedToUpdateStatus(String error) {
+    return 'ಸ್ಥಿತಿಯನ್ನು ನವೀಕರಿಸಲು ವಿಫಲವಾಗಿದೆ: $error';
+  }
+
+  @override
+  String get reminderOn => 'ಜ್ಞಾಪನೆ ಆನ್';
+
+  @override
+  String get editMedication => 'ಔಷಧಿಯನ್ನು ಸಂಪಾದಿಸಿ';
+
+  @override
+  String get deleteMedication => 'ಔಷಧಿಯನ್ನು ಅಳಿಸಿ';
+
+  @override
+  String get freqOnceDaily => 'ದಿನಕ್ಕೆ ಒಮ್ಮೆ';
+
+  @override
+  String get freqTwiceDaily => 'ದಿನಕ್ಕೆ ಎರಡು ಬಾರಿ';
+
+  @override
+  String get freqThreeTimesDaily => 'ದಿನಕ್ಕೆ ಮೂರು ಬಾರಿ';
+
+  @override
+  String get freqFourTimesDaily => 'ದಿನಕ್ಕೆ ನಾಲ್ಕು ಬಾರಿ';
+
+  @override
+  String get freqAsNeeded => 'ಅಗತ್ಯವಿದ್ದಾಗ';
+
+  @override
+  String get freqCustom => 'ಕಸ್ಟಮ್';
+
+  @override
+  String get freqScheduled => 'ನಿಗದಿಪಡಿಸಲಾಗಿದೆ';
+
+  @override
+  String errorSavingReminder(String error) {
+    return 'ಜ್ಞಾಪನೆಯನ್ನು ಉಳಿಸುವಲ್ಲಿ ದೋಷ: $error';
+  }
+
+  @override
+  String get newMedication => 'ಹೊಸ ಔಷಧಿ';
+
+  @override
+  String get editMedicationTitle => 'ಔಷಧಿಯನ್ನು ಸಂಪಾದಿಸಿ';
+
+  @override
+  String get medicineNameLabel => 'ಔಷಧಿಯ ಹೆಸರು';
+
+  @override
+  String get medicineNameRequired => 'ಔಷಧಿಯ ಹೆಸರು ಅಗತ್ಯ';
+
+  @override
+  String get dosageLabel => 'ಡೋಸೇಜ್ (ಉದಾ. 500mg, 1 ಮಾತ್ರೆ)';
+
+  @override
+  String get frequencyLabel => 'ಆವರ್ತನ';
+
+  @override
+  String get timesOfDay => 'ದಿನದ ಸಮಯಗಳು';
+
+  @override
+  String get addTime => 'ಸಮಯ ಸೇರಿಸಿ';
+
+  @override
+  String get addAtLeastOneTime => 'ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ಸಮಯವನ್ನು ಸೇರಿಸಿ.';
+
+  @override
+  String get additionalNotesOptional => 'ಹೆಚ್ಚುವರಿ ಟಿಪ್ಪಣಿಗಳು (ಐಚ್ಛಿಕ)';
+
+  @override
+  String get saveMedication => 'ಔಷಧಿಯನ್ನು ಉಳಿಸಿ';
+
+  @override
+  String failedToUpdateSchedule(String error) {
+    return 'ವೇಳಾಪಟ್ಟಿಯನ್ನು ನವೀಕರಿಸಲು ವಿಫಲವಾಗಿದೆ: $error';
+  }
+
+  @override
+  String failedToLoadSchedules(String error) {
+    return 'ವೇಳಾಪಟ್ಟಿಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ: $error';
+  }
+
+  @override
+  String forDaysCount(int days) {
+    return '$days ದಿನಗಳವರೆಗೆ';
+  }
+
+  @override
+  String get supportTitle => 'ಬೆಂಬಲ';
+
+  @override
+  String get supportNewRequest => 'ಹೊಸ ವಿನಂತಿ';
+
+  @override
+  String get supportCouldNotLoad =>
+      'ಬೆಂಬಲ ವಿನಂತಿಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.';
+
+  @override
+  String get supportNoRequests => 'ಇನ್ನೂ ಯಾವುದೇ ಬೆಂಬಲ ವಿನಂತಿಗಳಿಲ್ಲ.';
+
+  @override
+  String get supportRequestFallback => 'ವಿನಂತಿ';
+
+  @override
+  String get supportRequestDialogTitle => 'ಬೆಂಬಲ ವಿನಂತಿ';
+
+  @override
+  String get supportContactTitle => 'ಬೆಂಬಲವನ್ನು ಸಂಪರ್ಕಿಸಿ';
+
+  @override
+  String get supportDescribeHint =>
+      'ನಿಮ್ಮ ಪೂರ್ಣ ವೈದ್ಯಕೀಯ ವರದಿಯನ್ನು ಅಂಟಿಸದೆ ಸಮಸ್ಯೆಯನ್ನು ವಿವರಿಸಿ. ಅಗತ್ಯವಿದ್ದಾಗ ನಾವು ವರದಿ IDಯನ್ನು ಸೇರಿಸುತ್ತೇವೆ.';
+
+  @override
+  String get supportSubject => 'ವಿಷಯ';
+
+  @override
+  String get supportEnterSubject => 'ವಿಷಯವನ್ನು ನಮೂದಿಸಿ';
+
+  @override
+  String get supportCategory => 'ವರ್ಗ';
+
+  @override
+  String get supportWhatWentWrong => 'ಏನು ತಪ್ಪಾಯಿತು?';
+
+  @override
+  String get supportMoreDetail => 'ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಹೆಚ್ಚಿನ ವಿವರಗಳನ್ನು ಸೇರಿಸಿ';
+
+  @override
+  String get supportRequestSent => 'ಬೆಂಬಲ ವಿನಂತಿ ಕಳುಹಿಸಲಾಗಿದೆ';
+
+  @override
+  String get sendingEllipsis => 'ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ…';
+
+  @override
+  String get sendRequest => 'ವಿನಂತಿಯನ್ನು ಕಳುಹಿಸಿ';
+
+  @override
+  String supportStatusLine(String status) {
+    return 'ಸ್ಥಿತಿ: $status';
+  }
+
+  @override
+  String get replyToSupport => 'ಬೆಂಬಲಕ್ಕೆ ಪ್ರತ್ಯುತ್ತರಿಸಿ';
+
+  @override
+  String get sendReply => 'ಉತ್ತರ ಕಳುಹಿಸಿ';
+
+  @override
+  String get catLoginAccount => 'ಲಾಗಿನ್/ಖಾತೆ';
+
+  @override
+  String get catReportProcessing => 'ವರದಿ ಪ್ರಕ್ರಿಯೆ';
+
+  @override
+  String get catAiAnalysis => 'AI/ವಿಶ್ಲೇಷಣೆ';
+
+  @override
+  String get catChat => 'ಚಾಟ್';
+
+  @override
+  String get catTranslation => 'ಅನುವಾದ';
+
+  @override
+  String get catNotifications => 'ಅಧಿಸೂಚನೆಗಳು';
+
+  @override
+  String get catMedicationReminder => 'ಔಷಧಿ ಜ್ಞಾಪನೆ';
+
+  @override
+  String get catPerformance => 'ಕಾರ್ಯಕ್ಷಮತೆ';
+
+  @override
+  String get catSecurity => 'ಭದ್ರತೆ';
+
+  @override
+  String get catPrivacy => 'ಗೌಪ್ಯತೆ';
+
+  @override
+  String get catOther => 'ಇತರೆ';
+
+  @override
+  String get ticketNew => 'ಹೊಸದು';
+
+  @override
+  String get ticketTriaged => 'ವರ್ಗೀಕರಿಸಲಾಗಿದೆ';
+
+  @override
+  String get ticketInvestigating => 'ತನಿಖೆ ನಡೆಯುತ್ತಿದೆ';
+
+  @override
+  String get ticketWaitingUser => 'ಬಳಕೆದಾರರಿಗಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ';
+
+  @override
+  String get ticketWaitingEng => 'ಎಂಜಿನಿಯರಿಂಗ್‌ಗಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ';
+
+  @override
+  String get ticketResolved => 'ಪರಿಹರಿಸಲಾಗಿದೆ';
+
+  @override
+  String get ticketClosed => 'ಮುಚ್ಚಲಾಗಿದೆ';
+
+  @override
+  String get noClinicalSummary =>
+      'ಈ ವರದಿಗೆ ಕ್ಲಿನಿಕಲ್ ಕಾರ್ಯನಿರ್ವಾಹಕ ಸಾರಾಂಶ ಲಭ್ಯವಿಲ್ಲ.';
+
+  @override
+  String get noPatientSummary => 'ಈ ವರದಿಗೆ ರೋಗಿ-ಸ್ನೇಹಿ ಸಾರಾಂಶ ಲಭ್ಯವಿಲ್ಲ.';
+
+  @override
+  String get translatingReportBanner =>
+      'ನಿಮ್ಮ ವರದಿಯನ್ನು ಅನುವಾದಿಸಲಾಗುತ್ತಿದೆ. ಇದಕ್ಕೆ ಒಂದು ನಿಮಿಷದವರೆಗೆ ಸಮಯ ಹಿಡಿಯಬಹುದು…';
+
+  @override
+  String get metadataFallback => 'ಮೆಟಾಡೇಟಾ';
+
+  @override
+  String get findingFallback => 'ಪತ್ತೆ';
+
+  @override
+  String get generalComparisonRange => 'ಸಾಮಾನ್ಯ ಹೋಲಿಕೆ ವ್ಯಾಪ್ತಿ';
+
+  @override
+  String get provisionalWord => 'ತಾತ್ಕಾಲಿಕ';
+
+  @override
+  String provisionalNote(String source) {
+    return 'ಇದು ಪ್ರಕಟಿತ ಸಾಮಾನ್ಯ ವ್ಯಾಪ್ತಿಯನ್ನು ಆಧರಿಸಿದೆ, ಈ ಲ್ಯಾಬ್‌ನ ವ್ಯಾಪ್ತಿಯಲ್ಲ. ನಿಮ್ಮ ವೈದ್ಯರೊಂದಿಗೆ ದೃಢಪಡಿಸಿಕೊಳ್ಳಿ. ಮೂಲ: $source';
+  }
+
+  @override
+  String get refGeneralProvisional => '(ಸಾಮಾನ್ಯ, ತಾತ್ಕಾಲಿಕ)';
+
+  @override
+  String get refGeneralShort => '(ಸಾಮಾನ್ಯ)';
+
+  @override
+  String get noRefRangeShort => 'ಉಲ್ಲೇಖ ವ್ಯಾಪ್ತಿ ಇಲ್ಲ';
+
+  @override
+  String labMeasuresDesc(String parameter) {
+    return 'ಇದು ನಿಮ್ಮ ವೈದ್ಯಕೀಯ ದಾಖಲೆಯಲ್ಲಿ $parameter ಅನ್ನು ಅಳೆಯುತ್ತದೆ. ವ್ಯಾಖ್ಯಾನಕ್ಕಾಗಿ ಯಾವಾಗಲೂ ನಿಮ್ಮ ವೈದ್ಯರನ್ನು ಸಂಪರ್ಕಿಸಿ.';
+  }
+
+  @override
+  String get textDetectedInReport => 'ಅಪ್‌ಲೋಡ್ ಮಾಡಿದ ವರದಿಯಲ್ಲಿ ಪತ್ತೆಯಾದ ಪಠ್ಯ';
+
+  @override
+  String get checkAgainstOriginalOcr =>
+      'ಇದನ್ನು ಮೂಲ ದಾಖಲೆಯೊಂದಿಗೆ ಹೋಲಿಸಿ ಪರಿಶೀಲಿಸಿ; OCR ನಲ್ಲಿ ತಪ್ಪುಗಳಾಗಬಹುದು.';
+
+  @override
+  String get viewOriginalReport => 'ಮೂಲ ವರದಿಯನ್ನು ವೀಕ್ಷಿಸಿ';
+
+  @override
+  String get reportAnIncorrectResult => 'ತಪ್ಪು ಫಲಿತಾಂಶವನ್ನು ವರದಿ ಮಾಡಿ';
+
+  @override
+  String get backLabel => 'ಹಿಂದೆ';
+
+  @override
+  String get unfavourite => 'ಮೆಚ್ಚಿನವುಗಳಿಂದ ತೆಗೆದುಹಾಕಿ';
+
+  @override
+  String get favourite => 'ಮೆಚ್ಚಿನದು';
+
+  @override
+  String get pdfDownloadedOk => 'PDF ಯಶಸ್ವಿಯಾಗಿ ಡೌನ್‌ಲೋಡ್ ಆಗಿದೆ';
+
+  @override
+  String exportFailed(String error) {
+    return 'ರಫ್ತು ವಿಫಲವಾಗಿದೆ: $error';
+  }
+
+  @override
+  String previewFailed(String error) {
+    return 'ಪೂರ್ವವೀಕ್ಷಣೆ ವಿಫಲವಾಗಿದೆ: $error';
+  }
+
+  @override
+  String get reportNoLongerAvailable => 'ವರದಿ ಇನ್ನು ಲಭ್ಯವಿಲ್ಲ';
+
+  @override
+  String get reportMayBeDeleted =>
+      'ಈ ವರದಿಯನ್ನು ಅಳಿಸಿರಬಹುದು ಅಥವಾ ಇನ್ನು ಪ್ರವೇಶಿಸಲಾಗದಿರಬಹುದು.';
+
+  @override
+  String get backToReports => 'ವರದಿಗಳಿಗೆ ಹಿಂತಿರುಗಿ';
+
+  @override
+  String get originalReportTitle => 'ಮೂಲ ವರದಿ';
+
+  @override
+  String get unableToOpenOriginal => 'ಮೂಲ ದಾಖಲೆಯನ್ನು ತೆರೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.';
+
+  @override
+  String get compareAiFindings =>
+      'ನಿರ್ಧಾರ ತೆಗೆದುಕೊಳ್ಳುವ ಮೊದಲು AI ಪತ್ತೆಗಳನ್ನು ಈ ಅಪ್‌ಲೋಡ್ ಮಾಡಿದ ದಾಖಲೆಯೊಂದಿಗೆ ಹೋಲಿಸಿ.';
+
+  @override
+  String get chatCouldNotOpen =>
+      'ಚಾಟ್ ತೆರೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get somethingWentWrongRetry =>
+      'ಏನೋ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get reportTypeBlood => 'ರಕ್ತ ಪರೀಕ್ಷೆ';
+
+  @override
+  String get reportTypePathology => 'ರೋಗಶಾಸ್ತ್ರ';
+
+  @override
+  String get reportTypeHealthCheck => 'ಆರೋಗ್ಯ ತಪಾಸಣೆ';
+
+  @override
+  String get reportTypeOther => 'ಇತರೆ';
+
+  @override
+  String get procUploaded => 'ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ';
+
+  @override
+  String get procAnalyzing => 'ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ…';
+
+  @override
+  String get procCompleted => 'ಪೂರ್ಣಗೊಂಡಿದೆ';
+
+  @override
+  String get procFailed => 'ವಿಫಲವಾಗಿದೆ';
+
+  @override
+  String get quickSummarize => 'ನನ್ನ ಫಲಿತಾಂಶಗಳ ಸಾರಾಂಶ ನೀಡಿ';
+
+  @override
+  String get quickAbnormal => 'ಯಾವ ಮೌಲ್ಯಗಳು ಅಸಹಜವಾಗಿವೆ?';
+
+  @override
+  String get quickUrgent => 'ಯಾವುದಾದರೂ ತುರ್ತು ಇದೆಯೇ?';
+
+  @override
+  String get quickAskDoctor => 'ನಾನು ನನ್ನ ವೈದ್ಯರನ್ನು ಏನು ಕೇಳಬೇಕು?';
+
+  @override
+  String get chatReference => 'ಉಲ್ಲೇಖ';
+
+  @override
+  String chatSourceLine(String name) {
+    return 'ಮೂಲ: $name';
+  }
+
+  @override
+  String get chatDisclaimer =>
+      'AI ಉತ್ತರಗಳು ಮಾಹಿತಿಗಾಗಿ ಮಾತ್ರ; ಅವು ವೃತ್ತಿಪರ ವೈದ್ಯಕೀಯ ಸಲಹೆಗೆ ಪರ್ಯಾಯವಲ್ಲ. ಯಾವಾಗಲೂ ನಿಮ್ಮ ವೈದ್ಯರನ್ನು ಸಂಪರ್ಕಿಸಿ.';
+
+  @override
+  String get chatAskAboutReport => 'ನಿಮ್ಮ ವರದಿಯ ಬಗ್ಗೆ ಕೇಳಿ';
+
+  @override
+  String get chatEmptyBody =>
+      'ನಿಮ್ಮ ಫಲಿತಾಂಶಗಳು, ಔಷಧಿಗಳು ಮತ್ತು ವೈದ್ಯರನ್ನು ಏನು ಕೇಳಬೇಕು ಎಂಬುದರ ಬಗ್ಗೆ ಸರಳ ಭಾಷೆಯಲ್ಲಿ ಉತ್ತರಗಳನ್ನು ಪಡೆಯಿರಿ.';
+
+  @override
+  String get chatHintAsk => 'ನಿಮ್ಮ ವರದಿಯ ಬಗ್ಗೆ ಕೇಳಿ...';
+
+  @override
+  String chatMessageShortened(int max) {
+    return 'ನಿಮ್ಮ ಸಂದೇಶವನ್ನು $max ಅಕ್ಷರಗಳ ಮಿತಿಗೆ ಹೊಂದುವಂತೆ ಸಂಕ್ಷಿಪ್ತಗೊಳಿಸಲಾಗಿದೆ.';
+  }
+
+  @override
+  String get chatCouldNotLoad =>
+      'ಸಂಭಾಷಣೆಯನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get chatOnline => 'ಆನ್‌ಲೈನ್';
+
+  @override
+  String get chatOffline => 'ಆಫ್‌ಲೈನ್';
+
+  @override
+  String get offlineBackOnline => 'ಮತ್ತೆ ಆನ್‌ಲೈನ್! ರಿಫ್ರೆಶ್ ಆಗುತ್ತಿದೆ...';
+
+  @override
+  String get offlineViewingCached =>
+      'ನೀವು ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿದ್ದೀರಿ. ಉಳಿಸಿದ ಡೇಟಾ ತೋರಿಸಲಾಗುತ್ತಿದೆ.';
+
+  @override
+  String get voiceInputLabel => 'ಧ್ವನಿ ಇನ್‌ಪುಟ್';
+
+  @override
+  String get voiceSpeakYourMessage => 'ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಮಾತನಾಡಿ';
+
+  @override
+  String get voiceCancelTranscription => 'ಪ್ರತಿಲೇಖನ ರದ್ದುಗೊಳಿಸಿ';
+
+  @override
+  String get voiceDiscardRecording => 'ರೆಕಾರ್ಡಿಂಗ್ ಅನ್ನು ತ್ಯಜಿಸಿ';
+
+  @override
+  String get voiceDiscard => 'ತ್ಯಜಿಸಿ';
+
+  @override
+  String get voiceConverting => 'ಮಾತನ್ನು ಪಠ್ಯವಾಗಿ ಪರಿವರ್ತಿಸಲಾಗುತ್ತಿದೆ…';
+
+  @override
+  String get voiceFinishConvert => 'ಮುಗಿಸಿ ಪಠ್ಯವಾಗಿ ಪರಿವರ್ತಿಸಿ';
+
+  @override
+  String voiceSpokenLanguage(String language) {
+    return 'ಮಾತನಾಡುವ ಭಾಷೆ: $language';
+  }
+
+  @override
+  String get voiceSpeakIn => 'ಈ ಭಾಷೆಯಲ್ಲಿ ಮಾತನಾಡಿ';
+
+  @override
+  String get voiceMicOff =>
+      'ಮೈಕ್ರೋಫೋನ್ ಪ್ರವೇಶ ಆಫ್ ಆಗಿದೆ. ಧ್ವನಿ ಇನ್‌ಪುಟ್ ಬಳಸಲು ಸಾಧನ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ MedNarrate ಗೆ ಅನುಮತಿ ನೀಡಿ.';
+
+  @override
+  String get voiceCouldNotStart =>
+      'ರೆಕಾರ್ಡಿಂಗ್ ಪ್ರಾರಂಭಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get voiceNothingRecorded =>
+      'ಏನೂ ರೆಕಾರ್ಡ್ ಆಗಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get voiceTooShort =>
+      'ಅದು ತುಂಬಾ ಚಿಕ್ಕದಾಗಿತ್ತು. ಮೈಕ್ ಟ್ಯಾಪ್ ಮಾಡಿ, ಮಾತನಾಡಿ, ನಂತರ ಟಿಕ್ ಟ್ಯಾಪ್ ಮಾಡಿ.';
+
+  @override
+  String get voiceNoSpeech =>
+      'ಏನೂ ಕೇಳಿಸಲಿಲ್ಲ. ಮೈಕ್ರೋಫೋನ್‌ಗೆ ಸ್ವಲ್ಪ ಹತ್ತಿರ ಬಂದು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get voiceUnavailableType =>
+      'ಧ್ವನಿ ಇನ್‌ಪುಟ್ ಈಗ ಲಭ್ಯವಿಲ್ಲ. ಬದಲಿಗೆ ನೀವು ಟೈಪ್ ಮಾಡಬಹುದು.';
+
+  @override
+  String get voiceFailed =>
+      'ಧ್ವನಿ ಇನ್‌ಪುಟ್ ವಿಫಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ ಅಥವಾ ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ.';
+
+  @override
+  String get apiTimeout =>
+      'ವಿನಂತಿಯ ಸಮಯ ಮುಗಿದಿದೆ. ನಿಮ್ಮ ಸಂಪರ್ಕವನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get apiCannotConnect =>
+      'MedNarrate ಗೆ ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಬ್ಯಾಕೆಂಡ್ ಚಾಲನೆಯಲ್ಲಿದೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get apiGenericError =>
+      'MedNarrate ಅನ್ನು ಸಂಪರ್ಕಿಸುವಾಗ ಏನೋ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get apiSessionExpired =>
+      'ಸೆಶನ್ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ.';
+
+  @override
+  String get apiVoiceNeedsInternet =>
+      'ಧ್ವನಿ ಇನ್‌ಪುಟ್‌ಗೆ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಬೇಕು. ನೀವು ಇನ್ನೂ ಟೈಪ್ ಮಾಡಬಹುದು.';
+
+  @override
+  String get apiFileUnreadable =>
+      'ಆಯ್ಕೆ ಮಾಡಿದ ಫೈಲ್ ಅನ್ನು ಓದಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು Finder ನಿಂದ ಮತ್ತೆ ಆಯ್ಕೆಮಾಡಿ.';
+
+  @override
+  String get srvIncorrectCredentials => 'ಇಮೇಲ್ ಅಥವಾ ಪಾಸ್‌ವರ್ಡ್ ತಪ್ಪಾಗಿದೆ';
+
+  @override
+  String get srvAlreadyHaveAccount => 'ನಿಮಗೆ ಈಗಾಗಲೇ ಖಾತೆ ಇದೆ';
+
+  @override
+  String get srvAccountLocked =>
+      'ಹಲವು ಬಾರಿ ಲಾಗಿನ್ ವಿಫಲವಾದ ಕಾರಣ ಖಾತೆಯನ್ನು ತಾತ್ಕಾಲಿಕವಾಗಿ ಲಾಕ್ ಮಾಡಲಾಗಿದೆ';
+
+  @override
+  String get srvAccountInactive => 'ಖಾತೆ ನಿಷ್ಕ್ರಿಯವಾಗಿದೆ';
+
+  @override
+  String get srvInvalidRefresh => 'ಅಮಾನ್ಯ ಅಥವಾ ಅವಧಿ ಮುಗಿದ ರಿಫ್ರೆಶ್ ಟೋಕನ್';
+
+  @override
+  String get srvInvalidPassword => 'ಅಮಾನ್ಯ ಪಾಸ್‌ವರ್ಡ್';
+
+  @override
+  String get srvPasswordIncorrect => 'ಪಾಸ್‌ವರ್ಡ್ ತಪ್ಪಾಗಿದೆ';
+
+  @override
+  String get srvNotAuthenticated => 'ದೃಢೀಕರಿಸಲಾಗಿಲ್ಲ';
+
+  @override
+  String get srvCouldNotValidate => 'ರುಜುವಾತುಗಳನ್ನು ಮೌಲ್ಯೀಕರಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ';
+
+  @override
+  String get srvTokenExpired => 'ಟೋಕನ್ ಅವಧಿ ಮುಗಿದಿದೆ';
+
+  @override
+  String get srvInvalidToken => 'ಅಮಾನ್ಯ ಟೋಕನ್';
+
+  @override
+  String get srvUserNotFound => 'ಬಳಕೆದಾರ ಕಂಡುಬಂದಿಲ್ಲ';
+
+  @override
+  String get srvResetInvalid => 'ಅಮಾನ್ಯ ಅಥವಾ ಅವಧಿ ಮುಗಿದ ರೀಸೆಟ್ ಟೋಕನ್';
+
+  @override
+  String get srvResetExpired =>
+      'ರೀಸೆಟ್ ಟೋಕನ್ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಹೊಸದನ್ನು ವಿನಂತಿಸಿ.';
+
+  @override
+  String get srvOtpInvalid => 'ಅಮಾನ್ಯ ಅಥವಾ ಮರುಬಳಕೆಯಾದ OTP ಕೋಡ್';
+
+  @override
+  String get srvVoiceBusy =>
+      'ಧ್ವನಿ ಇನ್‌ಪುಟ್ ಈಗ ಬ್ಯುಸಿ ಆಗಿದೆ. ದಯವಿಟ್ಟು ಒಂದು ನಿಮಿಷದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ ಅಥವಾ ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ.';
+
+  @override
+  String get srvVoiceMisconfigured =>
+      'ಸರ್ವರ್‌ನಲ್ಲಿ ಧ್ವನಿ ಇನ್‌ಪುಟ್ ಸರಿಯಾಗಿ ಹೊಂದಿಸಲಾಗಿಲ್ಲ.';
+
+  @override
+  String get srvVoiceNotSetUp =>
+      'ಸರ್ವರ್‌ನಲ್ಲಿ ಧ್ವನಿ ಇನ್‌ಪುಟ್ ಇನ್ನೂ ಹೊಂದಿಸಲಾಗಿಲ್ಲ.';
+
+  @override
+  String get srvVoiceTooLong =>
+      'ಧ್ವನಿ ಇನ್‌ಪುಟ್‌ಗೆ ತುಂಬಾ ಸಮಯ ಹಿಡಿಯಿತು. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get srvVoiceNetwork =>
+      'ಸರ್ವರ್‌ಗೆ ಧ್ವನಿ ಸೇವೆಯನ್ನು ತಲುಪಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get srvVoiceUnavailable =>
+      'ಧ್ವನಿ ಇನ್‌ಪುಟ್ ತಾತ್ಕಾಲಿಕವಾಗಿ ಲಭ್ಯವಿಲ್ಲ. ನೀವು ಇನ್ನೂ ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಬಹುದು.';
+
+  @override
+  String get srvVoiceUnreadable =>
+      'ಆ ರೆಕಾರ್ಡಿಂಗ್ ಅನ್ನು ಓದಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get srvVoiceFormat => 'ಆ ಆಡಿಯೊ ಸ್ವರೂಪವನ್ನು ಬೆಂಬಲಿಸಲಾಗುವುದಿಲ್ಲ.';
+
+  @override
+  String get srvVoiceEmpty => 'ರೆಕಾರ್ಡಿಂಗ್ ಖಾಲಿಯಾಗಿದೆ.';
+
+  @override
+  String get srvVoiceDisabled => 'ಧ್ವನಿ ಇನ್‌ಪುಟ್ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿಲ್ಲ.';
+
+  @override
+  String medAlertTitle(String name) {
+    return 'ಔಷಧಿ ಜ್ಞಾಪನೆ: $name';
+  }
+
+  @override
+  String get medAlertBody => 'ನಿಮ್ಮ ಔಷಧಿ ತೆಗೆದುಕೊಳ್ಳುವ ಸಮಯ';
+
+  @override
+  String get bioReasonAccessRecords =>
+      'ನಿಮ್ಮ ವೈದ್ಯಕೀಯ ದಾಖಲೆಗಳನ್ನು ಪ್ರವೇಶಿಸಲು ದೃಢೀಕರಿಸಿ';
+
+  @override
+  String get bioReasonVerifyCurrent =>
+      'ಮುಂದುವರಿಸಲು ನಿಮ್ಮ ಪ್ರಸ್ತುತ ಬಯೋಮೆಟ್ರಿಕ್ ಅನ್ನು ಪರಿಶೀಲಿಸಿ';
+
+  @override
+  String get bioReasonEnable =>
+      'ಬಯೋಮೆಟ್ರಿಕ್ ಆ್ಯಪ್ ಲಾಕ್ ಸಕ್ರಿಯಗೊಳಿಸಲು ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಅಥವಾ Face ID ಬಳಸಿ ದೃಢೀಕರಿಸಿ';
+
+  @override
+  String get bioReasonDisable =>
+      'ಬಯೋಮೆಟ್ರಿಕ್ ಆ್ಯಪ್ ಲಾಕ್ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲು ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಅಥವಾ Face ID ಬಳಸಿ ದೃಢೀಕರಿಸಿ';
+
+  @override
+  String get insightsTrackProgress =>
+      'ಕಾಲಾನಂತರ ನಿಮ್ಮ ಪ್ರಗತಿಯನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ';
+
+  @override
+  String get insightsNoReports => 'ಹೋಲಿಕೆಗೆ ಯಾವುದೇ ವರದಿಗಳು ಲಭ್ಯವಿಲ್ಲ.';
+
+  @override
+  String get insightsSelectReports => 'ವರದಿಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ (ಗರಿಷ್ಠ 5)';
+
+  @override
+  String get insightsWhatChanged => 'ನಿಮ್ಮ ಕೊನೆಯ ವರದಿಯ ನಂತರ ಏನು ಬದಲಾಗಿದೆ?';
+
+  @override
+  String insightsFailedToLoad(String error) {
+    return 'ವರದಿಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ: $error';
+  }
+
+  @override
+  String get insightsMax5 => 'ಹೋಲಿಕೆಗಾಗಿ ಗರಿಷ್ಠ 5 ವರದಿಗಳನ್ನು ಆಯ್ಕೆಮಾಡಬಹುದು.';
+
+  @override
+  String get insightsSelectAtLeast2 => 'ಹೋಲಿಸಲು ಕನಿಷ್ಠ 2 ವರದಿಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ.';
+
+  @override
+  String insightsFailedCompare(String error) {
+    return 'ಹೋಲಿಕೆಯನ್ನು ರಚಿಸಲು ವಿಫಲವಾಗಿದೆ: $error';
+  }
+
+  @override
+  String insightsNormalRange(String range, String unit) {
+    return 'ಸಾಮಾನ್ಯ: $range $unit';
+  }
+
+  @override
+  String get apiNoSavedChat => 'ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ಉಳಿಸಿದ ಚಾಟ್ ಯಾವುದೂ ಲಭ್ಯವಿಲ್ಲ.';
+
+  @override
+  String get apiCannotSaveOffline =>
+      'ಈ ಫೈಲ್ ಅನ್ನು ಆಫ್‌ಲೈನ್ ಅಪ್‌ಲೋಡ್‌ಗಾಗಿ ಉಳಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ. ಸ್ಥಳೀಯ ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ.';
+
+  @override
+  String get apiReportTooLarge => 'ವರದಿ 25 MB ಅಥವಾ ಅದಕ್ಕಿಂತ ಚಿಕ್ಕದಾಗಿರಬೇಕು.';
+
+  @override
+  String get apiReportNotOffline => 'ಈ ವರದಿ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ಲಭ್ಯವಿಲ್ಲ.';
+
+  @override
+  String get apiAnalysisNotOffline => 'ಈ ವಿಶ್ಲೇಷಣೆ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ಲಭ್ಯವಿಲ್ಲ.';
+
+  @override
+  String get apiChatNeedsConnection =>
+      'ಚಾಟ್‌ಗೆ ಸಂಪರ್ಕ ಬೇಕು. ಉಳಿಸಿದ ಸಂದೇಶಗಳು ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ಲಭ್ಯವಿರುತ್ತವೆ.';
+
+  @override
+  String get apiTranslationUnexpected =>
+      'ಅನುವಾದವು ಅನಿರೀಕ್ಷಿತ ಭಾಷೆ ಅಥವಾ ಖಾಲಿ ವರದಿಯನ್ನು ನೀಡಿದೆ.';
+
+  @override
+  String get licensesTitle => 'ಓಪನ್ ಸೋರ್ಸ್ ಪರವಾನಗಿಗಳು';
+
+  @override
+  String get licensesSearchHint => 'ಪ್ಯಾಕೇಜ್‌ಗಳನ್ನು ಹುಡುಕಿ...';
+
+  @override
+  String licensesNoMatch(String query) {
+    return '\"$query\" ಗೆ ಹೊಂದುವ ಪರವಾನಗಿಗಳಿಲ್ಲ';
+  }
+
+  @override
+  String get licensesCountOne => '1 ಪರವಾನಗಿ';
+
+  @override
+  String licensesCountMany(int count) {
+    return '$count ಪರವಾನಗಿಗಳು';
+  }
+
+  @override
+  String licensesIndexOf(int index, int total) {
+    return 'ಪರವಾನಗಿ $index / $total';
+  }
+
+  @override
+  String get insightsNoCommonTitle => 'ಇನ್ನೂ ಹೋಲಿಸಲು ಏನೂ ಇಲ್ಲ';
+
+  @override
+  String get insightsNoCommonBody =>
+      'ಆಯ್ಕೆ ಮಾಡಿದ ವರದಿಗಳಲ್ಲಿ ಹಿಮೋಗ್ಲೋಬಿನ್ ಅಥವಾ ಕೊಲೆಸ್ಟ್ರಾಲ್ ನಂತಹ, ಎರಡರಲ್ಲೂ ಸಂಖ್ಯೆ ಇರುವ ಪರೀಕ್ಷೆ ಇಲ್ಲ. ನಿಮ್ಮ ಫಲಿತಾಂಶಗಳು ಹೇಗೆ ಬದಲಾದವು ಎಂದು ನೋಡಲು ಎರಡು ರಕ್ತ ಎಣಿಕೆಗಳಂತಹ ಒಂದೇ ರೀತಿಯ ವರದಿಗಳನ್ನು ಆರಿಸಿ.';
+
+  @override
+  String get chatAskHealthTitle => 'ನಿಮ್ಮ ಆರೋಗ್ಯದ ಬಗ್ಗೆ ನನ್ನನ್ನು ಕೇಳಿ';
+
+  @override
+  String get chatAskHealthBody =>
+      'ಫಿಟ್‌ನೆಸ್, ಆಹಾರ, ನಿದ್ರೆ, ಸಾಮಾನ್ಯ ಲಕ್ಷಣಗಳು ಮತ್ತು ಪರೀಕ್ಷೆಯ ಪದಗಳ ಅರ್ಥದ ಬಗ್ಗೆ ಸರಳ ಉತ್ತರಗಳನ್ನು ಪಡೆಯಿರಿ. ನಿಮ್ಮ ಸ್ವಂತ ವರದಿಗಾಗಿ, ಅದನ್ನು ತೆರೆದು ಅದರ ಚಾಟ್ ಟ್ಯಾಬ್ ಬಳಸಿ.';
+
+  @override
+  String get chatHintAskHealth => 'ಒಂದು ಆರೋಗ್ಯ ಪ್ರಶ್ನೆ ಕೇಳಿ...';
+
+  @override
+  String get chatSuggestWorkout => 'ನನಗೆ ಆರಂಭಿಕರ ವರ್ಕೌಟ್ ಯೋಜನೆ ನೀಡಿ';
+
+  @override
+  String get chatSuggestDiet => 'ಸಮತೋಲಿತ ದೈನಂದಿನ ಆಹಾರ ಹೇಗಿರುತ್ತದೆ?';
+
+  @override
+  String get chatSuggestSleep => 'ನಾನು ಉತ್ತಮವಾಗಿ ನಿದ್ರಿಸುವುದು ಹೇಗೆ?';
+
+  @override
+  String get chatSuggestTerms => 'ಸಾಮಾನ್ಯ ರಕ್ತ ಪರೀಕ್ಷೆಯ ಪದಗಳ ಅರ್ಥವೇನು?';
 }

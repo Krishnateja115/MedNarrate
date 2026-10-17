@@ -4,6 +4,8 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MedNarrate uses the microphone only when you tap the mic button in the chat, to turn your voice into text. Recordings are not kept.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>MedNarrate requires Face ID / Touch ID authentication to secure your medical records.</string>
 	<key>CFBundleDevelopmentRegion</key>

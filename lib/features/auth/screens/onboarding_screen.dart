@@ -6,6 +6,7 @@ import '../../../core/services/storage_service.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../widgets/onboarding_page.dart';
 import '../widgets/page_indicator.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -19,32 +20,40 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   int currentPage = 0;
 
-  final List<Map<String, dynamic>> pages = [
-    {
-      "icon": Icons.description_rounded,
-      "title": "Understand\nMedical Reports",
-      "subtitle":
-          "Upload any medical report and let AI explain every medical term in simple language."
-    },
-    {
-      "icon": Icons.smart_toy_rounded,
-      "title": "AI Health\nAssistant",
-      "subtitle":
-          "Ask questions about your uploaded reports and receive clear, easy-to-understand explanations."
-    },
-    {
-      "icon": Icons.medication_rounded,
-      "title": "Medicine\nReminders",
-      "subtitle":
-          "Never miss your medicines. Receive intelligent reminders based on your prescriptions."
-    },
-    {
-      "icon": Icons.insights_rounded,
-      "title": "Track Your\nHealth",
-      "subtitle":
-          "Monitor health trends, compare reports and understand your progress over time."
-    },
+  // Icons are fixed; the words come from the app's translations so they follow
+  // the language the user picked.
+  static const List<IconData> _pageIcons = [
+    Icons.description_rounded,
+    Icons.smart_toy_rounded,
+    Icons.medication_rounded,
+    Icons.insights_rounded,
   ];
+
+  String _pageTitle(AppLocalizations l10n, int index) {
+    switch (index) {
+      case 0:
+        return l10n.onbTitle1;
+      case 1:
+        return l10n.onbTitle2;
+      case 2:
+        return l10n.onbTitle3;
+      default:
+        return l10n.onbTitle4;
+    }
+  }
+
+  String _pageSubtitle(AppLocalizations l10n, int index) {
+    switch (index) {
+      case 0:
+        return l10n.onbBody1;
+      case 1:
+        return l10n.onbBody2;
+      case 2:
+        return l10n.onbBody3;
+      default:
+        return l10n.onbBody4;
+    }
+  }
 
   Future<void> _navigateToSignup() async {
     await StorageService.instance.setOnboardingSeen();
@@ -79,7 +88,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   TextButton(
                     onPressed: _navigateToSignup,
                     child: Text(
-                      "Skip",
+                      AppLocalizations.of(context)!.skip,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70),
                         fontSize: 16,
@@ -97,7 +106,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: PageView.builder(
                 controller: _controller,
 
-                itemCount: pages.length,
+                itemCount: _pageIcons.length,
 
                 onPageChanged: (index) {
                   setState(() {
@@ -106,15 +115,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
 
                 itemBuilder: (context, index) {
-                  final page = pages[index];
+                  final l10n = AppLocalizations.of(context)!;
 
                   return AnimatedSwitcher(
                     duration: const Duration(milliseconds: 400),
                     child: OnboardingPage(
                       key: ValueKey(index),
-                      icon: page["icon"],
-                      title: page["title"],
-                      subtitle: page["subtitle"],
+                      icon: _pageIcons[index],
+                      title: _pageTitle(l10n, index),
+                      subtitle: _pageSubtitle(l10n, index),
                       pageIndex: index,
                     ),
                   );
@@ -130,7 +139,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
 
               children: List.generate(
-                pages.length,
+                _pageIcons.length,
                 (index) => PageIndicator(
                   active: currentPage == index,
                 ),
@@ -147,12 +156,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
 
               child: PrimaryButton(
-                text: currentPage == pages.length - 1
-                    ? "Get Started"
-                    : "Continue",
+                text: currentPage == _pageIcons.length - 1
+                    ? AppLocalizations.of(context)!.getStarted
+                    : AppLocalizations.of(context)!.continueLabel,
 
                 onPressed: () {
-                  if (currentPage < pages.length - 1) {
+                  if (currentPage < _pageIcons.length - 1) {
                     _controller.nextPage(
                       duration: const Duration(milliseconds: 350),
                       curve: Curves.easeInOut,

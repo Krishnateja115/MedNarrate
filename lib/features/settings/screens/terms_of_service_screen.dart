@@ -102,7 +102,7 @@ class TermsOfServiceScreen extends StatelessWidget {
               theme,
               title: '3. No Emergency Care or Diagnosis',
               content:
-                  'The Application does not diagnose medical conditions, prescribe treatment plans, or provide emergency services. If you are experiencing a medical emergency, call your local emergency emergency response number (e.g., 911 or local equivalent) or visit the nearest emergency room immediately.',
+                  'The Application does not diagnose medical conditions, prescribe treatment plans, or provide emergency services. If you are experiencing a medical emergency, call your local emergency number (112 in India, 911 in the US) or visit the nearest emergency room immediately.',
             ),
 
             _buildSection(

@@ -150,6 +150,7 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                         SizedBox(height: 12),
                         DropdownButton<String>(
                           value: _selectedTest,
+                          isExpanded: true,
                           dropdownColor: Theme.of(context).cardColor,
                           style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurface),
@@ -165,6 +166,8 @@ class _ReportTimelineScreenState extends State<ReportTimelineScreen> {
                               .map((t) => DropdownMenuItem(
                                     value: t,
                                     child: Text(t,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                             color: Theme.of(context)
                                                 .colorScheme

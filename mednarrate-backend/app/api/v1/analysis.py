@@ -27,6 +27,8 @@ from app.schemas.report import (
 )
 from app.services.analysis_pipeline import run_analysis
 from app.services.llm_client import generate_translation_with_provider
+from app.services.translation_labels import get_ui_labels
+from app.services.translation_planner import INVALID_OUTPUT, resolve_translation_providers
 from app.services.translation_validation import validate_translation
 from app.exceptions import TranslationServiceError
 
@@ -45,7 +47,36 @@ SUPPORTED_TRANSLATION_LANGUAGES = {
     "mr": "Marathi",
 }
 
-# Every ui_labels key that the translation prompt contract promises.
+# What the patient sees for each failure cause. Messages stay free of provider
+# names, keys and report text; the exact cause is in the server log and in the
+# response's machine-readable "reason" field (see /api docs and llm_check).
+_TRANSLATION_FAILURE_MESSAGES = {
+    "quota_or_rate_limit": "Translation has reached its usage limit for now. Please try again in a few minutes.",
+    "temporary_outage_or_timeout": "Translation is taking too long or the service is busy. Please try again.",
+    "network_unreachable": "The server could not reach the translation service. Please check the server's internet connection and try again.",
+    "timeout": "Translation is taking too long or the service is busy. Please try again.",
+    "invalid_output": "The translation could not be verified for accuracy, so it was not shown. Please try again.",
+    "invalid_or_unauthorised_key": "Translation is not set up correctly on the server. Please contact support.",
+    "model_not_found_or_bad_request": "Translation is not set up correctly on the server. Please contact support.",
+    "not_configured": "Translation is not set up on the server yet. Please contact support.",
+    "unknown_error": "Translation is temporarily unavailable. Please try again.",
+}
+
+
+def _provider_diagnostics(providers) -> str:
+    """Key-free summary of why each provider is currently failing (for logs and dev UI)."""
+    from app.services.provider_health import provider_health
+
+    snapshot = provider_health.snapshot()
+    parts = []
+    for name in providers:
+        entry = snapshot.get("gemini" if name in {"dev_gemini", "gemini"} else name)
+        if entry:
+            parts.append(f"{name}={entry['kind']} ({entry.get('last_error') or 'no detail'})")
+    return " | ".join(parts)
+
+
+# Every ui_labels key the app reads (all supplied by translation_labels.py).
 # Backend validates that Gemini populated all of these (non-empty string)
 # before storing/returning the translation — so Flutter never sees a
 # partially-translated labels dict and is never tempted to fall back to
@@ -268,14 +299,10 @@ async def translate_analysis(
     import uuid
     import os
     request_id = str(uuid.uuid4())
-    logger.info(f"\n================================================\n"
-                f"MEDNARRATE TRANSLATION DEBUG REQUEST\n"
-                f"request_id={request_id}\n"
-                f"process_id={os.getpid()}\n"
-                f"report_id={id}\n"
-                f"target_language={req.language}\n"
-                f"================================================\n")
-    # ... adding logs
+    logger.info(
+        "[TRANSLATION %s] start report_id=%s target_language=%s pid=%s",
+        request_id, id, req.language, os.getpid(),
+    )
     logger.info(f"[TRANSLATION {request_id}] route entered")
     
     report = await verify_report_ownership(id, str(current_user.id), db)
@@ -363,13 +390,17 @@ async def translate_analysis(
         == source_fingerprint
     ):
         logger.info(f"[TRANSLATION {request_id}] cache=HIT")
+        # Screen labels are fixed text: always serve the current reviewed table
+        # (plus the cached per-report parameter names) so older cache rows that
+        # were model-generated cannot show blanks or English leftovers.
+        cached_labels = {**(translation.ui_labels or {}), **get_ui_labels(lang)}
         cached_payload = {
             "clinician_summary": translation.clinician_summary,
             "patient_summary": translation.patient_summary,
             "abnormal_findings": translation.findings_json,
             "medications": translation.medications_json,
             "doctor_discussion_points": translation.doctor_discussion_points,
-            "ui_labels": translation.ui_labels,
+            "ui_labels": cached_labels,
         }
         try:
             validate_translation(
@@ -391,7 +422,7 @@ async def translate_analysis(
                 findings_json=translation.findings_json,
                 medications_json=translation.medications_json,
                 doctor_discussion_points=translation.doctor_discussion_points,
-                ui_labels=translation.ui_labels,
+                ui_labels=cached_labels,
                 schema_version=translation.schema_version,
                 cached=True,
             )
@@ -413,33 +444,8 @@ async def translate_analysis(
         )
     )
 
-    from app.core.config import settings
-    order_str = getattr(
-        settings,
-        "TRANSLATION_PROVIDER_ORDER",
-        "vertex_ai,gemini,openai,mistral",
-    )
-    providers = [p.strip() for p in order_str.split(",") if p.strip()]
-    if not providers:
-        providers = ["vertex_ai", "gemini", "openai", "mistral"]
+    providers = resolve_translation_providers()
 
-    # Keep an explicitly configured primary provider first, but do not let a
-    # temporary quota/availability error turn into a hard translation outage
-    # when the fallback chain is enabled. This is especially important for
-    # local development configurations that set TRANSLATION_PROVIDER_ORDER to
-    # only `gemini` while also providing fallback credentials.
-    if getattr(settings, "ENABLE_LLM_FALLBACK", True):
-        configured_fallbacks = {
-            "vertex_ai": bool(getattr(settings, "VERTEX_PROJECT_ID", None)),
-            "openai": bool(getattr(settings, "OPENAI_API_KEY", None)),
-            "anthropic": bool(getattr(settings, "ANTHROPIC_API_KEY", None)),
-            "mistral": bool(getattr(settings, "MISTRAL_API_KEY", None)),
-            "ollama": bool(getattr(settings, "OLLAMA_URL", None)),
-        }
-        for fallback_name, is_configured in configured_fallbacks.items():
-            if is_configured and fallback_name not in providers:
-                providers.append(fallback_name)
-        
     logger.info(f"[TRANSLATION {request_id}] provider_order={','.join(providers)}")
         
     from app.services.translation_planner import execute_translation_plan
@@ -459,25 +465,39 @@ async def translate_analysis(
             generate_func=generate_translation_with_provider,
         )
         
-        # After full reassembly, validate the final complete payload exactly as before
-        # This guarantees full medical integrity across all chunks combined
+        # After full reassembly, validate the complete payload. This runs in every
+        # environment (development included) so a translation that passes locally
+        # cannot fail in production.
         logger.info(f"[TRANSLATION {request_id}] Final reassembled validation started")
-        if getattr(settings, "ENVIRONMENT", "development") != "development":
-            validate_translation(
-                parsed,
-                lang,
-                analysis.clinician_summary or "",
-                analysis.patient_summary or "",
-                abnormal_findings_source,
-                meds_list,
-                REQUIRED_UI_LABEL_KEYS,
-            )
+        validate_translation(
+            parsed,
+            lang,
+            analysis.clinician_summary or "",
+            analysis.patient_summary or "",
+            abnormal_findings_source,
+            meds_list,
+            REQUIRED_UI_LABEL_KEYS,
+        )
         logger.info(f"[TRANSLATION {request_id}] Final reassembled validation=PASS")
-        
+
     except Exception as exc:
-        logger.error("[Translation] Translation plan failed. Last exception: %s", type(exc).__name__)
-        logger.exception("Translation error details:")
-        raise TranslationServiceError("Translation is temporarily unavailable. Please try again.") from exc
+        reason = getattr(exc, "reason", None) or (
+            INVALID_OUTPUT if isinstance(exc, (ValueError, TypeError, KeyError)) else "unknown_error"
+        )
+        diagnostics = _provider_diagnostics(providers)
+        logger.error(
+            "[TRANSLATION %s] failed reason=%s error_type=%s providers=%s",
+            request_id, reason, type(exc).__name__, diagnostics or "-",
+        )
+        # A bug (not a provider failure) needs its traceback to be found.
+        logger.error("Translation error details:", exc_info=not isinstance(exc, TranslationServiceError))
+        message = _TRANSLATION_FAILURE_MESSAGES.get(reason, _TRANSLATION_FAILURE_MESSAGES["unknown_error"])
+        if str(getattr(settings, "ENVIRONMENT", "development")).lower() != "production":
+            # Local/dev only: show the real cause in the app so it can be fixed
+            # without digging through container logs. Never in production.
+            detail = diagnostics or f"{type(exc).__name__}: {str(exc)[:160]}"
+            message = f"{message} [dev info: {reason}; {detail}]"
+        raise TranslationServiceError(message, reason=reason) from exc
 
     logger.info(f"[TRANSLATION {request_id}] TranslationOut=SUCCESS")
     logger.info(f"[TRANSLATION {request_id}] response_status=200")

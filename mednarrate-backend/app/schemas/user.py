@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from datetime import date, datetime
 from typing import Literal, Optional
 from uuid import UUID
@@ -40,11 +41,24 @@ def validate_blood_group_str(v: Optional[str]) -> Optional[str]:
     return normalized
 
 
+def _has_letter_or_digit(text: str) -> bool:
+    """Unicode-aware: true for Latin as well as Devanagari, Telugu, Tamil, etc."""
+    return any(ch.isalnum() for ch in text)
+
+
+def _is_name_char(ch: str) -> bool:
+    """Letters and combining marks (Indic vowel signs are category M*), plus
+    whitespace and the punctuation commonly found in personal names."""
+    if ch.isspace() or ch in ".'-\u2019":
+        return True
+    return unicodedata.category(ch)[0] in ("L", "M")
+
+
 def validate_text_field_str(v: Optional[str]) -> Optional[str]:
     if v is None or v.strip() == "":
         return None
     trimmed = v.strip()
-    if not re.search(r"[a-zA-Z0-9]", trimmed):
+    if not _has_letter_or_digit(trimmed):
         raise ValueError("Field content cannot consist solely of special characters.")
     return trimmed
 
@@ -67,8 +81,8 @@ def validate_emergency_name_str(v: Optional[str]) -> Optional[str]:
     trimmed = v.strip()
     if (
         trimmed == ""
-        or not re.search(r"[a-zA-Z]", trimmed)
-        or not re.match(r"^[a-zA-Z\s\.\'-]+$", trimmed)
+        or not any(ch.isalpha() for ch in trimmed)
+        or not all(_is_name_char(ch) for ch in trimmed)
     ):
         raise ValueError("Please enter a valid full name containing letters.")
     return trimmed

@@ -79,3 +79,4 @@ scratch/
 scratch*.py
 mednarrate-backend/build/
 mednarrate-backend/llm_out.txt
+_backups/

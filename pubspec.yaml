@@ -73,6 +73,8 @@ dependencies:
   local_auth: ^3.0.2
   flutter_timezone: ^5.1.0
   audioplayers: ^6.8.1
+  # Voice input (microphone button in the chat box)
+  record: ^6.0.0
   web: ^1.1.0
   flutter_secure_storage: ^10.3.4
   cupertino_icons: ^2.0.0

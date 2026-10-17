@@ -84,3 +84,28 @@ async def test_create_report_reminder_and_ownership(
     final_get = await client.get("/api/v1/reminders/", headers=token_headers)
     assert final_get.status_code == 200
     assert not any(r["id"] == reminder_id for r in final_get.json())
+
+
+@pytest.mark.asyncio
+async def test_medication_schedules_lists_reminders_not_tied_to_a_report(
+    client: AsyncClient, token_headers: dict
+):
+    """A hand-made reminder has no report; listing schedules must still work."""
+    created = await client.post(
+        "/api/v1/reminders/",
+        json={
+            "medication_name": "Manual Med",
+            "dosage": "5mg",
+            "frequency": "Once daily",
+            "times_of_day": ["08:00"],
+        },
+        headers=token_headers,
+    )
+    assert created.status_code == 201
+
+    resp = await client.get(
+        "/api/v1/notifications/medication-schedules", headers=token_headers
+    )
+    assert resp.status_code == 200
+    rows = resp.json()
+    assert any(r["medication_name"] == "Manual Med" and r["report_id"] is None for r in rows)

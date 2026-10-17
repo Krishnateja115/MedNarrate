@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/services/api_service.dart';
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/custom_textfield.dart';
@@ -49,13 +50,15 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
   String? _validateName(String input) {
     final trimmed = input.trim();
     if (trimmed.isEmpty) {
-      return "Please enter the emergency contact's full name.";
+      return appL10n.emergencyNameRequired;
     }
-    if (!RegExp(r'[a-zA-Z]').hasMatch(trimmed)) {
-      return "Please enter a valid name containing letters.";
+    // Letters in any script (Devanagari, Tamil, ...) plus the combining marks used by
+    // Indic vowel signs, matching the backend's name rule.
+    if (!RegExp(r'\p{L}', unicode: true).hasMatch(trimmed)) {
+      return appL10n.emergencyNameInvalid;
     }
-    if (!RegExp(r"^[a-zA-Z\s\.\'-]+$").hasMatch(trimmed)) {
-      return "Name can only contain letters and spaces.";
+    if (!RegExp(r"^[\p{L}\p{M}\s.\-\u2019']+$", unicode: true).hasMatch(trimmed)) {
+      return appL10n.nameLettersSpacesOnly;
     }
     return null;
   }
@@ -63,10 +66,10 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
   String? _validatePhone(String input) {
     final trimmed = input.trim();
     if (trimmed.isEmpty) {
-      return "Please enter a valid 10-digit Indian mobile number.";
+      return appL10n.invalidIndianMobile;
     }
     if (!RegExp(r'^[6-9]\d{9}$').hasMatch(trimmed)) {
-      return "Please enter a valid 10-digit Indian mobile number.";
+      return appL10n.invalidIndianMobile;
     }
     return null;
   }
@@ -101,12 +104,12 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
 
       if (!mounted) return;
 
-      Helpers.showSuccess(context, 'Emergency contact saved successfully.');
+      Helpers.showSuccess(context, AppLocalizations.of(context)!.emergencyContactSaved);
       context.pop();
     } on ApiException catch (e) {
       if (mounted) Helpers.showError(context, e.message);
     } catch (_) {
-      if (mounted) Helpers.showError(context, 'Failed to save emergency contact.');
+      if (mounted) Helpers.showError(context, appL10n.emergencyContactSaveFailed);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -167,7 +170,9 @@ class _EmergencyContactScreenState extends State<EmergencyContactScreen> {
                     ),
                     SizedBox(height: 40),
                     PrimaryButton(
-                      text: _saving ? 'Saving...' : 'Save',
+                      text: _saving
+                          ? AppLocalizations.of(context)!.saving
+                          : AppLocalizations.of(context)!.save,
                       onPressed: _saving ? null : () { _save(); },
                     ),
                   ],

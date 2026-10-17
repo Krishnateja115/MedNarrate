@@ -2,11 +2,11 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 class RegisterTokenRequest(BaseModel):
-    token: str = Field(..., min_length=1)
+    token: str = Field(..., min_length=1, max_length=4096)
     platform: str = Field(..., pattern="^(ios|android)$")
 
 class UnregisterTokenRequest(BaseModel):
-    token: str = Field(..., min_length=1)
+    token: str = Field(..., min_length=1, max_length=4096)
 
 class GenericResponse(BaseModel):
     success: bool
@@ -18,7 +18,8 @@ from typing import List
 
 class MedicationScheduleOut(BaseModel):
     id: UUID
-    report_id: UUID
+    # A reminder added by hand is not tied to a report, so this can be empty.
+    report_id: Optional[UUID] = None
     medication_name: str
     dosage: Optional[str]
     frequency: Optional[str]

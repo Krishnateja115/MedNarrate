@@ -92,20 +92,59 @@ def preserve_numbers(source: str, translated: str) -> None:
         raise ValueError("Translation changed numeric facts")
 
 
+_LATIN_TOKEN = re.compile(r"[A-Za-z][A-Za-z0-9]*")
+
+
+def script_letter_stats(text: str, language: str) -> tuple[int, int]:
+    """(native, total) letter counts used by the script checks.
+
+    Two corrections make the ratio fair for Indic scripts:
+    * vowel signs, viramas and other combining marks inside the target script
+      count as native letters (str.isalpha() skips them, which understated
+      Tamil, Malayalam and Telugu text by roughly half);
+    * medical abbreviations and units (MCV, RBC, g/dL, 10^3/uL) are identifiers
+      that are meant to stay in Latin letters, so all-capital tokens, tokens with
+      digits and tokens of up to three letters are not held against the text.
+      Ordinary English words still count, so an untranslated answer is rejected.
+    """
+    low, high = SCRIPT_RANGES[language]
+    skip = bytearray(len(text))
+    for match in _LATIN_TOKEN.finditer(text):
+        token = match.group(0)
+        letters_only = re.sub(r"[0-9]", "", token)
+        if (
+            any(ch.isdigit() for ch in token)
+            or (len(letters_only) >= 2 and letters_only.isupper())
+            or len(letters_only) <= 3
+        ):
+            skip[match.start():match.end()] = b"\x01" * (match.end() - match.start())
+
+    native = total = 0
+    for index, char in enumerate(text):
+        if skip[index]:
+            continue
+        in_script = low <= ord(char) <= high
+        if char.isalpha() or (in_script and unicodedata.category(char) in ("Mn", "Mc")):
+            total += 1
+            if in_script:
+                native += 1
+    return native, total
+
+
 def require_script(text: str, language: str) -> None:
     """Require some target-script content without rejecting medical identifiers."""
     if not isinstance(text, str) or not text.strip():
         raise ValueError("Missing translated text")
     if language not in SCRIPT_RANGES:
         return
-    low, high = SCRIPT_RANGES[language]
-    letters = [char for char in text if char.isalpha()]
-    native = sum(low <= ord(char) <= high for char in letters)
+    native, total = script_letter_stats(text, language)
     # Keep the direct script check consistent with TranslationVerifier. A tiny
     # amount of native text is not a translation and lets English responses
     # pass through as if they were translated.
-    if not native or native / max(len(letters), 1) < 0.40:
-        raise ValueError("Translation does not use the requested script")
+    if not native or native / max(total, 1) < 0.40:
+        raise ValueError(
+            f"Translation does not use the requested script (native letters {native}/{total})"
+        )
 
 
 class TranslationVerifier:
@@ -310,13 +349,11 @@ class TranslationVerifier:
             "doctor_discussion_points"
         )
         if is_prose and self.language in SCRIPT_RANGES:
-            low, high = SCRIPT_RANGES[self.language]
-            letters = [char for char in translated_text if char.isalpha()]
-            native = sum(low <= ord(char) <= high for char in letters)
+            native, total = script_letter_stats(translated_text, self.language)
             threshold = self.language_thresholds.get(
                 self.language, self.language_thresholds["default"]
             )
-            if not native or native / max(len(letters), 1) < threshold:
+            if not native or native / max(total, 1) < threshold:
                 self._add_failure(
                     item_id,
                     field,
@@ -330,6 +367,36 @@ def _raise_verifier_failures(result: dict[str, Any]) -> None:
         return
     rules = ", ".join(sorted({failure["rule"] for failure in result["failures"]}))
     raise ValueError(f"Translation security verification failed: {rules}")
+
+
+def _align_to_source(
+    source: list[dict[str, Any]], output: list[Any], identifier: str
+) -> None:
+    """Make ``output`` line up with ``source`` (in place) or raise.
+
+    Models sometimes reorder items or "translate" the identifier. Identifiers
+    are facts from the report, so: a pure reordering is fixed; if the model
+    changed *every* identifier but kept the count, the order is trusted and the
+    identifiers are restored; a partial mismatch is ambiguous (an explanation
+    could end up under the wrong test) and is rejected.
+    """
+    if any(not isinstance(item, dict) for item in output):
+        raise ValueError("Translation entries must be objects")
+    wanted = [item.get(identifier) for item in source]
+    got = [item.get(identifier) for item in output]
+    if got == wanted:
+        return
+    if Counter(map(str, got)) == Counter(map(str, wanted)):
+        pool: dict[str, list[dict[str, Any]]] = {}
+        for item in output:
+            pool.setdefault(str(item.get(identifier)), []).append(item)
+        output[:] = [pool[str(name)].pop(0) for name in wanted]
+        return
+    if not set(map(str, got)) & set(map(str, wanted)):
+        for original, result in zip(source, output):
+            result[identifier] = original.get(identifier)
+        return
+    raise ValueError("Translation changed report identifiers or order")
 
 
 def validate_translation(
@@ -425,11 +492,7 @@ def validate_translation(
     ):
         if not isinstance(output, list) or len(source) != len(output):
             raise ValueError("Translation omitted or added report entries")
-        for original, result in zip(source, output):
-            if not isinstance(result, dict) or result.get(identifier) != original.get(
-                identifier
-            ):
-                raise ValueError("Translation changed report identifiers or order")
+        _align_to_source(source, output, identifier)
 
     for index, (original, result) in enumerate(zip(findings, output_findings)):
         explanation = result.get("translated_explanation")
@@ -457,9 +520,10 @@ def validate_translation(
         ):
             if not isinstance(result.get(key), str):
                 raise ValueError("Invalid translated medication field")
+        # The dosage is an immutable clinical fact: restore it from the source
+        # rather than rejecting an otherwise good translation.
         dosage = str(original.get("dosage") or "")
-        if result["translated_dosage"] != dosage:
-            raise ValueError("Translation changed medication dosage")
+        result["translated_dosage"] = dosage
         frequency = str(original.get("frequency") or "")
         if frequency:
             require_script(result["translated_frequency"], language)
@@ -469,12 +533,12 @@ def validate_translation(
             source_times
         ):
             raise ValueError("Translation changed medication timings")
-        for before, after in zip(source_times, translated_times):
+        for position, (before, after) in enumerate(zip(source_times, translated_times)):
             if not isinstance(after, str):
                 raise ValueError("Invalid medication timing")
             if re.fullmatch(r"\d{1,2}:\d{2}(?::\d{2})?", str(before)):
-                if before != after:
-                    raise ValueError("Translation changed a clock time")
+                # Clock times are copied from the source (immutable facts).
+                translated_times[position] = str(before)
             else:
                 require_script(after, language)
         instructions = str(original.get("instructions") or "")

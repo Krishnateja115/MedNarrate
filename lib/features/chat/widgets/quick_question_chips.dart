@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_l10n.dart';
 
 class QuickQuestionChips extends StatelessWidget {
   final Function(String) onSelect;
 
   const QuickQuestionChips({super.key, required this.onSelect});
 
-  static const List<String> questions = [
-    "Summarize my results",
-    "What values are abnormal?",
-    "Is anything urgent?",
-    "What should I ask my doctor?",
-  ];
+  /// The four starter questions in the language the user picked.
+  static List<String> get questions => [
+        appL10n.quickSummarize,
+        appL10n.quickAbnormal,
+        appL10n.quickUrgent,
+        appL10n.quickAskDoctor,
+      ];
+
+  /// Starter questions for the general assistant (no report open).
+  static List<String> get generalQuestions => [
+        appL10n.chatSuggestWorkout,
+        appL10n.chatSuggestDiet,
+        appL10n.chatSuggestSleep,
+        appL10n.chatSuggestTerms,
+      ];
 
   @override
   Widget build(BuildContext context) {

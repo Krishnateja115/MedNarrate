@@ -19,6 +19,7 @@ import '../widgets/announcement_banner.dart';
 import 'package:go_router/go_router.dart';
 import '../../reports/widgets/upload_card.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
+import 'package:mednarrate/core/l10n/app_l10n.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -32,7 +33,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _loading = true;
   String? _loadError;
-  String _userName = 'User';
+  String _userName = appL10n.defaultUserName;
   String _userRole = 'patient';
   List<ReportModel> _recentReports = [];
   int _totalReports = 0;
@@ -156,7 +157,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _loading = false;
           _loadError = error is ApiException
               ? error.message
-              : 'Unable to load your dashboard. Please try again.';
+              : appL10n.dashboardLoadError;
         });
       }
     }
@@ -194,7 +195,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ElevatedButton.icon(
                                     onPressed: _loadData,
                                     icon: const Icon(Icons.refresh),
-                                    label: const Text('Try again'),
+                                    label: Text(AppLocalizations.of(context)!.tryAgain),
                                   ),
                                 ],
                               ),

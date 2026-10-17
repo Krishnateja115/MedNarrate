@@ -613,3 +613,45 @@ class ChatMessageModel {
     );
   }
 }
+
+/// What the server says about voice input (`GET /speech/status`).
+class SpeechStatus {
+  final bool enabled;
+  final List<String> languages;
+  final int maxSeconds;
+
+  const SpeechStatus({
+    required this.enabled,
+    this.languages = const [],
+    this.maxSeconds = 120,
+  });
+
+  const SpeechStatus.disabled()
+      : enabled = false,
+        languages = const [],
+        maxSeconds = 120;
+
+  factory SpeechStatus.fromMap(Map<String, dynamic> map) {
+    return SpeechStatus(
+      enabled: map['enabled'] == true,
+      languages: List<String>.from(map['languages'] ?? const []),
+      maxSeconds: (map['max_seconds'] as num?)?.toInt() ?? 120,
+    );
+  }
+}
+
+/// Result of `POST /speech/transcribe`.
+class SpeechResult {
+  final String text;
+  final bool noSpeech;
+
+  const SpeechResult({required this.text, required this.noSpeech});
+
+  factory SpeechResult.fromMap(Map<String, dynamic> map) {
+    final text = (map['text'] as String? ?? '').trim();
+    return SpeechResult(
+      text: text,
+      noSpeech: map['no_speech'] == true || text.isEmpty,
+    );
+  }
+}

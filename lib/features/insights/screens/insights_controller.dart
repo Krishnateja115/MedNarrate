@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../reports/models/report_model.dart';
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/services/api_service.dart';
 import '../../../models/comparison_models.dart';
 
@@ -36,7 +37,7 @@ class InsightsController extends ChangeNotifier {
         await compareSelected();
       }
     } catch (e) {
-      if (!_disposed) error = "Failed to load reports: ${e.toString()}";
+      if (!_disposed) error = appL10n.insightsFailedToLoad(e.toString());
     } finally {
       if (!_disposed) {
         isLoading = false;
@@ -52,7 +53,7 @@ class InsightsController extends ChangeNotifier {
       if (selectedReportIds.length < 5) {
         selectedReportIds.add(reportId);
       } else {
-        error = "Maximum 5 reports can be selected for comparison.";
+        error = appL10n.insightsMax5;
         notifyListeners();
         return;
       }
@@ -65,7 +66,7 @@ class InsightsController extends ChangeNotifier {
 
   Future<void> compareSelected() async {
     if (selectedReportIds.length < 2) {
-      error = "Select at least 2 reports to compare.";
+      error = appL10n.insightsSelectAtLeast2;
       notifyListeners();
       return;
     }
@@ -80,7 +81,7 @@ class InsightsController extends ChangeNotifier {
       comparisonResult = comp;
     } catch (e) {
       if (!_disposed) {
-        error = "Failed to generate comparison: ${e.toString()}";
+        error = appL10n.insightsFailedCompare(e.toString());
         comparisonResult = null;
       }
     } finally {

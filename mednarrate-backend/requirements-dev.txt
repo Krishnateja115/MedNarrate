@@ -1,0 +1,6 @@
+# Development / CI tooling. Production images install requirements.txt only.
+-r requirements.txt
+pytest==8.3.2
+pytest-asyncio==0.23.8
+ruff==0.3.5
+mypy==1.9.0

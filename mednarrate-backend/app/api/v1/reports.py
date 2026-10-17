@@ -11,6 +11,7 @@ from sqlalchemy import desc, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from app.core.csv_safety import csv_safe_row
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.middleware.ownership import verify_report_ownership
@@ -27,7 +28,7 @@ from app.schemas.report import (
     ReportUpdate,
 )
 from app.services.file_storage import delete_file, save_upload_file
-from app.services.lab_value_normalizer import normalize_parameter_name
+from app.services.lab_value_normalizer import comparison_name
 from app.services.llm_client import generate
 from app.services.prompts import COMPARISON_PROMPT, TREND_NARRATIVE_PROMPT
 
@@ -109,6 +110,52 @@ async def list_reports(
     return reports
 
 
+def _num(value):
+    """Return a finite float for a numeric lab value, else None.
+
+    Stored lab values may be None, strings such as "<5" or "Positive", or
+    booleans; those cannot be trended or subtracted and must be skipped
+    instead of crashing the whole endpoint with a 500.
+    """
+    import math
+
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _lab_name(lab) -> str | None:
+    if not isinstance(lab, dict):
+        return None
+    name = lab.get("test_name")
+    return name.strip() if isinstance(name, str) and name.strip() else None
+
+
+def _lab_list(analysis) -> list:
+    values = getattr(analysis, "structured_lab_values", None)
+    return values if isinstance(values, list) else []
+
+
+def _format_range(entry) -> str:
+    """"low-high" for a reference range, or "" when the report gave none."""
+    if not entry:
+        return ""
+
+    def fmt(x):
+        return "" if x is None else (f"{x:g}")
+
+    low, high = entry["ref_low"], entry["ref_high"]
+    if low is not None and high is not None:
+        return f"{fmt(low)}-{fmt(high)}"
+    if high is not None:
+        return f"<{fmt(high)}"
+    return f">{fmt(low)}"
+
+
 @router.get("/trend", response_model=List[ComparePoint])
 async def get_test_trend(
     test_name: str,
@@ -131,16 +178,24 @@ async def get_test_trend(
     rows = result.all()
 
     points = []
+    wanted = test_name.strip().lower()
+    wanted_key = comparison_name(test_name.strip()) if wanted else ""
     for report, analysis in rows:
-        for val in analysis.structured_lab_values:
-            if val["test_name"].lower() == test_name.lower():
+        for val in _lab_list(analysis):
+            name = _lab_name(val)
+            number = _num(val.get("value")) if name else None
+            if (
+                name
+                and number is not None
+                and (name.lower() == wanted or comparison_name(name) == wanted_key)
+            ):
                 points.append(
                     ComparePoint(
                         report_id=report.id,
                         report_date=report.report_date,
-                        value=val["value"],
-                        unit=val["unit"],
-                        flag=val["flag"],
+                        value=number,
+                        unit=str(val.get("unit") or ""),
+                        flag=str(val.get("flag") or "not_classified"),
                     )
                 )
                 break
@@ -154,7 +209,14 @@ async def compare_reports_multiple(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    ids = [uuid.UUID(r_id.strip()) for r_id in report_ids.split(",") if r_id.strip()]
+    try:
+        ids = list(
+            dict.fromkeys(
+                uuid.UUID(r_id.strip()) for r_id in report_ids.split(",") if r_id.strip()
+            )
+        )
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid report ID in list")
     if len(ids) < 2 or len(ids) > 5:
         raise HTTPException(
             status_code=400, detail="Must provide between 2 and 5 report IDs"
@@ -182,42 +244,70 @@ async def compare_reports_multiple(
     analyses = (await db.execute(stmt_analyses)).scalars().all()
     analysis_by_report_id = {str(a.report_id): a for a in analyses}
 
-    # Build comparison object
-    param_map = {}
+    # Build comparison object. The same test is matched across reports by its
+    # canonical name ("rbc_count", "Total RBC Count" and "RBC" are one test).
+    # A missing unit does not stop two results matching; two different
+    # non-empty units (g/dL vs g/L) are kept apart.
+    by_name: dict[str, list[dict]] = {}
 
     for report in reports_sorted:
         analysis = analysis_by_report_id.get(str(report.id))
         if not analysis:
             continue
 
-        for lab in analysis.structured_lab_values:
-            norm_name = normalize_parameter_name(lab["test_name"])
-            unit = lab.get("unit", "").strip()
-
-            # Key by parameter AND unit to avoid comparing apples to oranges
-            key = f"{norm_name}|{unit}"
-
-            if key not in param_map:
-                param_map[key] = {
-                    "parameter": norm_name,
-                    "unit": unit,
-                    "reference_range": f"{lab.get('ref_low', '')}-{lab.get('ref_high', '')}",
-                    "values": [],
+        seen_in_report: set[str] = set()
+        for lab in _lab_list(analysis):
+            raw_name = _lab_name(lab)
+            lab_number = _num(lab.get("value")) if raw_name else None
+            if raw_name is None or lab_number is None:
+                continue  # non-numeric results cannot be compared over time
+            norm_name = comparison_name(raw_name)
+            if norm_name in seen_in_report:
+                continue  # one value per report per test
+            seen_in_report.add(norm_name)
+            by_name.setdefault(norm_name, []).append(
+                {
+                    "report_id": str(report.id),
+                    "date": report.report_date.isoformat(),
+                    "value": lab_number,
+                    "status": str(lab.get("flag") or "not_classified"),
+                    "unit": str(lab.get("unit") or "").strip(),
+                    "ref_low": _num(lab.get("ref_low")),
+                    "ref_high": _num(lab.get("ref_high")),
                 }
+            )
 
-            # Check if this report already has a value for this param
-            existing = [
-                v for v in param_map[key]["values"] if v["report_id"] == str(report.id)
-            ]
-            if not existing:
-                param_map[key]["values"].append(
-                    {
-                        "report_id": str(report.id),
-                        "date": report.report_date.isoformat(),
-                        "value": lab["value"],
-                        "status": lab.get("flag", "not_classified"),
-                    }
-                )
+    param_map = {}
+    for norm_name, entries in by_name.items():
+        units = {e["unit"].lower() for e in entries if e["unit"]}
+        if len(units) <= 1:
+            groups = {next(iter(units), ""): entries}
+        else:
+            groups = {}
+            for e in entries:
+                if e["unit"]:
+                    groups.setdefault(e["unit"].lower(), []).append(e)
+        for unit_key, group in groups.items():
+            shown_unit = next(
+                (e["unit"] for e in reversed(group) if e["unit"]), unit_key
+            )
+            ref_entry = next(
+                (
+                    e
+                    for e in reversed(group)
+                    if e["ref_low"] is not None or e["ref_high"] is not None
+                ),
+                None,
+            )
+            param_map[f"{norm_name}|{unit_key}"] = {
+                "parameter": norm_name,
+                "unit": shown_unit,
+                "reference_range": _format_range(ref_entry),
+                "values": [
+                    {k: e[k] for k in ("report_id", "date", "value", "status")}
+                    for e in group
+                ],
+            }
 
     # Filter to parameters present in at least 2 reports and compute trends
     comparisons = []
@@ -488,15 +578,23 @@ async def compare_previous(
     if not curr_analysis or not prev_analysis:
         return ComparePreviousResult(comparable=False, reason="missing_analysis")
 
-    prev_vals = {v["test_name"].lower(): v for v in prev_analysis.structured_lab_values}
-    curr_vals = {v["test_name"].lower(): v for v in curr_analysis.structured_lab_values}
+    prev_vals = {
+        _lab_name(v).lower(): v
+        for v in _lab_list(prev_analysis)
+        if _lab_name(v) and _num(v.get("value")) is not None
+    }
+    curr_vals = {
+        _lab_name(v).lower(): v
+        for v in _lab_list(curr_analysis)
+        if _lab_name(v) and _num(v.get("value")) is not None
+    }
 
     diffed_findings = []
     for t_name, curr_v in curr_vals.items():
         if t_name in prev_vals:
             prev_v = prev_vals[t_name]
             # Simple diff
-            diff = curr_v["value"] - prev_v["value"]
+            diff = _num(curr_v["value"]) - _num(prev_v["value"])
             status = "stable"
             if abs(diff) > 0.01:
                 # Basic rule: closer to ref_low / ref_high midpoint is improved, else worsened (simplified)
@@ -506,7 +604,7 @@ async def compare_previous(
                     "test_name": curr_v["test_name"],
                     "previous_value": prev_v["value"],
                     "current_value": curr_v["value"],
-                    "unit": curr_v["unit"],
+                    "unit": curr_v.get("unit") or "",
                     "status": status,
                 }
             )
@@ -515,7 +613,7 @@ async def compare_previous(
                 {
                     "test_name": curr_v["test_name"],
                     "current_value": curr_v["value"],
-                    "unit": curr_v["unit"],
+                    "unit": curr_v.get("unit") or "",
                     "status": "new",
                 }
             )
@@ -525,7 +623,11 @@ async def compare_previous(
     prompt = COMPARISON_PROMPT.format(
         diffed_findings_json=json.dumps(diffed_findings, indent=2)
     )
-    summary = await generate(prompt)
+    try:
+        summary = await generate(prompt)
+    except Exception:
+        logger.warning("compare-previous narrative generation failed", exc_info=True)
+        summary = "Comparison summary temporarily unavailable."
 
     return ComparePreviousResult(
         comparable=True,
@@ -559,14 +661,16 @@ async def export_report_csv(
 
     for val in analysis.structured_lab_values:
         writer.writerow(
-            [
-                val.get("test_name", ""),
-                val.get("value", ""),
-                val.get("unit", ""),
-                val.get("ref_low", ""),
-                val.get("ref_high", ""),
-                val.get("flag", ""),
-            ]
+            csv_safe_row(
+                [
+                    val.get("test_name", ""),
+                    val.get("value", ""),
+                    val.get("unit", ""),
+                    val.get("ref_low", ""),
+                    val.get("ref_high", ""),
+                    val.get("flag", ""),
+                ]
+            )
         )
 
     response = Response(content=output.getvalue(), media_type="text/csv")

@@ -31,4 +31,5 @@ class Routes {
   static const String termsOfService = "/terms-of-service";
   static const String privacyPolicy = "/privacy-policy";
   static const String customLicenses = "/licenses";
+  static const String aiModels = "/ai-models";
 }

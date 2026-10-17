@@ -200,8 +200,22 @@ async def prompt_injection_middleware(request: Request, call_next):
                 body_str = body.decode("utf-8").lower()
 
                 # Robust Prompt Injection / Jailbreak Detection Regex
+                # Only multi-word attack phrases are matched. Single ambiguous
+                # words ("bypass", "dan", "system prompt") also occur in
+                # legitimate medical/profile data (e.g. a contact named Dan,
+                # "bypass surgery") and must not block ordinary requests.
                 injection_pattern = re.compile(
-                    r"\b(ignore previous instructions|ignore all previous|system prompt|you are a helpful assistant|forget previous|override instructions|bypass|jailbreak|dan|do anything now)\b",
+                    r"\b("
+                    r"ignore (all )?(the )?(previous|prior|above) (instructions|prompts?)"
+                    r"|forget (all )?(the )?(previous|prior|above) (instructions|prompts?)"
+                    r"|(reveal|show|print|repeat|leak|ignore|override)\s+(me\s+)?(the\s+|your\s+)?system\s+prompt"
+                    r"|you are a helpful assistant"
+                    r"|override (your |the |all )?instructions"
+                    r"|bypass (your |the |all )?(safety|content|security)?\s*(filters?|guardrails?|restrictions?|rules)"
+                    r"|jailbreak(ing|ed)?"
+                    r"|dan mode"
+                    r"|do anything now"
+                    r")\b",
                     re.IGNORECASE,
                 )
 

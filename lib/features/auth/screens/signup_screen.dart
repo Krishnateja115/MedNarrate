@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
@@ -40,7 +41,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _signup() async {
     if (!_formKey.currentState!.validate()) return;
     if (passwordController.text != confirmPasswordController.text) {
-      Helpers.showError(context, 'Passwords do not match');
+      Helpers.showError(context, AppLocalizations.of(context)!.passwordsDoNotMatch);
       return;
     }
     setState(() => _loading = true);
@@ -85,7 +86,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   controller: nameController,
                   label: AppLocalizations.of(context)!.fullName,
                   icon: Icons.person_outline,
-                  validator: (v) => Validators.requiredField(v, fieldName: 'Full name'),
+                  validator: (v) => v == null || v.trim().isEmpty ? appL10n.fullNameRequired : null,
                 ),
                 SizedBox(height: 20),
                 CustomTextField(
@@ -101,7 +102,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   validator: Validators.passwordStrengthError,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: AppLocalizations.of(context)!.password,
                     labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
                     prefixIcon: Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
@@ -116,9 +117,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   controller: confirmPasswordController,
                   obscureText: obscureConfirmPassword,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                  validator: (v) => v == null || v.isEmpty ? 'Confirm your password' : null,
+                  validator: (v) => v == null || v.isEmpty ? appL10n.confirmYourPassword : null,
                   decoration: InputDecoration(
-                    labelText: 'Confirm Password',
+                    labelText: AppLocalizations.of(context)!.confirmPassword,
                     labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.70)),
                     prefixIcon: Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
@@ -130,7 +131,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 SizedBox(height: 35),
                 Text(
-                  'MedNarrate explains reports but does not diagnose conditions or replace a clinician.',
+                  AppLocalizations.of(context)!.medicalDisclaimerShort,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
@@ -140,17 +141,19 @@ class _SignupScreenState extends State<SignupScreen> {
                   children: [
                     TextButton(
                       onPressed: () => context.push(Routes.termsOfService),
-                      child: const Text('Terms of Service'),
+                      child: Text(AppLocalizations.of(context)!.termsOfService),
                     ),
                     TextButton(
                       onPressed: () => context.push(Routes.privacyPolicy),
-                      child: const Text('Privacy Policy'),
+                      child: Text(AppLocalizations.of(context)!.privacyPolicy),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 PrimaryButton(
-                  text: _loading ? 'Creating Account…' : 'Sign Up',
+                  text: _loading
+                      ? AppLocalizations.of(context)!.creatingAccount
+                      : AppLocalizations.of(context)!.signUp,
                   onPressed: _loading ? null : () { _signup(); },
                 ),
                 SizedBox(height: 35),

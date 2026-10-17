@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_l10n.dart';
+import '../../../core/l10n/locale_notifier.dart';
+import '../../../core/l10n/report_ui_labels.dart';
 import '../../../core/services/api_models.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
@@ -9,6 +12,7 @@ import '../models/report_model.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 import '../../../core/services/api_exception.dart';
 import 'translation_parameter_name.dart';
+import 'lab_flag_sheet.dart';
 
 class PatientViewTab extends StatefulWidget {
   final ReportModel report;
@@ -37,10 +41,12 @@ class PatientViewTab extends StatefulWidget {
 class _PatientViewTabState extends State<PatientViewTab> {
   String _label(String key, {required String fallback}) {
     final t = widget.translation;
-    final labels = t?.uiLabels;
+    // Labels of the active report translation, else the app-language word list
+    // (empty for English, which then uses [fallback]).
+    final labels = effectiveReportUiLabels(t);
     final bool isTranslated = t != null && t.language != 'en';
 
-    if (labels == null) {
+    if (labels.isEmpty) {
       return isTranslated ? '' : fallback;
     }
     final val = labels[key];
@@ -154,8 +160,6 @@ class _PatientViewTabState extends State<PatientViewTab> {
     final analysis = widget.analysis;
     final theme = Theme.of(context);
     final t = widget.translation;
-    // ignore: unused_local_variable
-    final l = t?.uiLabels;
 
     // Translated summaries that were stored without line breaks are given
     // their section structure back for display only (stored text untouched).
@@ -164,7 +168,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
           ? ReportTextStructurer.restoreStructure(t.patientSummary)
           : (analysis?.patientSummary ??
               report.aiSummary ??
-              'No patient-friendly summary available for this report.'),
+              AppLocalizations.of(context)!.noPatientSummary),
     );
 
     final rawLabs = analysis?.structuredLabValues ?? [];
@@ -258,11 +262,13 @@ class _PatientViewTabState extends State<PatientViewTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                _label('section_report_at_a_glance',
-                    fallback: 'Report at a Glance'),
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Expanded(
+                child: Text(
+                  _label('section_report_at_a_glance',
+                      fallback: 'Report at a Glance'),
+                  style:
+                      const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
               TextButton.icon(
                 key: const ValueKey('language_selector_button'),
@@ -278,6 +284,36 @@ class _PatientViewTabState extends State<PatientViewTab> {
             ],
           ),
           const SizedBox(height: 10),
+          if (widget.isTranslating)
+            Container(
+              key: const ValueKey('translating_banner'),
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context)!.translatingReportBanner,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // Summary Box formatted nicely without raw Markdown
           Container(
@@ -304,13 +340,16 @@ class _PatientViewTabState extends State<PatientViewTab> {
                             .primary
                             .withValues(alpha: 0.7)),
                     const SizedBox(width: 4),
-                    Text(
-                      aiAttribution,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                        fontStyle: FontStyle.italic,
+                    Flexible(
+                      child: Text(
+                        aiAttribution,
+                        textAlign: TextAlign.end,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color:
+                              theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ),
                   ],
@@ -343,13 +382,19 @@ class _PatientViewTabState extends State<PatientViewTab> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(item['label'] ?? 'Metadata',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w600)),
-                              Text(item['value'] ?? '',
-                                  style: TextStyle(
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.8))),
+                              Flexible(
+                                child: Text(item['label'] ?? AppLocalizations.of(context)!.metadataFallback,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                              const SizedBox(width: 12),
+                              Flexible(
+                                child: Text(item['value'] ?? '',
+                                    textAlign: TextAlign.end,
+                                    style: TextStyle(
+                                        color: theme.colorScheme.onSurface
+                                            .withValues(alpha: 0.8))),
+                              ),
                             ],
                           ),
                         ))
@@ -520,24 +565,31 @@ class _PatientViewTabState extends State<PatientViewTab> {
                         const SizedBox(width: 4),
                         Text(
                             Formatters.formatDate(report.reportDate,
-                                translation?.language ?? 'en'),
+                                translation?.language),
                             style: const TextStyle(fontSize: 12)),
                         const SizedBox(width: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.accentTeal.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            _label('chip_report_type',
-                                fallback:
-                                    Helpers.reportTypeLabel(report.reportType)),
-                            style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.accentTeal),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.accentTeal.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              Helpers.reportTypeLabelIn(
+                                  report.reportType,
+                                  translation != null &&
+                                          translation.language != 'en'
+                                      ? translation.language
+                                      : appLanguageCode),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.accentTeal),
+                            ),
                           ),
                         ),
                       ],
@@ -550,28 +602,36 @@ class _PatientViewTabState extends State<PatientViewTab> {
           const SizedBox(height: 14),
           const Divider(height: 1),
           const SizedBox(height: 12),
-          Wrap(
-            alignment: WrapAlignment.spaceAround,
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              _buildStatChip(
-                  context,
-                  '$labCount',
-                  _label('chip_lab_results', fallback: 'Lab Results'),
-                  Icons.science_outlined),
-              _buildStatChip(
-                  context,
-                  '$medCount',
-                  _label('chip_medications', fallback: 'Medications'),
-                  Icons.medication_outlined),
-              _buildStatChip(
-                  context,
-                  '$abnormalCount',
-                  _label('chip_noteworthy', fallback: 'Noteworthy'),
-                  Icons.warning_amber_rounded,
-                  color: abnormalCount > 0 ? Colors.orange : null),
-            ],
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _buildStatChip(
+                      context,
+                      '$labCount',
+                      _label('chip_lab_results', fallback: 'Lab Results'),
+                      Icons.science_outlined),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildStatChip(
+                      context,
+                      '$medCount',
+                      _label('chip_medications', fallback: 'Medications'),
+                      Icons.medication_outlined),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildStatChip(
+                      context,
+                      '$abnormalCount',
+                      _label('chip_noteworthy', fallback: 'Noteworthy'),
+                      Icons.warning_amber_rounded,
+                      color: abnormalCount > 0 ? Colors.orange : null),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -583,19 +643,37 @@ class _PatientViewTabState extends State<PatientViewTab> {
       {Color? color}) {
     final theme = Theme.of(context);
     final c = color ?? theme.colorScheme.primary;
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: c),
-        const SizedBox(width: 6),
-        Text(value,
-            style:
-                TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: c)),
-        const SizedBox(width: 4),
-        Text(label,
-            style: TextStyle(
-                fontSize: 12,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: c),
+              const SizedBox(width: 6),
+              Text(value,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 18, color: c)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 12,
+                  height: 1.25,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.65))),
+        ],
+      ),
     );
   }
 
@@ -603,26 +681,26 @@ class _PatientViewTabState extends State<PatientViewTab> {
       [TranslationModel? translation]) {
     final theme = Theme.of(context);
     final flag = lab.flag.toLowerCase();
-    final l = translation?.uiLabels;
+    final l = effectiveReportUiLabels(translation);
     final isProvisional = lab.referenceSource == 'general_provisional';
 
     Color flagColor = Colors.grey;
-    String flagLabel = l?['label_not_classified'] ?? 'Not classified';
+    String flagLabel = l['label_not_classified'] ?? 'No reference range';
     if (flag == 'high') {
       flagColor = Colors.redAccent;
-      flagLabel = l?['label_high'] ?? 'High';
+      flagLabel = l['label_high'] ?? 'High';
     } else if (flag == 'low') {
       flagColor = Colors.orange;
-      flagLabel = l?['label_low'] ?? 'Low';
+      flagLabel = l['label_low'] ?? 'Low';
     } else if (flag == 'critical') {
       flagColor = AppColors.warning;
-      flagLabel = l?['label_critical'] ?? 'Critical';
+      flagLabel = l['label_critical'] ?? 'Critical';
     } else if (flag == 'normal') {
       flagColor = const Color(0xFF00C48C);
-      flagLabel = l?['label_normal'] ?? 'Normal';
+      flagLabel = l['label_normal'] ?? 'Normal';
     }
 
-    String rangeText = l?['label_not_provided'] ?? 'Not provided in report';
+    String rangeText = l['label_not_provided'] ?? 'Not provided in report';
     final hasRange = lab.refLow != null && lab.refHigh != null;
     if (hasRange) {
       rangeText = '${lab.refLow} – ${lab.refHigh} ${lab.unit}';
@@ -672,7 +750,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  isProvisional ? '$flagLabel · provisional' : flagLabel,
+                  isProvisional
+                      ? '$flagLabel · ${AppLocalizations.of(context)!.provisionalWord}'
+                      : flagLabel,
                   style: TextStyle(
                       color: flagColor,
                       fontWeight: FontWeight.bold,
@@ -685,35 +765,37 @@ class _PatientViewTabState extends State<PatientViewTab> {
           Row(
             children: [
               Text(
-                '${l?['label_result'] ?? 'Result'}: ',
+                '${l['label_result'] ?? 'Result'}: ',
                 style: TextStyle(
                     fontSize: 13,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
               ),
-              Text(
-                '${lab.value} ${lab.unit}',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Flexible(
+                child: Text(
+                  '${lab.value} ${lab.unit}',
+                  style:
+                      const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            '${isProvisional ? 'General comparison range' : (l?['label_reported_range'] ?? 'Reported range')}: $rangeText',
+            '${isProvisional ? AppLocalizations.of(context)!.generalComparisonRange : (l['label_reported_range'] ?? 'Reported range')}: $rangeText',
             style: TextStyle(
                 fontSize: 13,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
           ),
           const SizedBox(height: 2),
           Text(
-            '${l?['label_status'] ?? 'Status'}: $flagLabel${isProvisional ? ' (provisional)' : ''}',
+            '${l['label_status'] ?? 'Status'}: $flagLabel${isProvisional ? ' (${AppLocalizations.of(context)!.provisionalWord})' : ''}',
             style: TextStyle(
                 fontSize: 12, fontWeight: FontWeight.w600, color: flagColor),
           ),
           if (isProvisional) ...[
             const SizedBox(height: 6),
             Text(
-              'Based on a published general range, not this lab’s range. Confirm with your clinician. Source: ${lab.referenceSourceUrl ?? 'MedlinePlus'}',
+              AppLocalizations.of(context)!.provisionalNote(lab.referenceSourceUrl ?? 'MedlinePlus'),
               style: TextStyle(
                   fontSize: 11,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.65)),
@@ -732,6 +814,28 @@ class _PatientViewTabState extends State<PatientViewTab> {
               ),
             ),
           ],
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: TextButton.icon(
+              onPressed: () => showLabFlagSheet(
+                context,
+                testName: translatedParameterName(lab.testName, widget.translation),
+                value: lab.value,
+                unit: lab.unit,
+                refLow: lab.refLow,
+                refHigh: lab.refHigh,
+                flag: flag,
+                isProvisional: isProvisional,
+              ),
+              icon: const Icon(Icons.help_outline, size: 16),
+              label: Text(AppLocalizations.of(context)!.mlWhyFlagged,
+                  style: const TextStyle(fontSize: 12.5)),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -746,11 +850,11 @@ class _PatientViewTabState extends State<PatientViewTab> {
   }) {
     final theme = Theme.of(context);
     String name = med['medication_name']?.toString() ?? 'Medication';
-    final l = translation?.uiLabels;
+    final l = effectiveReportUiLabels(translation);
     String dosage =
-        med['dosage']?.toString() ?? l?['label_unspecified'] ?? 'Not specified';
+        med['dosage']?.toString() ?? l['label_unspecified'] ?? 'Not specified';
     String frequency = med['frequency']?.toString() ??
-        l?['label_unspecified'] ??
+        l['label_unspecified'] ??
         'Not specified';
 
     List<String> times = List<String>.from(med['times_of_day'] ?? []);
@@ -781,25 +885,25 @@ class _PatientViewTabState extends State<PatientViewTab> {
 
     final timingText = times.isNotEmpty
         ? times.join(', ')
-        : (l?['label_not_provided'] ?? 'Not specified');
+        : (l['label_not_provided'] ?? 'Not specified');
     final provenance = med['provenance']?.toString() ?? labelReportExtracted;
 
     final List<Widget> medInfo = [
       Text(name,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       const SizedBox(height: 6),
-      Text('${l?['label_dose'] ?? 'Dose'}: $dosage',
+      Text('${l['label_dose'] ?? 'Dose'}: $dosage',
           style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.9))),
       const SizedBox(height: 2),
-      Text('${l?['label_frequency'] ?? 'Frequency'}: $frequency',
+      Text('${l['label_frequency'] ?? 'Frequency'}: $frequency',
           style: TextStyle(
               fontSize: 13,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.75))),
       const SizedBox(height: 2),
-      Text('${l?['label_timing'] ?? 'Timing'}: $timingText',
+      Text('${l['label_timing'] ?? 'Timing'}: $timingText',
           style: TextStyle(
               fontSize: 12,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6))),
@@ -895,24 +999,34 @@ class _PatientViewTabState extends State<PatientViewTab> {
     );
   }
 
+  /// "Discuss this result" bullet. In a non-English app language the bundled
+  /// template (same one the server uses) is filled in; English keeps the
+  /// original sentence.
+  String _discussBullet(String flag, String name, String val, String unit) {
+    final labels = bundledReportUiLabels(localeModeNotifier.value.languageCode);
+    final template = labels['dp_abnormal'];
+    if (template == null) {
+      return 'Discuss the $flag $name level ($val $unit) with your healthcare provider.';
+    }
+    final flagText = labels['label_${flag.toLowerCase()}'] ?? flag;
+    return template
+        .replaceAll('{test}', name)
+        .replaceAll('{flag}', flagText)
+        .replaceAll('{value}', val)
+        .replaceAll('{unit}', unit)
+        .replaceAll(RegExp(r'\(\s+'), '(')
+        .replaceAll(RegExp(r'\s+\)'), ')')
+        .replaceAll(RegExp(r'\(\s*\)'), '')
+        .replaceAll(RegExp(r'[ \t]{2,}'), ' ')
+        .trim();
+  }
+
   List<Widget> _buildDoctorDiscussionPoints(
     BuildContext context,
     List<Map<String, dynamic>> abnormalList,
     List<Map<String, dynamic>> meds,
     TranslationModel? translation,
   ) {
-    //region debug-point trans-flutter-001
-    final tLang = translation?.language ?? 'en';
-    final tFindings = translation?.findingsJson.length ?? 0;
-    final tLabels = translation?.uiLabels.length ?? 0;
-    final tMeds = translation?.medicationsJson.length ?? 0;
-    final tDiscussion = translation?.doctorDiscussionPoints.length ?? 0;
-    final abnCount = abnormalList.length;
-    final medCount = meds.length;
-    debugPrint(
-        '[TRANSLATION][FLUTTER] discussion_points_selected_language=$tLang findings_in_translation=$tFindings ui_labels_count=$tLabels meds_in_translation=$tMeds doctor_discussion_points_in_translation=$tDiscussion abnormal_source_count=$abnCount meds_source_count=$medCount');
-    //endregion
-
     final points = <Widget>[];
     final isTranslated = translation != null && translation.language != 'en';
 
@@ -932,11 +1046,9 @@ class _PatientViewTabState extends State<PatientViewTab> {
       }
       // Guard: if backend somehow returned fewer points than we expect, still
       // do NOT fall back to English templates. If the backend discussion
-      // points were short, we silently use what was provided and log it.
+      // points were short, we silently use what was provided.
       // (The backend validation should already guarantee completeness before
       // caching the response, so in practice this guard is rarely hit.)
-      debugPrint(
-          '[TRANSLATION][FLUTTER] discussion_points_source=backend count=${points.length}');
       return points;
     }
 
@@ -975,13 +1087,12 @@ class _PatientViewTabState extends State<PatientViewTab> {
           bullet = translatedExpl.trim();
         } else if (!isTranslated) {
           // Only English uses the Flutter template.
-          bullet =
-              'Discuss the $flag $name level ($val $unit) with your healthcare provider.';
+          bullet = _discussBullet(flag, name, val, unit);
         } else {
           // Safety net: translated mode + no backend discussion + no
           // translated explanation = surface a translated generic
           // "discuss with your doctor" label so no English leaks.
-          final generic = translation.uiLabels['label_review_test_parameters'];
+          final generic = effectiveReportUiLabels(translation)['label_review_test_parameters'];
           bullet = (generic != null && generic.trim().isNotEmpty)
               ? generic.trim()
               : (isTranslated
@@ -991,7 +1102,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
         points.add(_buildDoctorBullet(context, bullet));
       }
     } else {
-      final generic = translation?.uiLabels['label_review_test_parameters'];
+      final generic = effectiveReportUiLabels(translation)['label_review_test_parameters'];
       final text = (generic != null && generic.trim().isNotEmpty)
           ? generic.trim()
           : (isTranslated
@@ -1007,7 +1118,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
           .take(2)
           .join(', ');
       if (medNames.isNotEmpty) {
-        final label = translation?.uiLabels['label_confirm_dosage_timing'];
+        final label = effectiveReportUiLabels(translation)['label_confirm_dosage_timing'];
         final text = (label != null && label.trim().isNotEmpty)
             ? label.trim()
             : (isTranslated
@@ -1016,7 +1127,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
         points.add(_buildDoctorBullet(context, text));
       }
     } else {
-      final label = translation?.uiLabels['label_confirm_new_medications'];
+      final label = effectiveReportUiLabels(translation)['label_confirm_new_medications'];
       final text = (label != null && label.trim().isNotEmpty)
           ? label.trim()
           : (isTranslated
@@ -1026,7 +1137,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
     }
 
     {
-      final label = translation?.uiLabels['label_confirm_followup'];
+      final label = effectiveReportUiLabels(translation)['label_confirm_followup'];
       final text = (label != null && label.trim().isNotEmpty)
           ? label.trim()
           : (isTranslated
@@ -1035,8 +1146,6 @@ class _PatientViewTabState extends State<PatientViewTab> {
       points.add(_buildDoctorBullet(context, text));
     }
 
-    debugPrint(
-        '[TRANSLATION][FLUTTER] discussion_points_source=legacy_english_or_partial count=${points.length} is_translated=$isTranslated');
     return points;
   }
 

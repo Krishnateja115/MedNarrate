@@ -97,6 +97,45 @@ async def generate_core_summaries(
     )
 
 
+async def _record_failure(
+    db: AsyncSession, report_id: uuid.UUID, failure_cat: str, message: str
+) -> None:
+    """Persist a failed analysis state safely.
+
+    The session may be in a failed/aborted transaction (e.g. a flush error), so
+    roll back first and re-load the report by id instead of touching expired
+    ORM instances. Never raises: a report must not remain stuck in
+    ``processing`` because the failure handler itself failed.
+    """
+    try:
+        await db.rollback()
+        report = (
+            await db.execute(select(Report).where(Report.id == report_id))
+        ).scalars().first()
+        if not report:
+            return
+        report.processing_status = ProcessingStatus.failed
+        analysis = (
+            await db.execute(
+                select(ReportAnalysis).where(ReportAnalysis.report_id == report.id)
+            )
+        ).scalars().first()
+        if not analysis:
+            analysis = ReportAnalysis(report_id=report.id)
+            db.add(analysis)
+        analysis.error_reason = message[:2000]
+        analysis.failure_category = failure_cat
+        await db.commit()
+    except Exception as rec_e:  # noqa: BLE001
+        logger.error(
+            f"[STAGE:FAIL] Could not record failure for report {report_id}: {rec_e!r}"
+        )
+        try:
+            await db.rollback()
+        except Exception:
+            pass
+
+
 async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
     if db is None:
         async with AsyncSessionLocal() as session:
@@ -387,6 +426,16 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             from app.models.medication_schedule import MedicationSchedule
 
             meds = await extract_medication_schedule(cleaned_text)
+            if meds:
+                # Re-analysis (force) must replace, not duplicate, the schedule
+                # rows previously extracted from this same report.
+                from sqlalchemy import delete as sa_delete
+
+                await db.execute(
+                    sa_delete(MedicationSchedule).where(
+                        MedicationSchedule.report_id == report.id
+                    )
+                )
             for med in meds:
                 db_med = MedicationSchedule(
                     report_id=report.id,
@@ -442,24 +491,11 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         logger.error(
             f"[STAGE:FAIL] Extraction failed for report {report_id} [{failure_cat}]: {ee}"
         )
-        if "report" in locals() and report:
-            report.processing_status = ProcessingStatus.failed
-
-            stmt_analysis = select(ReportAnalysis).where(
-                ReportAnalysis.report_id == report.id
-            )
-            res_analysis = await db.execute(stmt_analysis)
-            analysis = res_analysis.scalars().first()
-            if not analysis:
-                analysis = ReportAnalysis(report_id=report.id)
-                db.add(analysis)
-            analysis.error_reason = str(ee)
-            analysis.failure_category = failure_cat
-
-            await db.commit()
+        # ExtractionError messages are written to be user-facing.
+        await _record_failure(db, report_id, failure_cat, str(ee))
 
     except (LLMConfigurationError, LLMConnectionError) as llm_e:
-        # LLM not configured or unreachable — store a clean, user-facing message
+        # LLM not configured or unreachable - store a clean, user-facing message
         # instead of the raw traceback that the generic handler would produce.
         is_config_error = isinstance(llm_e, LLMConfigurationError)
         failure_cat = (
@@ -474,22 +510,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         logger.error(
             f"[STAGE:FAIL] LLM error for report {report_id} [{failure_cat}]: {llm_e}"
         )
-
-        if "report" in locals() and report:
-            report.processing_status = ProcessingStatus.failed
-
-            stmt_analysis = select(ReportAnalysis).where(
-                ReportAnalysis.report_id == report.id
-            )
-            res_analysis = await db.execute(stmt_analysis)
-            analysis = res_analysis.scalars().first()
-            if not analysis:
-                analysis = ReportAnalysis(report_id=report.id)
-                db.add(analysis)
-            analysis.error_reason = clean_msg
-            analysis.failure_category = failure_cat
-
-            await db.commit()
+        await _record_failure(db, report_id, failure_cat, clean_msg)
 
     except Exception as e:
         import traceback
@@ -498,19 +519,12 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         logger.error(
             f"[STAGE:FAIL] Pipeline failed for report {report_id}: {repr(e)}\n{traceback.format_exc()}"
         )
-
-        if "report" in locals() and report:
-            report.processing_status = ProcessingStatus.failed
-
-            stmt_analysis = select(ReportAnalysis).where(
-                ReportAnalysis.report_id == report.id
-            )
-            res_analysis = await db.execute(stmt_analysis)
-            analysis = res_analysis.scalars().first()
-            if not analysis:
-                analysis = ReportAnalysis(report_id=report.id)
-                db.add(analysis)
-            analysis.error_reason = str(e)
-            analysis.failure_category = failure_cat
-
-            await db.commit()
+        # Never persist raw exception text (can contain SQL, paths, hostnames);
+        # /status returns error_reason to the end user. Details stay in the log.
+        await _record_failure(
+            db,
+            report_id,
+            failure_cat,
+            "Report analysis failed unexpectedly. Please try again, or contact "
+            "support if the problem continues.",
+        )

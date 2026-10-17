@@ -21,6 +21,7 @@ from app.api.v1.admin_governance import router as governance_router
 from app.api.v1.admin_help_center import router as help_center_router
 from app.api.v1.admin_incidents import router as incidents_router
 from app.api.v1.admin_jobs import router as jobs_router
+from app.api.v1.admin_ml import router as ml_router
 from app.api.v1.admin_privacy import router as privacy_router
 from app.api.v1.admin_rag_ops import router as rag_ops_router
 from app.api.v1.admin_reports import router as reports_router
@@ -157,6 +158,7 @@ router.include_router(
     help_center_router, prefix="/help-center", tags=["Admin Help Center"]
 )
 router.include_router(ai_ops_router, prefix="/ai-ops", tags=["Admin AI Ops"])
+router.include_router(ml_router, prefix="/ml", tags=["Admin Model Performance"])
 router.include_router(chat_ops_router, prefix="/chat-ops", tags=["Admin Chat Ops"])
 router.include_router(rag_ops_router, prefix="/rag-ops", tags=["Admin RAG Ops"])
 router.include_router(

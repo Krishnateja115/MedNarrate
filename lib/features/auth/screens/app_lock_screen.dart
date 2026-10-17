@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/services/api_service.dart';
@@ -45,7 +46,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
     });
 
     final result = await BiometricService.instance.authenticate(
-      reason: 'Authenticate to unlock MedNarrate',
+      reason: appL10n.unlockReason,
     );
 
     if (!mounted) return;
@@ -62,18 +63,17 @@ class _AppLockScreenState extends State<AppLockScreen> {
       setState(() {
         _isAuthenticating = false;
         if (result == BiometricResult.cancelled) {
-          _error = 'Biometric authentication was cancelled.';
+          _error = appL10n.biometricCancelled;
         } else if (result == BiometricResult.notConfigured) {
-          _error =
-              'Please set up fingerprint or Face ID in device settings first.';
+          _error = appL10n.biometricSetUpFirstMsg;
         } else if (result == BiometricResult.unsupported) {
-          _error = 'Biometric authentication is not supported by this browser.';
+          _error = appL10n.biometricBrowserUnsupported;
         } else {
           _failures++;
           if (_failures >= 3) {
             _lockout();
           } else {
-            _error = 'Biometric authentication failed. Please try again.';
+            _error = appL10n.biometricFailedRetry;
           }
         }
       });
@@ -84,7 +84,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
     setState(() {
       _lockedOut = true;
       _lockoutSeconds = 30;
-      _error = 'Too many attempts. Please try again in 30 seconds.';
+      _error = appL10n.tooManyAttempts30;
     });
 
     _lockoutTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -92,8 +92,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
       setState(() {
         if (_lockoutSeconds > 1) {
           _lockoutSeconds--;
-          _error =
-              'Too many attempts. Please try again in $_lockoutSeconds seconds.';
+          _error = appL10n.tooManyAttemptsSeconds(_lockoutSeconds);
         } else {
           _lockedOut = false;
           _failures = 0;
@@ -124,110 +123,112 @@ class _AppLockScreenState extends State<AppLockScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0C0C0E),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                AppLocalizations.of(context)!.appTitle,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(height: 48),
-              Icon(
-                Icons.lock_outline,
-                size: 80,
-                color: AppColors.accentTeal,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Your records are locked',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Authenticate to continue',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 48),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 24.0),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Colors.red.shade300,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  AppLocalizations.of(context)!.appTitle,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
                   ),
                 ),
-              ElevatedButton(
-                onPressed: _lockedOut ? null : _authenticate,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 8,
-                  shadowColor: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.5),
+                const SizedBox(height: 48),
+                Icon(
+                  Icons.lock_outline,
+                  size: 80,
+                  color: AppColors.accentTeal,
                 ),
-                child: _isAuthenticating
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Text(
-                        'Unlock with Biometrics',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-              ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Forgot? ',
-                    style:
-                        TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                const SizedBox(height: 24),
+                Text(
+                  AppLocalizations.of(context)!.recordsLocked,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
                   ),
-                  GestureDetector(
-                    onTap: _logout,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  AppLocalizations.of(context)!.authenticateToContinue,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24.0),
                     child: Text(
-                      'Log out',
+                      _error!,
                       style: TextStyle(
-                        color: AppColors.accentTeal,
-                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade300,
+                        fontSize: 14,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                ],
-              ),
-            ],
+                ElevatedButton(
+                  onPressed: _lockedOut ? null : _authenticate,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 8,
+                    shadowColor: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.5),
+                  ),
+                  child: _isAuthenticating
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          AppLocalizations.of(context)!.unlockWithBiometrics,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.forgotPrompt,
+                      style:
+                          TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                    ),
+                    GestureDetector(
+                      onTap: _logout,
+                      child: Text(
+                        AppLocalizations.of(context)!.logOut,
+                        style: TextStyle(
+                          color: AppColors.accentTeal,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

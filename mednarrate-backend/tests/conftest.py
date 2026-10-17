@@ -3,6 +3,16 @@ import os
 # Rate limiting is off for the general suite; test_rate_limiting.py re-enables it explicitly.
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
+# The suite must behave the same on a developer machine whose .env holds real AI
+# keys and has voice input switched on. Environment variables win over .env, so
+# blank them here; tests that need a key set it themselves with monkeypatch.
+for _name in (
+    "OPENAI_API_KEY", "GROQ_API_KEY", "CEREBRAS_API_KEY", "OPENROUTER_API_KEY",
+    "GITHUB_MODELS_TOKEN", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "MISTRAL_API_KEY",
+):
+    os.environ[_name] = ""
+os.environ["VOICE_INPUT_ENABLED"] = "false"
+
 import asyncio
 
 import pytest
@@ -58,6 +68,17 @@ def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest.fixture(autouse=True)
+def _reset_provider_health():
+    """Provider cool-downs are process-wide state; never let one test's
+    simulated outage make the next test skip that provider."""
+    from app.services.provider_health import provider_health
+
+    provider_health.reset()
+    yield
+    provider_health.reset()
 
 
 @pytest.fixture(autouse=True)

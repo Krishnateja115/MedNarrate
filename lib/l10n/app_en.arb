@@ -788,12 +788,2593 @@
   "@disclaimerSummary": {
     "description": "disclaimerSummary text"
   },
-  "disclaimerEmergency": "This sounds like a medical emergency. Please call your local emergency services (like 911) or go to the nearest emergency room immediately.",
+  "disclaimerEmergency": "This sounds like a medical emergency. Please call your local emergency services (like 112 or 911) or go to the nearest emergency room immediately.",
   "@disclaimerEmergency": {
     "description": "disclaimerEmergency text"
   },
   "disclaimerNoFindings": "No key findings identified.",
   "@disclaimerNoFindings": {
     "description": "disclaimerNoFindings text"
+  },
+  "healthProgress": "Health Progress",
+  "@healthProgress": {
+    "description": "dashboard screen text"
+  },
+  "noHealthProgressYet": "No health progress yet",
+  "@noHealthProgressYet": {
+    "description": "dashboard screen text"
+  },
+  "uploadToTrackProgress": "Upload a medical report to start tracking your health progress.",
+  "@uploadToTrackProgress": {
+    "description": "dashboard screen text"
+  },
+  "latestReportAnalyzed": "Latest report analyzed",
+  "@latestReportAnalyzed": {
+    "description": "dashboard screen text"
+  },
+  "historicalTrendPending": "Historical trend tracking will become available when additional comparable reports are uploaded.",
+  "@historicalTrendPending": {
+    "description": "dashboard screen text"
+  },
+  "uploadAnotherReport": "Upload Another Report",
+  "@uploadAnotherReport": {
+    "description": "dashboard screen text"
+  },
+  "trendStable": "Stable",
+  "@trendStable": {
+    "description": "dashboard screen text"
+  },
+  "trendIncreased": "Increased since previous report",
+  "@trendIncreased": {
+    "description": "dashboard screen text"
+  },
+  "trendDecreased": "Decreased since previous report",
+  "@trendDecreased": {
+    "description": "dashboard screen text"
+  },
+  "reportsComparedCount": "Reports Compared: {count}",
+  "@reportsComparedCount": {
+    "description": "dashboard screen text",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "previous": "Previous",
+  "@previous": {
+    "description": "dashboard screen text"
+  },
+  "current": "Current",
+  "@current": {
+    "description": "dashboard screen text"
+  },
+  "todaysMedicine": "Today's Medicine",
+  "@todaysMedicine": {
+    "description": "dashboard screen text"
+  },
+  "addMedicine": "Add Medicine",
+  "@addMedicine": {
+    "description": "dashboard screen text"
+  },
+  "noMedicinesYet": "No medicines added yet",
+  "@noMedicinesYet": {
+    "description": "dashboard screen text"
+  },
+  "addMedicationHint": "Add a medication or upload a report containing medication information.",
+  "@addMedicationHint": {
+    "description": "dashboard screen text"
+  },
+  "medicationsFromLatestReport": "Medications from Latest Report",
+  "@medicationsFromLatestReport": {
+    "description": "dashboard screen text"
+  },
+  "reportedBadge": "Reported",
+  "@reportedBadge": {
+    "description": "dashboard screen text"
+  },
+  "medicationLabel": "Medication",
+  "@medicationLabel": {
+    "description": "dashboard screen text"
+  },
+  "timingNotSpecified": "Timing: Not specified",
+  "@timingNotSpecified": {
+    "description": "dashboard screen text"
+  },
+  "confirmToSchedule": "Confirm to Schedule",
+  "@confirmToSchedule": {
+    "description": "dashboard screen text"
+  },
+  "myConfirmedSchedule": "My Confirmed Schedule",
+  "@myConfirmedSchedule": {
+    "description": "dashboard screen text"
+  },
+  "darkModeEnabled": "Dark mode enabled",
+  "@darkModeEnabled": {
+    "description": "dashboard screen text"
+  },
+  "lightModeEnabled": "Light mode enabled",
+  "@lightModeEnabled": {
+    "description": "dashboard screen text"
+  },
+  "goodMorning": "Good Morning ☀️",
+  "@goodMorning": {
+    "description": "dashboard screen text"
+  },
+  "goodAfternoon": "Good Afternoon 🌤️",
+  "@goodAfternoon": {
+    "description": "dashboard screen text"
+  },
+  "goodEvening": "Good Evening 🌙",
+  "@goodEvening": {
+    "description": "dashboard screen text"
+  },
+  "switchToLightMode": "Switch to Light Mode",
+  "@switchToLightMode": {
+    "description": "dashboard screen text"
+  },
+  "switchToDarkMode": "Switch to Dark Mode",
+  "@switchToDarkMode": {
+    "description": "dashboard screen text"
+  },
+  "disableNotifications": "Disable Notifications",
+  "@disableNotifications": {
+    "description": "dashboard screen text"
+  },
+  "enableNotifications": "Enable Notifications",
+  "@enableNotifications": {
+    "description": "dashboard screen text"
+  },
+  "noLabDataYet": "No lab data yet",
+  "@noLabDataYet": {
+    "description": "dashboard screen text"
+  },
+  "scoreLookingGood": "Looking Good",
+  "@scoreLookingGood": {
+    "description": "dashboard screen text"
+  },
+  "scoreAttentionNeeded": "Some Attention Needed",
+  "@scoreAttentionNeeded": {
+    "description": "dashboard screen text"
+  },
+  "scoreConsultDoctor": "Consult Your Doctor",
+  "@scoreConsultDoctor": {
+    "description": "dashboard screen text"
+  },
+  "healthScore": "Health Score",
+  "@healthScore": {
+    "description": "dashboard screen text"
+  },
+  "abnormalOfTotal": "{abnormalCount} abnormal / {totalLabValues} total values",
+  "@abnormalOfTotal": {
+    "description": "dashboard screen text",
+    "placeholders": {
+      "abnormalCount": {
+        "type": "int"
+      },
+      "totalLabValues": {
+        "type": "int"
+      }
+    }
+  },
+  "defaultUserName": "User",
+  "@defaultUserName": {
+    "description": "dashboard screen text"
+  },
+  "dashboardLoadError": "Unable to load your dashboard. Please try again.",
+  "@dashboardLoadError": {
+    "description": "dashboard screen text"
+  },
+  "tryAgain": "Try again",
+  "@tryAgain": {
+    "description": "dashboard screen text"
+  },
+  "noReportsYet": "No reports yet",
+  "@noReportsYet": {
+    "description": "dashboard screen text"
+  },
+  "recentReportsEmptyHint": "Your recent medical reports will appear here once you add them.",
+  "@recentReportsEmptyHint": {
+    "description": "dashboard screen text"
+  },
+  "todaysHealthTip": "Today's Health Tip",
+  "@todaysHealthTip": {
+    "description": "dashboard screen text"
+  },
+  "reportsFilterAll": "All",
+  "@reportsFilterAll": {
+    "description": "dashboard screen text"
+  },
+  "uploadFirstReportButton": "Upload your first report",
+  "@uploadFirstReportButton": {
+    "description": "dashboard screen text"
+  },
+  "startingReportAnalysis": "Starting report analysis...",
+  "@startingReportAnalysis": {
+    "description": "dashboard screen text"
+  },
+  "analysisRequestFailed": "Analysis request failed: {error}",
+  "@analysisRequestFailed": {
+    "description": "dashboard screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "unableToDeleteReportWithMessage": "Unable to delete report: {message}",
+  "@unableToDeleteReportWithMessage": {
+    "description": "dashboard screen text",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "unableToDeleteReport": "Unable to delete report. Please try again.",
+  "@unableToDeleteReport": {
+    "description": "dashboard screen text"
+  },
+  "searchReportsHint": "Search reports...",
+  "@searchReportsHint": {
+    "description": "dashboard screen text"
+  },
+  "analyze": "Analyze",
+  "@analyze": {
+    "description": "dashboard screen text"
+  },
+  "share": "Share",
+  "@share": {
+    "description": "dashboard screen text"
+  },
+  "sharingReportDetails": "Sharing report details...",
+  "@sharingReportDetails": {
+    "description": "dashboard screen text"
+  },
+  "shareReportText": "MedNarrate Medical Report: {title}\nHospital: {hospital}\nDate: {date}\nType: {kind}",
+  "@shareReportText": {
+    "description": "dashboard screen text",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "hospital": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadCardHint": "Tap here to upload a new medical report for analysis",
+  "@uploadCardHint": {
+    "description": "dashboard screen text"
+  },
+  "biometricMobileOnly": "Biometric App Lock is available on the mobile app (Android / iOS)",
+  "@biometricMobileOnly": {
+    "description": "settings screen text"
+  },
+  "biometricProtected": "Protected with device biometric authentication",
+  "@biometricProtected": {
+    "description": "settings screen text"
+  },
+  "biometricUseFingerprint": "Use fingerprint or Face ID to protect the app",
+  "@biometricUseFingerprint": {
+    "description": "settings screen text"
+  },
+  "biometricSetUpFirst": "Set up fingerprint or Face ID in device settings first",
+  "@biometricSetUpFirst": {
+    "description": "settings screen text"
+  },
+  "biometricNotAvailable": "Biometric authentication is not available on this device",
+  "@biometricNotAvailable": {
+    "description": "settings screen text"
+  },
+  "biometricNotAvailableMsg": "Biometric authentication is not available on this device.",
+  "@biometricNotAvailableMsg": {
+    "description": "settings screen text"
+  },
+  "biometricSetUpFirstMsg": "Please set up fingerprint or Face ID in your device settings first.",
+  "@biometricSetUpFirstMsg": {
+    "description": "settings screen text"
+  },
+  "biometricEnabledOk": "Biometric App Lock enabled successfully.",
+  "@biometricEnabledOk": {
+    "description": "settings screen text"
+  },
+  "biometricDisabledOk": "Biometric App Lock disabled.",
+  "@biometricDisabledOk": {
+    "description": "settings screen text"
+  },
+  "authCancelled": "Authentication cancelled.",
+  "@authCancelled": {
+    "description": "settings screen text"
+  },
+  "biometricFailedRetry": "Biometric authentication failed. Please try again.",
+  "@biometricFailedRetry": {
+    "description": "settings screen text"
+  },
+  "biometricManageNeedsDevice": "Biometric management requires a physical Android or iOS mobile device.",
+  "@biometricManageNeedsDevice": {
+    "description": "settings screen text"
+  },
+  "biometricChangeCancelled": "Biometric change cancelled.",
+  "@biometricChangeCancelled": {
+    "description": "settings screen text"
+  },
+  "biometricAuthFailedUnchanged": "Authentication failed. Your biometric settings have not been changed.",
+  "@biometricAuthFailedUnchanged": {
+    "description": "settings screen text"
+  },
+  "biometricWebNotSupported": "Biometric App Lock requires a physical Android or iOS mobile device. It is not available in the web browser environment.",
+  "@biometricWebNotSupported": {
+    "description": "settings screen text"
+  },
+  "changeDeviceBiometrics": "Change Device Biometrics",
+  "@changeDeviceBiometrics": {
+    "description": "settings screen text"
+  },
+  "biometricVerifiedBody": "Current biometric verified successfully!\n\nTo add or update your fingerprint or Face ID, manage your biometrics in your mobile device settings:",
+  "@biometricVerifiedBody": {
+    "description": "settings screen text"
+  },
+  "openDeviceSecuritySettings": "Open Device Security Settings",
+  "@openDeviceSecuritySettings": {
+    "description": "settings screen text"
+  },
+  "done": "Done",
+  "@done": {
+    "description": "settings screen text"
+  },
+  "close": "Close",
+  "@close": {
+    "description": "settings screen text"
+  },
+  "notificationsAllowInSettings": "Allow notifications in your phone settings to receive medicine alerts.",
+  "@notificationsAllowInSettings": {
+    "description": "settings screen text"
+  },
+  "themeSystemDefault": "System Default",
+  "@themeSystemDefault": {
+    "description": "settings screen text"
+  },
+  "soundCrystalChime": "Crystal Chime",
+  "@soundCrystalChime": {
+    "description": "settings screen text"
+  },
+  "soundWarmChord": "Warm Chord",
+  "@soundWarmChord": {
+    "description": "settings screen text"
+  },
+  "soundNatureDrop": "Nature Drop",
+  "@soundNatureDrop": {
+    "description": "settings screen text"
+  },
+  "archiveCouldNotSave": "Could not save the archive. Please try again.",
+  "@archiveCouldNotSave": {
+    "description": "settings screen text"
+  },
+  "archiveShareSubject": "Your MedNarrate account archive",
+  "@archiveShareSubject": {
+    "description": "settings screen text"
+  },
+  "deleteAccountTitle": "Delete account and medical data?",
+  "@deleteAccountTitle": {
+    "description": "settings screen text"
+  },
+  "deleteAccountBody": "This permanently removes your reports, medical profile, reminders, and chat history. Export your data first if needed. Enter your password to confirm.",
+  "@deleteAccountBody": {
+    "description": "settings screen text"
+  },
+  "deleteAccount": "Delete Account",
+  "@deleteAccount": {
+    "description": "settings screen text"
+  },
+  "passwordRequiredForDeletion": "Enter your password to confirm deletion.",
+  "@passwordRequiredForDeletion": {
+    "description": "settings screen text"
+  },
+  "deleteAccountFailed": "Could not delete the account. Please try again.",
+  "@deleteAccountFailed": {
+    "description": "settings screen text"
+  },
+  "copyrightNotice": "© 2026 MedNarrate\nAll rights reserved.",
+  "@copyrightNotice": {
+    "description": "settings screen text"
+  },
+  "viewLicenses": "View Licenses",
+  "@viewLicenses": {
+    "description": "settings screen text"
+  },
+  "updateBasicProfile": "Update your basic profile details",
+  "@updateBasicProfile": {
+    "description": "settings screen text"
+  },
+  "biometricAppLock": "Biometric App Lock",
+  "@biometricAppLock": {
+    "description": "settings screen text"
+  },
+  "biometricMobileOnlyDot": "Biometric App Lock is available when running on a mobile device (Android / iOS).",
+  "@biometricMobileOnlyDot": {
+    "description": "settings screen text"
+  },
+  "changeBiometric": "Change Biometric",
+  "@changeBiometric": {
+    "description": "settings screen text"
+  },
+  "reverifyBiometric": "Re-verify & manage device biometric settings",
+  "@reverifyBiometric": {
+    "description": "settings screen text"
+  },
+  "saveArchive": "Save an archive of your medical data",
+  "@saveArchive": {
+    "description": "settings screen text"
+  },
+  "deleteAccountSubtitle": "Permanently remove your account and medical data",
+  "@deleteAccountSubtitle": {
+    "description": "settings screen text"
+  },
+  "appPreferencesSection": "APP PREFERENCES",
+  "@appPreferencesSection": {
+    "description": "settings screen text"
+  },
+  "theme": "Theme",
+  "@theme": {
+    "description": "settings screen text"
+  },
+  "themeDark": "Dark Mode",
+  "@themeDark": {
+    "description": "settings screen text"
+  },
+  "professionalModeHint": "Show clinical summaries instead of patient-friendly ones",
+  "@professionalModeHint": {
+    "description": "settings screen text"
+  },
+  "metricUnitsShort": "Metric (kg, cm, °C)",
+  "@metricUnitsShort": {
+    "description": "settings screen text"
+  },
+  "imperialUnitsShort": "Imperial (lbs, in, °F)",
+  "@imperialUnitsShort": {
+    "description": "settings screen text"
+  },
+  "pushNotifications": "Push Notifications",
+  "@pushNotifications": {
+    "description": "settings screen text"
+  },
+  "soonBadge": "SOON",
+  "@soonBadge": {
+    "description": "settings screen text"
+  },
+  "healthAppSyncDesc": "Sync with Apple Health and Google Fit to automatically pull your vitals and activity data.",
+  "@healthAppSyncDesc": {
+    "description": "settings screen text"
+  },
+  "connectedDevicesDesc": "Connect your wearables, glucometers, and blood pressure monitors to track readings automatically.",
+  "@connectedDevicesDesc": {
+    "description": "settings screen text"
+  },
+  "askHelpReport": "Ask for help or report a problem",
+  "@askHelpReport": {
+    "description": "settings screen text"
+  },
+  "faqUploadQ": "How do I upload a medical report?",
+  "@faqUploadQ": {
+    "description": "settings screen text"
+  },
+  "faqUploadA": "You can upload a report from the Home screen by tapping the \"+\" button. We support PDF documents and images (JPG/PNG).",
+  "@faqUploadA": {
+    "description": "settings screen text"
+  },
+  "faqSecureQ": "Is my medical data secure?",
+  "@faqSecureQ": {
+    "description": "settings screen text"
+  },
+  "faqSecureA": "Yes. MedNarrate encrypts your data both in transit and at rest. We also provide biometric app lock capabilities to protect your medical history locally on your device.",
+  "@faqSecureA": {
+    "description": "settings screen text"
+  },
+  "faqAiQ": "How does the AI analysis work?",
+  "@faqAiQ": {
+    "description": "settings screen text"
+  },
+  "faqAiA": "MedNarrate uses advanced clinical AI models to extract, summarize, and explain complex medical jargon in a patient-friendly format.",
+  "@faqAiA": {
+    "description": "settings screen text"
+  },
+  "faqShareQ": "Can I share my reports?",
+  "@faqShareQ": {
+    "description": "settings screen text"
+  },
+  "faqShareA": "Yes, you can export your data from the Settings screen or share individual reports directly using the share button on the report details screen.",
+  "@faqShareA": {
+    "description": "settings screen text"
+  },
+  "rolePatient": "Patient",
+  "@rolePatient": {
+    "description": "profile screen text"
+  },
+  "roleDoctor": "Doctor",
+  "@roleDoctor": {
+    "description": "profile screen text"
+  },
+  "relDaughter": "Daughter",
+  "@relDaughter": {
+    "description": "profile screen text"
+  },
+  "relSon": "Son",
+  "@relSon": {
+    "description": "profile screen text"
+  },
+  "relSpouse": "Spouse",
+  "@relSpouse": {
+    "description": "profile screen text"
+  },
+  "relParent": "Parent",
+  "@relParent": {
+    "description": "profile screen text"
+  },
+  "relGuardian": "Guardian",
+  "@relGuardian": {
+    "description": "profile screen text"
+  },
+  "relSibling": "Sibling",
+  "@relSibling": {
+    "description": "profile screen text"
+  },
+  "relRelative": "Relative",
+  "@relRelative": {
+    "description": "profile screen text"
+  },
+  "relProfessionalCaregiver": "Professional Caregiver",
+  "@relProfessionalCaregiver": {
+    "description": "profile screen text"
+  },
+  "couldNotSwitchProfile": "Could not switch profile. Please try again.",
+  "@couldNotSwitchProfile": {
+    "description": "profile screen text"
+  },
+  "fullNameRequired": "Full name is required.",
+  "@fullNameRequired": {
+    "description": "profile screen text"
+  },
+  "fullNameInvalidLetters": "Full name must contain valid letters.",
+  "@fullNameInvalidLetters": {
+    "description": "profile screen text"
+  },
+  "nameLettersSpacesOnly": "Name can only contain letters and spaces.",
+  "@nameLettersSpacesOnly": {
+    "description": "profile screen text"
+  },
+  "dobInvalidFormat": "Invalid format. Use YYYY-MM-DD (e.g., 2006-05-20)",
+  "@dobInvalidFormat": {
+    "description": "profile screen text"
+  },
+  "dobYearMin": "Year must be 1900 or later",
+  "@dobYearMin": {
+    "description": "profile screen text"
+  },
+  "dobInvalidMonth": "Invalid month ({month}). Must be between 01 and 12",
+  "@dobInvalidMonth": {
+    "description": "profile screen text",
+    "placeholders": {
+      "month": {
+        "type": "int"
+      }
+    }
+  },
+  "dobFebLeap": "February {year} (leap year) has only 29 days",
+  "@dobFebLeap": {
+    "description": "profile screen text",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "dobFebDays": "February {year} has only 28 days",
+  "@dobFebDays": {
+    "description": "profile screen text",
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "dobMonthDays": "Month {month} has only {maxDays} days",
+  "@dobMonthDays": {
+    "description": "profile screen text",
+    "placeholders": {
+      "month": {
+        "type": "int"
+      },
+      "maxDays": {
+        "type": "int"
+      }
+    }
+  },
+  "dobFuture": "Date of Birth cannot be in the future",
+  "@dobFuture": {
+    "description": "profile screen text"
+  },
+  "doctorPersonalDetails": "Doctor Personal Details",
+  "@doctorPersonalDetails": {
+    "description": "profile screen text"
+  },
+  "doctorFullNameReq": "Doctor Full Name *",
+  "@doctorFullNameReq": {
+    "description": "profile screen text"
+  },
+  "professionalInformation": "Professional Information",
+  "@professionalInformation": {
+    "description": "profile screen text"
+  },
+  "medicalSpecialtyReq": "Medical Specialty *",
+  "@medicalSpecialtyReq": {
+    "description": "profile screen text"
+  },
+  "qualificationsLabel": "Qualifications (e.g. MBBS, MD) *",
+  "@qualificationsLabel": {
+    "description": "profile screen text"
+  },
+  "licenseLabel": "Medical License / Registration No. *",
+  "@licenseLabel": {
+    "description": "profile screen text"
+  },
+  "yearsExperienceLabel": "Years of Experience *",
+  "@yearsExperienceLabel": {
+    "description": "profile screen text"
+  },
+  "hospitalOrgLabel": "Hospital / Clinic / Organization",
+  "@hospitalOrgLabel": {
+    "description": "profile screen text"
+  },
+  "professionalAddressLabel": "Professional Address",
+  "@professionalAddressLabel": {
+    "description": "profile screen text"
+  },
+  "specialtyRequired": "Medical specialty is required.",
+  "@specialtyRequired": {
+    "description": "profile screen text"
+  },
+  "qualificationsRequired": "Qualifications are required.",
+  "@qualificationsRequired": {
+    "description": "profile screen text"
+  },
+  "licenseRequired": "Medical license / registration number is required.",
+  "@licenseRequired": {
+    "description": "profile screen text"
+  },
+  "yearsExperienceInvalid": "Please enter valid years of experience (0 - 70).",
+  "@yearsExperienceInvalid": {
+    "description": "profile screen text"
+  },
+  "caregiverPersonalDetails": "Caregiver Personal Details",
+  "@caregiverPersonalDetails": {
+    "description": "profile screen text"
+  },
+  "caregiverFullNameReq": "Caregiver Full Name *",
+  "@caregiverFullNameReq": {
+    "description": "profile screen text"
+  },
+  "caregiverInformation": "Caregiver Information",
+  "@caregiverInformation": {
+    "description": "profile screen text"
+  },
+  "relationshipToPatientReq": "Relationship to Patient *",
+  "@relationshipToPatientReq": {
+    "description": "profile screen text"
+  },
+  "caregivingRoleLabel": "Caregiving Role (e.g. Primary Caregiver)",
+  "@caregivingRoleLabel": {
+    "description": "profile screen text"
+  },
+  "supportedPatientNameOpt": "Supported Patient Name (Optional)",
+  "@supportedPatientNameOpt": {
+    "description": "profile screen text"
+  },
+  "employerOrgOpt": "Employer / Organization (Optional)",
+  "@employerOrgOpt": {
+    "description": "profile screen text"
+  },
+  "relationshipRequired": "Relationship to patient is required.",
+  "@relationshipRequired": {
+    "description": "profile screen text"
+  },
+  "doctorAccount": "Doctor Account",
+  "@doctorAccount": {
+    "description": "profile screen text"
+  },
+  "caregiverAccount": "Caregiver Account",
+  "@caregiverAccount": {
+    "description": "profile screen text"
+  },
+  "viewEditProfessionalDetails": "View and edit your professional/personal details",
+  "@viewEditProfessionalDetails": {
+    "description": "profile screen text"
+  },
+  "professionalInfoSubtitle": "Specialty, qualifications and registration details",
+  "@professionalInfoSubtitle": {
+    "description": "profile screen text"
+  },
+  "caregiverInfoSubtitle": "Caregiving role and supported patient information",
+  "@caregiverInfoSubtitle": {
+    "description": "profile screen text"
+  },
+  "noProfessionalInfo": "No professional information added yet. Tap Professional Information to complete your doctor profile.",
+  "@noProfessionalInfo": {
+    "description": "profile screen text"
+  },
+  "doctorProfileSummary": "Doctor Profile Summary",
+  "@doctorProfileSummary": {
+    "description": "profile screen text"
+  },
+  "specialtyLine": "Specialty: {value}",
+  "@specialtyLine": {
+    "description": "profile screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "qualificationsLine": "Qualifications: {value}",
+  "@qualificationsLine": {
+    "description": "profile screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "registrationLine": "Registration No.: {value}",
+  "@registrationLine": {
+    "description": "profile screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "experienceLine": "Experience: {years} years",
+  "@experienceLine": {
+    "description": "profile screen text",
+    "placeholders": {
+      "years": {
+        "type": "String"
+      }
+    }
+  },
+  "hospitalLine": "Hospital: {value}",
+  "@hospitalLine": {
+    "description": "profile screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "noCaregiverInfo": "No caregiver information added yet. Tap Caregiver Information to complete your profile.",
+  "@noCaregiverInfo": {
+    "description": "profile screen text"
+  },
+  "caregiverProfileSummary": "Caregiver Profile Summary",
+  "@caregiverProfileSummary": {
+    "description": "profile screen text"
+  },
+  "relationshipLine": "Relationship to Patient: {value}",
+  "@relationshipLine": {
+    "description": "profile screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "caregivingRoleLine": "Caregiving Role: {value}",
+  "@caregivingRoleLine": {
+    "description": "profile screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "supportingPatientLine": "Supporting Patient: {value}",
+  "@supportingPatientLine": {
+    "description": "profile screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "organizationLine": "Organization: {value}",
+  "@organizationLine": {
+    "description": "profile screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidBloodGroup": "Invalid blood group. Valid options: A+, A-, B+, B-, AB+, AB-, O+, O-",
+  "@invalidBloodGroup": {
+    "description": "forms screen text"
+  },
+  "fieldOnlySpecialChars": "{fieldName} cannot consist only of special characters.",
+  "@fieldOnlySpecialChars": {
+    "description": "forms screen text",
+    "placeholders": {
+      "fieldName": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldNotProvided": "{field} has not been provided.",
+  "@fieldNotProvided": {
+    "description": "forms screen text",
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "medicalInfoIncomplete": "Some medical information is incomplete. You can update it later.",
+  "@medicalInfoIncomplete": {
+    "description": "forms screen text"
+  },
+  "medicalInfoSaved": "Medical information saved successfully.",
+  "@medicalInfoSaved": {
+    "description": "forms screen text"
+  },
+  "medicalInfoSaveFailed": "Failed to save medical information",
+  "@medicalInfoSaveFailed": {
+    "description": "forms screen text"
+  },
+  "emergencyNameRequired": "Please enter the emergency contact's full name.",
+  "@emergencyNameRequired": {
+    "description": "forms screen text"
+  },
+  "emergencyNameInvalid": "Please enter a valid name containing letters.",
+  "@emergencyNameInvalid": {
+    "description": "forms screen text"
+  },
+  "invalidIndianMobile": "Please enter a valid 10-digit Indian mobile number.",
+  "@invalidIndianMobile": {
+    "description": "forms screen text"
+  },
+  "emergencyContactSaved": "Emergency contact saved successfully.",
+  "@emergencyContactSaved": {
+    "description": "forms screen text"
+  },
+  "emergencyContactSaveFailed": "Failed to save emergency contact.",
+  "@emergencyContactSaveFailed": {
+    "description": "forms screen text"
+  },
+  "enterEmailAddress": "Please enter your email address.",
+  "@enterEmailAddress": {
+    "description": "forms screen text"
+  },
+  "fillAllFields": "Please fill in all fields.",
+  "@fillAllFields": {
+    "description": "forms screen text"
+  },
+  "passwordRules": "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number and a special character.",
+  "@passwordRules": {
+    "description": "forms screen text"
+  },
+  "passwordResetSuccess": "Password reset successfully! Please log in.",
+  "@passwordResetSuccess": {
+    "description": "forms screen text"
+  },
+  "setNewPassword": "Set New Password",
+  "@setNewPassword": {
+    "description": "forms screen text"
+  },
+  "enterResetTokenAndPassword": "Enter the reset token and your new password below.",
+  "@enterResetTokenAndPassword": {
+    "description": "forms screen text"
+  },
+  "enterEmailForResetCode": "Enter your email and we'll e-mail you a reset code.",
+  "@enterEmailForResetCode": {
+    "description": "forms screen text"
+  },
+  "resetToken": "Reset Token",
+  "@resetToken": {
+    "description": "forms screen text"
+  },
+  "newPassword": "New Password",
+  "@newPassword": {
+    "description": "forms screen text"
+  },
+  "passwordsDoNotMatch": "Passwords do not match",
+  "@passwordsDoNotMatch": {
+    "description": "forms screen text"
+  },
+  "confirmYourPassword": "Confirm your password",
+  "@confirmYourPassword": {
+    "description": "forms screen text"
+  },
+  "passwordIsRequired": "Password is required",
+  "@passwordIsRequired": {
+    "description": "forms screen text"
+  },
+  "medicalDisclaimerShort": "MedNarrate explains reports but does not diagnose conditions or replace a clinician.",
+  "@medicalDisclaimerShort": {
+    "description": "forms screen text"
+  },
+  "emailRequired": "Email is required",
+  "@emailRequired": {
+    "description": "forms screen text"
+  },
+  "emailInvalid": "Enter a valid email address",
+  "@emailInvalid": {
+    "description": "forms screen text"
+  },
+  "passwordMin8": "Password must be at least 8 characters",
+  "@passwordMin8": {
+    "description": "forms screen text"
+  },
+  "passwordNeedsLetter": "Password must contain a letter",
+  "@passwordNeedsLetter": {
+    "description": "forms screen text"
+  },
+  "passwordNeedsDigit": "Password must contain a digit",
+  "@passwordNeedsDigit": {
+    "description": "forms screen text"
+  },
+  "thisField": "This field",
+  "@thisField": {
+    "description": "forms screen text"
+  },
+  "fieldRequired": "{fieldName} is required",
+  "@fieldRequired": {
+    "description": "forms screen text",
+    "placeholders": {
+      "fieldName": {
+        "type": "String"
+      }
+    }
+  },
+  "unlockReason": "Authenticate to unlock MedNarrate",
+  "@unlockReason": {
+    "description": "forms screen text"
+  },
+  "biometricCancelled": "Biometric authentication was cancelled.",
+  "@biometricCancelled": {
+    "description": "forms screen text"
+  },
+  "biometricBrowserUnsupported": "Biometric authentication is not supported by this browser.",
+  "@biometricBrowserUnsupported": {
+    "description": "forms screen text"
+  },
+  "tooManyAttempts30": "Too many attempts. Please try again in 30 seconds.",
+  "@tooManyAttempts30": {
+    "description": "forms screen text"
+  },
+  "tooManyAttemptsSeconds": "Too many attempts. Please try again in {seconds} seconds.",
+  "@tooManyAttemptsSeconds": {
+    "description": "forms screen text",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "recordsLocked": "Your records are locked",
+  "@recordsLocked": {
+    "description": "forms screen text"
+  },
+  "authenticateToContinue": "Authenticate to continue",
+  "@authenticateToContinue": {
+    "description": "forms screen text"
+  },
+  "unlockWithBiometrics": "Unlock with Biometrics",
+  "@unlockWithBiometrics": {
+    "description": "forms screen text"
+  },
+  "forgotPrompt": "Forgot? ",
+  "@forgotPrompt": {
+    "description": "forms screen text"
+  },
+  "startupUnableToConnect": "Unable to connect",
+  "@startupUnableToConnect": {
+    "description": "forms screen text"
+  },
+  "startupSecureSignInUnavailable": "Secure sign-in is unavailable",
+  "@startupSecureSignInUnavailable": {
+    "description": "forms screen text"
+  },
+  "startupKeychainMessage": "MedNarrate cannot access the encrypted macOS Keychain. Quit the app, install the latest build, and then try again.",
+  "@startupKeychainMessage": {
+    "description": "forms screen text"
+  },
+  "onbTitle1": "Understand\nMedical Reports",
+  "@onbTitle1": {
+    "description": "forms screen text"
+  },
+  "onbBody1": "Upload any medical report and let AI explain every medical term in simple language.",
+  "@onbBody1": {
+    "description": "forms screen text"
+  },
+  "onbTitle2": "AI Health\nAssistant",
+  "@onbTitle2": {
+    "description": "forms screen text"
+  },
+  "onbBody2": "Ask questions about your uploaded reports and receive clear, easy-to-understand explanations.",
+  "@onbBody2": {
+    "description": "forms screen text"
+  },
+  "onbTitle3": "Medicine\nReminders",
+  "@onbTitle3": {
+    "description": "forms screen text"
+  },
+  "onbBody3": "Never miss your medicines. Receive intelligent reminders based on your prescriptions.",
+  "@onbBody3": {
+    "description": "forms screen text"
+  },
+  "onbTitle4": "Track Your\nHealth",
+  "@onbTitle4": {
+    "description": "forms screen text"
+  },
+  "onbBody4": "Monitor health trends, compare reports and understand your progress over time.",
+  "@onbBody4": {
+    "description": "forms screen text"
+  },
+  "skip": "Skip",
+  "@skip": {
+    "description": "forms screen text"
+  },
+  "getStarted": "Get Started",
+  "@getStarted": {
+    "description": "forms screen text"
+  },
+  "continueLabel": "Continue",
+  "@continueLabel": {
+    "description": "forms screen text"
+  },
+  "appTagline": "AI Medical Report Assistant",
+  "@appTagline": {
+    "description": "misc screen text"
+  },
+  "uploadStatusUploadingReport": "Uploading report...",
+  "@uploadStatusUploadingReport": {
+    "description": "upload screen text"
+  },
+  "uploadStatusUploadingMedical": "Uploading medical report...",
+  "@uploadStatusUploadingMedical": {
+    "description": "upload screen text"
+  },
+  "uploadStatusExtracting": "Extracting text and analyzing report...",
+  "@uploadStatusExtracting": {
+    "description": "upload screen text"
+  },
+  "uploadStatusReconnecting": "Still processing. Reconnecting to check your report...",
+  "@uploadStatusReconnecting": {
+    "description": "upload screen text"
+  },
+  "uploadStatusRetrying": "Retrying AI analysis...",
+  "@uploadStatusRetrying": {
+    "description": "upload screen text"
+  },
+  "fileChooserTypeLabel": "Medical reports",
+  "@fileChooserTypeLabel": {
+    "description": "upload screen text"
+  },
+  "fileChooserConfirm": "Choose Report",
+  "@fileChooserConfirm": {
+    "description": "upload screen text"
+  },
+  "uploadOnlyTypes": "Only PDF, JPG, JPEG, and PNG files are supported.",
+  "@uploadOnlyTypes": {
+    "description": "upload screen text"
+  },
+  "uploadFileTooLarge": "File must be smaller than {size}.",
+  "@uploadFileTooLarge": {
+    "description": "upload screen text",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadChooserFailed": "The file chooser could not open. Close any open file dialog and try again.",
+  "@uploadChooserFailed": {
+    "description": "upload screen text"
+  },
+  "uploadFileUnreadable": "The selected file could not be read. Please choose it again from Finder.",
+  "@uploadFileUnreadable": {
+    "description": "upload screen text"
+  },
+  "uploadErrOcrUnavailable": "The report was uploaded successfully, but text recognition is not available on this server.",
+  "@uploadErrOcrUnavailable": {
+    "description": "upload screen text"
+  },
+  "uploadErrImageUnreadable": "The image was uploaded successfully, but readable medical text could not be extracted from it. Please upload a clearer scan or image.",
+  "@uploadErrImageUnreadable": {
+    "description": "upload screen text"
+  },
+  "uploadErrPdfUnreadable": "Unable to extract text from this PDF document. The file may be scanned or unreadable.",
+  "@uploadErrPdfUnreadable": {
+    "description": "upload screen text"
+  },
+  "uploadErrFileEmpty": "The uploaded file is empty or formatted improperly.",
+  "@uploadErrFileEmpty": {
+    "description": "upload screen text"
+  },
+  "uploadErrNotMedical": "This does not appear to be a medical report. Please upload a clearer report or clinical document.",
+  "@uploadErrNotMedical": {
+    "description": "upload screen text"
+  },
+  "uploadErrAiUnavailableExtracted": "Your report was uploaded and text was extracted, but AI analysis could not be completed right now.",
+  "@uploadErrAiUnavailableExtracted": {
+    "description": "upload screen text"
+  },
+  "uploadErrAiUnavailable": "Your report was uploaded successfully, but AI analysis could not be completed right now.",
+  "@uploadErrAiUnavailable": {
+    "description": "upload screen text"
+  },
+  "uploadErrNetwork": "Unable to connect to the server. Please check your network connection.",
+  "@uploadErrNetwork": {
+    "description": "upload screen text"
+  },
+  "uploadErrSession": "Your session has expired. Please sign in again.",
+  "@uploadErrSession": {
+    "description": "upload screen text"
+  },
+  "selectReportFileFirst": "Please select a report file first.",
+  "@selectReportFileFirst": {
+    "description": "upload screen text"
+  },
+  "reportTitleReq": "Report Title *",
+  "@reportTitleReq": {
+    "description": "upload screen text"
+  },
+  "reportTitleHint": "e.g. Annual Blood Test",
+  "@reportTitleHint": {
+    "description": "upload screen text"
+  },
+  "titleRequired": "Title is required",
+  "@titleRequired": {
+    "description": "upload screen text"
+  },
+  "hospitalClinicOptional": "Hospital / Clinic (optional)",
+  "@hospitalClinicOptional": {
+    "description": "upload screen text"
+  },
+  "hospitalHint": "e.g. City General Hospital",
+  "@hospitalHint": {
+    "description": "upload screen text"
+  },
+  "uploadDataNotice": "Your document will be stored and its text processed by MedNarrate and configured AI services to create an explanation. Check important results against the original report.",
+  "@uploadDataNotice": {
+    "description": "upload screen text"
+  },
+  "howDataIsUsed": "How your data is used",
+  "@howDataIsUsed": {
+    "description": "upload screen text"
+  },
+  "processingReportEllipsis": "Processing report…",
+  "@processingReportEllipsis": {
+    "description": "upload screen text"
+  },
+  "uploadFormatsHint": "PDF, JPG, JPEG, or PNG · Max 25 MB",
+  "@uploadFormatsHint": {
+    "description": "upload screen text"
+  },
+  "reportDateLabel": "Report Date",
+  "@reportDateLabel": {
+    "description": "upload screen text"
+  },
+  "autoDetectFromDocument": "Auto-detect from document",
+  "@autoDetectFromDocument": {
+    "description": "upload screen text"
+  },
+  "chooseFileToAnalyze": "Choose a file to analyze",
+  "@chooseFileToAnalyze": {
+    "description": "upload screen text"
+  },
+  "openingFileChooser": "Opening file chooser…",
+  "@openingFileChooser": {
+    "description": "upload screen text"
+  },
+  "supportsFormatsUpTo": "Supports PDF, JPG, JPEG, PNG (up to 25 MB)",
+  "@supportsFormatsUpTo": {
+    "description": "upload screen text"
+  },
+  "reportUploadedBadge": "Report uploaded",
+  "@reportUploadedBadge": {
+    "description": "upload screen text"
+  },
+  "fileReadyBadge": "File Ready",
+  "@fileReadyBadge": {
+    "description": "upload screen text"
+  },
+  "removeFile": "Remove file",
+  "@removeFile": {
+    "description": "upload screen text"
+  },
+  "step1UploadCompleted": "Step 1: Upload Completed",
+  "@step1UploadCompleted": {
+    "description": "upload screen text"
+  },
+  "step2TextExtractionFailed": "Step 2: Text Extraction Failed",
+  "@step2TextExtractionFailed": {
+    "description": "upload screen text"
+  },
+  "step2AiUnavailable": "Step 2: AI Analysis Unavailable",
+  "@step2AiUnavailable": {
+    "description": "upload screen text"
+  },
+  "step2ProcessingAi": "Step 2: Processing AI Analysis",
+  "@step2ProcessingAi": {
+    "description": "upload screen text"
+  },
+  "canLeavePageNotice": "You can leave this page. Your report will appear in Reports when processing finishes.",
+  "@canLeavePageNotice": {
+    "description": "upload screen text"
+  },
+  "failTitleOcrUnavailable": "Text Recognition Unavailable",
+  "@failTitleOcrUnavailable": {
+    "description": "upload screen text"
+  },
+  "failTitleNotMedical": "This Is Not a Medical Report",
+  "@failTitleNotMedical": {
+    "description": "upload screen text"
+  },
+  "failTitleImage": "Unable to Read This Image",
+  "@failTitleImage": {
+    "description": "upload screen text"
+  },
+  "failTitleDocument": "Unable to Read This Document",
+  "@failTitleDocument": {
+    "description": "upload screen text"
+  },
+  "failTitleAi": "AI Analysis Unavailable",
+  "@failTitleAi": {
+    "description": "upload screen text"
+  },
+  "retryAiAnalysis": "Retry AI Analysis",
+  "@retryAiAnalysis": {
+    "description": "upload screen text"
+  },
+  "reminderNotificationsOff": "Phone notifications are off. Enable them in device settings to receive medicine alerts.",
+  "@reminderNotificationsOff": {
+    "description": "reminders screen text"
+  },
+  "failedToLoadReminders": "Failed to load reminders: {error}",
+  "@failedToLoadReminders": {
+    "description": "reminders screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToDeleteReminder": "Failed to delete reminder: {error}",
+  "@failedToDeleteReminder": {
+    "description": "reminders screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToUpdateStatus": "Failed to update status: {error}",
+  "@failedToUpdateStatus": {
+    "description": "reminders screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderOn": "Reminder on",
+  "@reminderOn": {
+    "description": "reminders screen text"
+  },
+  "editMedication": "Edit medication",
+  "@editMedication": {
+    "description": "reminders screen text"
+  },
+  "deleteMedication": "Delete medication",
+  "@deleteMedication": {
+    "description": "reminders screen text"
+  },
+  "freqOnceDaily": "Once daily",
+  "@freqOnceDaily": {
+    "description": "reminders screen text"
+  },
+  "freqTwiceDaily": "Twice daily",
+  "@freqTwiceDaily": {
+    "description": "reminders screen text"
+  },
+  "freqThreeTimesDaily": "Three times daily",
+  "@freqThreeTimesDaily": {
+    "description": "reminders screen text"
+  },
+  "freqFourTimesDaily": "Four times daily",
+  "@freqFourTimesDaily": {
+    "description": "reminders screen text"
+  },
+  "freqAsNeeded": "As needed",
+  "@freqAsNeeded": {
+    "description": "reminders screen text"
+  },
+  "freqCustom": "Custom",
+  "@freqCustom": {
+    "description": "reminders screen text"
+  },
+  "freqScheduled": "Scheduled",
+  "@freqScheduled": {
+    "description": "reminders screen text"
+  },
+  "errorSavingReminder": "Error saving reminder: {error}",
+  "@errorSavingReminder": {
+    "description": "reminders screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "newMedication": "New Medication",
+  "@newMedication": {
+    "description": "reminders screen text"
+  },
+  "editMedicationTitle": "Edit Medication",
+  "@editMedicationTitle": {
+    "description": "reminders screen text"
+  },
+  "medicineNameLabel": "Medicine Name",
+  "@medicineNameLabel": {
+    "description": "reminders screen text"
+  },
+  "medicineNameRequired": "Medicine name is required",
+  "@medicineNameRequired": {
+    "description": "reminders screen text"
+  },
+  "dosageLabel": "Dosage (e.g. 500mg, 1 tablet)",
+  "@dosageLabel": {
+    "description": "reminders screen text"
+  },
+  "frequencyLabel": "Frequency",
+  "@frequencyLabel": {
+    "description": "reminders screen text"
+  },
+  "timesOfDay": "Times of Day",
+  "@timesOfDay": {
+    "description": "reminders screen text"
+  },
+  "addTime": "Add Time",
+  "@addTime": {
+    "description": "reminders screen text"
+  },
+  "addAtLeastOneTime": "Please add at least one time.",
+  "@addAtLeastOneTime": {
+    "description": "reminders screen text"
+  },
+  "additionalNotesOptional": "Additional Notes (optional)",
+  "@additionalNotesOptional": {
+    "description": "reminders screen text"
+  },
+  "saveMedication": "Save Medication",
+  "@saveMedication": {
+    "description": "reminders screen text"
+  },
+  "failedToUpdateSchedule": "Failed to update schedule: {error}",
+  "@failedToUpdateSchedule": {
+    "description": "reminders screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToLoadSchedules": "Failed to load schedules: {error}",
+  "@failedToLoadSchedules": {
+    "description": "reminders screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "forDaysCount": "For {days} days",
+  "@forDaysCount": {
+    "description": "reminders screen text",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "supportTitle": "Support",
+  "@supportTitle": {
+    "description": "support screen text"
+  },
+  "supportNewRequest": "New request",
+  "@supportNewRequest": {
+    "description": "support screen text"
+  },
+  "supportCouldNotLoad": "Could not load support requests.",
+  "@supportCouldNotLoad": {
+    "description": "support screen text"
+  },
+  "supportNoRequests": "No support requests yet.",
+  "@supportNoRequests": {
+    "description": "support screen text"
+  },
+  "supportRequestFallback": "Request",
+  "@supportRequestFallback": {
+    "description": "support screen text"
+  },
+  "supportRequestDialogTitle": "Support request",
+  "@supportRequestDialogTitle": {
+    "description": "support screen text"
+  },
+  "supportContactTitle": "Contact support",
+  "@supportContactTitle": {
+    "description": "support screen text"
+  },
+  "supportDescribeHint": "Describe the problem without pasting your full medical report. We will attach the report ID when relevant.",
+  "@supportDescribeHint": {
+    "description": "support screen text"
+  },
+  "supportSubject": "Subject",
+  "@supportSubject": {
+    "description": "support screen text"
+  },
+  "supportEnterSubject": "Enter a subject",
+  "@supportEnterSubject": {
+    "description": "support screen text"
+  },
+  "supportCategory": "Category",
+  "@supportCategory": {
+    "description": "support screen text"
+  },
+  "supportWhatWentWrong": "What went wrong?",
+  "@supportWhatWentWrong": {
+    "description": "support screen text"
+  },
+  "supportMoreDetail": "Please add a little more detail",
+  "@supportMoreDetail": {
+    "description": "support screen text"
+  },
+  "supportRequestSent": "Support request sent",
+  "@supportRequestSent": {
+    "description": "support screen text"
+  },
+  "sendingEllipsis": "Sending…",
+  "@sendingEllipsis": {
+    "description": "support screen text"
+  },
+  "sendRequest": "Send request",
+  "@sendRequest": {
+    "description": "support screen text"
+  },
+  "supportStatusLine": "Status: {status}",
+  "@supportStatusLine": {
+    "description": "support screen text",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "replyToSupport": "Reply to support",
+  "@replyToSupport": {
+    "description": "support screen text"
+  },
+  "sendReply": "Send reply",
+  "@sendReply": {
+    "description": "support screen text"
+  },
+  "catLoginAccount": "Login/Account",
+  "@catLoginAccount": {
+    "description": "support screen text"
+  },
+  "catReportProcessing": "Report Processing",
+  "@catReportProcessing": {
+    "description": "support screen text"
+  },
+  "catAiAnalysis": "AI/Analysis",
+  "@catAiAnalysis": {
+    "description": "support screen text"
+  },
+  "catChat": "Chat",
+  "@catChat": {
+    "description": "support screen text"
+  },
+  "catTranslation": "Translation",
+  "@catTranslation": {
+    "description": "support screen text"
+  },
+  "catNotifications": "Notifications",
+  "@catNotifications": {
+    "description": "support screen text"
+  },
+  "catMedicationReminder": "Medication Reminder",
+  "@catMedicationReminder": {
+    "description": "support screen text"
+  },
+  "catPerformance": "Performance",
+  "@catPerformance": {
+    "description": "support screen text"
+  },
+  "catSecurity": "Security",
+  "@catSecurity": {
+    "description": "support screen text"
+  },
+  "catPrivacy": "Privacy",
+  "@catPrivacy": {
+    "description": "support screen text"
+  },
+  "catOther": "Other",
+  "@catOther": {
+    "description": "support screen text"
+  },
+  "ticketNew": "New",
+  "@ticketNew": {
+    "description": "support screen text"
+  },
+  "ticketTriaged": "Triaged",
+  "@ticketTriaged": {
+    "description": "support screen text"
+  },
+  "ticketInvestigating": "Investigating",
+  "@ticketInvestigating": {
+    "description": "support screen text"
+  },
+  "ticketWaitingUser": "Waiting for User",
+  "@ticketWaitingUser": {
+    "description": "support screen text"
+  },
+  "ticketWaitingEng": "Waiting for Engineering",
+  "@ticketWaitingEng": {
+    "description": "support screen text"
+  },
+  "ticketResolved": "Resolved",
+  "@ticketResolved": {
+    "description": "support screen text"
+  },
+  "ticketClosed": "Closed",
+  "@ticketClosed": {
+    "description": "support screen text"
+  },
+  "noClinicalSummary": "No clinical executive summary available for this report.",
+  "@noClinicalSummary": {
+    "description": "reportdetail screen text"
+  },
+  "noPatientSummary": "No patient-friendly summary available for this report.",
+  "@noPatientSummary": {
+    "description": "reportdetail screen text"
+  },
+  "translatingReportBanner": "Translating your report. This can take up to a minute…",
+  "@translatingReportBanner": {
+    "description": "reportdetail screen text"
+  },
+  "metadataFallback": "Metadata",
+  "@metadataFallback": {
+    "description": "reportdetail screen text"
+  },
+  "findingFallback": "Finding",
+  "@findingFallback": {
+    "description": "reportdetail screen text"
+  },
+  "generalComparisonRange": "General comparison range",
+  "@generalComparisonRange": {
+    "description": "reportdetail screen text"
+  },
+  "provisionalWord": "provisional",
+  "@provisionalWord": {
+    "description": "reportdetail screen text"
+  },
+  "provisionalNote": "Based on a published general range, not this lab’s range. Confirm with your clinician. Source: {source}",
+  "@provisionalNote": {
+    "description": "reportdetail screen text",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "refGeneralProvisional": "(general, provisional)",
+  "@refGeneralProvisional": {
+    "description": "reportdetail screen text"
+  },
+  "refGeneralShort": "(general)",
+  "@refGeneralShort": {
+    "description": "reportdetail screen text"
+  },
+  "noRefRangeShort": "No ref range",
+  "@noRefRangeShort": {
+    "description": "reportdetail screen text"
+  },
+  "labMeasuresDesc": "This measures {parameter} in your medical document. Always consult your physician for interpretation.",
+  "@labMeasuresDesc": {
+    "description": "reportdetail screen text",
+    "placeholders": {
+      "parameter": {
+        "type": "String"
+      }
+    }
+  },
+  "textDetectedInReport": "Text detected in the uploaded report",
+  "@textDetectedInReport": {
+    "description": "reportdetail screen text"
+  },
+  "checkAgainstOriginalOcr": "Check this against the original document; OCR can make mistakes.",
+  "@checkAgainstOriginalOcr": {
+    "description": "reportdetail screen text"
+  },
+  "viewOriginalReport": "View original report",
+  "@viewOriginalReport": {
+    "description": "reportdetail screen text"
+  },
+  "reportAnIncorrectResult": "Report an incorrect result",
+  "@reportAnIncorrectResult": {
+    "description": "reportdetail screen text"
+  },
+  "backLabel": "Back",
+  "@backLabel": {
+    "description": "reportdetail screen text"
+  },
+  "unfavourite": "Unfavourite",
+  "@unfavourite": {
+    "description": "reportdetail screen text"
+  },
+  "favourite": "Favourite",
+  "@favourite": {
+    "description": "reportdetail screen text"
+  },
+  "pdfDownloadedOk": "PDF downloaded successfully",
+  "@pdfDownloadedOk": {
+    "description": "reportdetail screen text"
+  },
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
+    "description": "reportdetail screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "previewFailed": "Preview failed: {error}",
+  "@previewFailed": {
+    "description": "reportdetail screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "reportNoLongerAvailable": "Report no longer available",
+  "@reportNoLongerAvailable": {
+    "description": "reportdetail screen text"
+  },
+  "reportMayBeDeleted": "This report may have been deleted or is no longer accessible.",
+  "@reportMayBeDeleted": {
+    "description": "reportdetail screen text"
+  },
+  "backToReports": "Back to Reports",
+  "@backToReports": {
+    "description": "reportdetail screen text"
+  },
+  "originalReportTitle": "Original report",
+  "@originalReportTitle": {
+    "description": "reportdetail screen text"
+  },
+  "unableToOpenOriginal": "Unable to open the original document.",
+  "@unableToOpenOriginal": {
+    "description": "reportdetail screen text"
+  },
+  "compareAiFindings": "Compare AI findings with this uploaded document before making decisions.",
+  "@compareAiFindings": {
+    "description": "reportdetail screen text"
+  },
+  "chatCouldNotOpen": "Could not open the chat. Please try again.",
+  "@chatCouldNotOpen": {
+    "description": "reportdetail screen text"
+  },
+  "somethingWentWrongRetry": "Something went wrong. Please try again.",
+  "@somethingWentWrongRetry": {
+    "description": "reportdetail screen text"
+  },
+  "reportTypeBlood": "Blood Test",
+  "@reportTypeBlood": {
+    "description": "helpers screen text"
+  },
+  "reportTypePathology": "Pathology",
+  "@reportTypePathology": {
+    "description": "helpers screen text"
+  },
+  "reportTypeHealthCheck": "Health Check",
+  "@reportTypeHealthCheck": {
+    "description": "helpers screen text"
+  },
+  "reportTypeOther": "Other",
+  "@reportTypeOther": {
+    "description": "helpers screen text"
+  },
+  "procUploaded": "Uploaded",
+  "@procUploaded": {
+    "description": "helpers screen text"
+  },
+  "procAnalyzing": "Analyzing…",
+  "@procAnalyzing": {
+    "description": "helpers screen text"
+  },
+  "procCompleted": "Completed",
+  "@procCompleted": {
+    "description": "helpers screen text"
+  },
+  "procFailed": "Failed",
+  "@procFailed": {
+    "description": "helpers screen text"
+  },
+  "quickSummarize": "Summarize my results",
+  "@quickSummarize": {
+    "description": "chat_services screen text"
+  },
+  "quickAbnormal": "What values are abnormal?",
+  "@quickAbnormal": {
+    "description": "chat_services screen text"
+  },
+  "quickUrgent": "Is anything urgent?",
+  "@quickUrgent": {
+    "description": "chat_services screen text"
+  },
+  "quickAskDoctor": "What should I ask my doctor?",
+  "@quickAskDoctor": {
+    "description": "chat_services screen text"
+  },
+  "chatReference": "Reference",
+  "@chatReference": {
+    "description": "chat_services screen text"
+  },
+  "chatSourceLine": "Source: {name}",
+  "@chatSourceLine": {
+    "description": "chat_services screen text",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatDisclaimer": "AI answers are for information only and do not replace professional medical advice. Always consult your doctor.",
+  "@chatDisclaimer": {
+    "description": "chat_services screen text"
+  },
+  "chatAskAboutReport": "Ask about your report",
+  "@chatAskAboutReport": {
+    "description": "chat_services screen text"
+  },
+  "chatEmptyBody": "Get plain-language answers about your results, medicines and what to ask your doctor.",
+  "@chatEmptyBody": {
+    "description": "chat_services screen text"
+  },
+  "chatHintAsk": "Ask about your report...",
+  "@chatHintAsk": {
+    "description": "chat_services screen text"
+  },
+  "chatMessageShortened": "Your message was shortened to fit the {max}-character limit.",
+  "@chatMessageShortened": {
+    "description": "chat_services screen text",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "chatCouldNotLoad": "Could not load the conversation. Please try again.",
+  "@chatCouldNotLoad": {
+    "description": "chat_services screen text"
+  },
+  "chatOnline": "Online",
+  "@chatOnline": {
+    "description": "chat_services screen text"
+  },
+  "chatOffline": "Offline",
+  "@chatOffline": {
+    "description": "chat_services screen text"
+  },
+  "offlineBackOnline": "Back online! Refreshing...",
+  "@offlineBackOnline": {
+    "description": "chat_services screen text"
+  },
+  "offlineViewingCached": "You're offline. Viewing cached data.",
+  "@offlineViewingCached": {
+    "description": "chat_services screen text"
+  },
+  "voiceInputLabel": "Voice input",
+  "@voiceInputLabel": {
+    "description": "chat_services screen text"
+  },
+  "voiceSpeakYourMessage": "Speak your message",
+  "@voiceSpeakYourMessage": {
+    "description": "chat_services screen text"
+  },
+  "voiceCancelTranscription": "Cancel transcription",
+  "@voiceCancelTranscription": {
+    "description": "chat_services screen text"
+  },
+  "voiceDiscardRecording": "Discard recording",
+  "@voiceDiscardRecording": {
+    "description": "chat_services screen text"
+  },
+  "voiceDiscard": "Discard",
+  "@voiceDiscard": {
+    "description": "chat_services screen text"
+  },
+  "voiceConverting": "Converting speech to text…",
+  "@voiceConverting": {
+    "description": "chat_services screen text"
+  },
+  "voiceFinishConvert": "Finish and convert to text",
+  "@voiceFinishConvert": {
+    "description": "chat_services screen text"
+  },
+  "voiceSpokenLanguage": "Spoken language: {language}",
+  "@voiceSpokenLanguage": {
+    "description": "chat_services screen text",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceSpeakIn": "Speak in",
+  "@voiceSpeakIn": {
+    "description": "chat_services screen text"
+  },
+  "voiceMicOff": "Microphone access is turned off. Allow it for MedNarrate in your device settings to use voice input.",
+  "@voiceMicOff": {
+    "description": "chat_services screen text"
+  },
+  "voiceCouldNotStart": "Could not start recording. Please try again.",
+  "@voiceCouldNotStart": {
+    "description": "chat_services screen text"
+  },
+  "voiceNothingRecorded": "Nothing was recorded. Please try again.",
+  "@voiceNothingRecorded": {
+    "description": "chat_services screen text"
+  },
+  "voiceTooShort": "That was too short. Tap the mic, speak, then tap the tick.",
+  "@voiceTooShort": {
+    "description": "chat_services screen text"
+  },
+  "voiceNoSpeech": "Couldn't hear anything. Try again, a little closer to the microphone.",
+  "@voiceNoSpeech": {
+    "description": "chat_services screen text"
+  },
+  "voiceUnavailableType": "Voice input is not available right now. You can type instead.",
+  "@voiceUnavailableType": {
+    "description": "chat_services screen text"
+  },
+  "voiceFailed": "Voice input failed. Please try again or type your message.",
+  "@voiceFailed": {
+    "description": "chat_services screen text"
+  },
+  "apiTimeout": "The request timed out. Check your connection and try again.",
+  "@apiTimeout": {
+    "description": "chat_services screen text"
+  },
+  "apiCannotConnect": "Unable to connect to MedNarrate. Check that the backend is running and try again.",
+  "@apiCannotConnect": {
+    "description": "chat_services screen text"
+  },
+  "apiGenericError": "Something went wrong while contacting MedNarrate. Please try again.",
+  "@apiGenericError": {
+    "description": "chat_services screen text"
+  },
+  "apiSessionExpired": "Session expired. Please log in again.",
+  "@apiSessionExpired": {
+    "description": "chat_services screen text"
+  },
+  "apiVoiceNeedsInternet": "Voice input needs an internet connection. You can still type.",
+  "@apiVoiceNeedsInternet": {
+    "description": "chat_services screen text"
+  },
+  "apiFileUnreadable": "The selected file could not be read. Please select it again from Finder.",
+  "@apiFileUnreadable": {
+    "description": "chat_services screen text"
+  },
+  "srvIncorrectCredentials": "Incorrect email or password",
+  "@srvIncorrectCredentials": {
+    "description": "chat_services screen text"
+  },
+  "srvAlreadyHaveAccount": "You already have an account",
+  "@srvAlreadyHaveAccount": {
+    "description": "chat_services screen text"
+  },
+  "srvAccountLocked": "Account is temporarily locked due to multiple failed login attempts",
+  "@srvAccountLocked": {
+    "description": "chat_services screen text"
+  },
+  "srvAccountInactive": "Account is inactive",
+  "@srvAccountInactive": {
+    "description": "chat_services screen text"
+  },
+  "srvInvalidRefresh": "Invalid or expired refresh token",
+  "@srvInvalidRefresh": {
+    "description": "chat_services screen text"
+  },
+  "srvInvalidPassword": "Invalid password",
+  "@srvInvalidPassword": {
+    "description": "chat_services screen text"
+  },
+  "srvPasswordIncorrect": "Password is incorrect",
+  "@srvPasswordIncorrect": {
+    "description": "chat_services screen text"
+  },
+  "srvNotAuthenticated": "Not authenticated",
+  "@srvNotAuthenticated": {
+    "description": "chat_services screen text"
+  },
+  "srvCouldNotValidate": "Could not validate credentials",
+  "@srvCouldNotValidate": {
+    "description": "chat_services screen text"
+  },
+  "srvTokenExpired": "Token has expired",
+  "@srvTokenExpired": {
+    "description": "chat_services screen text"
+  },
+  "srvInvalidToken": "Invalid token",
+  "@srvInvalidToken": {
+    "description": "chat_services screen text"
+  },
+  "srvUserNotFound": "User not found",
+  "@srvUserNotFound": {
+    "description": "chat_services screen text"
+  },
+  "srvResetInvalid": "Invalid or expired reset token",
+  "@srvResetInvalid": {
+    "description": "chat_services screen text"
+  },
+  "srvResetExpired": "Reset token has expired. Please request a new one.",
+  "@srvResetExpired": {
+    "description": "chat_services screen text"
+  },
+  "srvOtpInvalid": "Invalid or reused OTP code",
+  "@srvOtpInvalid": {
+    "description": "chat_services screen text"
+  },
+  "srvVoiceBusy": "Voice input is busy right now. Please try again in a minute, or type your message.",
+  "@srvVoiceBusy": {
+    "description": "chat_services screen text"
+  },
+  "srvVoiceMisconfigured": "Voice input is not set up correctly on the server.",
+  "@srvVoiceMisconfigured": {
+    "description": "chat_services screen text"
+  },
+  "srvVoiceNotSetUp": "Voice input is not set up on the server yet.",
+  "@srvVoiceNotSetUp": {
+    "description": "chat_services screen text"
+  },
+  "srvVoiceTooLong": "Voice input took too long. Please try again.",
+  "@srvVoiceTooLong": {
+    "description": "chat_services screen text"
+  },
+  "srvVoiceNetwork": "The server could not reach the voice service. Please try again.",
+  "@srvVoiceNetwork": {
+    "description": "chat_services screen text"
+  },
+  "srvVoiceUnavailable": "Voice input is temporarily unavailable. You can still type your message.",
+  "@srvVoiceUnavailable": {
+    "description": "chat_services screen text"
+  },
+  "srvVoiceUnreadable": "That recording could not be read. Please try again.",
+  "@srvVoiceUnreadable": {
+    "description": "chat_services screen text"
+  },
+  "srvVoiceFormat": "That audio format is not supported.",
+  "@srvVoiceFormat": {
+    "description": "chat_services screen text"
+  },
+  "srvVoiceEmpty": "The recording is empty.",
+  "@srvVoiceEmpty": {
+    "description": "chat_services screen text"
+  },
+  "srvVoiceDisabled": "Voice input is not enabled.",
+  "@srvVoiceDisabled": {
+    "description": "chat_services screen text"
+  },
+  "medAlertTitle": "Medicine Reminder: {name}",
+  "@medAlertTitle": {
+    "description": "chat_services screen text",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "medAlertBody": "Time to take your medicine",
+  "@medAlertBody": {
+    "description": "chat_services screen text"
+  },
+  "bioReasonAccessRecords": "Authenticate to access your medical records",
+  "@bioReasonAccessRecords": {
+    "description": "chat_services screen text"
+  },
+  "bioReasonVerifyCurrent": "Verify your current biometric to continue",
+  "@bioReasonVerifyCurrent": {
+    "description": "chat_services screen text"
+  },
+  "bioReasonEnable": "Authenticate using fingerprint or Face ID to enable Biometric App Lock",
+  "@bioReasonEnable": {
+    "description": "chat_services screen text"
+  },
+  "bioReasonDisable": "Authenticate using fingerprint or Face ID to disable Biometric App Lock",
+  "@bioReasonDisable": {
+    "description": "chat_services screen text"
+  },
+  "insightsTrackProgress": "Track your progress over time",
+  "@insightsTrackProgress": {
+    "description": "chat_services screen text"
+  },
+  "insightsNoReports": "No reports available for comparison.",
+  "@insightsNoReports": {
+    "description": "chat_services screen text"
+  },
+  "insightsSelectReports": "Select Reports (Max 5)",
+  "@insightsSelectReports": {
+    "description": "chat_services screen text"
+  },
+  "insightsWhatChanged": "What changed since your last report?",
+  "@insightsWhatChanged": {
+    "description": "chat_services screen text"
+  },
+  "insightsFailedToLoad": "Failed to load reports: {error}",
+  "@insightsFailedToLoad": {
+    "description": "chat_services screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsMax5": "Maximum 5 reports can be selected for comparison.",
+  "@insightsMax5": {
+    "description": "chat_services screen text"
+  },
+  "insightsSelectAtLeast2": "Select at least 2 reports to compare.",
+  "@insightsSelectAtLeast2": {
+    "description": "chat_services screen text"
+  },
+  "insightsFailedCompare": "Failed to generate comparison: {error}",
+  "@insightsFailedCompare": {
+    "description": "chat_services screen text",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsNormalRange": "Normal: {range} {unit}",
+  "@insightsNormalRange": {
+    "description": "chat_services screen text",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "apiNoSavedChat": "No saved chat is available offline.",
+  "@apiNoSavedChat": {
+    "description": "offline screen text"
+  },
+  "apiCannotSaveOffline": "This file cannot be saved for offline upload. Select a local file.",
+  "@apiCannotSaveOffline": {
+    "description": "offline screen text"
+  },
+  "apiReportTooLarge": "The report must be 25 MB or smaller.",
+  "@apiReportTooLarge": {
+    "description": "offline screen text"
+  },
+  "apiReportNotOffline": "This report is not available offline.",
+  "@apiReportNotOffline": {
+    "description": "offline screen text"
+  },
+  "apiAnalysisNotOffline": "This analysis is not available offline.",
+  "@apiAnalysisNotOffline": {
+    "description": "offline screen text"
+  },
+  "apiChatNeedsConnection": "Chat requires a connection. Saved messages remain available offline.",
+  "@apiChatNeedsConnection": {
+    "description": "offline screen text"
+  },
+  "apiTranslationUnexpected": "Translation returned an unexpected language or empty report.",
+  "@apiTranslationUnexpected": {
+    "description": "offline screen text"
+  },
+  "licensesTitle": "Open Source Licenses",
+  "@licensesTitle": {
+    "description": "licenses screen text"
+  },
+  "licensesSearchHint": "Search packages...",
+  "@licensesSearchHint": {
+    "description": "licenses screen text"
+  },
+  "licensesNoMatch": "No licenses match \"{query}\"",
+  "@licensesNoMatch": {
+    "description": "licenses screen text",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "licensesCountOne": "1 license",
+  "@licensesCountOne": {
+    "description": "licenses screen text"
+  },
+  "licensesCountMany": "{count} licenses",
+  "@licensesCountMany": {
+    "description": "licenses screen text",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "licensesIndexOf": "License {index} of {total}",
+  "@licensesIndexOf": {
+    "description": "licenses screen text",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsNoCommonTitle": "Nothing to compare yet",
+  "@insightsNoCommonTitle": {
+    "description": "insights screen text"
+  },
+  "insightsNoCommonBody": "The selected reports do not share a test with a number in both, such as hemoglobin or cholesterol. Pick reports of the same kind, for example two blood counts, to see how your results changed.",
+  "@insightsNoCommonBody": {
+    "description": "insights screen text"
+  },
+  "chatAskHealthTitle": "Ask me about your health",
+  "@chatAskHealthTitle": {
+    "description": "general_chat screen text"
+  },
+  "chatAskHealthBody": "Get simple answers on fitness, food, sleep, common symptoms and what your test terms mean. For your own report, open it and use its Chat tab.",
+  "@chatAskHealthBody": {
+    "description": "general_chat screen text"
+  },
+  "chatHintAskHealth": "Ask a health question...",
+  "@chatHintAskHealth": {
+    "description": "general_chat screen text"
+  },
+  "chatSuggestWorkout": "Give me a beginner workout plan",
+  "@chatSuggestWorkout": {
+    "description": "general_chat screen text"
+  },
+  "chatSuggestDiet": "What does a balanced daily diet look like?",
+  "@chatSuggestDiet": {
+    "description": "general_chat screen text"
+  },
+  "chatSuggestSleep": "How can I sleep better?",
+  "@chatSuggestSleep": {
+    "description": "general_chat screen text"
+  },
+  "chatSuggestTerms": "What do common blood test terms mean?",
+  "@chatSuggestTerms": {
+    "description": "general_chat screen text"
+  },
+  "mlScreenTitle": "AI models & explainability",
+  "@mlScreenTitle": {
+    "description": "ai_models screen text"
+  },
+  "mlTileSubtitle": "How well each AI model performs and why it answers as it does",
+  "@mlTileSubtitle": {
+    "description": "ai_models screen text"
+  },
+  "mlIntro": "MedNarrate uses several AI models. See what each one does, how it scored on our own tests, and how it explains its answers.",
+  "@mlIntro": {
+    "description": "ai_models screen text"
+  },
+  "mlSummaryMeasured": "{evaluated} of {total} models measured",
+  "@mlSummaryMeasured": {
+    "description": "ai_models screen text",
+    "placeholders": {
+      "evaluated": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "mlSummaryDeep": "{evaluated} of {total} deep-learning models measured",
+  "@mlSummaryDeep": {
+    "description": "ai_models screen text",
+    "placeholders": {
+      "evaluated": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "mlPendingBanner": "Some models have not been measured yet. Their scores will appear here once the evaluation has been run.",
+  "@mlPendingBanner": {
+    "description": "ai_models screen text"
+  },
+  "mlLastMeasured": "Last measured: {when}",
+  "@mlLastMeasured": {
+    "description": "ai_models screen text",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "mlKindDeep": "Deep learning",
+  "@mlKindDeep": {
+    "description": "ai_models screen text"
+  },
+  "mlKindClassical": "Classical machine learning",
+  "@mlKindClassical": {
+    "description": "ai_models screen text"
+  },
+  "mlKindRules": "Rule-based",
+  "@mlKindRules": {
+    "description": "ai_models screen text"
+  },
+  "mlUsedInApp": "Used in the app",
+  "@mlUsedInApp": {
+    "description": "ai_models screen text"
+  },
+  "mlOfflineTool": "Offline or research use",
+  "@mlOfflineTool": {
+    "description": "ai_models screen text"
+  },
+  "mlStatusMeasured": "Measured",
+  "@mlStatusMeasured": {
+    "description": "ai_models screen text"
+  },
+  "mlStatusNotEvaluated": "Not evaluated yet",
+  "@mlStatusNotEvaluated": {
+    "description": "ai_models screen text"
+  },
+  "mlStatusFailed": "Could not be measured",
+  "@mlStatusFailed": {
+    "description": "ai_models screen text"
+  },
+  "mlNoScoresYet": "No scores yet.",
+  "@mlNoScoresYet": {
+    "description": "ai_models screen text"
+  },
+  "mlMeasuredOn": "Measured on {count} test items",
+  "@mlMeasuredOn": {
+    "description": "ai_models screen text",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mlTestSetNote": "Scores come from small, hand-checked test sets, so they show strengths and weaknesses rather than clinical accuracy.",
+  "@mlTestSetNote": {
+    "description": "ai_models screen text"
+  },
+  "mlLoadError": "Could not load the model information.",
+  "@mlLoadError": {
+    "description": "ai_models screen text"
+  },
+  "mlTaskBiomedicalNer": "Finds symptoms, diseases, medicines and lab terms in report text",
+  "@mlTaskBiomedicalNer": {
+    "description": "ai_models screen text"
+  },
+  "mlTaskReportEmbedding": "Finds the parts of your report that answer a chat question",
+  "@mlTaskReportEmbedding": {
+    "description": "ai_models screen text"
+  },
+  "mlTaskKbEmbedding": "Finds general health knowledge that answers a question",
+  "@mlTaskKbEmbedding": {
+    "description": "ai_models screen text"
+  },
+  "mlTaskPubmedbertEmbedding": "Prepares medical knowledge for search (offline step)",
+  "@mlTaskPubmedbertEmbedding": {
+    "description": "ai_models screen text"
+  },
+  "mlTaskLlmChain": "Explains reports, answers questions and translates summaries",
+  "@mlTaskLlmChain": {
+    "description": "ai_models screen text"
+  },
+  "mlTaskLocalQwen": "Translates offline when no online model can be reached",
+  "@mlTaskLocalQwen": {
+    "description": "ai_models screen text"
+  },
+  "mlTaskWhisperStt": "Turns your spoken question into text",
+  "@mlTaskWhisperStt": {
+    "description": "ai_models screen text"
+  },
+  "mlTaskReportClassifier": "Predicts the type of a report (research model, not used in the app)",
+  "@mlTaskReportClassifier": {
+    "description": "ai_models screen text"
+  },
+  "mlTaskLabExtractor": "Reads test names, values and ranges from report text",
+  "@mlTaskLabExtractor": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricPrecision": "Findings that are right",
+  "@mlMetricPrecision": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricRecall": "Real items it finds",
+  "@mlMetricRecall": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricF1": "Overall balance (F1)",
+  "@mlMetricF1": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricEntityType": "Correct type of term",
+  "@mlMetricEntityType": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricAvgLatency": "Average response time",
+  "@mlMetricAvgLatency": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricLatencyP50": "Typical response time",
+  "@mlMetricLatencyP50": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricLatencyP95": "Slowest 5% response time",
+  "@mlMetricLatencyP95": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricTop1": "Right passage ranked 1st",
+  "@mlMetricTop1": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricTop3": "Right passage in top 3",
+  "@mlMetricTop3": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricTop5": "Right passage in top 5",
+  "@mlMetricTop5": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricMrr": "Average ranking score (MRR)",
+  "@mlMetricMrr": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricAnswerAccuracy": "Correct answers from the report",
+  "@mlMetricAnswerAccuracy": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricAbstention": "Says “not in the report” when true",
+  "@mlMetricAbstention": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricNumbersKept": "Numbers kept in translation",
+  "@mlMetricNumbersKept": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricAllNumbers": "Sentences keeping every number",
+  "@mlMetricAllNumbers": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricChrf": "Hindi translation quality (chrF, out of 100)",
+  "@mlMetricChrf": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricWerEn": "English speech errors (lower is better)",
+  "@mlMetricWerEn": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricWerHi": "Hindi speech errors (lower is better)",
+  "@mlMetricWerHi": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricAccuracy": "Overall correct",
+  "@mlMetricAccuracy": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricMacroPrecision": "Average right-when-found across types",
+  "@mlMetricMacroPrecision": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricMacroRecall": "Average share found across types",
+  "@mlMetricMacroRecall": {
+    "description": "ai_models screen text"
+  },
+  "mlMetricMacroF1": "Average balance across types (F1)",
+  "@mlMetricMacroF1": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiTitle": "How the AI explains itself",
+  "@mlXaiTitle": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiIntro": "Explainable AI (XAI) shows which words or numbers led to a result, so it can be checked instead of trusted blindly.",
+  "@mlXaiIntro": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiLimeName": "LIME: local surrogate model",
+  "@mlXaiLimeName": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiLimeBody": "Hides random words, asks the model again and fits a small simple model to the answers. The weights show which words pushed the prediction.",
+  "@mlXaiLimeBody": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiLinearName": "Exact linear attribution (SHAP for linear models)",
+  "@mlXaiLinearName": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiLinearBody": "For a linear model, each word contributes its weight times its value. The contributions add up exactly to the score.",
+  "@mlXaiLinearBody": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiOcclusionName": "Occlusion saliency",
+  "@mlXaiOcclusionName": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiOcclusionBody": "Blanks out one word at a time and measures how much confidence drops. The words that matter most are the evidence.",
+  "@mlXaiOcclusionBody": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiRuleName": "Rule trace",
+  "@mlXaiRuleName": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiRuleBody": "Shows the exact comparison behind a High or Low flag: your value against the range printed in the report.",
+  "@mlXaiRuleBody": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiClassifierTitle": "Report-type classifier: why this prediction?",
+  "@mlXaiClassifierTitle": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiEntitiesTitle": "Medical-term finder: what it relied on",
+  "@mlXaiEntitiesTitle": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiLabsTitle": "Why lab results are flagged",
+  "@mlXaiLabsTitle": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiPredicted": "Predicted {label} ({confidence}% sure)",
+  "@mlXaiPredicted": {
+    "description": "ai_models screen text",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "confidence": {
+        "type": "String"
+      }
+    }
+  },
+  "mlXaiLimeCaption": "Words that pushed the prediction (LIME)",
+  "@mlXaiLimeCaption": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiLinearCaption": "Exact contribution of each word",
+  "@mlXaiLinearCaption": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiEvidenceCaption": "Other words it relied on",
+  "@mlXaiEvidenceCaption": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiNoEvidence": "No other word changed this result.",
+  "@mlXaiNoEvidence": {
+    "description": "ai_models screen text"
+  },
+  "mlXaiExampleNote": "Examples use short invented text, not patient data.",
+  "@mlXaiExampleNote": {
+    "description": "ai_models screen text"
+  },
+  "mlWhyFlagged": "Why flagged?",
+  "@mlWhyFlagged": {
+    "description": "ai_models screen text"
+  },
+  "mlWhyTitle": "How this result was flagged",
+  "@mlWhyTitle": {
+    "description": "ai_models screen text"
+  },
+  "mlWhyYourValue": "Your value",
+  "@mlWhyYourValue": {
+    "description": "ai_models screen text"
+  },
+  "mlWhyRangeUsed": "Range used",
+  "@mlWhyRangeUsed": {
+    "description": "ai_models screen text"
+  },
+  "mlWhyBelow": "{value} is below the lowest normal value ({low}) by {percent}%, so it is flagged “{flag}”.",
+  "@mlWhyBelow": {
+    "description": "ai_models screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "low": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "flag": {
+        "type": "String"
+      }
+    }
+  },
+  "mlWhyAbove": "{value} is above the highest normal value ({high}) by {percent}%, so it is flagged “{flag}”.",
+  "@mlWhyAbove": {
+    "description": "ai_models screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "flag": {
+        "type": "String"
+      }
+    }
+  },
+  "mlWhyWithin": "{value} is inside the range ({range}), so it is “{flag}”.",
+  "@mlWhyWithin": {
+    "description": "ai_models screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "range": {
+        "type": "String"
+      },
+      "flag": {
+        "type": "String"
+      }
+    }
+  },
+  "mlWhyNoRange": "{value} has no reference range in this report, so it cannot be flagged.",
+  "@mlWhyNoRange": {
+    "description": "ai_models screen text",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mlWhyReportMarked": "The laboratory marked this result as “{flag}” in the report, and that marking is used.",
+  "@mlWhyReportMarked": {
+    "description": "ai_models screen text",
+    "placeholders": {
+      "flag": {
+        "type": "String"
+      }
+    }
+  },
+  "mlWhyProvisional": "This range is a general adult range, not one printed in your report.",
+  "@mlWhyProvisional": {
+    "description": "ai_models screen text"
+  },
+  "mlWhyMethod": "Method: rule trace. The app compares your value with a range. It does not diagnose. Ask your doctor what a flag means for you.",
+  "@mlWhyMethod": {
+    "description": "ai_models screen text"
   }
 }

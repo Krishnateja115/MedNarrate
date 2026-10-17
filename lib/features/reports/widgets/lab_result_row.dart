@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/report_ui_labels.dart';
 import '../../../core/services/api_models.dart';
+import '../../../core/l10n/app_l10n.dart';
 
 class LabResultRow extends StatelessWidget {
   final String parameter;
@@ -33,25 +35,28 @@ class LabResultRow extends StatelessWidget {
 
     Color statusColor = theme.colorScheme.onSurface;
     String badgeText =
-        translation?.uiLabels['label_not_classified']?.toUpperCase() ??
-            "NOT CLASSIFIED";
+        effectiveReportUiLabels(translation)['label_not_classified']?.toUpperCase() ??
+            "NO REFERENCE RANGE";
 
     if (flag == 'high') {
       statusColor = Colors.redAccent;
-      badgeText = translation?.uiLabels['label_high']?.toUpperCase() ?? "HIGH";
+      badgeText = effectiveReportUiLabels(translation)['label_high']?.toUpperCase() ?? "HIGH";
     } else if (flag == 'low') {
       statusColor = Colors.orange;
-      badgeText = translation?.uiLabels['label_low']?.toUpperCase() ?? "LOW";
+      badgeText = effectiveReportUiLabels(translation)['label_low']?.toUpperCase() ?? "LOW";
     } else if (flag == 'critical') {
       statusColor = Colors.red.shade900;
       badgeText =
-          translation?.uiLabels['label_critical']?.toUpperCase() ?? "CRITICAL";
+          effectiveReportUiLabels(translation)['label_critical']?.toUpperCase() ?? "CRITICAL";
     } else if (flag == 'normal') {
       statusColor = Colors.green;
       badgeText =
-          translation?.uiLabels['label_normal']?.toUpperCase() ?? "NORMAL";
+          effectiveReportUiLabels(translation)['label_normal']?.toUpperCase() ?? "NORMAL";
     }
-    if (isProvisional) badgeText = '$badgeText · PROVISIONAL';
+    if (isProvisional) {
+      badgeText =
+          '$badgeText · ${appL10n.provisionalWord.toUpperCase()}';
+    }
 
     return InkWell(
       onTap: onTap,
@@ -85,7 +90,7 @@ class LabResultRow extends StatelessWidget {
                       Text(
                         unit.isNotEmpty
                             ? unit
-                            : '${translation?.uiLabels['label_unit'] ?? 'Unit'}: -',
+                            : '${effectiveReportUiLabels(translation)['label_unit'] ?? 'Unit'}: -',
                         style: TextStyle(
                             fontSize: 12,
                             color: theme.colorScheme.onSurface
@@ -134,8 +139,8 @@ class LabResultRow extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: Text(
                       hasRange
-                          ? '$minRange - $maxRange${isProvisional ? ' (general)' : ''}'
-                          : 'No ref range',
+                          ? '$minRange - $maxRange${isProvisional ? ' ${appL10n.refGeneralShort}' : ''}'
+                          : appL10n.noRefRangeShort,
                       style: TextStyle(
                           fontSize: 12,
                           color: theme.colorScheme.onSurface

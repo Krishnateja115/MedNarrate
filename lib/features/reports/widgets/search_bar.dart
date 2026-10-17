@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class ReportSearchBar extends StatelessWidget {
   final ValueChanged<String> onChanged;
@@ -13,7 +14,7 @@ class ReportSearchBar extends StatelessWidget {
     return TextField(
       onChanged: onChanged,
       decoration: InputDecoration(
-        hintText: "Search reports...",
+        hintText: AppLocalizations.of(context)!.searchReportsHint,
         prefixIcon: Icon(Icons.search),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

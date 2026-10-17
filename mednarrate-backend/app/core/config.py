@@ -57,10 +57,36 @@ class Settings(BaseSettings):
     # Translation requests must fail promptly when an upstream provider is
     # unavailable; the mobile client should never remain in a loading state.
     TRANSLATION_TIMEOUT_SECONDS: float = 45.0
+    # Whole-request budget for one translation. Must stay below the mobile
+    # app's receive timeout (240 s) and any reverse-proxy timeout.
+    GEMINI_FALLBACK_MODELS: str = "gemini-2.5-flash,gemini-2.5-flash-lite"
+    TRANSLATION_DEADLINE_SECONDS: float = 150.0
+    # Report chunks translated in parallel (kept small to respect free-tier rate limits).
+    TRANSLATION_CONCURRENCY: int = 3
+    # Upper bound for one chat answer (all providers together); the app waits 90 s.
+    CHAT_TIMEOUT_SECONDS: float = 75.0
+    # Direct GEMINI_API_KEY use is refused when ENVIRONMENT=production unless this is true.
+    ALLOW_GEMINI_API_KEY_IN_PRODUCTION: bool = False
 
     # Translation Fallback Orchestrator Models
-    TRANSLATION_PROVIDER_ORDER: str = "vertex_ai,gemini,openai,mistral"
     OPENAI_API_KEY: str | None = None
+    # Extra OpenAI-compatible providers (all have a free tier; see .env.example).
+    GROQ_API_KEY: str | None = None
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    CEREBRAS_API_KEY: str | None = None
+    CEREBRAS_MODEL: str = "llama-3.3-70b"
+    OPENROUTER_API_KEY: str | None = None
+    OPENROUTER_MODEL: str = "meta-llama/llama-3.3-70b-instruct:free"
+    GITHUB_MODELS_TOKEN: str | None = None
+    GITHUB_MODELS_MODEL: str = "openai/gpt-4o-mini"
+    # Voice input (speech-to-text for the chat box). Off by default; the app
+    # hides the microphone unless this is true and GROQ_API_KEY is set.
+    VOICE_INPUT_ENABLED: bool = False
+    SPEECH_MODELS: str = "whisper-large-v3,whisper-large-v3-turbo"
+    SPEECH_MAX_BYTES: int = 10 * 1024 * 1024
+    SPEECH_MAX_SECONDS: int = 120
+    SPEECH_TIMEOUT_SECONDS: float = 30.0
+    SPEECH_RATE_LIMIT: str = "20/minute"
     OPENAI_TRANSLATION_MODEL: str = "gpt-6.1-sol"
     ANTHROPIC_API_KEY: str | None = None
     ANTHROPIC_TRANSLATION_MODEL: str = "claude-sonnet-5-5"
@@ -72,6 +98,10 @@ class Settings(BaseSettings):
     LOCAL_TRANSLATION_TIMEOUT_SECONDS: float = 30.0
 
     ENABLE_LLM_FALLBACK: bool = True
+    # Comma-separated provider order tried after the primary/fallback, e.g.
+    # "gemini,openai,mistral,anthropic". Empty = vertex_ai,gemini,openai,anthropic,mistral
+    # (only providers that actually have credentials are used).
+    LLM_PROVIDER_CHAIN: str = ""
 
     # Vertex AI (Primary Production Provider - Fallback for Gemini)
     VERTEX_PROJECT_ID: str | None = None
@@ -85,8 +115,7 @@ class Settings(BaseSettings):
         "llama3:8b"  # Default fallback, should use specific models instead
     )
 
-    # Development-Only Gemini Provider
-    GEMINI_API_KEY: str | None = None
+    # Development-Only Gemini Provider (GEMINI_API_KEY is declared above)
     EMBEDDING_PROVIDER: str | None = None  # defaults to PRIMARY_LLM_PROVIDER
     GEMINI_MODEL: str = "gemini-3.8-flash"
 
@@ -110,6 +139,26 @@ class Settings(BaseSettings):
     # schema with SQLAlchemy metadata.
     AUTO_CREATE_SCHEMA: bool = False
     EXPECTED_SCHEMA_REVISION: str = "110ba6a7df09"
+
+    # Transactional e-mail (password reset). "log" only logs in development.
+    EMAIL_PROVIDER: str = "log"  # "sendgrid" | "smtp" | "log"
+    EMAIL_FROM: str = "no-reply@mednarrate.app"
+    EMAIL_FROM_NAME: str = "MedNarrate"
+    EMAIL_TIMEOUT_SECONDS: float = 10.0
+    SENDGRID_API_KEY: str | None = None
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_USE_TLS: bool = True
+    SMTP_USE_SSL: bool = False
+
+    # Field-encryption keys (MFA secrets, stored AI keys). When unset the key is
+    # derived from JWT_SECRET (legacy behaviour). Set ENCRYPTION_KEY to a
+    # Fernet key to decouple it from JWT rotation; keep the old key in
+    # ENCRYPTION_KEY_PREVIOUS (comma separated) while rotating.
+    ENCRYPTION_KEY: str | None = None
+    ENCRYPTION_KEY_PREVIOUS: str | None = None
 
     # Backward compatibility property aliases
     @property

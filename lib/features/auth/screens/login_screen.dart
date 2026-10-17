@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
@@ -80,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 CustomPasswordField(
                   controller: passwordController,
                   label: AppLocalizations.of(context)!.password,
-                  validator: (v) => v == null || v.isEmpty ? 'Password is required' : null,
+                  validator: (v) => v == null || v.isEmpty ? appL10n.passwordIsRequired : null,
                 ),
                 SizedBox(height: 15),
                 Align(
@@ -92,7 +93,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 SizedBox(height: 25),
                 PrimaryButton(
-                  text: _loading ? 'Signing in…' : 'Login',
+                  text: _loading
+                      ? AppLocalizations.of(context)!.signingIn
+                      : AppLocalizations.of(context)!.login,
                   onPressed: _loading ? null : () { _login(); },
                 ),
                 SizedBox(height: 35),

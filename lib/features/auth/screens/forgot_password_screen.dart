@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/routing/routes.dart';
@@ -39,7 +40,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _requestReset() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty) {
-      setState(() => _error = 'Please enter your email address.');
+      setState(() => _error = appL10n.enterEmailAddress);
       return;
     }
     setState(() {
@@ -76,11 +77,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final token = _tokenCtrl.text.trim();
     final newPass = _newPassCtrl.text.trim();
     if (token.isEmpty || newPass.isEmpty) {
-      setState(() => _error = 'Please fill in all fields.');
+      setState(() => _error = appL10n.fillAllFields);
       return;
     }
-    if (newPass.length < 8) {
-      setState(() => _error = 'Password must be at least 8 characters.');
+    // Mirror the server policy so users get a clear message before the request.
+    if (newPass.length < 8 ||
+        !RegExp(r'[A-Z]').hasMatch(newPass) ||
+        !RegExp(r'[a-z]').hasMatch(newPass) ||
+        !RegExp(r'[0-9]').hasMatch(newPass) ||
+        !RegExp(r'[^A-Za-z0-9]').hasMatch(newPass)) {
+      setState(() => _error = appL10n.passwordRules);
       return;
     }
     setState(() {
@@ -92,9 +98,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           .resetPassword(token: token, newPassword: newPass);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password reset successfully! Please log in.'),
-          backgroundColor: Color(0xFF00C48C),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.passwordResetSuccess),
+          backgroundColor: const Color(0xFF00C48C),
         ),
       );
       context.go(Routes.login);
@@ -149,7 +155,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               SizedBox(height: 28),
               Text(
-                _step2 ? 'Set New Password' : 'Forgot Password?',
+                _step2
+                    ? AppLocalizations.of(context)!.setNewPassword
+                    : AppLocalizations.of(context)!.forgotPassword,
                 style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 28,
@@ -158,8 +166,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               SizedBox(height: 10),
               Text(
                 _step2
-                    ? 'Enter the reset token and your new password below.'
-                    : "Enter your email and we'll send you a reset token.",
+                    ? AppLocalizations.of(context)!.enterResetTokenAndPassword
+                    : AppLocalizations.of(context)!.enterEmailForResetCode,
                 style: TextStyle(
                     color: Theme.of(context)
                         .colorScheme
@@ -240,13 +248,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                 CustomTextField(
                   controller: _tokenCtrl,
-                  label: 'Reset Token',
+                  label: AppLocalizations.of(context)!.resetToken,
                   icon: Icons.key_outlined,
                 ),
                 SizedBox(height: 16),
                 CustomTextField(
                   controller: _newPassCtrl,
-                  label: 'New Password',
+                  label: AppLocalizations.of(context)!.newPassword,
                   icon: Icons.lock_outline,
                   obscureText: true,
                 ),

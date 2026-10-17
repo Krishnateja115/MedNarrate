@@ -71,7 +71,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               theme,
               title: '5. AI & Report Processing',
               content:
-                  'Uploaded documents are processed by the MedNarrate backend. Text needed for analysis, chat, and translation may be sent to configured third-party AI providers. We do not sell your medical documents. AI outputs can be wrong, so compare important findings with your original report and a qualified clinician.',
+                  'Uploaded documents are processed by the MedNarrate backend. Text needed for analysis, chat, and translation may be sent to configured third-party AI providers. If you use the microphone button in the chat, your short voice recording is sent through our server to a speech-to-text provider to turn it into text; MedNarrate does not keep the recording. We do not sell your medical documents. AI outputs can be wrong, so compare important findings with your original report and a qualified clinician.',
             ),
 
             _buildSection(

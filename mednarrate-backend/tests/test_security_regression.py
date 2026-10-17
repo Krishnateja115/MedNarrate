@@ -130,14 +130,21 @@ async def test_chat_fallback_behavior(
         headers=auth_headers,
         json={"content": "hello"},
     )
-    assert chat_resp.status_code == 200
-    resp_data = chat_resp.json()
+    # 3. With no working provider the endpoint must fail visibly (503) instead of
+    #    saving an apology as if it were the assistant's real answer.
+    assert chat_resp.status_code == 503
+    body = chat_resp.text
+    assert "What Your Report Says" not in body
+    assert "Your blood report data has been processed" not in body
 
-    # 3. Verify response is the safe unavailable message, NOT a report template
-    assistant_msg = resp_data["message"]["content"]
-    assert "What Your Report Says" not in assistant_msg
-    assert "Your blood report data has been processed" not in assistant_msg
-    assert assistant_msg == "AI service is temporarily unavailable. Please try again."
+    # 4. Nothing (neither the question nor a fake answer) is left in the history.
+    msgs_resp = await client.get(
+        f"/api/v1/chat/sessions/{session_id}/messages", headers=auth_headers
+    )
+    assert msgs_resp.status_code == 200
+    data = msgs_resp.json()
+    items = data["items"] if isinstance(data, dict) and "items" in data else data
+    assert items == []
 
 
 

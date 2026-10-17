@@ -41,7 +41,19 @@ def verify_summary_grounding(
             if lab.get(k) is not None:
                 known_numbers.add(str(lab[k]))
 
-    ignored_numbers = {"1", "2", "3", "4", "5"}
+    # Counts derived from the structured results themselves ("22 results",
+    # "2 flagged") are grounded facts, not claims that must appear in the
+    # source text.
+    abnormal = sum(
+        1 for lab in structured_lab_values
+        if lab.get("flag") in {"low", "high", "critical", "abnormal"}
+    )
+    normal = sum(1 for lab in structured_lab_values if lab.get("flag") == "normal")
+    known_numbers.update(
+        {str(len(structured_lab_values)), str(abnormal), str(normal)}
+    )
+
+    ignored_numbers = {"0", "1", "2", "3", "4", "5"}
 
     unsupported_numbers = []
     for num in numbers_in_summary:

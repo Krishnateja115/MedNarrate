@@ -11,6 +11,7 @@ import '../../../core/services/storage_service.dart';
 import '../../../main.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../../shared/widgets/profile_tile.dart';
+import 'package:mednarrate/core/l10n/app_l10n.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -54,6 +55,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Relative',
     'Professional Caregiver',
   ];
+
+  /// Display name for a stored role value ('patient' / 'clinician').
+  String _roleLabel(BuildContext context, String value) {
+    final l10n = AppLocalizations.of(context)!;
+    return value == 'clinician' ? l10n.roleDoctor : l10n.rolePatient;
+  }
+
+  /// Display name for a stored relationship. The stored value stays English so
+  /// existing accounts and the API are unaffected; unknown values (free text
+  /// typed earlier) are shown as they were saved.
+  String _relationshipLabel(BuildContext context, String value) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (value) {
+      case 'Daughter':
+        return l10n.relDaughter;
+      case 'Son':
+        return l10n.relSon;
+      case 'Spouse':
+        return l10n.relSpouse;
+      case 'Parent':
+        return l10n.relParent;
+      case 'Guardian':
+        return l10n.relGuardian;
+      case 'Sibling':
+        return l10n.relSibling;
+      case 'Relative':
+        return l10n.relRelative;
+      case 'Professional Caregiver':
+        return l10n.relProfessionalCaregiver;
+      default:
+        return value;
+    }
+  }
 
   @override
   void initState() {
@@ -139,8 +173,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       setState(() => _savingRole = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not switch profile. Please try again.'),
+        SnackBar(
+          content: Text(appL10n.couldNotSwitchProfile),
         ),
       );
     }
@@ -149,13 +183,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _validateFullName(String? input) {
     final trimmed = input?.trim() ?? '';
     if (trimmed.isEmpty) {
-      return 'Full name is required.';
+      return appL10n.fullNameRequired;
     }
-    if (!RegExp(r'[a-zA-Z]').hasMatch(trimmed)) {
-      return 'Full name must contain valid letters.';
+    if (!RegExp(r'\p{L}', unicode: true).hasMatch(trimmed)) {
+      return appL10n.fullNameInvalidLetters;
     }
-    if (!RegExp(r"^[a-zA-Z\s\.\'-]+$").hasMatch(trimmed)) {
-      return 'Name can only contain letters and spaces.';
+    if (!RegExp(r"^[\p{L}\p{M}\s.'\-]+$", unicode: true)
+        .hasMatch(trimmed)) {
+      return appL10n.nameLettersSpacesOnly;
     }
     return null;
   }
@@ -167,7 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final value = input.trim();
     final regExp = RegExp(r'^\d{4}-\d{2}-\d{2}$');
     if (!regExp.hasMatch(value)) {
-      return 'Invalid format. Use YYYY-MM-DD (e.g., 2006-05-20)';
+      return appL10n.dobInvalidFormat;
     }
 
     final parts = value.split('-');
@@ -176,11 +211,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final day = int.parse(parts[2]);
 
     if (year < 1900) {
-      return 'Year must be 1900 or later';
+      return appL10n.dobYearMin;
     }
 
     if (month < 1 || month > 12) {
-      return 'Invalid month ($month). Must be between 01 and 12';
+      return appL10n.dobInvalidMonth(month);
     }
 
     int maxDays;
@@ -199,10 +234,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final bool isLeapYear =
             (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
         return isLeapYear
-            ? 'February $year (leap year) has only 29 days'
-            : 'February $year has only 28 days';
+            ? appL10n.dobFebLeap(year)
+            : appL10n.dobFebDays(year);
       }
-      return 'Month $month has only $maxDays days';
+      return appL10n.dobMonthDays(month, maxDays);
     }
 
     final now = DateTime.now();
@@ -210,7 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final dobDate = DateTime(year, month, day);
 
     if (dobDate.isAfter(today)) {
-      return 'Date of Birth cannot be in the future';
+      return appL10n.dobFuture;
     }
 
     return null;
@@ -310,7 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             });
                           }
                         },
-                  child: Text(saving ? 'Saving...' : 'Save'),
+                  child: Text(saving ? AppLocalizations.of(context)!.saving : AppLocalizations.of(context)!.save),
                 ),
               ],
             );
@@ -333,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text('Doctor Personal Details',
+              title: Text(AppLocalizations.of(context)!.doctorPersonalDetails,
                   style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface)),
               content: Column(
@@ -341,7 +376,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   CustomTextField(
                     controller: nameCtrl,
-                    label: 'Doctor Full Name *',
+                    label: AppLocalizations.of(context)!.doctorFullNameReq,
                     icon: Icons.person_outline,
                     errorText: nameError,
                     onChanged: (_) {
@@ -382,7 +417,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             });
                           }
                         },
-                  child: Text(saving ? 'Saving...' : 'Save'),
+                  child: Text(saving ? AppLocalizations.of(context)!.saving : AppLocalizations.of(context)!.save),
                 ),
               ],
             );
@@ -418,7 +453,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text('Professional Information',
+              title: Text(AppLocalizations.of(context)!.professionalInformation,
                   style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface)),
               content: SingleChildScrollView(
@@ -438,7 +473,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           (context, controller, focusNode, onEditingComplete) {
                         return CustomTextField(
                           controller: controller,
-                          label: 'Medical Specialty *',
+                          label: AppLocalizations.of(context)!.medicalSpecialtyReq,
                           icon: Icons.local_hospital_outlined,
                           errorText: specialtyError,
                           onChanged: (val) {
@@ -453,7 +488,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 14),
                     CustomTextField(
                       controller: qualCtrl,
-                      label: 'Qualifications (e.g. MBBS, MD) *',
+                      label: AppLocalizations.of(context)!.qualificationsLabel,
                       icon: Icons.school_outlined,
                       errorText: qualError,
                       onChanged: (_) {
@@ -465,7 +500,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 14),
                     CustomTextField(
                       controller: licenseCtrl,
-                      label: 'Medical License / Registration No. *',
+                      label: AppLocalizations.of(context)!.licenseLabel,
                       icon: Icons.verified_outlined,
                       errorText: licenseError,
                       onChanged: (_) {
@@ -477,7 +512,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 14),
                     CustomTextField(
                       controller: expCtrl,
-                      label: 'Years of Experience *',
+                      label: AppLocalizations.of(context)!.yearsExperienceLabel,
                       icon: Icons.history_edu_outlined,
                       keyboardType: TextInputType.number,
                       errorText: expError,
@@ -490,13 +525,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 14),
                     CustomTextField(
                       controller: hospitalCtrl,
-                      label: 'Hospital / Clinic / Organization',
+                      label: AppLocalizations.of(context)!.hospitalOrgLabel,
                       icon: Icons.business_outlined,
                     ),
                     const SizedBox(height: 14),
                     CustomTextField(
                       controller: addressCtrl,
-                      label: 'Professional Address',
+                      label: AppLocalizations.of(context)!.professionalAddressLabel,
                       icon: Icons.location_on_outlined,
                     ),
                   ],
@@ -522,21 +557,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           String? eErr;
 
                           if (spec.isEmpty) {
-                            sErr = 'Medical specialty is required.';
+                            sErr = appL10n.specialtyRequired;
                           }
                           if (qual.isEmpty) {
-                            qErr = 'Qualifications are required.';
+                            qErr = appL10n.qualificationsRequired;
                           }
                           if (lic.isEmpty) {
                             lErr =
-                                'Medical license / registration number is required.';
+                                appL10n.licenseRequired;
                           }
                           if (expStr.isEmpty ||
                               expVal == null ||
                               expVal < 0 ||
                               expVal > 70) {
                             eErr =
-                                'Please enter valid years of experience (0 - 70).';
+                                appL10n.yearsExperienceInvalid;
                           }
 
                           if (sErr != null ||
@@ -579,7 +614,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             setDialogState(() => saving = false);
                           }
                         },
-                  child: Text(saving ? 'Saving...' : 'Save'),
+                  child: Text(saving ? AppLocalizations.of(context)!.saving : AppLocalizations.of(context)!.save),
                 ),
               ],
             );
@@ -602,7 +637,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text('Caregiver Personal Details',
+              title: Text(AppLocalizations.of(context)!.caregiverPersonalDetails,
                   style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface)),
               content: Column(
@@ -610,7 +645,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   CustomTextField(
                     controller: nameCtrl,
-                    label: 'Caregiver Full Name *',
+                    label: AppLocalizations.of(context)!.caregiverFullNameReq,
                     icon: Icons.person_outline,
                     errorText: nameError,
                     onChanged: (_) {
@@ -651,7 +686,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             });
                           }
                         },
-                  child: Text(saving ? 'Saving...' : 'Save'),
+                  child: Text(saving ? AppLocalizations.of(context)!.saving : AppLocalizations.of(context)!.save),
                 ),
               ],
             );
@@ -681,7 +716,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              title: Text('Caregiver Information',
+              title: Text(AppLocalizations.of(context)!.caregiverInformation,
                   style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface)),
               content: SingleChildScrollView(
@@ -693,7 +728,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ? relCtrl.text
                           : null,
                       decoration: InputDecoration(
-                        labelText: 'Relationship to Patient *',
+                        labelText: AppLocalizations.of(context)!.relationshipToPatientReq,
                         prefixIcon: Icon(Icons.people_outline,
                             color: Theme.of(context)
                                 .colorScheme
@@ -705,7 +740,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       items: _commonRelationships
                           .map(
-                              (r) => DropdownMenuItem(value: r, child: Text(r)))
+                              (r) => DropdownMenuItem(
+                              value: r,
+                              child: Text(_relationshipLabel(context, r))))
                           .toList(),
                       onChanged: (val) {
                         if (val != null) {
@@ -719,19 +756,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 14),
                     CustomTextField(
                       controller: roleCtrl,
-                      label: 'Caregiving Role (e.g. Primary Caregiver)',
+                      label: AppLocalizations.of(context)!.caregivingRoleLabel,
                       icon: Icons.assignment_ind_outlined,
                     ),
                     const SizedBox(height: 14),
                     CustomTextField(
                       controller: patientCtrl,
-                      label: 'Supported Patient Name (Optional)',
+                      label: AppLocalizations.of(context)!.supportedPatientNameOpt,
                       icon: Icons.person_search_outlined,
                     ),
                     const SizedBox(height: 14),
                     CustomTextField(
                       controller: orgCtrl,
-                      label: 'Employer / Organization (Optional)',
+                      label: AppLocalizations.of(context)!.employerOrgOpt,
                       icon: Icons.business_outlined,
                     ),
                   ],
@@ -748,7 +785,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final rel = relCtrl.text.trim();
                           if (rel.isEmpty) {
                             setDialogState(() => relError =
-                                'Relationship to patient is required.');
+                                appL10n.relationshipRequired);
                             return;
                           }
 
@@ -780,7 +817,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             setDialogState(() => saving = false);
                           }
                         },
-                  child: Text(saving ? 'Saving...' : 'Save'),
+                  child: Text(saving ? AppLocalizations.of(context)!.saving : AppLocalizations.of(context)!.save),
                 ),
               ],
             );
@@ -887,7 +924,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   .onSurface
                                                   .withValues(alpha: 0.54)),
                                       SizedBox(height: 4),
-                                      Text(r['label'] as String,
+                                      Text(_roleLabel(context, r['value'] as String),
                                           style: TextStyle(
                                               fontSize: 11,
                                               color: isActive
@@ -923,10 +960,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       // Role specific account header
                       _sectionTitle(isDoctor
-                          ? 'Doctor Account'
+                          ? AppLocalizations.of(context)!.doctorAccount
                           : isCaregiver
-                              ? 'Caregiver Account'
-                              : 'Account'),
+                              ? AppLocalizations.of(context)!.caregiverAccount
+                              : AppLocalizations.of(context)!.account),
                       SizedBox(height: 15),
 
                       // Role specific tiles
@@ -959,14 +996,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           title:
                               AppLocalizations.of(context)!.personalInformation,
                           subtitle:
-                              'View and edit your professional/personal details',
+                              AppLocalizations.of(context)!.viewEditProfessionalDetails,
                           onTap: _showEditDoctorPersonalInfoDialog,
                         ),
                         ProfileTile(
                           icon: Icons.badge_outlined,
-                          title: 'Professional Information',
+                          title: AppLocalizations.of(context)!.professionalInformation,
                           subtitle:
-                              'Specialty, qualifications and registration details',
+                              AppLocalizations.of(context)!.professionalInfoSubtitle,
                           onTap: _showEditDoctorInfoDialog,
                         ),
                         const SizedBox(height: 12),
@@ -982,9 +1019,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         ProfileTile(
                           icon: Icons.volunteer_activism_outlined,
-                          title: 'Caregiver Information',
+                          title: AppLocalizations.of(context)!.caregiverInformation,
                           subtitle:
-                              'Caregiving role and supported patient information',
+                              AppLocalizations.of(context)!.caregiverInfoSubtitle,
                           onTap: _showEditCaregiverInfoDialog,
                         ),
                         const SizedBox(height: 12),
@@ -992,7 +1029,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
 
                       SizedBox(height: 30),
-                      _sectionTitle('Application & Appearance'),
+                      _sectionTitle(AppLocalizations.of(context)!.appAndAppearance),
                       SizedBox(height: 15),
 
                       ValueListenableBuilder<ThemeMode>(
@@ -1006,7 +1043,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 : Icons.light_mode_outlined,
                             title: AppLocalizations.of(context)!.themeMode,
                             subtitle:
-                                isDark ? 'Dark Mode (OLED)' : 'Light Mode',
+                                isDark ? AppLocalizations.of(context)!.darkMode : AppLocalizations.of(context)!.lightMode,
                             onTap: () async {
                               final next =
                                   isDark ? ThemeMode.light : ThemeMode.dark;
@@ -1074,7 +1111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'No professional information added yet. Tap Professional Information to complete your doctor profile.',
+                AppLocalizations.of(context)!.noProfessionalInfo,
                 style: TextStyle(
                     fontSize: 13,
                     color: Theme.of(context)
@@ -1102,24 +1139,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Icon(Icons.local_hospital, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('Doctor Profile Summary',
+              Text(AppLocalizations.of(context)!.doctorProfileSummary,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
           const SizedBox(height: 10),
           if (doc.specialty != null)
-            Text('Specialty: ${doc.specialty}', style: TextStyle(fontSize: 13)),
+            Text(AppLocalizations.of(context)!.specialtyLine(doc.specialty!), style: TextStyle(fontSize: 13)),
           if (doc.qualifications != null)
-            Text('Qualifications: ${doc.qualifications}',
+            Text(AppLocalizations.of(context)!.qualificationsLine(doc.qualifications!),
                 style: TextStyle(fontSize: 13)),
           if (doc.licenseNumber != null)
-            Text('Registration No.: ${doc.licenseNumber}',
+            Text(AppLocalizations.of(context)!.registrationLine(doc.licenseNumber!),
                 style: TextStyle(fontSize: 13)),
           if (doc.yearsOfExperience != null)
-            Text('Experience: ${doc.yearsOfExperience} years',
+            Text(AppLocalizations.of(context)!.experienceLine('${doc.yearsOfExperience}'),
                 style: TextStyle(fontSize: 13)),
           if (doc.hospital != null)
-            Text('Hospital: ${doc.hospital}', style: TextStyle(fontSize: 13)),
+            Text(AppLocalizations.of(context)!.hospitalLine(doc.hospital!), style: TextStyle(fontSize: 13)),
         ],
       ),
     );
@@ -1144,7 +1181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'No caregiver information added yet. Tap Caregiver Information to complete your profile.',
+                AppLocalizations.of(context)!.noCaregiverInfo,
                 style: TextStyle(
                     fontSize: 13,
                     color: Theme.of(context)
@@ -1172,22 +1209,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Icon(Icons.favorite, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('Caregiver Profile Summary',
+              Text(AppLocalizations.of(context)!.caregiverProfileSummary,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
           const SizedBox(height: 10),
           if (cg.relationship != null)
-            Text('Relationship to Patient: ${cg.relationship}',
+            Text(AppLocalizations.of(context)!.relationshipLine(_relationshipLabel(context, cg.relationship!)),
                 style: TextStyle(fontSize: 13)),
           if (cg.caregiverRole != null)
-            Text('Caregiving Role: ${cg.caregiverRole}',
+            Text(AppLocalizations.of(context)!.caregivingRoleLine(cg.caregiverRole!),
                 style: TextStyle(fontSize: 13)),
           if (cg.supportedPatientName != null)
-            Text('Supporting Patient: ${cg.supportedPatientName}',
+            Text(AppLocalizations.of(context)!.supportingPatientLine(cg.supportedPatientName!),
                 style: TextStyle(fontSize: 13)),
           if (cg.organization != null)
-            Text('Organization: ${cg.organization}',
+            Text(AppLocalizations.of(context)!.organizationLine(cg.organization!),
                 style: TextStyle(fontSize: 13)),
         ],
       ),

@@ -28,7 +28,7 @@ android {
     defaultConfig {
         applicationId = "com.mednarrate.app"
 
-        minSdk = flutter.minSdkVersion
+        minSdk = maxOf(flutter.minSdkVersion, 23) // 23 is the lowest the microphone plugin supports
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

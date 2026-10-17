@@ -9,9 +9,11 @@ from .notifications import router as notifications_router
 from .password_reset import router as password_reset_router
 from .reminders import router as reminders_router
 from .reports import router as reports_router
+from .speech import router as speech_router
 from .support import router as support_router
 from .users import router as users_router
 from .mfa import router as mfa_router
+from .ml import router as ml_router
 
 router = APIRouter()
 router.include_router(auth_router, prefix="/auth", tags=["auth"])
@@ -28,3 +30,5 @@ router.include_router(reminders_router, prefix="/reminders", tags=["reminders"])
 router.include_router(support_router, prefix="/support", tags=["support"])
 router.include_router(admin_router, prefix="/admin", tags=["admin"])
 router.include_router(mfa_router, prefix="/mfa", tags=["mfa"])
+router.include_router(speech_router, prefix="/speech", tags=["speech"])
+router.include_router(ml_router, prefix="/ml", tags=["ml"])

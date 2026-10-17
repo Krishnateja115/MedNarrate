@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/services/health_tip_service.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class HealthTipCard extends StatelessWidget {
   const HealthTipCard({super.key});
@@ -27,12 +28,16 @@ class HealthTipCard extends StatelessWidget {
                 color: Colors.white,
               ),
               const SizedBox(width: 10),
-              const Text(
-                "Today's Health Tip",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.todaysHealthTip,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],

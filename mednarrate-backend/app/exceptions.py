@@ -19,9 +19,17 @@ class TranslationServiceError(Exception):
     generic internal bug.
     """
 
-    def __init__(self, detail: str = "Translation is currently unavailable."):
+    def __init__(
+        self,
+        detail: str = "Translation is currently unavailable.",
+        reason: str | None = None,
+    ):
         super().__init__(detail)
         self.detail = detail
+        # Short machine-readable cause (for example "quota_or_rate_limit",
+        # "not_configured", "timeout", "invalid_output"). Safe to show to the
+        # client: it never contains report text or provider error bodies.
+        self.reason = reason
 
 
 async def translation_service_error_handler(request: Request, exc: TranslationServiceError):
@@ -35,6 +43,7 @@ async def translation_service_error_handler(request: Request, exc: TranslationSe
         content={
             "detail": exc.detail,
             "code": "translation_service_unavailable",
+            "reason": getattr(exc, "reason", None),
             "request_id": request_id,
         },
     )

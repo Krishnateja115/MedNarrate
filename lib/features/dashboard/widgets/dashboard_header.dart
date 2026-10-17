@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../main.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
+import 'package:mednarrate/core/l10n/app_l10n.dart';
 
 class DashboardHeader extends StatefulWidget {
   final String name;
@@ -98,13 +100,15 @@ class _DashboardHeaderState extends State<DashboardHeader> {
                     size: 17,
                   ),
                   SizedBox(width: 8),
-                  Text(
-                    message,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
+                  Flexible(
+                    child: Text(
+                      message,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
                     ),
                   ),
                 ],
@@ -126,7 +130,7 @@ class _DashboardHeaderState extends State<DashboardHeader> {
     await StorageService.instance.setNotificationsEnabled(newState);
     if (mounted) setState(() => _notificationsEnabled = newState);
     _showTopBanner(
-      newState ? "Notifications enabled" : "Notifications disabled",
+      newState ? appL10n.notificationsEnabled : appL10n.notificationsDisabled,
       newState,
     );
   }
@@ -137,16 +141,16 @@ class _DashboardHeaderState extends State<DashboardHeader> {
     await StorageService.instance.setThemeMode(next);
     themeModeNotifier.value = next;
     _showTopBanner(
-      next == ThemeMode.dark ? "Dark mode enabled" : "Light mode enabled",
+      next == ThemeMode.dark ? appL10n.darkModeEnabled : appL10n.lightModeEnabled,
       true,
     );
   }
 
   String get _greeting {
     final hour = DateTime.now().hour;
-    if (hour < 12) return "Good Morning ☀️";
-    if (hour < 17) return "Good Afternoon 🌤️";
-    return "Good Evening 🌙";
+    if (hour < 12) return AppLocalizations.of(context)!.goodMorning;
+    if (hour < 17) return AppLocalizations.of(context)!.goodAfternoon;
+    return AppLocalizations.of(context)!.goodEvening;
   }
 
   @override
@@ -204,7 +208,7 @@ class _DashboardHeaderState extends State<DashboardHeader> {
                 ),
                 onPressed: _toggleTheme,
                 tooltip:
-                    isDark ? "Switch to Light Mode" : "Switch to Dark Mode",
+                    isDark ? AppLocalizations.of(context)!.switchToLightMode : AppLocalizations.of(context)!.switchToDarkMode,
               ),
             );
           },
@@ -245,8 +249,8 @@ class _DashboardHeaderState extends State<DashboardHeader> {
             ),
             onPressed: _toggleNotifications,
             tooltip: _notificationsEnabled
-                ? "Disable Notifications"
-                : "Enable Notifications",
+                ? AppLocalizations.of(context)!.disableNotifications
+                : AppLocalizations.of(context)!.enableNotifications,
           ),
         ),
       ],

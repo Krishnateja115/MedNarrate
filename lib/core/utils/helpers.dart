@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_l10n.dart';
+
 /// Miscellaneous helpers used across the app.
 class Helpers {
   Helpers._();
@@ -27,16 +29,22 @@ class Helpers {
   }
 
   /// Returns a user-friendly label for a report_type string.
-  static String reportTypeLabel(String type) {
+  static String reportTypeLabel(String type) =>
+      reportTypeLabelIn(type, appLanguageCode);
+
+  /// Same as [reportTypeLabel] but in an explicit language, for a report that
+  /// is shown translated into a language other than the app's.
+  static String reportTypeLabelIn(String type, String languageCode) {
+    final l = l10nFor(languageCode);
     switch (type) {
       case 'blood':
-        return 'Blood Test';
+        return l.reportTypeBlood;
       case 'pathology':
-        return 'Pathology';
+        return l.reportTypePathology;
       case 'health':
-        return 'Health Check';
+        return l.reportTypeHealthCheck;
       default:
-        return 'Other';
+        return l.reportTypeOther;
     }
   }
 
@@ -60,13 +68,13 @@ class Helpers {
   static String statusLabel(String status) {
     switch (status) {
       case 'uploaded':
-        return 'Uploaded';
+        return appL10n.procUploaded;
       case 'processing':
-        return 'Analyzing…';
+        return appL10n.procAnalyzing;
       case 'completed':
-        return 'Completed';
+        return appL10n.procCompleted;
       case 'failed':
-        return 'Failed';
+        return appL10n.procFailed;
       default:
         return status;
     }

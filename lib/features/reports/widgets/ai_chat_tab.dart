@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import 'package:flutter/services.dart';
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_models.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/utils/helpers.dart';
-import '../../chat/widgets/typing_indicator.dart';
+import '../../chat/widgets/chat_widgets.dart';
 import '../../chat/widgets/quick_question_chips.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
 
@@ -63,6 +64,13 @@ class _AIChatTabState extends State<AIChatTab> {
           _initializing = false;
         });
       }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _error = appL10n.chatCouldNotOpen;
+          _initializing = false;
+        });
+      }
     }
   }
 
@@ -104,20 +112,37 @@ class _AIChatTabState extends State<AIChatTab> {
     final text = textOverride ?? _messageController.text.trim();
     if (text.isEmpty || _sending || _sessionId == null) return;
 
+    final pending = ChatMessageModel(
+      id: DateTime.now().toString(),
+      chatSessionId: _sessionId!,
+      role: 'user',
+      content: text,
+      createdAt: DateTime.now(),
+    );
     _messageController.clear();
     setState(() {
       _sending = true;
-      _messages.add(
-        ChatMessageModel(
-          id: DateTime.now().toString(),
-          chatSessionId: _sessionId!,
-          role: 'user',
-          content: text,
-          createdAt: DateTime.now(),
-        ),
-      );
+      _messages.add(pending);
     });
     _scrollToBottom();
+
+    // When the answer cannot be produced the server removes the question as
+    // well, so the optimistic bubble is taken back out and the text returns to
+    // the input box instead of leaving an unanswered message behind.
+    void giveUp(String message) {
+      if (!mounted) return;
+      setState(() {
+        _sending = false;
+        _messages.remove(pending);
+      });
+      if (_messageController.text.isEmpty) {
+        _messageController.value = TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+      }
+      Helpers.showError(context, message);
+    }
 
     try {
       final lang = Localizations.localeOf(context).languageCode;
@@ -131,11 +156,19 @@ class _AIChatTabState extends State<AIChatTab> {
         _scrollToBottom();
       }
     } on ApiException catch (e) {
-      if (mounted) {
-        setState(() => _sending = false);
-        Helpers.showError(context, e.message);
-      }
+      giveUp(e.message);
+    } catch (_) {
+      giveUp(appL10n.somethingWentWrongRetry);
     }
+  }
+
+  Future<void> _copyMessage(ChatMessageModel msg) async {
+    await Clipboard.setData(ClipboardData(text: msg.content));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(AppLocalizations.of(context)!.messageCopied),
+      duration: const Duration(seconds: 2),
+    ));
   }
 
   @override
@@ -148,149 +181,82 @@ class _AIChatTabState extends State<AIChatTab> {
   @override
   Widget build(BuildContext context) {
     if (_initializing) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
     if (_error != null) {
-      return Center(child: Text(_error!, style: TextStyle(color: Colors.red)));
-    }
-
-    return Column(
-      children: [
-        if (_messages.isEmpty && !_sending)
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: QuickQuestionChips(
-              onSelect: (q) {
-                _messageController.text = q;
-                _sendMessage(textOverride: q);
-              },
-            ),
-          ),
-        Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(16),
-            itemCount: _messages.length,
-            itemBuilder: (context, index) {
-              final msg = _messages[index];
-              final isUser = msg.role == 'user';
-              return _buildMessageBubble(msg, isUser);
-            },
-          ),
-        ),
-        if (_sending)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant),
-                ),
-                child: TypingIndicator(),
-              ),
-            ),
-          ),
-        Container(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 12,
-            bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 12 : 24,
-          ),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            border: Border(
-                top: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant)),
-          ),
-          child: Row(
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                        color: Theme.of(context).colorScheme.outlineVariant),
-                  ),
-                  child: TextField(
-                    controller: _messageController,
-                    maxLength: 500,
-                    minLines: 1,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: "Ask about your report...",
-                      border: InputBorder.none,
-                      counterText: '',
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  onPressed: _sending ? null : _sendMessage,
-                  icon: Icon(Icons.send_rounded, color: Colors.white),
-                ),
+              Icon(Icons.cloud_off_rounded,
+                  size: 40,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.5)),
+              const SizedBox(height: 12),
+              Text(_error!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface)),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _initializing = true;
+                    _error = null;
+                  });
+                  _initSession();
+                },
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(AppLocalizations.of(context)!.tryAgain),
               ),
             ],
           ),
         ),
-      ],
-    );
-  }
+      );
+    }
 
-  Widget _buildMessageBubble(ChatMessageModel msg, bool isUser) {
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: GestureDetector(
-        onLongPress: () {
-          if (!isUser) {
-            // Show copy
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(AppLocalizations.of(context)!.messageCopied)));
-          }
-        },
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          constraints:
-              BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isUser ? AppColors.primary : Theme.of(context).cardColor,
-            border: isUser
-                ? null
-                : Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant),
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(16),
-              topRight: const Radius.circular(16),
-              bottomLeft: Radius.circular(isUser ? 16 : 4),
-              bottomRight: Radius.circular(isUser ? 4 : 16),
-            ),
-          ),
-          child: SelectableText(
-            msg.content,
-            style: TextStyle(
-              color: isUser
-                  ? Colors.white
-                  : Theme.of(context).colorScheme.onSurface,
-              height: 1.5,
-              fontSize: 15,
-            ),
-          ),
+    return Column(
+      children: [
+        const ChatDisclaimer(),
+        Expanded(
+          child: _messages.isEmpty && !_sending
+              ? ChatEmptyState(
+                  suggestions: QuickQuestionChips.questions,
+                  onSelect: (q) => _sendMessage(textOverride: q),
+                )
+              : Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      itemCount: _messages.length + (_sending ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= _messages.length) {
+                          return const ChatTypingBubble();
+                        }
+                        final msg = _messages[index];
+                        return ChatBubble(
+                          message: msg,
+                          onCopy: msg.role == 'user'
+                              ? null
+                              : () => _copyMessage(msg),
+                        );
+                      },
+                    ),
+                  ),
+                ),
         ),
-      ),
+        ChatComposer(
+          controller: _messageController,
+          sending: _sending,
+          onSend: _sendMessage,
+        ),
+      ],
     );
   }
 }

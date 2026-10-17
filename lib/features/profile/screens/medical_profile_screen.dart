@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/services/api_service.dart';
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/custom_textfield.dart';
@@ -57,7 +58,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
 
     final normalized = trimmed.toUpperCase();
     if (!_validBloodGroups.contains(normalized)) {
-      return 'Invalid blood group. Valid options: A+, A-, B+, B-, AB+, AB-, O+, O-';
+      return appL10n.invalidBloodGroup;
     }
     return null;
   }
@@ -66,10 +67,11 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     final trimmed = input.trim();
     if (trimmed.isEmpty) return null; // Optional
 
-    // Check if input consists solely of special characters/punctuation (no alphanumeric letters or numbers)
-    final hasAlphaNum = RegExp(r'[a-zA-Z0-9]').hasMatch(trimmed);
+    // Check if input consists solely of special characters/punctuation (no letters or
+    // numbers in any script, so Hindi/Tamil/etc. entries are accepted like the backend does)
+    final hasAlphaNum = RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(trimmed);
     if (!hasAlphaNum) {
-      return '$fieldName cannot consist only of special characters.';
+      return appL10n.fieldOnlySpecialChars(fieldName);
     }
     return null;
   }
@@ -87,8 +89,8 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
 
     // 1. Validate fields for INVALID data
     final bloodErr = _validateBloodGroup(rawBlood);
-    final allergiesErr = _validateTextField(allergiesVal, 'Known Allergies');
-    final conditionsErr = _validateTextField(conditionsVal, 'Chronic Conditions');
+    final allergiesErr = _validateTextField(allergiesVal, appL10n.knownAllergies);
+    final conditionsErr = _validateTextField(conditionsVal, appL10n.chronicConditions);
 
     if (bloodErr != null || allergiesErr != null || conditionsErr != null) {
       setState(() {
@@ -116,13 +118,14 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
       _bloodController.text = normalizedBlood;
 
       // 2. Check for MISSING (empty) optional fields
+      final l10n = AppLocalizations.of(context)!;
       final missingFields = <String>[];
-      if (normalizedBlood.isEmpty) missingFields.add('Blood Group');
-      if (allergiesVal.isEmpty) missingFields.add('Known Allergies');
-      if (conditionsVal.isEmpty) missingFields.add('Chronic Conditions');
+      if (normalizedBlood.isEmpty) missingFields.add(l10n.bloodGroup);
+      if (allergiesVal.isEmpty) missingFields.add(l10n.knownAllergies);
+      if (conditionsVal.isEmpty) missingFields.add(l10n.chronicConditions);
 
       if (missingFields.isNotEmpty) {
-        final missingDetails = missingFields.map((f) => '$f has not been provided.').join(' ');
+        final missingDetails = missingFields.map(l10n.fieldNotProvided).join(' ');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.amber.shade900,
@@ -131,9 +134,9 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Some medical information is incomplete. You can update it later.',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                Text(
+                  l10n.medicalInfoIncomplete,
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -145,14 +148,14 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
           ),
         );
       } else {
-        Helpers.showSuccess(context, 'Medical information saved successfully.');
+        Helpers.showSuccess(context, l10n.medicalInfoSaved);
       }
 
       context.pop();
     } on ApiException catch (e) {
       if (mounted) Helpers.showError(context, e.message);
     } catch (_) {
-      if (mounted) Helpers.showError(context, 'Failed to save medical information');
+      if (mounted) Helpers.showError(context, appL10n.medicalInfoSaveFailed);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -218,7 +221,9 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                   ),
                   SizedBox(height: 40),
                   PrimaryButton(
-                    text: _saving ? 'Saving...' : 'Save',
+                    text: _saving
+                        ? AppLocalizations.of(context)!.saving
+                        : AppLocalizations.of(context)!.save,
                     onPressed: _saving ? null : () { _save(); },
                   ),
                 ],

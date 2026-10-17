@@ -1,6 +1,7 @@
 """Build a user-owned medical-data archive without exporting credentials."""
 
 import json
+import logging
 import os
 import tempfile
 import zipfile
@@ -22,6 +23,8 @@ from app.models.report_analysis import ReportAnalysis
 from app.models.support import SupportTicket, SupportTicketMessage
 from app.models.user import User
 from app.services.storage import get_storage_backend
+
+logger = logging.getLogger(__name__)
 
 
 def _row_data(row: Any, *, exclude: set[str] | None = None) -> dict[str, Any]:
@@ -118,10 +121,30 @@ async def build_account_archive(user: User, db: AsyncSession) -> str:
         storage = get_storage_backend()
         with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("account.json", json.dumps(payload, indent=2, ensure_ascii=False))
+            missing: list[str] = []
             for report in reports:
-                original = await storage.download_file(report.file_path)
-                safe_name = PurePath(report.file_name.replace("\\", "/")).name
+                try:
+                    original = await storage.download_file(report.file_path)
+                except Exception as exc:  # noqa: BLE001
+                    # One missing/unreadable original must not block the whole
+                    # data-portability export; list it instead.
+                    logger.warning(
+                        "Export: original file unavailable for report %s (%s)",
+                        report.id,
+                        type(exc).__name__,
+                    )
+                    missing.append(str(report.id))
+                    continue
+                safe_name = PurePath((report.file_name or "").replace("\\", "/")).name or "report"
                 archive.writestr(f"reports/{report.id}/{safe_name}", original)
+            if missing:
+                archive.writestr(
+                    "reports/MISSING_FILES.txt",
+                    "The original document for these report IDs could not be read "
+                    "and is not included (their extracted data is in account.json):\n"
+                    + "\n".join(missing)
+                    + "\n",
+                )
     except Exception:
         os.unlink(archive_path)
         raise

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
+import '../l10n/app_l10n.dart';
 import 'storage_service.dart';
 
 enum BiometricAvailability {
@@ -56,14 +57,14 @@ class BiometricService {
     return status == BiometricAvailability.available;
   }
 
-  Future<BiometricResult> authenticate({String reason = 'Authenticate to access your medical records'}) async {
+  Future<BiometricResult> authenticate({String? reason}) async {
     if (kIsWeb) {
       return BiometricResult.unsupported;
     }
 
     try {
       final didAuthenticate = await _auth.authenticate(
-        localizedReason: reason,
+        localizedReason: reason ?? appL10n.bioReasonAccessRecords,
       );
 
       final result = didAuthenticate ? BiometricResult.success : BiometricResult.failure;
@@ -86,7 +87,7 @@ class BiometricService {
   }
 
   Future<BiometricResult> verifyCurrentBiometric() async {
-    return await authenticate(reason: 'Verify your current biometric to continue');
+    return await authenticate(reason: appL10n.bioReasonVerifyCurrent);
   }
 
   Future<bool> isBiometricEnabled() async {
@@ -96,14 +97,14 @@ class BiometricService {
 
   Future<BiometricResult> setBiometricEnabled(bool enabled) async {
     if (enabled) {
-      final result = await authenticate(reason: 'Authenticate using fingerprint or Face ID to enable Biometric App Lock');
+      final result = await authenticate(reason: appL10n.bioReasonEnable);
       if (result == BiometricResult.success) {
         await StorageService.instance.setBiometricEnabled(true);
         isUnlocked = true;
       }
       return result;
     } else {
-      final result = await authenticate(reason: 'Authenticate using fingerprint or Face ID to disable Biometric App Lock');
+      final result = await authenticate(reason: appL10n.bioReasonDisable);
       if (result == BiometricResult.success) {
         await StorageService.instance.setBiometricEnabled(false);
         isUnlocked = true;

@@ -145,3 +145,28 @@ async def test_support_round_trip_and_report_file_deleted(client: AsyncClient) -
     )
     assert deleted.status_code == 204
     assert not await get_storage_backend().file_exists(storage_key)
+
+
+async def test_export_survives_a_missing_original_file(client: AsyncClient, monkeypatch) -> None:
+    headers = await _signup(client, "export_missing@example.com")
+    fields = {"title": "Blood Test", "report_date": "2024-01-01", "report_type": "blood"}
+    up = await client.post(
+        "/api/v1/reports/upload",
+        headers=headers,
+        files={"file": ("gone.pdf", VALID_PDF, "application/pdf")},
+        data=fields,
+    )
+    assert up.status_code == 201
+
+    class _GoneStorage:
+        async def download_file(self, _path):
+            raise FileNotFoundError("gone")
+
+    monkeypatch.setattr(
+        "app.services.account_export.get_storage_backend", lambda: _GoneStorage()
+    )
+    response = await client.get("/api/v1/users/me/export", headers=headers)
+    assert response.status_code == 200
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        assert "reports/MISSING_FILES.txt" in archive.namelist()
+        assert json.loads(archive.read("account.json"))["account"]["email"] == "export_missing@example.com"

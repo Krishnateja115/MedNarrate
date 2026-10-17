@@ -1,0 +1,46 @@
+{
+ "description": "English medical sentences. Hindi has a human-written reference (chrF is scored for Hindi only); number preservation is scored for every language.",
+ "languages": [
+  "hi",
+  "ta",
+  "te",
+  "kn",
+  "ml",
+  "bn",
+  "mr"
+ ],
+ "items": [
+  {
+   "source": "Your hemoglobin is 11.2 g/dL, which is lower than the normal range of 13.0 to 17.0 g/dL.",
+   "reference_hi": "आपका हीमोग्लोबिन 11.2 g/dL है, जो 13.0 से 17.0 g/dL की सामान्य सीमा से कम है।"
+  },
+  {
+   "source": "Your white blood cell count is 11500 per cumm, which is slightly high.",
+   "reference_hi": "आपकी श्वेत रक्त कोशिकाओं की संख्या 11500 प्रति घन मिमी है, जो थोड़ी अधिक है।"
+  },
+  {
+   "source": "Please take metformin 500 mg twice a day after meals.",
+   "reference_hi": "कृपया भोजन के बाद दिन में दो बार मेटफॉर्मिन 500 mg लें।"
+  },
+  {
+   "source": "Your fasting blood sugar is 112 mg/dL, which is above the normal limit of 99 mg/dL.",
+   "reference_hi": "आपकी उपवास रक्त शर्करा 112 mg/dL है, जो 99 mg/dL की सामान्य सीमा से अधिक है।"
+  },
+  {
+   "source": "Your kidney function test is normal.",
+   "reference_hi": "आपकी किडनी कार्य जांच सामान्य है।"
+  },
+  {
+   "source": "Drink plenty of water and repeat the test after 2 weeks.",
+   "reference_hi": "खूब पानी पिएं और 2 सप्ताह बाद जांच दोबारा करवाएं।"
+  },
+  {
+   "source": "Your platelet count is 180000 per cumm, which is within the normal range.",
+   "reference_hi": "आपकी प्लेटलेट की संख्या 180000 प्रति घन मिमी है, जो सामान्य सीमा के भीतर है।"
+  },
+  {
+   "source": "Please consult your doctor if you feel dizzy or tired.",
+   "reference_hi": "यदि आपको चक्कर या थकान महसूस हो तो कृपया अपने डॉक्टर से परामर्श लें।"
+  }
+ ]
+}

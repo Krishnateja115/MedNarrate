@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/app_l10n.dart';
 import '../../../core/routing/routes.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/api_exception.dart';
@@ -66,7 +67,9 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
             const Icon(Icons.delete_outline_rounded,
                 color: Colors.redAccent, size: 24),
             const SizedBox(width: 10),
-            Text(AppLocalizations.of(context)!.deleteReportTitle),
+            Flexible(
+              child: Text(AppLocalizations.of(context)!.deleteReportTitle),
+            ),
           ],
         ),
         content: Text(AppLocalizations.of(context)!.deleteReportConfirm),
@@ -136,7 +139,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
         if (mounted) {
           messenger.showSnackBar(
             SnackBar(
-              content: Text('Unable to delete report: ${e.message}'),
+              content: Text(appL10n.unableToDeleteReportWithMessage(e.message)),
               backgroundColor: Colors.redAccent,
               behavior: SnackBarBehavior.floating,
             ),
@@ -146,8 +149,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
     } catch (e) {
       if (mounted) {
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Unable to delete report. Please try again.'),
+          SnackBar(
+            content: Text(appL10n.unableToDeleteReport),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -172,6 +175,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
           backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
           leadingWidth: 140,
+          centerTitle: false,
+          titleSpacing: 0,
           leading: TextButton.icon(
             onPressed: () {
               ReportsScreen.onRefreshRequested?.call();
@@ -183,12 +188,17 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
               }
             },
             icon: const Icon(Icons.arrow_back_rounded, size: 18),
-            label: const Text(
-              'Back',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            label: Text(
+              AppLocalizations.of(context)!.backLabel,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
-          title: Text(AppLocalizations.of(context)!.reportDetails),
+          title: Text(
+            AppLocalizations.of(context)!.reportDetails,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
           actions: [
             if (_controller.report != null) ...[
               IconButton(
@@ -202,8 +212,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                       : theme.colorScheme.onSurface.withValues(alpha: 0.70),
                 ),
                 tooltip: _controller.report!.isFavourite
-                    ? 'Unfavourite'
-                    : 'Favourite',
+                    ? AppLocalizations.of(context)!.unfavourite
+                    : AppLocalizations.of(context)!.favourite,
               ),
               Theme(
                 data: theme.copyWith(
@@ -241,8 +251,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                           translation: _controller.translation,
                         );
                         if (mounted) {
-                          messenger.showSnackBar(const SnackBar(
-                            content: Text('PDF downloaded successfully'),
+                          messenger.showSnackBar(SnackBar(
+                            content: Text(appL10n.pdfDownloadedOk),
                             backgroundColor: Color(0xFF1B8A5A),
                             behavior: SnackBarBehavior.floating,
                           ));
@@ -250,7 +260,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                       } catch (e) {
                         if (mounted) {
                           messenger.showSnackBar(SnackBar(
-                            content: Text('Export failed: $e'),
+                            content: Text(appL10n.exportFailed('$e')),
                             backgroundColor: Colors.red,
                             behavior: SnackBarBehavior.floating,
                           ));
@@ -279,7 +289,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                       } catch (e) {
                         if (mounted) {
                           messenger.showSnackBar(SnackBar(
-                            content: Text('Preview failed: $e'),
+                            content: Text(appL10n.previewFailed('$e')),
                             backgroundColor: Colors.red,
                             behavior: SnackBarBehavior.floating,
                           ));
@@ -313,7 +323,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                           Icon(Icons.description_outlined,
                               size: 20, color: theme.colorScheme.onSurface),
                           const SizedBox(width: 12),
-                          const Text('View original report'),
+                          Text(AppLocalizations.of(context)!.viewOriginalReport),
                         ],
                       ),
                     ),
@@ -324,7 +334,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                           Icon(Icons.flag_outlined,
                               size: 20, color: theme.colorScheme.onSurface),
                           const SizedBox(width: 12),
-                          const Text('Report an incorrect result'),
+                          Text(AppLocalizations.of(context)!.reportAnIncorrectResult),
                         ],
                       ),
                     ),
@@ -339,7 +349,9 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                                     .withValues(alpha: 0.85)),
                             const SizedBox(width: 12),
                             Text(
-                              _exporting ? 'Exporting…' : 'Export PDF',
+                              _exporting
+                                  ? AppLocalizations.of(context)!.exporting
+                                  : AppLocalizations.of(context)!.exportPdf,
                               style: TextStyle(
                                   color: theme.colorScheme.onSurface,
                                   fontSize: 14,
@@ -358,7 +370,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                                     .withValues(alpha: 0.85)),
                             const SizedBox(width: 12),
                             Text(
-                              'Print / Preview',
+                              AppLocalizations.of(context)!.printPreview,
                               style: TextStyle(
                                   color: theme.colorScheme.onSurface,
                                   fontSize: 14,
@@ -400,6 +412,12 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                   indicatorColor: theme.colorScheme.primary,
                   indicatorWeight: 3,
                   isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+                  labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 14),
+                  unselectedLabelStyle: const TextStyle(
+                      fontWeight: FontWeight.w500, fontSize: 14),
                   overlayColor:
                       const WidgetStatePropertyAll(Colors.transparent),
                   splashFactory: NoSplash.splashFactory,
@@ -485,7 +503,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
             ),
             const SizedBox(height: 24),
             Text(
-              'Report no longer available',
+              AppLocalizations.of(context)!.reportNoLongerAvailable,
               style: TextStyle(
                 color: theme.colorScheme.onSurface,
                 fontSize: 20,
@@ -495,7 +513,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
             ),
             const SizedBox(height: 10),
             Text(
-              'This report may have been deleted or is no longer accessible.',
+              AppLocalizations.of(context)!.reportMayBeDeleted,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.54),
@@ -522,9 +540,9 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
               },
               icon: const Icon(Icons.arrow_back_rounded,
                   color: Colors.white, size: 20),
-              label: const Text(
-                'Back to Reports',
-                style: TextStyle(
+              label: Text(
+                AppLocalizations.of(context)!.backToReports,
+                style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 15),

@@ -42,3 +42,15 @@ async def test_compare_multiple_reports(client: AsyncClient, token_headers: dict
     assert report1_id in data["report_ids"]
     assert report2_id in data["report_ids"]
     assert "comparisons" in data
+
+
+def test_comparison_name_matches_spellings_of_the_same_test():
+    from app.services.lab_value_normalizer import comparison_name
+
+    assert comparison_name("rbc_count") == comparison_name("Total RBC Count") == "RBC"
+    assert comparison_name("Mean Corpuscular Volume") == comparison_name("MCV") == "MCV"
+    assert comparison_name("RDW") == comparison_name("RDW-CV")
+    assert comparison_name("Hct") == comparison_name("Hematocrit")
+    # Different tests stay different.
+    assert comparison_name("Neutrophils") != comparison_name("Absolute Neutrophils")
+

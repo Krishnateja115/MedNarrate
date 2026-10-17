@@ -3,7 +3,7 @@ import logging
 import re
 from typing import List, Optional
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, field_validator
 
 from app.services.normalization import normalize_lab_value
 from app.services.lab_value_normalizer import normalize_parameter_name
@@ -398,6 +398,134 @@ def _extract_simple_lab_lines(text: str) -> list[dict]:
     return results
 
 
+_COLUMN_HEADER_WORDS = {
+    "test description", "test", "test name", "result", "results", "ref. range", "ref range",
+    "reference range", "reference", "unit", "units", "parameter", "investigation", "value",
+    "bio. ref. interval", "biological reference interval", "method", "flag",
+}
+_GENERIC_UNIT_RE = re.compile(
+    r"^(?:%|fl|pg|mm|mmhg|ratio|"
+    r"/\s*[A-Za-z0-9\u00b5^]{1,8}|"
+    r"[A-Za-z\u00b5]{1,10}\s*/\s*[A-Za-z0-9\u00b5^.]{1,10}|"
+    r"(?:million|mil|thousand|thou|lakhs?)\s*/\s*[A-Za-z0-9\u00b5^]{1,8})$",
+    re.IGNORECASE,
+)
+_SECTION_END_RE = re.compile(r"^(?:interpretation|end of report|note|comments?|disclaimer)\b", re.IGNORECASE)
+_ROW_LINE_RE = re.compile(
+    r"^(?P<name>[A-Za-z][A-Za-z0-9 /().,'\-]{1,60}?)\s+"
+    r"(?P<value>[<>]?\s*\d+(?:\.\d+)?)\s+"
+    r"(?P<range>\d+(?:\.\d+)?\s*(?:-|\u2013|to)\s*\d+(?:\.\d+)?|[<>]=?\s*\d+(?:\.\d+)?)\s+"
+    r"(?P<unit>\S+(?:\s\S+)?)"
+    r"(?:\s+(?P<flag>H|L|HIGH|LOW))?$",
+    re.IGNORECASE,
+)
+
+
+def _is_unit_line(value: str) -> bool:
+    value = " ".join(value.strip().split())
+    if not value or len(value) > 24:
+        return False
+    return _looks_like_unit(value) or bool(_GENERIC_UNIT_RE.fullmatch(value))
+
+
+def _is_column_name_candidate(line: str) -> bool:
+    cleaned = " ".join(line.split())
+    if not cleaned or len(cleaned) > 70 or not re.search(r"[A-Za-z]", cleaned):
+        return False
+    if cleaned.lower().rstrip(":") in _COLUMN_HEADER_WORDS or cleaned.endswith(":"):
+        return False
+    if _NUMBER_LINE_RE.fullmatch(cleaned) or _RANGE_RE.fullmatch(cleaned) or _is_unit_line(cleaned):
+        return False
+    if re.search(r"\d{1,2}/\d{1,2}/\d{2,4}", cleaned) or ":" in cleaned:
+        return False
+    return not _is_rejected_name(cleaned)
+
+
+def _extract_column_layout_table(text: str) -> list[dict]:
+    """Parse reports whose cells are stacked as name / result / range / unit.
+
+    Many lab PDFs (react-pdf, LIS exports) extract either as one row per line
+    ("Neutrophils 50 40 - 80 %") or as one cell per line. Reference ranges and
+    units are read from the report itself so values can be classified.
+    """
+    lines = [" ".join(line.split()) for line in text.splitlines() if line.strip()]
+    results: list[dict] = []
+    seen: set[tuple[str, float]] = set()
+    in_table = False
+    anchored = 0
+
+    def add(name: str, value: str, ref: Optional[str], unit: str, flag: str = "") -> bool:
+        raw_name = re.sub(r"\s*\([^)]*\)\s*$", "", name).strip() or name
+        record = _sanitize_lab_record(
+            {
+                "test_name": raw_name,
+                "original_name": raw_name,
+                "value": float(re.sub(r"[^0-9.+-]", "", value)),
+                "unit": unit,
+                "original_unit": unit,
+                "ref_range_str": ref,
+                "flag": {"h": "high", "l": "low"}.get(flag.lower(), flag.lower()) if flag else "",
+            }
+        )
+        if not record:
+            return False
+        key = (record["test_name"].lower(), record["value"])
+        if key in seen:
+            return True
+        seen.add(key)
+        results.append(record)
+        return True
+
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if _SECTION_END_RE.match(line):
+            in_table = False
+        row = _ROW_LINE_RE.match(line)
+        if row and _is_column_name_candidate(row.group("name")) and _is_unit_line(row.group("unit")):
+            if add(row.group("name"), row.group("value"), row.group("range"), row.group("unit"), row.group("flag") or ""):
+                in_table = True
+                anchored += 1
+            index += 1
+            continue
+        if (
+            index + 1 < len(lines)
+            and _is_column_name_candidate(line)
+            and _NUMBER_LINE_RE.fullmatch(lines[index + 1])
+        ):
+            cursor = index + 2
+            ref = None
+            unit = ""
+            if cursor < len(lines) and _RANGE_RE.fullmatch(lines[cursor]):
+                ref = lines[cursor]
+                cursor += 1
+            if cursor < len(lines) and _is_unit_line(lines[cursor]):
+                unit = lines[cursor]
+                cursor += 1
+            has_anchor = bool(ref or unit)
+            if (has_anchor or in_table) and add(line, lines[index + 1], ref, unit):
+                if has_anchor:
+                    in_table = True
+                    anchored += 1
+                index = cursor
+                continue
+        index += 1
+    return results if anchored >= 3 else []
+
+
+
+def extract_lab_values_rules(text: str) -> list[dict]:
+    """The deterministic (no AI) part of :func:`extract_lab_values`.
+
+    Used by the model evaluation to measure the rule-based parser on its own.
+    """
+    return (
+        _extract_column_layout_table(text)
+        or _extract_report_table(text)
+        or _extract_simple_lab_lines(text)
+    )
+
+
 async def extract_lab_values(text: str, report_type: str = "blood") -> list[dict]:
     # Skip only for explicit imaging/radiology report types
     rt = (report_type or "").lower().strip()
@@ -407,12 +535,20 @@ async def extract_lab_values(text: str, report_type: str = "blood") -> list[dict
     # Most laboratory PDFs expose a stable value -> test name -> reference
     # range -> unit layout. Parse that locally first so an LLM cannot shift a
     # unit into the test-name column or turn page/header text into a lab test.
+    column_results = _extract_column_layout_table(text)
+    if column_results:
+        return column_results
     table_results = _extract_report_table(text)
     if table_results:
         return table_results
     line_results = _extract_simple_lab_lines(text)
     if line_results:
         return line_results
+
+    # Privacy boundary: never send raw identifiers to an external LLM.
+    from app.services.privacy import deidentify_prompt_text
+
+    text = deidentify_prompt_text(text)
 
     prompt = f"""From the following medical report text, extract all laboratory test results.
 The parser must strictly follow these rules:
@@ -478,6 +614,40 @@ Report text:
         return []
 
 
+_CLOCK_RE = re.compile(
+    r"^\s*(\d{1,2})(?:[:.](\d{2}))?(?::\d{2})?\s*([ap])?\.?\s*(?:m\.?)?\s*$",
+    re.IGNORECASE,
+)
+
+
+def normalize_clock_time(value: str) -> Optional[str]:
+    """Return a clock time as 24-hour ``HH:MM`` or None if it is not one.
+
+    Accepts "08:00", "8:00 AM", "8 pm", "08.30 a.m.", "20:00:00". The mobile
+    app schedules alerts from 24-hour HH:MM strings only, so report-extracted
+    "08:00 AM" style times must be normalised or no alert would ever fire.
+    """
+    if not isinstance(value, str):
+        return None
+    match = _CLOCK_RE.match(value)
+    if not match:
+        return None
+    hour = int(match.group(1))
+    minute = int(match.group(2) or 0)
+    meridiem = (match.group(3) or "").lower()
+    if match.group(2) is None and not meridiem:
+        return None  # a bare number ("3") is a count, not a clock time
+    if minute > 59:
+        return None
+    if meridiem:
+        if not 1 <= hour <= 12:
+            return None
+        hour = hour % 12 + (12 if meridiem == "p" else 0)
+    elif hour > 23:
+        return None
+    return f"{hour:02d}:{minute:02d}"
+
+
 class MedicationScheduleModel(BaseModel):
     medication_name: str
     dosage: Optional[str] = None
@@ -487,10 +657,29 @@ class MedicationScheduleModel(BaseModel):
     notes: Optional[str] = None
     provenance: str = "REPORT_EXTRACTED"
 
+    @field_validator("times_of_day", mode="before")
+    @classmethod
+    def _normalise_times(cls, v):
+        if not v:
+            return []
+        if isinstance(v, str):
+            v = [v]
+        out: list[str] = []
+        for item in v:
+            normalised = normalize_clock_time(item)
+            # Unparseable free text ("after breakfast") is dropped rather than
+            # stored as an alert time that can never be scheduled.
+            if normalised and normalised not in out:
+                out.append(normalised)
+        return out
+
 
 async def extract_medication_schedule(
     report_text: str,
 ) -> list[MedicationScheduleModel]:
+    from app.services.privacy import deidentify_prompt_text
+
+    report_text = deidentify_prompt_text(report_text)
     prompt = f"""From the following medical report text, extract all prescribed or current medications mentioned.
 For each medication, extract:
 - medication_name: exact medication name

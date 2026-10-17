@@ -14,6 +14,7 @@ import '../widgets/search_bar.dart';
 import '../../../core/services/report_polling_service.dart';
 import 'dart:async';
 import 'package:mednarrate/l10n/app_localizations.dart';
+import 'package:mednarrate/core/l10n/app_l10n.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -100,7 +101,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
             const Icon(Icons.delete_outline_rounded,
                 color: Colors.redAccent, size: 24),
             const SizedBox(width: 10),
-            Text(AppLocalizations.of(context)!.deleteReportTitle),
+            Flexible(
+              child: Text(AppLocalizations.of(context)!.deleteReportTitle),
+            ),
           ],
         ),
         content: Text(AppLocalizations.of(context)!.deleteReportConfirm),
@@ -171,7 +174,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         if (mounted) {
           messenger.showSnackBar(
             SnackBar(
-              content: Text('Unable to delete report: ${e.message}'),
+              content: Text(appL10n.unableToDeleteReportWithMessage(e.message)),
               backgroundColor: Colors.redAccent,
               behavior: SnackBarBehavior.floating,
             ),
@@ -182,8 +185,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
       _loadReports();
       if (mounted) {
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Unable to delete report. Please try again.'),
+          SnackBar(
+            content: Text(appL10n.unableToDeleteReport),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -242,14 +245,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
             child: Row(
               children: [
                 _filterChip(
-                    'All', _filterType == null && _filterFavourite == null, () {
+                    AppLocalizations.of(context)!.reportsFilterAll, _filterType == null && _filterFavourite == null, () {
                   setState(() {
                     _filterType = null;
                     _filterFavourite = null;
                   });
                   _loadReports();
                 }),
-                _filterChip('Favourites', _filterFavourite == true, () {
+                _filterChip(AppLocalizations.of(context)!.statFavourites, _filterFavourite == true, () {
                   setState(() {
                     _filterFavourite = _filterFavourite == true ? null : true;
                     _filterType = null;
@@ -344,9 +347,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   },
                                   icon: const Icon(Icons.upload_file_rounded,
                                       color: Colors.white),
-                                  label: const Text(
-                                    'Upload your first report',
-                                    style: TextStyle(
+                                  label: Text(
+                                    AppLocalizations.of(context)!.uploadFirstReportButton,
+                                    style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 15),
@@ -380,9 +383,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                             ScaffoldMessenger.of(context);
                                         try {
                                           messenger.showSnackBar(
-                                            const SnackBar(
+                                            SnackBar(
                                                 content: Text(
-                                                    'Starting report analysis...')),
+                                                    AppLocalizations.of(context)!.startingReportAnalysis)),
                                           );
                                           await ApiService.instance
                                               .processReport(report.id,
@@ -393,7 +396,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                             messenger.showSnackBar(
                                               SnackBar(
                                                   content: Text(
-                                                      'Analysis request failed: $e'),
+                                                      appL10n.analysisRequestFailed(e.toString())),
                                                   backgroundColor: Colors.red),
                                             );
                                           }

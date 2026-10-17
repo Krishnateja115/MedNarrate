@@ -21,9 +21,11 @@ import 'core/config/app_config.dart';
 
 import 'package:mednarrate/l10n/app_localizations.dart';
 import 'boot_screen.dart';
+import 'core/l10n/locale_notifier.dart';
+
+export 'core/l10n/locale_notifier.dart' show localeModeNotifier;
 
 final themeModeNotifier = ValueNotifier<ThemeMode>(ThemeMode.system);
-final localeModeNotifier = ValueNotifier<Locale>(const Locale('en'));
 
 class AppLifecycleObserver extends WidgetsBindingObserver {
   DateTime? _backgroundedAt;

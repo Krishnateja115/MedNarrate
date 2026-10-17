@@ -167,7 +167,7 @@ class RecentReportsSection extends StatelessWidget {
 
                       // Primary Title
                       Text(
-                        'No reports yet',
+                        AppLocalizations.of(context)!.noReportsYet,
                         style: TextStyle(
                           color: theme.colorScheme.onSurface,
                           fontSize: 17,
@@ -179,7 +179,7 @@ class RecentReportsSection extends StatelessWidget {
 
                       // Supporting Description
                       Text(
-                        'Your recent medical reports will appear here once you add them.',
+                        AppLocalizations.of(context)!.recentReportsEmptyHint,
                         style: TextStyle(
                           color: theme.colorScheme.onSurface
                               .withValues(alpha: 0.60),

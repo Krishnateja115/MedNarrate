@@ -18,6 +18,17 @@ async def register_token(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    # A physical device token belongs to one account at a time: if another user
+    # previously logged in on this device, detach it so the previous user's
+    # medication notifications are not delivered to the new owner's device.
+    from sqlalchemy import delete as sa_delete
+
+    await db.execute(
+        sa_delete(PushToken).where(
+            PushToken.device_token == req.token, PushToken.user_id != current_user.id
+        )
+    )
+
     # Upsert the token
     stmt = select(PushToken).where(
         PushToken.user_id == current_user.id,
@@ -39,6 +50,9 @@ async def register_token(
     await db.commit()
     return GenericResponse(success=True, message="Device registered")
 
+# The mobile client POSTs the token in the body (its HTTP helper cannot send a
+# DELETE body through the auth-refresh path), so both verbs are accepted.
+@router.post("/unregister-token", response_model=GenericResponse)
 @router.delete("/unregister-token", response_model=GenericResponse)
 async def unregister_token(
     req: UnregisterTokenRequest,

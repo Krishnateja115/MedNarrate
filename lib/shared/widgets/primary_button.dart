@@ -87,14 +87,18 @@ class _PrimaryButtonState extends State<PrimaryButton> {
                               : theme.colorScheme.onSurfaceVariant,
                         ),
                       if (widget.icon != null) SizedBox(width: 10),
-                      Text(
-                        widget.text,
-                        style: TextStyle(
-                          color: isEnabled
-                              ? theme.colorScheme.onPrimary
-                              : theme.colorScheme.onSurfaceVariant,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                      Flexible(
+                        child: Text(
+                          widget.text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isEnabled
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurfaceVariant,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],

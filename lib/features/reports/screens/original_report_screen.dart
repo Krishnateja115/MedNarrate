@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
 import '../../../core/services/api_service.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 /// Displays the uploaded document, not an AI-generated export.
 class OriginalReportScreen extends StatefulWidget {
@@ -39,7 +40,7 @@ class _OriginalReportScreenState extends State<OriginalReportScreen> {
   Widget build(BuildContext context) {
     final isPdf = widget.fileName.toLowerCase().endsWith('.pdf');
     return Scaffold(
-      appBar: AppBar(title: const Text('Original report')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.originalReportTitle)),
       body: FutureBuilder<Uint8List>(
         future: _document,
         builder: (context, snapshot) {
@@ -50,10 +51,10 @@ class _OriginalReportScreenState extends State<OriginalReportScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Unable to open the original document.'),
+                    Text(AppLocalizations.of(context)!.unableToOpenOriginal),
                     const SizedBox(height: 12),
                     OutlinedButton(
-                        onPressed: _retry, child: const Text('Retry')),
+                        onPressed: _retry, child: Text(AppLocalizations.of(context)!.retry)),
                   ],
                 ),
               ),
@@ -68,7 +69,7 @@ class _OriginalReportScreenState extends State<OriginalReportScreen> {
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: Text(
-                  'Compare AI findings with this uploaded document before making decisions.',
+                  AppLocalizations.of(context)!.compareAiFindings,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),

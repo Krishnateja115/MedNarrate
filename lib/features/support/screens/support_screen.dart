@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/display_labels.dart';
 import '../../../core/services/api_exception.dart';
 import '../../../core/services/api_service.dart';
+import 'package:mednarrate/l10n/app_localizations.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key, this.reportId, this.reportTitle});
@@ -74,28 +76,26 @@ class _SupportScreenState extends State<SupportScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Contact support',
+                    Text(AppLocalizations.of(context)!.supportContactTitle,
                         style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Describe the problem without pasting your full medical report. '
-                      'We will attach the report ID when relevant.',
-                    ),
+                    Text(AppLocalizations.of(context)!.supportDescribeHint),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: title,
                       maxLength: 255,
-                      decoration: const InputDecoration(labelText: 'Subject'),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context)!.supportSubject),
                       validator: (value) => (value ?? '').trim().length < 3
-                          ? 'Enter a subject'
+                          ? AppLocalizations.of(context)!.supportEnterSubject
                           : null,
                     ),
                     DropdownButtonFormField<String>(
                       initialValue: category,
-                      decoration: const InputDecoration(labelText: 'Category'),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context)!.supportCategory),
                       items: categories
                           .map((value) => DropdownMenuItem(
-                              value: value, child: Text(value)))
+                              value: value,
+                              child: Text(supportCategoryLabel(AppLocalizations.of(context)!, value))))
                           .toList(),
                       onChanged: (value) {
                         if (value != null) category = value;
@@ -107,11 +107,11 @@ class _SupportScreenState extends State<SupportScreen> {
                       minLines: 3,
                       maxLines: 6,
                       maxLength: 5000,
-                      decoration: const InputDecoration(
-                          labelText: 'What went wrong?',
+                      decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.supportWhatWentWrong,
                           alignLabelWithHint: true),
                       validator: (value) => (value ?? '').trim().length < 10
-                          ? 'Please add a little more detail'
+                          ? AppLocalizations.of(context)!.supportMoreDetail
                           : null,
                     ),
                     const SizedBox(height: 8),
@@ -135,8 +135,9 @@ class _SupportScreenState extends State<SupportScreen> {
                                   setState(_reload);
                                   ScaffoldMessenger.of(this.context)
                                       .showSnackBar(
-                                    const SnackBar(
-                                        content: Text('Support request sent')),
+                                    SnackBar(
+                                        content: Text(AppLocalizations.of(this.context)!
+                                            .supportRequestSent)),
                                   );
                                 } on ApiException catch (error) {
                                   if (!mounted) return;
@@ -150,7 +151,9 @@ class _SupportScreenState extends State<SupportScreen> {
                                   }
                                 }
                               },
-                        child: Text(submitting ? 'Sending…' : 'Send request'),
+                        child: Text(submitting
+                            ? AppLocalizations.of(context)!.sendingEllipsis
+                            : AppLocalizations.of(context)!.sendRequest),
                       ),
                     ),
                   ],
@@ -175,13 +178,16 @@ class _SupportScreenState extends State<SupportScreen> {
         context: context,
         builder: (dialogContext) => StatefulBuilder(
             builder: (dialogContext, setDialogState) => AlertDialog(
-                  title: Text(ticket['title']?.toString() ?? 'Support request'),
+                  title: Text(ticket['title']?.toString() ??
+                      AppLocalizations.of(dialogContext)!.supportRequestDialogTitle),
                   content: SizedBox(
                     width: double.maxFinite,
                     child: ListView(
                       shrinkWrap: true,
                       children: [
-                        Text('Status: ${ticket['status']}'),
+                        Text(AppLocalizations.of(dialogContext)!.supportStatusLine(
+                            supportStatusLabel(AppLocalizations.of(dialogContext)!,
+                                ticket['status']?.toString() ?? ''))),
                         const SizedBox(height: 12),
                         for (final message
                             in (ticket['messages'] as List<dynamic>? ?? []))
@@ -197,9 +203,9 @@ class _SupportScreenState extends State<SupportScreen> {
                           controller: reply,
                           minLines: 2,
                           maxLines: 4,
-                          decoration: const InputDecoration(
-                            labelText: 'Reply to support',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(dialogContext)!.replyToSupport,
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ],
@@ -208,7 +214,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text('Close'),
+                      child: Text(AppLocalizations.of(dialogContext)!.close),
                     ),
                     TextButton(
                       onPressed: () async {
@@ -233,7 +239,7 @@ class _SupportScreenState extends State<SupportScreen> {
                           }
                         }
                       },
-                      child: const Text('Send reply'),
+                      child: Text(AppLocalizations.of(dialogContext)!.sendReply),
                     ),
                   ],
                 )),
@@ -252,11 +258,11 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Support')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.supportTitle)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createTicket,
         icon: const Icon(Icons.edit_outlined),
-        label: const Text('New request'),
+        label: Text(AppLocalizations.of(context)!.supportNewRequest),
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _tickets,
@@ -266,10 +272,10 @@ class _SupportScreenState extends State<SupportScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Could not load support requests.'),
+                  Text(AppLocalizations.of(context)!.supportCouldNotLoad),
                   TextButton(
                     onPressed: () => setState(_reload),
-                    child: const Text('Retry'),
+                    child: Text(AppLocalizations.of(context)!.retry),
                   ),
                 ],
               ),
@@ -280,7 +286,7 @@ class _SupportScreenState extends State<SupportScreen> {
           }
           final tickets = snapshot.data!;
           if (tickets.isEmpty) {
-            return const Center(child: Text('No support requests yet.'));
+            return Center(child: Text(AppLocalizations.of(context)!.supportNoRequests));
           }
           return RefreshIndicator(
             onRefresh: () async {
@@ -292,8 +298,9 @@ class _SupportScreenState extends State<SupportScreen> {
               itemBuilder: (context, index) {
                 final ticket = tickets[index];
                 return ListTile(
-                  title: Text(ticket['title']?.toString() ?? 'Request'),
-                  subtitle: Text(ticket['status']?.toString() ?? ''),
+                  title: Text(ticket['title']?.toString() ?? AppLocalizations.of(context)!.supportRequestFallback),
+                  subtitle: Text(supportStatusLabel(
+                      AppLocalizations.of(context)!, ticket['status']?.toString() ?? '')),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _openTicket(ticket['id'].toString()),
                 );

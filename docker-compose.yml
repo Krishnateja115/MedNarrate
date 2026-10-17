@@ -1,16 +1,82 @@
+# Production-style stack: API + report-analysis worker + PostgreSQL (pgvector) + Redis.
+#
+# Required environment (put them in a .env file next to this file, never commit it):
+#   POSTGRES_PASSWORD, JWT_SECRET (>=32 random chars), CORS_ORIGINS (JSON list, e.g.
+#   CORS_ORIGINS=["https://app.example.com"]), and your LLM provider settings
+#   (e.g. PRIMARY_LLM_PROVIDER, VERTEX_PROJECT_ID / GEMINI_API_KEY ...).
+# Optional: ADMIN_APP_ORIGIN, EMAIL_PROVIDER + SENDGRID_API_KEY (password-reset e-mails),
+#   ENCRYPTION_KEY, STORAGE_BACKEND + bucket settings, TRUSTED_PROXY=true (ONLY when a
+#   reverse proxy you control sits in front of the API).
+#
+# The backend refuses to boot in production unless ANALYSIS_EXECUTION_MODE=worker and
+# CORS_ORIGINS is an explicit list, which is why those are set below and why a `worker`
+# service exists.
+
+x-backend-env: &backend-env
+  DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-mednarrate_user}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-mednarrate}}
+  ENVIRONMENT: ${ENVIRONMENT:-production}
+  ANONYMIZED_TELEMETRY: "False"
+  MEDNARRATE_VERSION: ${MEDNARRATE_VERSION:-1.0.0}
+  MEDNARRATE_COMMIT: ${MEDNARRATE_COMMIT:-dev}
+  JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+  ANALYSIS_EXECUTION_MODE: worker
+  CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS must be set to a JSON list of allowed origins}
+  ADMIN_APP_ORIGIN: ${ADMIN_APP_ORIGIN:-http://localhost:3001}
+  RATE_LIMIT_STORAGE_URI: redis://redis:6379/0
+  TRUSTED_PROXY: ${TRUSTED_PROXY:-false}
+  UPLOAD_DIR: /app/uploads
+  AUTO_CREATE_SCHEMA: "false"
+  # --- LLM providers -------------------------------------------------------
+  # Pass-through (no value): taken from your shell or the root .env when set,
+  # otherwise from mednarrate-backend/.env (see env_file below), otherwise the
+  # application default. Check what works with:
+  #   docker compose exec backend python -m app.llm_check
+  PRIMARY_LLM_PROVIDER:
+  LLM_PROVIDER_CHAIN:
+  ENABLE_LLM_FALLBACK:
+  TRANSLATION_PROVIDER_ORDER:
+  TRANSLATION_DEADLINE_SECONDS:
+  TRANSLATION_CONCURRENCY:
+  GEMINI_FALLBACK_MODELS:
+  GROQ_API_KEY:
+  VOICE_INPUT_ENABLED:
+  SPEECH_MODELS:
+  SPEECH_RATE_LIMIT:
+  # This stack runs ENVIRONMENT=production, where a direct GEMINI_API_KEY is refused.
+  # To test locally with a Gemini key, add ALLOW_GEMINI_API_KEY_IN_PRODUCTION=true to
+  # mednarrate-backend/.env (read the privacy note in that file's .env.example first).
+  ALLOW_GEMINI_API_KEY_IN_PRODUCTION:
+  VERTEX_PROJECT_ID:
+  VERTEX_LOCATION:
+  VERTEX_MODEL:
+  GEMINI_API_KEY:
+  GEMINI_MODEL:
+  OPENAI_API_KEY:
+  OPENAI_TRANSLATION_MODEL:
+  ANTHROPIC_API_KEY:
+  ANTHROPIC_TRANSLATION_MODEL:
+  MISTRAL_API_KEY:
+  MISTRAL_TRANSLATION_MODEL:
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+  EMAIL_PROVIDER: ${EMAIL_PROVIDER:-log}
+  EMAIL_FROM: ${EMAIL_FROM:-no-reply@mednarrate.app}
+  SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+  STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+  STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME:-}
+
 services:
   backend:
     build:
       context: ./mednarrate-backend
     ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-mednarrate_user}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-mednarrate}}
-      - ENVIRONMENT=${ENVIRONMENT:-production}
-      - MEDNARRATE_VERSION=${MEDNARRATE_VERSION:-1.0.0}
-      - MEDNARRATE_COMMIT=${MEDNARRATE_COMMIT:-dev}
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      - "${API_HOST_PORT:-8000}:8000"
+    env_file:
+      - path: ./mednarrate-backend/.env
+        required: false
+    environment: *backend-env
     command: bash -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -23,6 +89,26 @@ services:
       retries: 5
       start_period: 15s
 
+  # Processes uploaded reports (OCR -> extraction -> LLM summary). Without this service
+  # reports stay in "processing" forever when ANALYSIS_EXECUTION_MODE=worker.
+  worker:
+    build:
+      context: ./mednarrate-backend
+    env_file:
+      - path: ./mednarrate-backend/.env
+        required: false
+    environment: *backend-env
+    command: python -m app.analysis_worker
+    # The image's HTTP healthcheck targets the API; the worker serves no HTTP.
+    healthcheck:
+      disable: true
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
   db:
     image: pgvector/pgvector:pg15
     environment:
@@ -30,7 +116,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
       - POSTGRES_DB=${POSTGRES_DB:-mednarrate}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -42,7 +128,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -51,3 +137,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads:
