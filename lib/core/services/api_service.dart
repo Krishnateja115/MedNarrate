@@ -206,7 +206,10 @@ class ApiService {
       String message = resp.reasonPhrase ?? 'Login failed';
       try {
         final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
-        message = decoded['detail']?.toString() ?? message;
+        final detail = decoded['detail'];
+        message = detail is Map<String, dynamic>
+            ? (detail['message']?.toString() ?? message)
+            : (detail?.toString() ?? message);
       } catch (_) {}
       throw ApiException(resp.statusCode, message);
     }
@@ -987,6 +990,11 @@ class ApiService {
     final reminder = jsonDecode(resp.body) as Map<String, dynamic>;
     try {
       await MedicationAlertService.instance.upsert(reminder);
+  Future<Map<String, dynamic>> getMaintenanceStatus() async {
+    final resp = await _get('/maintenance/status');
+    return Map<String, dynamic>.from(jsonDecode(resp.body) as Map);
+  }
+
     } catch (error) {
       debugPrint('Medicine updated, but phone alert could not be set: $error');
     }

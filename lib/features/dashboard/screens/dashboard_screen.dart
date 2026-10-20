@@ -16,6 +16,7 @@ import '../widgets/recent_reports_section.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/offline_banner.dart';
 import '../widgets/announcement_banner.dart';
+import '../widgets/maintenance_banner.dart';
 import 'package:go_router/go_router.dart';
 import '../../reports/widgets/upload_card.dart';
 import 'package:mednarrate/l10n/app_localizations.dart';
@@ -170,7 +171,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           children: [
             const OfflineBanner(),
-            if (!_loading && _loadError == null) AnnouncementBanner(role: _userRole),
+            const MaintenanceBanner(),
+            AnnouncementBanner(role: _userRole),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadData,

@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.core.maintenance import enforce_global_maintenance
 
 from .admin import router as admin_router
 from .analysis import router as analysis_router
@@ -14,8 +15,10 @@ from .support import router as support_router
 from .users import router as users_router
 from .mfa import router as mfa_router
 from .ml import router as ml_router
+from .maintenance import router as maintenance_router
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(enforce_global_maintenance)])
+router.include_router(maintenance_router, prefix="/maintenance", tags=["maintenance"])
 router.include_router(auth_router, prefix="/auth", tags=["auth"])
 router.include_router(users_router, prefix="/users", tags=["users"])
 router.include_router(reports_router, prefix="/reports", tags=["reports"])

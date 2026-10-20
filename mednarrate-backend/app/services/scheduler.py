@@ -6,6 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import select
 
 from app.core.database import AsyncSessionLocal
+from app.core.maintenance import latest_maintenance
 from app.core.config import settings
 from app.models.job_execution import JobExecution, JobStatus
 from app.models.medication_schedule import MedicationSchedule
@@ -22,6 +23,10 @@ async def check_medication_reminders():
     now = datetime.now(timezone.utc)
     try:
         async with AsyncSessionLocal() as session:
+            maintenance = await latest_maintenance(session)
+            if maintenance and maintenance.is_enabled and maintenance.scope in {"all", "notifications"}:
+                logger.info("Medication push skipped during maintenance.")
+                return
             # Fetch active schedules and match their configured reminder times.
             stmt = select(MedicationSchedule).where(
                 MedicationSchedule.is_active.is_(True)

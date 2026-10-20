@@ -22,6 +22,11 @@ interface Announcement {
   created_at: string | null;
 }
 
+function localDateTimeValue(date: Date): string {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
 export default function AnnouncementsPage() {
   const queryClient = useQueryClient();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -32,8 +37,8 @@ export default function AnnouncementsPage() {
   const [message, setMessage] = useState('');
   const [audience, setAudience] = useState('all');
   const [language, setLanguage] = useState('en');
-  const [startTime, setStartTime] = useState(new Date().toISOString().slice(0, 16));
-  const [endTime, setEndTime] = useState(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16));
+  const [startTime, setStartTime] = useState(() => localDateTimeValue(new Date(Date.now() - 60_000)));
+  const [endTime, setEndTime] = useState(() => localDateTimeValue(new Date(Date.now() + 7 * 86400000)));
 
   const { data, isLoading } = useQuery<{ announcements: Announcement[] }>({
     queryKey: ['announcements'],
@@ -72,13 +77,19 @@ export default function AnnouncementsPage() {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !message) return;
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) {
+      setErrorMsg('Choose an end time after the start time.');
+      return;
+    }
     createAnnouncementMutation.mutate({
       title,
       message,
       audience,
       language,
-      start_time: new Date(startTime).toISOString(),
-      end_time: new Date(endTime).toISOString(),
+      start_time: start.toISOString(),
+      end_time: end.toISOString(),
       status: 'published'
     });
   };

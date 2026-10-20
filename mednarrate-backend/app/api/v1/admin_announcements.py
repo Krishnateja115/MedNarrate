@@ -2,9 +2,9 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, desc, select
+from sqlalchemy import and_, case, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import AdminContext, require_permission
@@ -13,6 +13,11 @@ from app.models.announcement import Announcement
 from app.services.audit import log_admin_action
 
 router = APIRouter()
+
+
+def _utc_naive(value: datetime) -> datetime:
+    """The database stores UTC timestamps without a timezone."""
+    return value.astimezone(timezone.utc).replace(tzinfo=None) if value.tzinfo else value
 
 
 class AnnouncementCreate(BaseModel):
@@ -82,16 +87,8 @@ async def create_announcement(
     db: AsyncSession = Depends(get_db),
     admin_ctx: AdminContext = Depends(require_permission("announcements:manage")),
 ):
-    start = (
-        payload.start_time.replace(tzinfo=None)
-        if payload.start_time.tzinfo
-        else payload.start_time
-    )
-    end = (
-        payload.end_time.replace(tzinfo=None)
-        if payload.end_time.tzinfo
-        else payload.end_time
-    )
+    start = _utc_naive(payload.start_time)
+    end = _utc_naive(payload.end_time)
 
     if end <= start:
         raise HTTPException(status_code=400, detail="end_time must be after start_time")
@@ -159,20 +156,15 @@ async def update_announcement(
     if payload.language is not None:
         ann.language = payload.language
     if payload.start_time is not None:
-        ann.start_time = (
-            payload.start_time.replace(tzinfo=None)
-            if payload.start_time.tzinfo
-            else payload.start_time
-        )
+        ann.start_time = _utc_naive(payload.start_time)
     if payload.end_time is not None:
-        ann.end_time = (
-            payload.end_time.replace(tzinfo=None)
-            if payload.end_time.tzinfo
-            else payload.end_time
-        )
+        ann.end_time = _utc_naive(payload.end_time)
     if payload.status is not None:
         ann.status = payload.status
 
+
+    if ann.end_time <= ann.start_time:
+        raise HTTPException(status_code=400, detail="end_time must be after start_time")
 
     await log_admin_action(
         db=db,
@@ -236,10 +228,12 @@ async def delete_announcement(
 # Public Active Announcements Endpoint for App / Mobile Users
 @router.get("/announcements/active/public")
 async def get_active_public_announcements(
+    response: Response,
     audience: Optional[str] = Query("all"),
     language: Optional[str] = Query("en"),
     db: AsyncSession = Depends(get_db),
 ):
+    response.headers["Cache-Control"] = "no-store"
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     stmt = (
         select(Announcement)
@@ -249,10 +243,10 @@ async def get_active_public_announcements(
                 Announcement.start_time <= now,
                 Announcement.end_time >= now,
                 Announcement.audience.in_(["all", audience]),
-                Announcement.language == language,
+                Announcement.language.in_({language or "en", "en"}),
             )
         )
-        .order_by(desc(Announcement.start_time))
+        .order_by(case((Announcement.language == language, 0), else_=1), desc(Announcement.start_time))
     )
 
     res = await db.execute(stmt)

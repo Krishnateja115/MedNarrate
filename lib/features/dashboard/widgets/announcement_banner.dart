@@ -1,10 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/storage_service.dart';
 
 class AnnouncementBanner extends StatefulWidget {
   final String role; // to fetch role-specific announcements
-  const AnnouncementBanner({super.key, required this.role});
+  final Future<List<Map<String, dynamic>>> Function(String audience, String language)? loadAnnouncements;
+  const AnnouncementBanner({super.key, required this.role, this.loadAnnouncements});
 
   @override
   State<AnnouncementBanner> createState() => _AnnouncementBannerState();
@@ -12,11 +14,25 @@ class AnnouncementBanner extends StatefulWidget {
 
 class _AnnouncementBannerState extends State<AnnouncementBanner> {
   Map<String, dynamic>? _activeAnnouncement;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadAnnouncement();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadAnnouncement());
+  }
+
+  @override
+  void didUpdateWidget(covariant AnnouncementBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.role != widget.role) _loadAnnouncement();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadAnnouncement() async {
@@ -24,23 +40,19 @@ class _AnnouncementBannerState extends State<AnnouncementBanner> {
       final language = await StorageService.instance.getPreferredLanguage();
       final audience = widget.role == 'clinician' ? 'doctors' : (widget.role == 'caregiver' ? 'caregivers' : 'patients');
       
-      final announcements = await ApiService.instance.getAnnouncements(
-        audience: audience,
-        language: language,
-      );
+      final announcements = await (widget.loadAnnouncements?.call(audience, language) ??
+          ApiService.instance.getAnnouncements(audience: audience, language: language));
 
+      Map<String, dynamic>? next;
       for (var ann in announcements) {
         final id = ann['id'] as String;
         final dismissed = await StorageService.instance.isAnnouncementDismissed(id);
         if (!dismissed) {
-          if (mounted) {
-            setState(() {
-              _activeAnnouncement = ann;
-            });
-          }
+          next = ann;
           break;
         }
       }
+      if (mounted) setState(() => _activeAnnouncement = next);
     } catch (e) {
       // Fail silently for announcements
     }
@@ -53,6 +65,7 @@ class _AnnouncementBannerState extends State<AnnouncementBanner> {
       setState(() {
         _activeAnnouncement = null;
       });
+      _loadAnnouncement();
     }
   }
 

@@ -31,6 +31,7 @@ export default function SettingsAndMaintenancePage() {
   const { data: maintenance, isLoading } = useQuery<MaintenanceStatus>({
     queryKey: ['maintenance-status'],
     queryFn: () => fetchApi('/api/v1/admin/maintenance'),
+    refetchInterval: 15_000,
   });
 
   const toggleMaintenanceMutation = useMutation({
@@ -87,7 +88,7 @@ export default function SettingsAndMaintenancePage() {
                 <Wrench className="w-5 h-5 text-amber-600" /> Scoped Maintenance Mode Controller
               </CardTitle>
               <CardDescription>
-                When enabled, specified user-facing features will display an informative maintenance notice.
+                All Services pauses the phone app while keeping admin controls available. Other scopes pause only the selected feature.
               </CardDescription>
             </div>
             {isLoading ? (

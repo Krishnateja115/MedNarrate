@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.database import get_db
+from app.core.maintenance import check_maintenance
 from app.core.security import get_current_user
 from app.models.user import User
 from app.models.push_token import PushToken
@@ -10,7 +11,7 @@ from app.schemas.notification import RegisterTokenRequest, UnregisterTokenReques
 import uuid
 from typing import List
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(check_maintenance("notifications"))])
 
 @router.post("/register-token", response_model=GenericResponse)
 async def register_token(
