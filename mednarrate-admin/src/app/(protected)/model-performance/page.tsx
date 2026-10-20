@@ -309,6 +309,8 @@ export default function ModelPerformancePage() {
     queryKey: ['model_performance'],
     queryFn: () => fetchApi('/api/v1/admin/ml/model-performance'),
     enabled: allowed,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
   });
 
   if (!allowed) return <Forbidden />;

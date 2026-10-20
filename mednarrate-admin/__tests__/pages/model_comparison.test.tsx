@@ -82,6 +82,7 @@ describe('Large vs small model panel', () => {
   it('shows both models side by side with measured numbers', () => {
     (useQuery as jest.Mock).mockReturnValue({ data: report([large, small]), isLoading: false, error: null });
     render(<ModelPerformancePage />);
+    expect((useQuery as jest.Mock).mock.calls[0][0].refetchInterval).toBe(15_000);
     const panel = screen.getByTestId('model-comparison');
     const row = within(screen.getByTestId('cmp-number_preservation'));
     expect(row.getByText('97.0%')).toBeInTheDocument();
