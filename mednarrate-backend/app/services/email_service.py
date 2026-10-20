@@ -32,15 +32,6 @@ def _provider() -> str:
     return (settings.EMAIL_PROVIDER or "log").strip().lower()
 
 
-def is_email_delivery_configured() -> bool:
-    provider = _provider()
-    if provider == "sendgrid":
-        return bool(settings.SENDGRID_API_KEY)
-    if provider == "smtp":
-        return bool(settings.SMTP_HOST)
-    return False
-
-
 async def _send_sendgrid(to: str, subject: str, text: str) -> bool:
     payload = {
         "personalizations": [{"to": [{"email": to}]}],

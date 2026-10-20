@@ -44,7 +44,6 @@ else:
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 
 from sqlalchemy import event
-from sqlalchemy.engine import Engine
 
 if _IS_SQLITE:
 
@@ -79,6 +78,18 @@ def _reset_provider_health():
     provider_health.reset()
     yield
     provider_health.reset()
+
+
+@pytest.fixture(autouse=True)
+def _no_real_knowledge_base(monkeypatch):
+    """Chat looks up general-health notes in ChromaDB, whose model is downloaded on first use.
+    Keep every test offline and fast; tests that exercise the lookup patch it themselves."""
+
+    async def _none(query, top_k=3):
+        return ""
+
+    monkeypatch.setattr("app.api.v1.chat.retrieve_kb_context", _none)
+    yield
 
 
 @pytest.fixture(autouse=True)
@@ -146,9 +157,7 @@ async def token_headers(client: AsyncClient):
 
 import uuid
 from datetime import date
-from app.core.security import hash_password
 from app.models.report import Report
-from app.models.admin import AdminRole, AdminRoleAssignment
 
 @pytest.fixture
 async def target_user(db_session: AsyncSession):

@@ -169,7 +169,6 @@ async def build_diagnostic_snapshot(
 
     # --- Related Report ---
     if ticket.related_report_id:
-        import uuid
 
         report_res = await db.execute(
             select(Report).where(Report.id == ticket.related_report_id)
@@ -265,7 +264,6 @@ async def build_diagnostic_snapshot(
 
     # --- Related Incident ---
     if ticket.related_incident_id:
-        import uuid
 
         incident_res = await db.execute(
             select(Incident).where(Incident.id == ticket.related_incident_id)
@@ -284,7 +282,6 @@ async def build_diagnostic_snapshot(
 
     # --- Recent Notification for Ticket User ---
     if ticket.user_id:
-        import uuid
 
         notif_res = await db.execute(
             select(NotificationLog)

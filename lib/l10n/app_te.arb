@@ -761,5 +761,34 @@
   "mlWhyNoRange": "ఈ రిపోర్ట్‌లో {value}కు సాధారణ పరిధి లేదు, కాబట్టి గుర్తు పెట్టలేము.",
   "mlWhyReportMarked": "ప్రయోగశాల ఈ ఫలితాన్ని రిపోర్ట్‌లో “{flag}” అని గుర్తించింది, ఆ గుర్తునే ఉపయోగించాం.",
   "mlWhyProvisional": "ఈ పరిధి సాధారణ వయోజన పరిధి, మీ రిపోర్ట్‌లో ముద్రించినది కాదు.",
-  "mlWhyMethod": "పద్ధతి: నియమ వివరణ. యాప్ మీ విలువను ఒక పరిధితో పోలుస్తుంది. ఇది వ్యాధి నిర్ధారణ చేయదు. గుర్తు మీకు ఏమి సూచిస్తుందో మీ డాక్టర్‌ను అడగండి."
+  "mlWhyMethod": "పద్ధతి: నియమ వివరణ. యాప్ మీ విలువను ఒక పరిధితో పోలుస్తుంది. ఇది వ్యాధి నిర్ధారణ చేయదు. గుర్తు మీకు ఏమి సూచిస్తుందో మీ డాక్టర్‌ను అడగండి.",
+  "narrationListen": "సారాంశాన్ని వినండి",
+  "@narrationListen": {
+    "description": "Tooltip of the button that reads the report summary aloud"
+  },
+  "narrationStop": "వినడం ఆపండి",
+  "@narrationStop": {
+    "description": "Tooltip of the button that stops the read-aloud"
+  },
+  "narrationVoiceMissing": "ఈ భాషకు సంబంధించిన వాయిస్ ఈ ఫోన్‌లో ఇంకా లేదు. మీ ఫోన్ టెక్స్ట్-టు-స్పీచ్ సెట్టింగ్‌లలో దాన్ని జోడించండి.",
+  "@narrationVoiceMissing": {
+    "description": "Message when the phone has no text-to-speech voice for the chosen language"
+  },
+  "narrationFailed": "సారాంశాన్ని చదివి వినిపించలేకపోయాము. దయచేసి మళ్లీ ప్రయత్నించండి.",
+  "@narrationFailed": {
+    "description": "Message when the summary could not be read aloud"
+  },
+  "docTypeCheckTitle": "పత్రం రకం తనిఖీ",
+  "docTypeCheckExperimental": "ప్రయోగాత్మకం",
+  "docTypeCheckScore": "మోడల్ స్కోర్ {percent}%",
+  "docTypeBlood": "ఇది రక్త పరీక్ష నివేదికలా కనిపిస్తోంది",
+  "docTypeHealth": "ఇది సాధారణ ఆరోగ్య రికార్డులా కనిపిస్తోంది",
+  "docTypeTcga": "ఇది పాథాలజీ లేదా క్యాన్సర్ పరిశోధన రికార్డులా కనిపిస్తోంది",
+  "docTypeCheckAbout": "MRAD డేటాసెట్‌పై శిక్షణ పొందిన ఒక ప్రయోగాత్మక మోడల్ ఈ నివేదికలోని పదజాలాన్ని మూడు రకాల రికార్డులతో (రక్త పరీక్షలు, సాధారణ ఆరోగ్య రికార్డులు, క్యాన్సర్ పరిశోధన రికార్డులు) పోల్చింది. ఇది ఒక సూచన మాత్రమే, రోగ నిర్ధారణ కాదు; అది ఎప్పుడూ చూడని రకాల నివేదికలకు తప్పు కావచ్చు.",
+  "mlDatasetTitle": "నివేదిక-రకం మోడల్ డేటాసెట్",
+  "mlDatasetIntro": "నివేదిక-రకం మోడల్ {patients} మంది రోగుల {reports} వైద్య నివేదికల సంకలనమైన MRAD నుండి నేర్చుకుంది.",
+  "mlDatasetSplit": "శిక్షణ / ధృవీకరణ / పరీక్ష",
+  "mlDatasetClasses": "నివేదిక రకాలు",
+  "mlDatasetSafeguard": "ఒక రోగి నివేదికలు ఈ సమూహాలలో ఒకదానికి మించి రావు, శిక్షణకు ముందు పాఠ్యం నుండి నివేదిక-రకం హెడర్ లైన్ తొలగించబడుతుంది.",
+  "mlDatasetScope": "ఈ ఒక్క మోడల్ మాత్రమే MRAD నుండి నేర్చుకుంటుంది. సారాంశాలు, చాట్, అనువాదం ముందే శిక్షణ పొందిన AI మోడల్‌లను ఉపయోగిస్తాయి; అవి MRADపై శిక్షణ పొందలేదు."
 }

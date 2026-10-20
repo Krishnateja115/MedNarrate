@@ -16,7 +16,7 @@ async def test_user_sees_every_model_without_server_details(client: AsyncClient,
     resp = await client.get("/api/v1/ml/model-performance", headers=token_headers)
     assert resp.status_code == 200
     body = resp.json()
-    assert len(body["models"]) == 9
+    assert len(body["models"]) == 8
     assert body["summary"]["deep_learning_total"] >= 5
     assert {"lime", "linear_attribution", "occlusion", "rule_trace"} <= {m["id"] for m in body["xai_methods"]}
     assert "environment" not in body and "how_to_refresh" not in body

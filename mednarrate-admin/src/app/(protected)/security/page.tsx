@@ -16,7 +16,6 @@ interface SecurityOverview {
   active_sessions: number;
   active_breakglass_grants: number;
   total_audit_logs: number;
-  pending_privacy_requests: number;
   total_security_events: number;
 }
 
@@ -48,15 +47,10 @@ export default function SecurityOverviewPage() {
   });
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <Shield className="w-7 h-7 text-blue-600" /> Security Center Overview
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">
-          “Active administrators” are enabled admin accounts. “Active sessions” are
-          unrevoked, unexpired admin refresh sessions.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Security Overview</h1>
+          <p className="text-muted-foreground">Admin accounts, active sessions and recent security events. Active means enabled and not expired.</p>
       </div>
 
       {/* Metrics Row — keys match actual backend response */}
@@ -123,20 +117,6 @@ export default function SecurityOverviewPage() {
               {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
                 <div className={`text-2xl font-bold ${overview!.active_breakglass_grants > 0 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
                   {overview!.active_breakglass_grants}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Pending Privacy Requests</CardTitle>
-              <Lock className="w-4 h-4 text-slate-500" />
-            </CardHeader>
-            <CardContent>
-              {isLoadingOverview ? <Skeleton className="h-8 w-16" /> : (
-                <div className={`text-2xl font-bold ${overview!.pending_privacy_requests > 0 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
-                  {overview!.pending_privacy_requests}
                 </div>
               )}
             </CardContent>

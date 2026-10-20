@@ -1,13 +1,13 @@
+import re
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import AdminContext, require_permission
-from app.core.config import settings
 from app.core.database import get_db
 from app.models.system_setting import SystemSetting
 from app.services.audit import log_admin_action
@@ -15,15 +15,21 @@ from app.services.audit import log_admin_action
 router = APIRouter()
 
 
-def mask_secret(value: str | None) -> str:
-    if not value or len(value) < 6:
-        return "********"
-    return f"{value[:3]}****{value[-3:]}"
+# Providers the runtime can actually build (see LLMClient). A stored name outside this list
+# would make every AI request raise "Unknown LLM Provider", so it is refused up front.
+PRIMARY_PROVIDERS = frozenset(
+    {"gemini", "dev_gemini", "vertex_ai", "ollama", "openai", "anthropic", "mistral",
+     "groq", "groq_qwen", "cerebras", "openrouter", "github", "local"}
+)
+FALLBACK_PROVIDERS = PRIMARY_PROVIDERS | {"fallback", "none"}
+_MODEL_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/\-]{0,99}$")
 
 
 class AIConfigUpdate(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     primary_provider: Optional[str] = Field(None, example="gemini")
-    model_name: Optional[str] = Field(None, example="gemini-1.5-pro")
+    model_name: Optional[str] = Field(None, example="gemini-3.1-flash-lite")
     temperature: Optional[float] = Field(None, ge=0.0, le=2.0)
     max_tokens: Optional[int] = Field(None, ge=100, le=32000)
     fallback_provider: Optional[str] = Field(None, example="ollama")
@@ -39,38 +45,26 @@ async def get_ai_configuration(
     db: AsyncSession = Depends(get_db),
     admin_ctx: AdminContext = Depends(require_permission("ai_config:read")),
 ):
-    # Retrieve system settings for AI
-    stmt = select(SystemSetting).where(SystemSetting.category == "ai_config")
-    res = await db.execute(stmt)
-    settings_records = {s.key: s.value for s in res.scalars().all()}
+    # Show what the app is really using right now (admin override, else environment),
+    # not a second set of defaults that could disagree with the runtime.
+    from app.services.llm_client import get_resolved_ai_config
 
-    primary_provider = settings_records.get(
-        "ai_primary_provider", getattr(settings, "AI_PRIMARY_PROVIDER", "gemini")
-    )
-    model_name = settings_records.get(
-        "ai_model_name", getattr(settings, "GEMINI_MODEL", "gemini-1.5-flash")
-    )
-    temperature = float(settings_records.get("ai_temperature", "0.2"))
-    max_tokens = int(settings_records.get("ai_max_tokens", "2048"))
-    fallback_provider = settings_records.get("ai_fallback_provider", "ollama")
-
-    raw_key = settings_records.get(
-        "ai_api_key", getattr(settings, "GEMINI_API_KEY", None)
-    )
-    key_is_set = bool(raw_key and raw_key.strip())
-    # Never return any portion of the key — even partial reveals are a security risk
-    # Admins see only: is_set: true/false
+    config = await get_resolved_ai_config(db)
+    res = await db.execute(select(SystemSetting).where(SystemSetting.category == "ai_config"))
+    stored = {s.key for s in res.scalars().all()}
+    fallback_provider = config.get("fallback_provider") or "fallback"
+    key_is_set = bool(config.get("api_key") and str(config["api_key"]).strip())
+    # Never return any portion of the key. Admins see only: is_set true/false.
 
     return {
-        "primary_provider": primary_provider,
-        "model_name": model_name,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
+        "primary_provider": config.get("primary_provider"),
+        "model_name": config.get("model_name"),
+        "temperature": config.get("temperature"),
+        "max_tokens": config.get("max_tokens"),
         "fallback_provider": fallback_provider,
-        "api_key_status": {
-            "is_set": key_is_set,
-            # No masked_key field — do not return any key fragment
-        },
+        "api_key_status": {"is_set": key_is_set},
+        # Which values an admin has overridden; the rest come from the server environment.
+        "overridden": sorted(k.removeprefix("ai_") for k in stored if k != "ai_api_key"),
     }
 
 
@@ -81,6 +75,13 @@ async def update_ai_configuration(
     db: AsyncSession = Depends(get_db),
     admin_ctx: AdminContext = Depends(require_permission("ai_config:manage")),
 ):
+    if payload.primary_provider is not None and payload.primary_provider.lower().strip() not in PRIMARY_PROVIDERS:
+        raise HTTPException(status_code=422, detail=f"Unknown primary provider '{payload.primary_provider}'.")
+    if payload.fallback_provider is not None and payload.fallback_provider.lower().strip() not in FALLBACK_PROVIDERS:
+        raise HTTPException(status_code=422, detail=f"Unknown fallback provider '{payload.fallback_provider}'.")
+    if payload.model_name is not None and not _MODEL_NAME_RE.match(payload.model_name.strip()):
+        raise HTTPException(status_code=422, detail="Model name may only contain letters, digits and . _ : / -")
+
     async def _upsert_setting(
         key: str, val: str, is_sensitive: bool = False, description: str = ""
     ):
@@ -106,15 +107,15 @@ async def update_ai_configuration(
     if payload.primary_provider is not None:
         await _upsert_setting(
             "ai_primary_provider",
-            payload.primary_provider,
+            payload.primary_provider.lower().strip(),
             False,
             "Primary AI Provider",
         )
-        changes["primary_provider"] = payload.primary_provider
+        changes["primary_provider"] = payload.primary_provider.lower().strip()
 
     if payload.model_name is not None:
         await _upsert_setting(
-            "ai_model_name", payload.model_name, False, "AI Model Name"
+            "ai_model_name", payload.model_name.strip(), False, "AI Model Name"
         )
         changes["model_name"] = payload.model_name
 
@@ -133,11 +134,11 @@ async def update_ai_configuration(
     if payload.fallback_provider is not None:
         await _upsert_setting(
             "ai_fallback_provider",
-            payload.fallback_provider,
+            payload.fallback_provider.lower().strip(),
             False,
             "Fallback AI Provider",
         )
-        changes["fallback_provider"] = payload.fallback_provider
+        changes["fallback_provider"] = payload.fallback_provider.lower().strip()
 
     if payload.api_key is not None and payload.api_key.strip():
         from app.core.encryption import encrypt_value

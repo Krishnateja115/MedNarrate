@@ -1,0 +1,357 @@
+{
+  "S1": {
+    "S1_with_report_context": {
+      "n": 15,
+      "metrics": {
+        "answer_accuracy": 1.0,
+        "abstention_rate": 0.8,
+        "latency_p50_ms": 725.9552509999594,
+        "latency_p95_ms": 3435.601809999961,
+        "answers_with_invented_numbers": 0
+      },
+      "details": {
+        "in_report_questions": 10,
+        "out_of_report_questions": 5,
+        "missed_questions": [],
+        "questions_with_invented_numbers": []
+      }
+    },
+    "S2_without_report_context": {
+      "n": 15,
+      "metrics": {
+        "answer_accuracy": 0.5,
+        "abstention_rate": 0.4,
+        "latency_p50_ms": 2150.2728760001446,
+        "latency_p95_ms": 3842.0865225999482,
+        "answers_with_invented_numbers": 6
+      },
+      "details": {
+        "in_report_questions": 10,
+        "out_of_report_questions": 5,
+        "missed_questions": [
+          "What is my haemoglobin value?",
+          "What is my platelet count?",
+          "What is my fasting glucose?",
+          "What is my ALT value?",
+          "Which of my results are above the reference range?"
+        ],
+        "questions_with_invented_numbers": [
+          "What is my haemoglobin value?",
+          "Is my white blood cell count high or normal?",
+          "What is my platelet count?",
+          "What is my fasting glucose?",
+          "Is my creatinine normal?",
+          "What is the reference range for my glucose?"
+        ]
+      }
+    }
+  },
+  "resources": {
+    "model": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    "file_size_mb": 1065.6,
+    "load_seconds": 0.64,
+    "peak_rss_mb": 1377.4,
+    "tokens_per_second": 16.01,
+    "threads": 4
+  },
+  "updated_at": "2026-10-19T04:38:23+0000",
+  "S4": {
+    "n": 30,
+    "model_flags_correct": 16,
+    "model_errors": [
+      [
+        "Platelet Count 210000 /cumm, reference 150000 - 410000",
+        "normal",
+        "high"
+      ],
+      [
+        "Serum Creatinine 0.9 mg/dL, reference 0.7 - 1.3",
+        "normal",
+        "low"
+      ],
+      [
+        "Blood Urea 28 mg/dL, reference 15 - 40",
+        "normal",
+        "high"
+      ],
+      [
+        "SGOT (AST) 38 U/L, reference 0 - 40",
+        "normal",
+        "high"
+      ],
+      [
+        "Total Bilirubin 0.8 mg/dL, reference 0.3 - 1.2",
+        "normal",
+        "low"
+      ],
+      [
+        "Alkaline Phosphatase 110 U/L, reference 44 - 147",
+        "normal",
+        "high"
+      ],
+      [
+        "T3, Total 1.2 ng/mL, reference 0.8 - 2.0",
+        "normal",
+        "low"
+      ],
+      [
+        "T4, Total 8.1 ug/dL, reference 5.1 - 14.1",
+        "normal",
+        "low"
+      ],
+      [
+        "Hemoglobin 14.2 g/dL, reference 13.0 - 17.0",
+        "normal",
+        "low"
+      ],
+      [
+        "Platelet Count 180000 /cumm, reference 150000 - 410000",
+        "normal",
+        "high"
+      ],
+      [
+        "Serum Creatinine 0.9 mg/dL, reference 0.7 - 1.3",
+        "normal",
+        "low"
+      ],
+      [
+        "SGPT (ALT) 28 U/L, reference 0 - 40",
+        "normal",
+        "high"
+      ],
+      [
+        "Potassium 5.1 mmol/L, reference 3.5 - 5.1",
+        "normal",
+        "low"
+      ],
+      [
+        "Platelet Count 2.1 lakhs/cumm, reference 1.5 - 4.1",
+        "normal",
+        "low"
+      ]
+    ],
+    "rule_parser_on_same_lines_correct": 26
+  },
+  "S3": {
+    "n": 56,
+    "metrics": {
+      "number_preservation": 0.8214285714285714,
+      "sentences_with_all_numbers_kept": 0.8095238095238095,
+      "avg_latency_ms": 1281.0758145535685,
+      "chrf_hindi": 26.94073371353163,
+      "latency_p50_ms": 3512.1049389999826
+    },
+    "details": {
+      "number_preservation_by_language": {
+        "hi": 0.75,
+        "ta": 0.8333333333333334,
+        "te": 0.8333333333333334,
+        "kn": 0.8333333333333334,
+        "ml": 0.8333333333333334,
+        "bn": 0.8333333333333334,
+        "mr": 0.8333333333333334
+      },
+      "sentences": 8,
+      "languages": [
+        "hi",
+        "ta",
+        "te",
+        "kn",
+        "ml",
+        "bn",
+        "mr"
+      ]
+    }
+  },
+  "S6": {
+    "emergency": {
+      "n": 20,
+      "model_correct": 20,
+      "regex_then_model_correct": 20
+    },
+    "diagnosis": {
+      "n": 20,
+      "model_correct": 19,
+      "regex_then_model_correct": 19
+    },
+    "general": {
+      "n": 20,
+      "model_correct": 9,
+      "regex_then_model_correct": 6
+    }
+  },
+  "S5": {
+    "aggregate": {
+      "with_structured_values": {
+        "summaries": 6,
+        "passed_grounding_check": 6,
+        "unsupported_numbers_total": 0,
+        "unsupported_diagnoses_total": 0,
+        "value_coverage": 0.8205,
+        "mean_fk_grade": 8.4,
+        "followed_closing_instruction": 0,
+        "median_ms": 33214.0
+      },
+      "text_only": {
+        "summaries": 6,
+        "passed_grounding_check": 6,
+        "unsupported_numbers_total": 0,
+        "unsupported_diagnoses_total": 0,
+        "value_coverage": 0.4359,
+        "mean_fk_grade": 8.6,
+        "followed_closing_instruction": 0,
+        "median_ms": 22255.5
+      }
+    },
+    "per_report": {
+      "with_structured_values": [
+        {
+          "report": "sample_cbc_pdf",
+          "values_in_report": 22,
+          "values_mentioned": 16,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 9.5,
+          "words": 249,
+          "has_closing_sentence": false,
+          "ms": 100602
+        },
+        {
+          "report": "inline_rows",
+          "values_in_report": 5,
+          "values_mentioned": 5,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 5.7,
+          "words": 364,
+          "has_closing_sentence": false,
+          "ms": 35708
+        },
+        {
+          "report": "vertical_columns",
+          "values_in_report": 4,
+          "values_mentioned": 4,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 7.0,
+          "words": 338,
+          "has_closing_sentence": false,
+          "ms": 30720
+        },
+        {
+          "report": "thyroid_panel",
+          "values_in_report": 3,
+          "values_mentioned": 3,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 11.0,
+          "words": 324,
+          "has_closing_sentence": false,
+          "ms": 29869
+        },
+        {
+          "report": "pipe_separated",
+          "values_in_report": 0,
+          "values_mentioned": 0,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 9.3,
+          "words": 300,
+          "has_closing_sentence": false,
+          "ms": 22360
+        },
+        {
+          "report": "qa_context",
+          "values_in_report": 5,
+          "values_mentioned": 4,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 8.0,
+          "words": 369,
+          "has_closing_sentence": false,
+          "ms": 49700
+        }
+      ],
+      "text_only": [
+        {
+          "report": "sample_cbc_pdf",
+          "values_in_report": 22,
+          "values_mentioned": 0,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 7.3,
+          "words": 479,
+          "has_closing_sentence": false,
+          "ms": 27655
+        },
+        {
+          "report": "inline_rows",
+          "values_in_report": 5,
+          "values_mentioned": 5,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 8.7,
+          "words": 308,
+          "has_closing_sentence": false,
+          "ms": 30515
+        },
+        {
+          "report": "vertical_columns",
+          "values_in_report": 4,
+          "values_mentioned": 4,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 8.1,
+          "words": 300,
+          "has_closing_sentence": false,
+          "ms": 18059
+        },
+        {
+          "report": "thyroid_panel",
+          "values_in_report": 3,
+          "values_mentioned": 3,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 8.0,
+          "words": 277,
+          "has_closing_sentence": false,
+          "ms": 16639
+        },
+        {
+          "report": "pipe_separated",
+          "values_in_report": 0,
+          "values_mentioned": 0,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 11.8,
+          "words": 274,
+          "has_closing_sentence": false,
+          "ms": 17738
+        },
+        {
+          "report": "qa_context",
+          "values_in_report": 5,
+          "values_mentioned": 5,
+          "grounding_valid": true,
+          "unsupported_numbers": [],
+          "unsupported_diagnoses": [],
+          "fk_grade": 7.4,
+          "words": 444,
+          "has_closing_sentence": false,
+          "ms": 26452
+        }
+      ]
+    }
+  }
+}

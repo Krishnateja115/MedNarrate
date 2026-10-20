@@ -9,9 +9,3 @@ def get_ner_pipeline():
         "ner", model="d4data/biomedical-ner-all", aggregation_strategy="simple"
     )
 
-
-@lru_cache(maxsize=1)
-def get_embedding_model():
-    from sentence_transformers import SentenceTransformer
-
-    return SentenceTransformer("pritamdeka/S-PubMedBert-MS-MARCO")

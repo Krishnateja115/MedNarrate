@@ -1,7 +1,7 @@
  
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,13 @@ import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/toast';
+import { useRouter } from 'next/navigation';
 
 interface Incident {
   id: string;
@@ -32,7 +39,17 @@ interface IncidentsResponse {
   limit: number;
 }
 
+const SEVERITIES = ['SEV-1', 'SEV-2', 'SEV-3', 'SEV-4'] as const;
+const EMPTY_FORM = { title: '', severity: 'SEV-3', affected_service: '', summary: '' };
+
 export default function IncidentsPage() {
+  const { can } = useAuth();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const canManage = can('incidents.manage');
+  const [declareOpen, setDeclareOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
   const [sortState, setSortState] = useState<{id: string, desc: boolean}>({ id: 'started_at', desc: true });
@@ -46,6 +63,28 @@ export default function IncidentsPage() {
   const { data, isLoading, error } = useQuery<IncidentsResponse>({
     queryKey: ['incidents', page, limit, sortState],
     queryFn: () => fetchApi(`/api/v1/admin/incidents?${queryParams.toString()}`),
+  });
+
+  const declareMutation = useMutation<{ status: string; incident_id: string }, Error, void>({
+    mutationFn: () =>
+      fetchApi('/api/v1/admin/incidents', {
+        method: 'POST',
+        data: {
+          title: form.title.trim(),
+          severity: form.severity,
+          affected_service: form.affected_service.trim() || null,
+          summary: form.summary.trim() || null,
+        },
+      }),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['incidents'] });
+      setDeclareOpen(false);
+      setForm(EMPTY_FORM);
+      setFormError(null);
+      toast.add({ title: 'Incident declared.', type: 'success' });
+      if (result?.incident_id) router.push(`/incidents/detail?id=${result.incident_id}`);
+    },
+    onError: (err) => setFormError(err.message || 'Could not declare the incident.'),
   });
 
   const getSeverityBadge = (severity: string) => {
@@ -184,11 +223,56 @@ export default function IncidentsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Incidents</h1>
           <p className="text-muted-foreground mt-2">Track, investigate, and resolve system anomalies.</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Declare Incident
-        </Button>
+        {canManage && (
+          <Button onClick={() => { setForm(EMPTY_FORM); setFormError(null); setDeclareOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" />
+            Declare Incident
+          </Button>
+        )}
       </div>
+
+      <Dialog open={declareOpen} onOpenChange={setDeclareOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Declare incident</DialogTitle>
+            <DialogDescription>Record a new system problem so the team can track it to resolution.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="incident-title">Title</Label>
+              <Input id="incident-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Report analysis is failing" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="incident-severity">Severity</Label>
+                <select
+                  id="incident-severity"
+                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
+                  value={form.severity}
+                  onChange={(e) => setForm({ ...form, severity: e.target.value })}
+                >
+                  {SEVERITIES.map((sev) => <option key={sev} value={sev}>{sev}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="incident-service">Affected service (optional)</Label>
+                <Input id="incident-service" value={form.affected_service} onChange={(e) => setForm({ ...form, affected_service: e.target.value })} placeholder="worker" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="incident-summary">Summary (optional)</Label>
+              <Textarea id="incident-summary" value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} />
+            </div>
+            {formError && <p className="text-sm text-destructive">{formError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeclareOpen(false)}>Cancel</Button>
+            <Button onClick={() => declareMutation.mutate()} disabled={declareMutation.isPending || !form.title.trim()}>
+              {declareMutation.isPending ? 'Declaring...' : 'Declare incident'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader className="border-b bg-slate-50/50 dark:bg-slate-900/50">

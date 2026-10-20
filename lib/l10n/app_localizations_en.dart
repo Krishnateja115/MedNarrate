@@ -2276,4 +2276,346 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatSuggestTerms => 'What do common blood test terms mean?';
+
+  @override
+  String get mlScreenTitle => 'AI models & explainability';
+
+  @override
+  String get mlTileSubtitle =>
+      'How well each AI model performs and why it answers as it does';
+
+  @override
+  String get mlIntro =>
+      'MedNarrate uses several AI models. See what each one does, how it scored on our own tests, and how it explains its answers.';
+
+  @override
+  String mlSummaryMeasured(int evaluated, int total) {
+    return '$evaluated of $total models measured';
+  }
+
+  @override
+  String mlSummaryDeep(int evaluated, int total) {
+    return '$evaluated of $total deep-learning models measured';
+  }
+
+  @override
+  String get mlPendingBanner =>
+      'Some models have not been measured yet. Their scores will appear here once the evaluation has been run.';
+
+  @override
+  String mlLastMeasured(String when) {
+    return 'Last measured: $when';
+  }
+
+  @override
+  String get mlKindDeep => 'Deep learning';
+
+  @override
+  String get mlKindClassical => 'Classical machine learning';
+
+  @override
+  String get mlKindRules => 'Rule-based';
+
+  @override
+  String get mlUsedInApp => 'Used in the app';
+
+  @override
+  String get mlOfflineTool => 'Offline or research use';
+
+  @override
+  String get mlStatusMeasured => 'Measured';
+
+  @override
+  String get mlStatusNotEvaluated => 'Not evaluated yet';
+
+  @override
+  String get mlStatusFailed => 'Could not be measured';
+
+  @override
+  String get mlNoScoresYet => 'No scores yet.';
+
+  @override
+  String mlMeasuredOn(int count) {
+    return 'Measured on $count test items';
+  }
+
+  @override
+  String get mlTestSetNote =>
+      'Scores come from small, hand-checked test sets, so they show strengths and weaknesses rather than clinical accuracy.';
+
+  @override
+  String get mlLoadError => 'Could not load the model information.';
+
+  @override
+  String get mlTaskBiomedicalNer =>
+      'Finds symptoms, diseases, medicines and lab terms in report text';
+
+  @override
+  String get mlTaskReportEmbedding =>
+      'Finds the parts of your report that answer a chat question';
+
+  @override
+  String get mlTaskKbEmbedding =>
+      'Finds general health knowledge that answers a question';
+
+  @override
+  String get mlTaskPubmedbertEmbedding =>
+      'Prepares medical knowledge for search (offline step)';
+
+  @override
+  String get mlTaskLlmChain =>
+      'Explains reports, answers questions and translates summaries';
+
+  @override
+  String get mlTaskLocalQwen =>
+      'Translates offline when no online model can be reached';
+
+  @override
+  String get mlTaskWhisperStt => 'Turns your spoken question into text';
+
+  @override
+  String get mlTaskReportClassifier =>
+      'Predicts the type of a report (research model, not used in the app)';
+
+  @override
+  String get mlTaskLabExtractor =>
+      'Reads test names, values and ranges from report text';
+
+  @override
+  String get mlMetricPrecision => 'Findings that are right';
+
+  @override
+  String get mlMetricRecall => 'Real items it finds';
+
+  @override
+  String get mlMetricF1 => 'Overall balance (F1)';
+
+  @override
+  String get mlMetricEntityType => 'Correct type of term';
+
+  @override
+  String get mlMetricAvgLatency => 'Average response time';
+
+  @override
+  String get mlMetricLatencyP50 => 'Typical response time';
+
+  @override
+  String get mlMetricLatencyP95 => 'Slowest 5% response time';
+
+  @override
+  String get mlMetricTop1 => 'Right passage ranked 1st';
+
+  @override
+  String get mlMetricTop3 => 'Right passage in top 3';
+
+  @override
+  String get mlMetricTop5 => 'Right passage in top 5';
+
+  @override
+  String get mlMetricMrr => 'Average ranking score (MRR)';
+
+  @override
+  String get mlMetricAnswerAccuracy => 'Correct answers from the report';
+
+  @override
+  String get mlMetricAbstention => 'Says “not in the report” when true';
+
+  @override
+  String get mlMetricNumbersKept => 'Numbers kept in translation';
+
+  @override
+  String get mlMetricAllNumbers => 'Sentences keeping every number';
+
+  @override
+  String get mlMetricChrf => 'Hindi translation quality (chrF, out of 100)';
+
+  @override
+  String get mlMetricWerEn => 'English speech errors (lower is better)';
+
+  @override
+  String get mlMetricWerHi => 'Hindi speech errors (lower is better)';
+
+  @override
+  String get mlMetricAccuracy => 'Overall correct';
+
+  @override
+  String get mlMetricMacroPrecision => 'Average right-when-found across types';
+
+  @override
+  String get mlMetricMacroRecall => 'Average share found across types';
+
+  @override
+  String get mlMetricMacroF1 => 'Average balance across types (F1)';
+
+  @override
+  String get mlXaiTitle => 'How the AI explains itself';
+
+  @override
+  String get mlXaiIntro =>
+      'Explainable AI (XAI) shows which words or numbers led to a result, so it can be checked instead of trusted blindly.';
+
+  @override
+  String get mlXaiLimeName => 'LIME: local surrogate model';
+
+  @override
+  String get mlXaiLimeBody =>
+      'Hides random words, asks the model again and fits a small simple model to the answers. The weights show which words pushed the prediction.';
+
+  @override
+  String get mlXaiLinearName =>
+      'Exact linear attribution (SHAP for linear models)';
+
+  @override
+  String get mlXaiLinearBody =>
+      'For a linear model, each word contributes its weight times its value. The contributions add up exactly to the score.';
+
+  @override
+  String get mlXaiOcclusionName => 'Occlusion saliency';
+
+  @override
+  String get mlXaiOcclusionBody =>
+      'Blanks out one word at a time and measures how much confidence drops. The words that matter most are the evidence.';
+
+  @override
+  String get mlXaiRuleName => 'Rule trace';
+
+  @override
+  String get mlXaiRuleBody =>
+      'Shows the exact comparison behind a High or Low flag: your value against the range printed in the report.';
+
+  @override
+  String get mlXaiClassifierTitle =>
+      'Report-type classifier: why this prediction?';
+
+  @override
+  String get mlXaiEntitiesTitle => 'Medical-term finder: what it relied on';
+
+  @override
+  String get mlXaiLabsTitle => 'Why lab results are flagged';
+
+  @override
+  String mlXaiPredicted(String label, String confidence) {
+    return 'Predicted $label ($confidence% sure)';
+  }
+
+  @override
+  String get mlXaiLimeCaption => 'Words that pushed the prediction (LIME)';
+
+  @override
+  String get mlXaiLinearCaption => 'Exact contribution of each word';
+
+  @override
+  String get mlXaiEvidenceCaption => 'Other words it relied on';
+
+  @override
+  String get mlXaiNoEvidence => 'No other word changed this result.';
+
+  @override
+  String get mlXaiExampleNote =>
+      'Examples use short invented text, not patient data.';
+
+  @override
+  String get mlWhyFlagged => 'Why flagged?';
+
+  @override
+  String get mlWhyTitle => 'How this result was flagged';
+
+  @override
+  String get mlWhyYourValue => 'Your value';
+
+  @override
+  String get mlWhyRangeUsed => 'Range used';
+
+  @override
+  String mlWhyBelow(String value, String low, String percent, String flag) {
+    return '$value is below the lowest normal value ($low) by $percent%, so it is flagged “$flag”.';
+  }
+
+  @override
+  String mlWhyAbove(String value, String high, String percent, String flag) {
+    return '$value is above the highest normal value ($high) by $percent%, so it is flagged “$flag”.';
+  }
+
+  @override
+  String mlWhyWithin(String value, String range, String flag) {
+    return '$value is inside the range ($range), so it is “$flag”.';
+  }
+
+  @override
+  String mlWhyNoRange(String value) {
+    return '$value has no reference range in this report, so it cannot be flagged.';
+  }
+
+  @override
+  String mlWhyReportMarked(String flag) {
+    return 'The laboratory marked this result as “$flag” in the report, and that marking is used.';
+  }
+
+  @override
+  String get mlWhyProvisional =>
+      'This range is a general adult range, not one printed in your report.';
+
+  @override
+  String get mlWhyMethod =>
+      'Method: rule trace. The app compares your value with a range. It does not diagnose. Ask your doctor what a flag means for you.';
+
+  @override
+  String get narrationListen => 'Listen to summary';
+
+  @override
+  String get narrationStop => 'Stop listening';
+
+  @override
+  String get narrationVoiceMissing =>
+      'This phone doesn\'t have a voice for this language yet. Add one in your phone\'s text-to-speech settings.';
+
+  @override
+  String get narrationFailed =>
+      'Couldn\'t read the summary aloud. Please try again.';
+
+  @override
+  String get docTypeCheckTitle => 'Document type check';
+
+  @override
+  String get docTypeCheckExperimental => 'Experimental';
+
+  @override
+  String docTypeCheckScore(int percent) {
+    return 'Model score $percent%';
+  }
+
+  @override
+  String get docTypeBlood => 'Looks like a blood-test report';
+
+  @override
+  String get docTypeHealth => 'Looks like a general health record';
+
+  @override
+  String get docTypeTcga => 'Looks like a pathology or cancer-research record';
+
+  @override
+  String get docTypeCheckAbout =>
+      'An experimental model trained on the MRAD dataset compared the wording of this report with three kinds of records (blood tests, general health records and cancer-research records). It is only a hint, not a diagnosis, and it can be wrong for kinds of reports it has not seen.';
+
+  @override
+  String get mlDatasetTitle => 'Dataset behind the report-type model';
+
+  @override
+  String mlDatasetIntro(String reports, String patients) {
+    return 'The report-type model learned from MRAD, a collection of $reports medical reports from $patients patients.';
+  }
+
+  @override
+  String get mlDatasetSplit => 'Training / validation / test';
+
+  @override
+  String get mlDatasetClasses => 'Report types';
+
+  @override
+  String get mlDatasetSafeguard =>
+      'Reports from one patient never appear in more than one of these groups, and the report-type header line is removed from the text before training.';
+
+  @override
+  String get mlDatasetScope =>
+      'Only this one model learns from MRAD. Summaries, chat and translation use pretrained AI models and are not trained on it.';
 }

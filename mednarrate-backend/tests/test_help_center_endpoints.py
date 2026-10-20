@@ -24,7 +24,7 @@ from app.models.admin import (
     AdminRoleAssignment,
     AdminRolePermission,
 )
-from app.models.help_center import ArticleStatus, HelpArticle, HelpArticleVersion
+from app.models.help_center import ArticleStatus, HelpArticle
 
 # The system/seeded zero-UUID that migration inserts
 SYSTEM_UUID = uuid.UUID(int=0)

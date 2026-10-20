@@ -2,11 +2,8 @@ import uuid
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from app.models.feature_flag import FeatureFlag
-from app.models.user import User, UserRole
-from app.models.admin import AdminRole, AdminRoleAssignment
 
 @pytest.mark.asyncio
 async def test_regression_feature_flag_update_uuid(client: AsyncClient, token_headers: dict, db_session: AsyncSession):

@@ -177,6 +177,58 @@ class LabExample {
       );
 }
 
+/// What the report-type model was trained on (`dataset` in the same payload).
+/// Absent when the server has no training files, and the screen then hides it.
+class DatasetInfo {
+  final String name;
+  final List<String> classes;
+  final int usableRecords;
+  final int uniquePatients;
+  final int trainRecords;
+  final int validationRecords;
+  final int testRecords;
+
+  const DatasetInfo({
+    required this.name,
+    required this.classes,
+    required this.usableRecords,
+    required this.uniquePatients,
+    required this.trainRecords,
+    required this.validationRecords,
+    required this.testRecords,
+  });
+
+  static DatasetInfo? tryParse(Object? raw) {
+    if (raw is! Map) return null;
+    final m = Map<String, dynamic>.from(raw);
+    final usable = (m['records_usable'] as num?)?.toInt() ?? 0;
+    if (usable <= 0) return null;
+    return DatasetInfo(
+      name: m['name'] as String? ?? 'MRAD',
+      classes: [
+        for (final c in (m['classes'] as List? ?? const [])) c.toString(),
+      ],
+      usableRecords: usable,
+      uniquePatients: (m['unique_patients'] as num?)?.toInt() ?? 0,
+      trainRecords: (m['train_records'] as num?)?.toInt() ?? 0,
+      validationRecords: (m['validation_records'] as num?)?.toInt() ?? 0,
+      testRecords: (m['test_records'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  /// 123367 -> "123,367" (the same in every language, so it never clashes with
+  /// the translated sentence around it).
+  static String group(int value) {
+    final digits = value.abs().toString();
+    final out = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) out.write(',');
+      out.write(digits[i]);
+    }
+    return value < 0 ? '-$out' : out.toString();
+  }
+}
+
 class ModelPerformanceReport {
   final String? generatedAt;
   final int total;
@@ -187,6 +239,7 @@ class ModelPerformanceReport {
   final List<ClassifierExample> classifierExamples;
   final List<EntityExample> entityExamples;
   final List<LabExample> labExamples;
+  final DatasetInfo? dataset;
 
   const ModelPerformanceReport({
     required this.generatedAt,
@@ -198,6 +251,7 @@ class ModelPerformanceReport {
     required this.classifierExamples,
     required this.entityExamples,
     required this.labExamples,
+    this.dataset,
   });
 
   factory ModelPerformanceReport.fromMap(Map<String, dynamic> m) {
@@ -217,6 +271,7 @@ class ModelPerformanceReport {
       classifierExamples: mapList(examples['classifier'], ClassifierExample.fromMap),
       entityExamples: mapList(examples['ner'], EntityExample.fromMap),
       labExamples: mapList(examples['lab'], LabExample.fromMap),
+      dataset: DatasetInfo.tryParse(m['dataset']),
     );
   }
 }

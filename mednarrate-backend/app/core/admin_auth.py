@@ -141,27 +141,6 @@ def require_any_permission(permissions: List[str]) -> Callable:
     return _require_any
 
 
-def require_all_permissions(permissions: List[str]) -> Callable:
-    """
-    Dependency that returns the AdminContext if the admin has ALL of the specified permissions.
-    """
-
-    async def _require_all(
-        admin_ctx: AdminContext = Depends(get_admin_context),
-    ) -> AdminContext:
-        if admin_ctx.is_super_admin:
-            return admin_ctx
-        missing = [p for p in permissions if not admin_ctx.has_permission(p)]
-        if missing:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Missing required permissions: {missing}",
-            )
-        return admin_ctx
-
-    return _require_all
-
-
 from fastapi import Header
 def require_step_up(x_step_up_token: str = Header(..., description="Step-up JWT token")) -> dict:
     from app.core.security import decode_step_up_token
@@ -259,29 +238,3 @@ async def validate_access_grant(
 
     return grant
 
-
-def require_active_break_glass(resource_type: str) -> Callable:
-    """
-    Dependency factory. Requires an active break-glass grant for the given resource_type.
-    The resource_id is extracted from the path parameter named 'resource_id' or a custom param.
-    Use as: Depends(require_active_break_glass("medical_report"))
-    """
-
-    async def _check(
-        admin_ctx: AdminContext = Depends(get_admin_context),
-        db: AsyncSession = Depends(get_db),
-    ) -> AdminContext:
-        # Note: resource_id must be validated by the calling endpoint
-        # This dependency validates the admin has the baseline permission chain
-        if (
-            not admin_ctx.has_permission("reports.sensitive_view")
-            and not admin_ctx.has_permission("chat.sensitive_view")
-            and not admin_ctx.is_super_admin
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Missing baseline permission for sensitive access.",
-            )
-        return admin_ctx
-
-    return _check

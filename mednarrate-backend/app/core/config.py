@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "MedNarrate"
     ENVIRONMENT: str = "development"
+    # Log every SQL statement with its parameters. Very noisy and prints data; leave off unless debugging.
+    DB_ECHO: bool = False
     # Centralized API rate limiting (see app/core/rate_limit.py). Disable only in tests.
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_DEFAULT: str = "100/minute"
@@ -59,7 +61,9 @@ class Settings(BaseSettings):
     TRANSLATION_TIMEOUT_SECONDS: float = 45.0
     # Whole-request budget for one translation. Must stay below the mobile
     # app's receive timeout (240 s) and any reverse-proxy timeout.
-    GEMINI_FALLBACK_MODELS: str = "gemini-2.5-flash,gemini-2.5-flash-lite"
+    # Extra Gemini models to try (same key, separate quota) after the main one. Empty by default:
+    # model names are retired often and a retired one only costs a failed call per translation.
+    GEMINI_FALLBACK_MODELS: str = ""
     TRANSLATION_DEADLINE_SECONDS: float = 150.0
     # Report chunks translated in parallel (kept small to respect free-tier rate limits).
     TRANSLATION_CONCURRENCY: int = 3
@@ -72,11 +76,13 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str | None = None
     # Extra OpenAI-compatible providers (all have a free tier; see .env.example).
     GROQ_API_KEY: str | None = None
-    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
+    # Second Groq model (same key, own daily limit) used as a separate fail-over entry.
+    GROQ_QWEN_MODEL: str = "qwen/qwen3.8-27b"
     CEREBRAS_API_KEY: str | None = None
     CEREBRAS_MODEL: str = "llama-3.3-70b"
     OPENROUTER_API_KEY: str | None = None
-    OPENROUTER_MODEL: str = "meta-llama/llama-3.3-70b-instruct:free"
+    OPENROUTER_MODEL: str = "openrouter/free"
     GITHUB_MODELS_TOKEN: str | None = None
     GITHUB_MODELS_MODEL: str = "openai/gpt-4o-mini"
     # Voice input (speech-to-text for the chat box). Off by default; the app
@@ -126,6 +132,14 @@ class Settings(BaseSettings):
     MAX_INPUT_TOKENS: int = 8192
     MAX_OUTPUT_TOKENS: int = 2048
     LLM_TIMEOUT_SECONDS: float = 60.0
+    # A provider that is not the last one in the chain may only hold a request
+    # for this long before the next provider is tried (0 disables the cap).
+    LLM_PROVIDER_TIMEOUT_SECONDS: float = 25.0
+    # Gemini 3 "thinking" depth for report summaries (LOW is much faster than HIGH).
+    ANALYSIS_THINKING_LEVEL: Literal["LOW", "MEDIUM", "HIGH"] = "LOW"
+    # Timing log: one JSON line per timed request/analysis in logs/timing.jsonl.
+    TIMING_LOG_ENABLED: bool = True
+    TIMING_SLOW_REQUEST_MS: int = 3000
     MAX_RAG_CHUNKS: int = 3
     MAX_RETRIES: int = 2
     # Startup must remain responsive when model weights are not already cached.

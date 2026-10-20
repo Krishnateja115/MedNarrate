@@ -1,0 +1,22 @@
+# HTTPS reverse proxy. Caddy obtains and renews free certificates by itself.
+# API_DOMAIN, ADMIN_DOMAIN and TEAM_DOMAIN come from the .env file next to docker-compose.yml.
+
+{$API_DOMAIN} {
+	encode gzip
+	request_body {
+		max_size 30MB
+	}
+	reverse_proxy backend:8000
+}
+
+{$ADMIN_DOMAIN} {
+	encode gzip
+	reverse_proxy admin:3000
+}
+
+# Static team website (files in ./website, mounted at /srv/website).
+{$TEAM_DOMAIN} {
+	encode gzip
+	root * /srv/website
+	file_server
+}

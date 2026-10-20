@@ -3376,5 +3376,86 @@
   "mlWhyMethod": "Method: rule trace. The app compares your value with a range. It does not diagnose. Ask your doctor what a flag means for you.",
   "@mlWhyMethod": {
     "description": "ai_models screen text"
+  },
+  "narrationListen": "Listen to summary",
+  "@narrationListen": {
+    "description": "Tooltip of the button that reads the report summary aloud"
+  },
+  "narrationStop": "Stop listening",
+  "@narrationStop": {
+    "description": "Tooltip of the button that stops the read-aloud"
+  },
+  "narrationVoiceMissing": "This phone doesn't have a voice for this language yet. Add one in your phone's text-to-speech settings.",
+  "@narrationVoiceMissing": {
+    "description": "Message when the phone has no text-to-speech voice for the chosen language"
+  },
+  "narrationFailed": "Couldn't read the summary aloud. Please try again.",
+  "@narrationFailed": {
+    "description": "Message when the summary could not be read aloud"
+  },
+  "docTypeCheckTitle": "Document type check",
+  "@docTypeCheckTitle": {
+    "description": "Document type check and dataset text"
+  },
+  "docTypeCheckExperimental": "Experimental",
+  "@docTypeCheckExperimental": {
+    "description": "Document type check and dataset text"
+  },
+  "docTypeCheckScore": "Model score {percent}%",
+  "@docTypeCheckScore": {
+    "description": "Document type check and dataset text",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "docTypeBlood": "Looks like a blood-test report",
+  "@docTypeBlood": {
+    "description": "Document type check and dataset text"
+  },
+  "docTypeHealth": "Looks like a general health record",
+  "@docTypeHealth": {
+    "description": "Document type check and dataset text"
+  },
+  "docTypeTcga": "Looks like a pathology or cancer-research record",
+  "@docTypeTcga": {
+    "description": "Document type check and dataset text"
+  },
+  "docTypeCheckAbout": "An experimental model trained on the MRAD dataset compared the wording of this report with three kinds of records (blood tests, general health records and cancer-research records). It is only a hint, not a diagnosis, and it can be wrong for kinds of reports it has not seen.",
+  "@docTypeCheckAbout": {
+    "description": "Document type check and dataset text"
+  },
+  "mlDatasetTitle": "Dataset behind the report-type model",
+  "@mlDatasetTitle": {
+    "description": "Document type check and dataset text"
+  },
+  "mlDatasetIntro": "The report-type model learned from MRAD, a collection of {reports} medical reports from {patients} patients.",
+  "@mlDatasetIntro": {
+    "description": "Document type check and dataset text",
+    "placeholders": {
+      "reports": {
+        "type": "String"
+      },
+      "patients": {
+        "type": "String"
+      }
+    }
+  },
+  "mlDatasetSplit": "Training / validation / test",
+  "@mlDatasetSplit": {
+    "description": "Document type check and dataset text"
+  },
+  "mlDatasetClasses": "Report types",
+  "@mlDatasetClasses": {
+    "description": "Document type check and dataset text"
+  },
+  "mlDatasetSafeguard": "Reports from one patient never appear in more than one of these groups, and the report-type header line is removed from the text before training.",
+  "@mlDatasetSafeguard": {
+    "description": "Document type check and dataset text"
+  },
+  "mlDatasetScope": "Only this one model learns from MRAD. Summaries, chat and translation use pretrained AI models and are not trained on it.",
+  "@mlDatasetScope": {
+    "description": "Document type check and dataset text"
   }
 }

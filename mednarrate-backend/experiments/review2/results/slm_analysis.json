@@ -1,0 +1,217 @@
+{
+  "summaries": {
+    "with_structured_values": [
+      {
+        "report": "sample_cbc_pdf",
+        "flag_contradictions": [
+          {
+            "test": "MCV",
+            "value": "80",
+            "flag": "low",
+            "sentence": "These percentages are within the normal range of 40 - 80% for neutrophils, 20 - 40% for lymphocytes, 1 - 6% for eosinophils, 2 - 10% for monocytes, and 0 - 1% f"
+          }
+        ],
+        "conditions_not_in_report": [],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [],
+        "mentions_information_not_provided": false
+      },
+      {
+        "report": "inline_rows",
+        "flag_contradictions": [
+          {
+            "test": "Hemoglobin",
+            "value": "12.5",
+            "flag": "low",
+            "sentence": "Your report shows that your hemoglobin level is 12.5 g/dL, which is within the normal range of 13.0 - 17.0 g/dL."
+          }
+        ],
+        "conditions_not_in_report": [
+          "diabetes",
+          "infection",
+          "inflammation"
+        ],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [
+          "diabetes"
+        ],
+        "mentions_information_not_provided": true
+      },
+      {
+        "report": "vertical_columns",
+        "flag_contradictions": [],
+        "conditions_not_in_report": [
+          "inflammation"
+        ],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [],
+        "mentions_information_not_provided": true
+      },
+      {
+        "report": "thyroid_panel",
+        "flag_contradictions": [],
+        "conditions_not_in_report": [
+          "diabetes"
+        ],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [
+          "diabetes"
+        ],
+        "mentions_information_not_provided": true
+      },
+      {
+        "report": "pipe_separated",
+        "flag_contradictions": [],
+        "conditions_not_in_report": [
+          "heart disease"
+        ],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [],
+        "mentions_information_not_provided": true
+      },
+      {
+        "report": "qa_context",
+        "flag_contradictions": [],
+        "conditions_not_in_report": [
+          "diabetes"
+        ],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [
+          "diabetes"
+        ],
+        "mentions_information_not_provided": true
+      }
+    ],
+    "text_only": [
+      {
+        "report": "sample_cbc_pdf",
+        "flag_contradictions": [],
+        "conditions_not_in_report": [
+          "inflammation",
+          "vitamin deficiency"
+        ],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [],
+        "mentions_information_not_provided": true
+      },
+      {
+        "report": "inline_rows",
+        "flag_contradictions": [
+          {
+            "test": "Hemoglobin",
+            "value": "12.5",
+            "flag": "low",
+            "sentence": "Your blood test results show that your hemoglobin level is 12.5 g/dL, which is within the normal range of 13.0 - 17.0 g/dL."
+          },
+          {
+            "test": "Total WBC Count",
+            "value": "11200",
+            "flag": "high",
+            "sentence": "- Total WBC Count: 11200 /cumm (Normal: 4000 - 10000)"
+          },
+          {
+            "test": "Fasting Glucose",
+            "value": "112",
+            "flag": "high",
+            "sentence": "- Fasting Blood Sugar: 112 mg/dL (Normal: 70 - 99 mg/dL)"
+          }
+        ],
+        "conditions_not_in_report": [
+          "diabetes",
+          "infection"
+        ],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [
+          "diabetes"
+        ],
+        "mentions_information_not_provided": true
+      },
+      {
+        "report": "vertical_columns",
+        "flag_contradictions": [
+          {
+            "test": "Total Bilirubin",
+            "value": "0.8",
+            "flag": "normal",
+            "sentence": "The total bilirubin is 0.8, which is a bit lower than the normal range of 0.3 to 1.2 mg/dL."
+          },
+          {
+            "test": "ALP",
+            "value": "110",
+            "flag": "normal",
+            "sentence": "The alkaline phosphatase is 110, which is a bit higher than the normal range of 44 to 147 U/L."
+          }
+        ],
+        "conditions_not_in_report": [
+          "inflammation"
+        ],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [],
+        "mentions_information_not_provided": true
+      },
+      {
+        "report": "thyroid_panel",
+        "flag_contradictions": [],
+        "conditions_not_in_report": [],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [],
+        "mentions_information_not_provided": true
+      },
+      {
+        "report": "pipe_separated",
+        "flag_contradictions": [],
+        "conditions_not_in_report": [],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [],
+        "mentions_information_not_provided": true
+      },
+      {
+        "report": "qa_context",
+        "flag_contradictions": [],
+        "conditions_not_in_report": [
+          "diabetes",
+          "infection",
+          "inflammation"
+        ],
+        "shipped_verifier_valid": true,
+        "diagnoses_caught_without_exemption": [
+          "diabetes"
+        ],
+        "mentions_information_not_provided": true
+      }
+    ]
+  },
+  "translation": {
+    "outputs": 56,
+    "degenerate_repetition": 6,
+    "by_language": {
+      "hi": "0/8",
+      "ta": "1/8",
+      "te": "3/8",
+      "kn": "0/8",
+      "ml": "0/8",
+      "bn": "1/8",
+      "mr": "1/8"
+    }
+  },
+  "summary_aggregate": {
+    "with_structured_values": {
+      "summaries": 6,
+      "flag_contradictions": 2,
+      "summaries_with_contradiction": 2,
+      "summaries_naming_condition_not_in_report": 5,
+      "shipped_verifier_passed": 6,
+      "summaries_flagged_if_exemption_removed": 3,
+      "summaries_containing_not_provided": 5
+    },
+    "text_only": {
+      "summaries": 6,
+      "flag_contradictions": 5,
+      "summaries_with_contradiction": 2,
+      "summaries_naming_condition_not_in_report": 4,
+      "shipped_verifier_passed": 6,
+      "summaries_flagged_if_exemption_removed": 2,
+      "summaries_containing_not_provided": 6
+    }
+  }
+}

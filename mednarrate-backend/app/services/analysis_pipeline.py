@@ -11,6 +11,7 @@ from sqlalchemy.future import select
 
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
+from app.core.timing import Stopwatch, record as record_timing
 from app.models.report import ProcessingStatus, Report
 from app.models.report_analysis import ReportAnalysis
 from app.models.user import User
@@ -85,14 +86,14 @@ async def generate_core_summaries(
             timeout=settings.LLM_TIMEOUT_SECONDS,
             request_id=request_id,
             system_instruction=clinician_instruction,
-            thinking_level="HIGH",
+            thinking_level=settings.ANALYSIS_THINKING_LEVEL,
         ),
         generate_with_timeout_metadata(
             patient_prompt,
             timeout=settings.LLM_TIMEOUT_SECONDS,
             request_id=request_id,
             system_instruction=patient_instruction,
-            thinking_level="HIGH",
+            thinking_level=settings.ANALYSIS_THINKING_LEVEL,
         ),
     )
 
@@ -143,6 +144,8 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
 
     req_id = str(uuid.uuid4())
     start_time = datetime.now(timezone.utc)
+    watch = Stopwatch()
+    med_task: asyncio.Task | None = None
     logger.info(
         f"[STAGE:START] req_id={req_id} Pipeline analysis started for report {report_id}"
     )
@@ -162,6 +165,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         await db.commit()
 
         # 1. Text Extraction & Diagnostic Handling
+        watch.lap("setup")
         stage_started = time.perf_counter()
         file_type_str = (
             report.file_type.value
@@ -194,6 +198,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             await db.commit()
 
         # 2. Run NER -> entities
+        watch.lap("extraction")
         stage_started = time.perf_counter()
         logger.info(f"[STAGE:NLP] req_id={req_id} Running biomedical NER pipeline...")
         entities = []
@@ -226,6 +231,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             )
 
         # 3. Extract Structured Lab Values & Abnormal Findings
+        watch.lap("nlp")
         stage_started = time.perf_counter()
         logger.info(
             f"[STAGE:LAB_EXTRACT] req_id={req_id} Extracting structured lab parameters..."
@@ -259,11 +265,11 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         )
 
         # 4. RAG Processing & Retrieval
+        watch.lap("lab_extract")
         stage_started = time.perf_counter()
         logger.info(
             f"[STAGE:RAG] req_id={req_id} Processing report chunks for RAG index..."
         )
-        rag_retrieved = False
         retrieved_chunks_count = 0
         rag_context = ""
         try:
@@ -272,7 +278,6 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
                 query=cleaned_text[:500], report_id=report.id, db=db, top_k=3
             )
             if rag_context and rag_context.strip():
-                rag_retrieved = True
                 retrieved_chunks_count = rag_context.count("[Chunk ")
             logger.info(
                 f"[STAGE:RAG:SUCCESS] req_id={req_id} Report processed for RAG. Retrieved {retrieved_chunks_count} chunks in {time.perf_counter() - stage_started:.2f}s."
@@ -281,8 +286,6 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             logger.warning(
                 f"[STAGE:RAG:FAIL] req_id={req_id} RAG indexing/retrieval failed: {rag_e}"
             )
-
-        prompt_has_rag = bool(rag_context and rag_context.strip())
 
         # 5. User Role & Prompt Preparation with Privacy De-identification
         user_stmt = select(User).where(User.id == report.user_id)
@@ -333,11 +336,19 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         )
 
         # 6. LLM Generation with Request Correlation
+        watch.lap("rag_and_prompt")
         stage_started = time.perf_counter()
         logger.info(
             f"[STAGE:LLM] req_id={req_id} Generating summaries via configured LLM provider..."
         )
         from app.services.llm_orchestrator import verify_medical_facts
+
+        # The medication schedule only needs the report text, so it runs while
+        # the two summaries are being generated instead of after them.
+        med_task = asyncio.create_task(extract_medication_schedule(cleaned_text))
+        med_task.add_done_callback(
+            lambda t: t.cancelled() or t.exception()  # mark exception as retrieved
+        )
 
         clinician_sys = "You are a specialized medical analysis AI. Strictly format your response according to the provided instructions. Do not hallucinate data. Maintain a formal, clinical tone."
         patient_sys = "You are an empathetic medical assistant. Explain medical terms clearly to a patient. Strictly follow the structure requested. Do not give direct medical advice."
@@ -357,6 +368,7 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         logger.info(
             f"[STAGE:LLM:SUCCESS] req_id={req_id} Generated clinician and patient summaries in {time.perf_counter() - stage_started:.2f}s."
         )
+        watch.lap("llm_summaries")
 
         # 7. Medical Validation & Grounding Layer
         logger.info(
@@ -425,7 +437,9 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         try:
             from app.models.medication_schedule import MedicationSchedule
 
-            meds = await extract_medication_schedule(cleaned_text)
+            watch.lap("validation")
+            meds = await med_task
+            watch.lap("medication_wait")
             if meds:
                 # Re-analysis (force) must replace, not duplicate, the schedule
                 # rows previously extracted from this same report.
@@ -481,9 +495,23 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
         report.processing_status = ProcessingStatus.completed
         await db.commit()
 
+        watch.lap("persist")
         duration = (datetime.now(timezone.utc) - start_time).total_seconds()
         logger.info(
             f"[STAGE:COMPLETE] Report {report_id} analysis completed successfully in {duration:.2f}s."
+        )
+        record_timing(
+            "ANALYSIS",
+            "report_analysis",
+            watch.total_ms(),
+            **{f"{k}_ms": v for k, v in watch.laps_ms.items()},
+            provider=llm_provider,
+            model=llm_model,
+            chars=len(cleaned_text),
+            summary_calls_ms=max(
+                int(clinician_res.get("latency_ms") or 0),
+                int(patient_res.get("latency_ms") or 0),
+            ),
         )
 
     except ExtractionError as ee:
@@ -528,3 +556,9 @@ async def run_analysis(report_id: uuid.UUID, db: AsyncSession = None):
             "Report analysis failed unexpectedly. Please try again, or contact "
             "support if the problem continues.",
         )
+
+    finally:
+        # Never leave the concurrent medication task running if the pipeline
+        # ended early (extraction/LLM failure).
+        if med_task is not None and not med_task.done():
+            med_task.cancel()

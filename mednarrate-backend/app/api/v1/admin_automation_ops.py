@@ -1,14 +1,20 @@
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import desc, func, or_
+from sqlalchemy import String, cast, desc, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.admin_auth import AdminContext, require_permission
 from app.core.database import get_db
-from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
-from app.models.job_execution import JobExecution
+from app.core.pagination import (
+    build_pagination_response,
+    clamp_limit,
+    page_to_offset,
+    resolve_sort_column,
+)
+from app.models.job_execution import JobExecution, JobStatus
 from app.models.medication_schedule import MedicationSchedule
 from app.models.notification_log import NotificationLog
 from app.models.push_token import PushToken
@@ -37,7 +43,7 @@ async def list_notifications(
     if search:
         stmt = stmt.where(
             or_(
-                NotificationLog.user_id.cast(str).ilike(f"%{search}%"),
+                cast(NotificationLog.user_id, String).ilike(f"%{search}%"),
                 NotificationLog.title.ilike(f"%{search}%"),
             )
         )
@@ -47,7 +53,7 @@ async def list_notifications(
     total = (await db.execute(count_stmt)).scalar() or 0
 
     # Sort
-    sort_col = getattr(NotificationLog, sort_by, NotificationLog.sent_at)
+    sort_col = resolve_sort_column(NotificationLog, sort_by, NotificationLog.sent_at)
     if sort_desc:
         stmt = stmt.order_by(desc(sort_col))
     else:
@@ -74,7 +80,7 @@ async def list_notifications(
 
 @router.post("/notifications/{log_id}/retry")
 async def retry_notification(
-    log_id: str,
+    log_id: uuid.UUID,
     admin_ctx: AdminContext = Depends(require_permission("automation.manage")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -109,7 +115,7 @@ async def retry_notification(
         action="NOTIFICATION_RETRY",
         actor_admin_id=admin_ctx.user.id,
         resource_type="NotificationLog",
-        resource_id=log.id,
+        resource_id=str(log.id),
         metadata={"success": success},
     )
     await db.commit()
@@ -141,7 +147,7 @@ async def list_medications(
     total = (await db.execute(count_stmt)).scalar() or 0
 
     # Sort
-    sort_col = getattr(MedicationSchedule, sort_by, MedicationSchedule.created_at)
+    sort_col = resolve_sort_column(MedicationSchedule, sort_by, MedicationSchedule.created_at)
     if sort_desc:
         stmt = stmt.order_by(desc(sort_col))
     else:
@@ -179,14 +185,23 @@ async def list_jobs(
     limit = clamp_limit(limit)
     stmt = select(JobExecution)
     if status:
-        stmt = stmt.where(JobExecution.status == status)
+        # The column is a database enum: PostgreSQL rejects any other string with an error,
+        # so check the value here and answer 422 instead of failing with a 500.
+        try:
+            wanted = JobStatus(status.strip().lower())
+        except ValueError:
+            allowed = ", ".join(s.value for s in JobStatus)
+            raise HTTPException(
+                status_code=422, detail=f"Unknown job status '{status}'. Use one of: {allowed}."
+            )
+        stmt = stmt.where(JobExecution.status == wanted)
 
     # Count
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = (await db.execute(count_stmt)).scalar() or 0
 
     # Sort
-    sort_col = getattr(JobExecution, sort_by, JobExecution.started_at)
+    sort_col = resolve_sort_column(JobExecution, sort_by, JobExecution.started_at)
     if sort_desc:
         stmt = stmt.order_by(desc(sort_col))
     else:

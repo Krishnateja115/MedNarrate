@@ -441,52 +441,66 @@ class _UploadScreenState extends State<UploadScreen> {
                   _buildHeader(theme, loc),
                   const SizedBox(height: 24),
 
-                  // Title Field
-                  TextFormField(
-                    controller: _titleCtrl,
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                    decoration: _inputDec(l10n.reportTitleReq, Icons.title_rounded,
-                        hint: l10n.reportTitleHint),
-                    validator: (v) => v == null || v.trim().isEmpty
-                        ? l10n.titleRequired
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
+                  // Report details card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: theme.colorScheme.outlineVariant),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                      // Title Field
+                      TextFormField(
+                        controller: _titleCtrl,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        decoration: _inputDec(l10n.reportTitleReq, Icons.title_rounded,
+                            hint: l10n.reportTitleHint),
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? l10n.titleRequired
+                            : null,
+                      ),
+                      const SizedBox(height: 14),
 
-                  // Hospital Field
-                  TextFormField(
-                    controller: _hospitalCtrl,
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                    decoration: _inputDec(l10n.hospitalClinicOptional,
-                        Icons.local_hospital_outlined,
-                        hint: l10n.hospitalHint),
-                  ),
-                  const SizedBox(height: 16),
+                      // Hospital Field
+                      TextFormField(
+                        controller: _hospitalCtrl,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        decoration: _inputDec(l10n.hospitalClinicOptional,
+                            Icons.local_hospital_outlined,
+                            hint: l10n.hospitalHint),
+                      ),
+                      const SizedBox(height: 14),
 
-                  // Responsive Grid for Report Type & Report Date
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isWide = constraints.maxWidth >= 550;
-                      if (isWide) {
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(child: _buildReportTypeDropdown(theme)),
-                            const SizedBox(width: 16),
-                            Expanded(child: _buildDatePickerTile(theme)),
-                          ],
-                        );
-                      }
-                      return Column(
-                        children: [
-                          _buildReportTypeDropdown(theme),
-                          const SizedBox(height: 16),
-                          _buildDatePickerTile(theme),
-                        ],
-                      );
-                    },
+                      // Responsive Grid for Report Type & Report Date
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isWide = constraints.maxWidth >= 550;
+                          if (isWide) {
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: _buildReportTypeDropdown(theme)),
+                                const SizedBox(width: 16),
+                                Expanded(child: _buildDatePickerTile(theme)),
+                              ],
+                            );
+                          }
+                          return Column(
+                            children: [
+                              _buildReportTypeDropdown(theme),
+                              const SizedBox(height: 14),
+                              _buildDatePickerTile(theme),
+                            ],
+                          );
+                        },
+                      ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // File Picker / Selected File Area
                   _buildFileArea(theme),
@@ -531,7 +545,7 @@ class _UploadScreenState extends State<UploadScreen> {
                   // Primary Bottom Submit Button (Hidden when failure card with contextual retry is visible)
                   if (!isReportSavedAndFailed) ...[
                     SizedBox(
-                      height: 52,
+                      height: 54,
                       child: FilledButton(
                         style: FilledButton.styleFrom(
                           backgroundColor: theme.colorScheme.primary,
@@ -541,32 +555,38 @@ class _UploadScreenState extends State<UploadScreen> {
                           disabledForegroundColor: theme.colorScheme.onSurface
                               .withValues(alpha: 0.30),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                              borderRadius: BorderRadius.circular(16)),
                         ),
                         onPressed: (isProcessing || _selectedFile == null)
                             ? null
                             : _uploadAndAnalyze,
-                        child: Stack(
-                          alignment: Alignment.center,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              isProcessing
-                                  ? l10n.processingReportEllipsis
-                                  : l10n.uploadAndAnalyze,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            if (isProcessing)
-                              const Positioned(
-                                right: 12,
-                                child: SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2.5),
+                            if (isProcessing) ...[
+                              SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.45),
                                 ),
                               ),
+                              const SizedBox(width: 10),
+                            ],
+                            Flexible(
+                              child: Text(
+                                isProcessing
+                                    ? l10n.processingReportEllipsis
+                                    : l10n.uploadAndAnalyze,
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -585,33 +605,22 @@ class _UploadScreenState extends State<UploadScreen> {
     return Column(
       children: [
         Container(
-          width: 72,
-          height: 72,
+          width: 64,
+          height: 64,
           decoration: BoxDecoration(
             color: theme.colorScheme.primary.withValues(alpha: 0.10),
-            shape: BoxShape.circle,
-            border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.20),
-                width: 1.5),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Icon(Icons.cloud_upload_outlined,
-              color: theme.colorScheme.primary, size: 36),
+              color: theme.colorScheme.primary, size: 32),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         Text(
           loc?.uploadMedicalReport ?? 'Upload Medical Report',
           style: TextStyle(
               fontSize: 22,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurface),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          loc?.uploadFormatsHint ?? 'PDF, JPG, JPEG, or PNG · Max 25 MB',
-          style: TextStyle(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.54),
-              fontSize: 13),
           textAlign: TextAlign.center,
         ),
       ],
@@ -658,10 +667,10 @@ class _UploadScreenState extends State<UploadScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         decoration: BoxDecoration(
-          color: theme.cardColor,
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
           border:
               Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
@@ -717,39 +726,55 @@ class _UploadScreenState extends State<UploadScreen> {
       return Semantics(
         button: true,
         label: AppLocalizations.of(context)!.chooseFileToAnalyze,
-        child: OutlinedButton(
-          onPressed: _isPickingFile ? null : _pickFile,
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.all(24),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Material(
+          color: theme.colorScheme.primary.withValues(alpha: 0.05),
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
             side: BorderSide(
-                color: theme.colorScheme.primary.withValues(alpha: 0.40),
+                color: theme.colorScheme.primary.withValues(alpha: 0.30),
                 width: 1.5),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.attach_file_rounded,
-                  color: theme.colorScheme.primary, size: 32),
-              const SizedBox(height: 10),
-              Text(
-                _isPickingFile
-                    ? AppLocalizations.of(context)!.openingFileChooser
-                    : AppLocalizations.of(context)!.chooseFileToAnalyze,
-                style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface),
+          child: InkWell(
+            onTap: _isPickingFile ? null : _pickFile,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.upload_file_rounded,
+                        color: theme.colorScheme.primary, size: 28),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    _isPickingFile
+                        ? AppLocalizations.of(context)!.openingFileChooser
+                        : AppLocalizations.of(context)!.chooseFileToAnalyze,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    AppLocalizations.of(context)!.supportsFormatsUpTo,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 12,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.54)),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                AppLocalizations.of(context)!.supportsFormatsUpTo,
-                style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.54)),
-              ),
-            ],
+            ),
           ),
         ),
       );
@@ -763,7 +788,7 @@ class _UploadScreenState extends State<UploadScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: (isReportUploaded ? Colors.green : theme.colorScheme.primary)
               .withValues(alpha: 0.50),
@@ -812,10 +837,10 @@ class _UploadScreenState extends State<UploadScreen> {
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.green.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         isReportUploaded
@@ -844,10 +869,10 @@ class _UploadScreenState extends State<UploadScreen> {
 
   Widget _buildUploadStatusIndicator(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
@@ -920,7 +945,7 @@ class _UploadScreenState extends State<UploadScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: theme.colorScheme.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
             color: theme.colorScheme.primary.withValues(alpha: 0.15)),
       ),
@@ -946,8 +971,18 @@ class _UploadScreenState extends State<UploadScreen> {
             AppLocalizations.of(context)!.canLeavePageNotice,
             style: TextStyle(
                 fontSize: 13,
+                height: 1.4,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.60)),
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 18),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              minHeight: 4,
+              backgroundColor:
+                  theme.colorScheme.primary.withValues(alpha: 0.12),
+            ),
           ),
         ],
       ),
@@ -959,10 +994,10 @@ class _UploadScreenState extends State<UploadScreen> {
         _step == UploadStep.uploading || _step == UploadStep.processing;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.amber.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.amber.withValues(alpha: 0.40)),
       ),
       child: Column(
@@ -1056,24 +1091,25 @@ class _UploadScreenState extends State<UploadScreen> {
                 .onSurface
                 .withValues(alpha: 0.54)),
         filled: true,
-        fillColor: Theme.of(context).cardColor,
+        fillColor:
+            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
             color: Theme.of(context).colorScheme.outlineVariant,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.onSurface, width: 1.5),
+              color: Theme.of(context).colorScheme.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.redAccent),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.redAccent),
         ),
       );

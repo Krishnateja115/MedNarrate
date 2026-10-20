@@ -761,5 +761,34 @@
   "mlWhyNoRange": "এই রিপোর্টে {value}-এর জন্য কোনো স্বাভাবিক সীমা নেই, তাই চিহ্ন দেওয়া যায় না।",
   "mlWhyReportMarked": "ল্যাব রিপোর্টে এই ফলাফলকে “{flag}” হিসেবে চিহ্নিত করেছে এবং সেই চিহ্নই ব্যবহার করা হয়েছে।",
   "mlWhyProvisional": "এই সীমা সাধারণ প্রাপ্তবয়স্কদের সীমা, আপনার রিপোর্টে ছাপা সীমা নয়।",
-  "mlWhyMethod": "পদ্ধতি: নিয়মের ধাপ। অ্যাপ আপনার মানকে একটি সীমার সঙ্গে তুলনা করে। এটি রোগ নির্ণয় করে না। চিহ্নটি আপনার জন্য কী বোঝায় তা ডাক্তারকে জিজ্ঞাসা করুন।"
+  "mlWhyMethod": "পদ্ধতি: নিয়মের ধাপ। অ্যাপ আপনার মানকে একটি সীমার সঙ্গে তুলনা করে। এটি রোগ নির্ণয় করে না। চিহ্নটি আপনার জন্য কী বোঝায় তা ডাক্তারকে জিজ্ঞাসা করুন।",
+  "narrationListen": "সারসংক্ষেপ শুনুন",
+  "@narrationListen": {
+    "description": "Tooltip of the button that reads the report summary aloud"
+  },
+  "narrationStop": "শোনা বন্ধ করুন",
+  "@narrationStop": {
+    "description": "Tooltip of the button that stops the read-aloud"
+  },
+  "narrationVoiceMissing": "এই ফোনে এই ভাষার কণ্ঠস্বর এখনও নেই। ফোনের টেক্সট-টু-স্পিচ সেটিংসে এটি যোগ করুন।",
+  "@narrationVoiceMissing": {
+    "description": "Message when the phone has no text-to-speech voice for the chosen language"
+  },
+  "narrationFailed": "সারসংক্ষেপ পড়ে শোনানো যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।",
+  "@narrationFailed": {
+    "description": "Message when the summary could not be read aloud"
+  },
+  "docTypeCheckTitle": "নথির ধরন যাচাই",
+  "docTypeCheckExperimental": "পরীক্ষামূলক",
+  "docTypeCheckScore": "মডেল স্কোর {percent}%",
+  "docTypeBlood": "এটি রক্ত পরীক্ষার রিপোর্টের মতো দেখাচ্ছে",
+  "docTypeHealth": "এটি সাধারণ স্বাস্থ্য রেকর্ডের মতো দেখাচ্ছে",
+  "docTypeTcga": "এটি প্যাথলজি বা ক্যানসার-গবেষণা রেকর্ডের মতো দেখাচ্ছে",
+  "docTypeCheckAbout": "MRAD ডেটাসেটে প্রশিক্ষিত একটি পরীক্ষামূলক মডেল এই রিপোর্টের ভাষাকে তিন ধরনের রেকর্ডের (রক্ত পরীক্ষা, সাধারণ স্বাস্থ্য রেকর্ড ও ক্যানসার-গবেষণা রেকর্ড) সঙ্গে তুলনা করেছে। এটি শুধু একটি ইঙ্গিত, রোগ নির্ণয় নয়, এবং যে ধরনের রিপোর্ট সে আগে দেখেনি সেগুলোর ক্ষেত্রে ভুল হতে পারে।",
+  "mlDatasetTitle": "রিপোর্ট-ধরন মডেলের ডেটাসেট",
+  "mlDatasetIntro": "রিপোর্ট-ধরন মডেলটি MRAD থেকে শিখেছে, যা {patients} জন রোগীর {reports}টি চিকিৎসা রিপোর্টের সংগ্রহ।",
+  "mlDatasetSplit": "প্রশিক্ষণ / যাচাই / পরীক্ষা",
+  "mlDatasetClasses": "রিপোর্টের ধরন",
+  "mlDatasetSafeguard": "একজন রোগীর রিপোর্ট এই দলগুলোর একটির বেশিতে থাকে না, এবং প্রশিক্ষণের আগে লেখা থেকে রিপোর্ট-ধরনের শিরোনাম লাইন সরিয়ে ফেলা হয়।",
+  "mlDatasetScope": "শুধু এই একটি মডেলই MRAD থেকে শেখে। সারাংশ, চ্যাট ও অনুবাদ আগে থেকে প্রশিক্ষিত AI মডেল ব্যবহার করে এবং সেগুলো MRAD-তে প্রশিক্ষিত নয়।"
 }

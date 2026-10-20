@@ -17,6 +17,7 @@ from app.ml.catalog import KIND_DEEP, KIND_LABELS, METRIC_INFO, MODELS, XAI_METH
 ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "artifacts")
 REPORT_PATH = os.path.join(ARTIFACTS_DIR, "model_report.json")
 CLASSIFIER_METRICS_PATH = os.path.join(ARTIFACTS_DIR, "metrics.json")
+CLASSIFIER_METADATA_PATH = os.path.join(ARTIFACTS_DIR, "metadata.json")
 
 EMPTY_STORE: dict[str, Any] = {"generated_at": None, "environment": {}, "results": {}, "xai_examples": {}}
 
@@ -109,6 +110,52 @@ def classifier_result(path: str | None = None) -> dict | None:
     }
 
 
+def dataset_info(
+    metadata_path: str | None = None, metrics_path: str | None = None
+) -> dict | None:
+    """What the report-type classifier was trained on (the MRAD dataset).
+
+    Read from the files written at training time. The location of the CSV on
+    the machine that trained the model is deliberately left out. Returns
+    ``None`` when the training files are missing, and the UI then simply does
+    not show the section.
+    """
+    meta = _read_json(metadata_path or CLASSIFIER_METADATA_PATH)
+    if not meta or not meta.get("usable_records"):
+        return None
+    metrics = _read_json(metrics_path or CLASSIFIER_METRICS_PATH) or {}
+    support = {
+        name: int(values.get("support"))
+        for name, values in (metrics.get("per_class_report") or {}).items()
+        if isinstance(values, dict)
+        and name in (meta.get("classes") or [])
+        and isinstance(values.get("support"), (int, float))
+    }
+    return {
+        "name": "MRAD (Unified Medical Dataset)",
+        "task": "Report-type classification",
+        "classes": list(meta.get("classes") or []),
+        "records_raw": meta.get("raw_records"),
+        "records_usable": meta.get("usable_records"),
+        "duplicates_removed": meta.get("duplicates_removed"),
+        "unique_patients": meta.get("unique_patients"),
+        "train_records": meta.get("train_records"),
+        "validation_records": meta.get("validation_records"),
+        "test_records": meta.get("test_records"),
+        "test_support_by_class": support,
+        "split": "Patient-level 80% / 10% / 10% split: no patient appears in more than one group.",
+        "random_seed": meta.get("random_seed"),
+        "leakage_safeguard": (
+            "The report-type header line is removed from the text before training, "
+            "so the model cannot read the answer from the header."
+        ),
+        "scope": (
+            "Only the report-type classifier learns from this dataset. Summaries, chat answers and "
+            "translations come from pretrained models and are not trained on it."
+        ),
+    }
+
+
 def _format_metrics(entry: dict, result: dict) -> list[dict]:
     values = result.get("metrics", {})
     out = []
@@ -174,6 +221,12 @@ def build_report(
             "deep_learning_evaluated": sum(1 for m in deep if m["status"] == "evaluated"),
         },
         "models": models,
+        "dataset": dataset_info(
+            os.path.join(os.path.dirname(classifier_path), "metadata.json")
+            if classifier_path
+            else None,
+            classifier_path,
+        ),
         "xai_methods": [{"id": k, **v} for k, v in XAI_METHODS.items()],
         "xai_examples": store.get("xai_examples", {}),
         "how_to_refresh": "Run `python scripts/evaluate_models.py` in mednarrate-backend and reload.",

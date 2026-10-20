@@ -74,7 +74,7 @@ describe('ModelPerformancePage', () => {
   it('shows the heading while loading', () => {
     mockQuery(null, true);
     render(<ModelPerformancePage />);
-    expect(screen.getByText('Model Performance & Explainability')).toBeInTheDocument();
+    expect(screen.getByText('Models & Explainability')).toBeInTheDocument();
   });
 
   it('is forbidden without the ai.view permission', () => {
@@ -82,7 +82,7 @@ describe('ModelPerformancePage', () => {
     mockQuery(null);
     render(<ModelPerformancePage />);
     expect(screen.getByText('Access denied')).toBeInTheDocument();
-    expect(screen.queryByText('Model Performance & Explainability')).not.toBeInTheDocument();
+    expect(screen.queryByText('Models & Explainability')).not.toBeInTheDocument();
   });
 
   it('says "Not evaluated yet" instead of showing numbers, and explains how to measure', () => {
@@ -112,6 +112,39 @@ describe('ModelPerformancePage', () => {
     expect(screen.getByText('42 ms')).toBeInTheDocument();
     expect(screen.getByText(/25 items/)).toBeInTheDocument();
     expect(screen.queryByText(/have not been measured yet/)).not.toBeInTheDocument();
+  });
+
+  it('shows the training dataset card with counts when the server sends it', () => {
+    mockQuery(report([baseModel], {
+      dataset: {
+        name: 'MRAD (Unified Medical Dataset)',
+        task: 'Report type: Blood / Health / TCGA',
+        classes: ['Blood', 'Health', 'TCGA'],
+        records_usable: 123367,
+        unique_patients: 110677,
+        duplicates_removed: 12,
+        train_records: 98000,
+        validation_records: 12000,
+        test_records: 13367,
+        split: 'Split by patient so no patient is in two sets.',
+      },
+    }));
+    render(<ModelPerformancePage />);
+    expect(screen.getByTestId('dataset-card')).toBeInTheDocument();
+    expect(screen.getByText(/MRAD \(Unified Medical Dataset\)/)).toBeInTheDocument();
+    expect(screen.getByText('123,367')).toBeInTheDocument();
+    expect(screen.getByText('110,677')).toBeInTheDocument();
+    expect(screen.getByText('98,000 / 12,000 / 13,367')).toBeInTheDocument();
+  });
+
+  it('shows no dataset card when the dataset info is missing or empty', () => {
+    mockQuery(report([baseModel]));
+    const { unmount } = render(<ModelPerformancePage />);
+    expect(screen.queryByTestId('dataset-card')).not.toBeInTheDocument();
+    unmount();
+    mockQuery(report([baseModel], { dataset: { name: 'MRAD', records_usable: null } }));
+    render(<ModelPerformancePage />);
+    expect(screen.queryByTestId('dataset-card')).not.toBeInTheDocument();
   });
 
   it('reports a failed evaluation with its reason', () => {

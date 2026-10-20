@@ -54,7 +54,7 @@ describe('HealthPage', () => {
     
     // Check services rendering
     expect(screen.getByText('API Server')).toBeInTheDocument();
-    expect(screen.getByText('PostgreSQL Database')).toBeInTheDocument();
+    expect(screen.getByText('Database')).toBeInTheDocument();
     
     // Check error summary
     expect(screen.getByText('High latency detected')).toBeInTheDocument();

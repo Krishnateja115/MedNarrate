@@ -761,5 +761,34 @@
   "mlWhyNoRange": "इस रिपोर्ट में {value} के लिए कोई सामान्य सीमा नहीं दी गई, इसलिए उस पर निशान नहीं लगाया जा सकता।",
   "mlWhyReportMarked": "प्रयोगशाला ने रिपोर्ट में इस नतीजे को “{flag}” चिह्नित किया है, और वही चिह्न इस्तेमाल किया गया है।",
   "mlWhyProvisional": "यह सीमा एक सामान्य वयस्क सीमा है, आपकी रिपोर्ट में छपी सीमा नहीं।",
-  "mlWhyMethod": "तरीका: नियम का ब्योरा। ऐप आपके मान की तुलना एक सीमा से करता है। यह निदान नहीं करता। निशान का आपके लिए क्या मतलब है, यह अपने डॉक्टर से पूछें।"
+  "mlWhyMethod": "तरीका: नियम का ब्योरा। ऐप आपके मान की तुलना एक सीमा से करता है। यह निदान नहीं करता। निशान का आपके लिए क्या मतलब है, यह अपने डॉक्टर से पूछें।",
+  "narrationListen": "सारांश सुनें",
+  "@narrationListen": {
+    "description": "Tooltip of the button that reads the report summary aloud"
+  },
+  "narrationStop": "सुनना बंद करें",
+  "@narrationStop": {
+    "description": "Tooltip of the button that stops the read-aloud"
+  },
+  "narrationVoiceMissing": "इस फ़ोन में इस भाषा की आवाज़ अभी नहीं है। अपने फ़ोन की टेक्स्ट-टू-स्पीच सेटिंग में इसे जोड़ें।",
+  "@narrationVoiceMissing": {
+    "description": "Message when the phone has no text-to-speech voice for the chosen language"
+  },
+  "narrationFailed": "सारांश पढ़कर नहीं सुनाया जा सका। कृपया फिर कोशिश करें।",
+  "@narrationFailed": {
+    "description": "Message when the summary could not be read aloud"
+  },
+  "docTypeCheckTitle": "दस्तावेज़ प्रकार जाँच",
+  "docTypeCheckExperimental": "प्रायोगिक",
+  "docTypeCheckScore": "मॉडल स्कोर {percent}%",
+  "docTypeBlood": "यह रक्त-जाँच रिपोर्ट जैसी लगती है",
+  "docTypeHealth": "यह सामान्य स्वास्थ्य रिकॉर्ड जैसा लगता है",
+  "docTypeTcga": "यह पैथोलॉजी या कैंसर-शोध रिकॉर्ड जैसा लगता है",
+  "docTypeCheckAbout": "MRAD डेटासेट पर प्रशिक्षित एक प्रायोगिक मॉडल ने इस रिपोर्ट की भाषा की तुलना तीन तरह के रिकॉर्ड (रक्त-जाँच, सामान्य स्वास्थ्य रिकॉर्ड और कैंसर-शोध रिकॉर्ड) से की। यह केवल एक संकेत है, निदान नहीं, और जिन तरह की रिपोर्टें इसने नहीं देखीं उनके लिए गलत हो सकता है।",
+  "mlDatasetTitle": "रिपोर्ट-प्रकार मॉडल का डेटासेट",
+  "mlDatasetIntro": "रिपोर्ट-प्रकार मॉडल ने MRAD से सीखा, जो {patients} मरीज़ों की {reports} चिकित्सा रिपोर्टों का संग्रह है।",
+  "mlDatasetSplit": "प्रशिक्षण / सत्यापन / परीक्षण",
+  "mlDatasetClasses": "रिपोर्ट के प्रकार",
+  "mlDatasetSafeguard": "एक मरीज़ की रिपोर्टें इन समूहों में से एक से ज़्यादा में नहीं आतीं, और प्रशिक्षण से पहले टेक्स्ट से रिपोर्ट-प्रकार वाली हेडर पंक्ति हटा दी जाती है।",
+  "mlDatasetScope": "केवल यही एक मॉडल MRAD से सीखता है। सारांश, चैट और अनुवाद पहले से प्रशिक्षित AI मॉडलों से बनते हैं और MRAD पर प्रशिक्षित नहीं हैं।"
 }

@@ -9,6 +9,7 @@ import '../../../core/services/export_service.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../models/report_model.dart';
 import '../controllers/report_detail_controller.dart';
+import '../widgets/document_type_badge.dart';
 import '../widgets/patient_view_tab.dart';
 import '../widgets/clinical_view_tab.dart';
 import '../widgets/lab_results_tab.dart';
@@ -455,6 +456,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                         isTranslating: _controller.isTranslating,
                         pendingLanguage: _controller.pendingLanguage,
                         onTranslate: (lang) => _controller.translate(lang),
+                        headerExtra: DocumentTypeBadge(
+                            reportId: _controller.report!.id),
                       ),
                       ClinicalViewTab(
                         key: const PageStorageKey('clinical_view_tab'),
@@ -473,6 +476,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen>
                       AIChatTab(
                         key: const PageStorageKey('ai_chat_tab'),
                         reportId: _controller.report!.id,
+                        language: _controller.translation?.language,
                       ),
                     ],
                   ),

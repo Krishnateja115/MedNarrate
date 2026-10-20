@@ -3,10 +3,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import desc, func
+from sqlalchemy import and_, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from app.core.config import settings
 from app.core.admin_auth import AdminContext, require_permission
 from app.core.database import get_db
 from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
@@ -124,6 +125,55 @@ async def get_rag_status(
         rag_index_status = "unknown"
         rag_error = f"RAG service health check unavailable: {str(e)}"
 
+    # How patient-report search is doing (extra detail; never allowed to break this page).
+    report_search = None
+    try:
+        from app.services.embedding_provider import embedding_status
+
+        per_report = (
+            await db.execute(
+                select(RagChunk.report_id, func.count(RagChunk.id)).where(
+                    RagChunk.report_id.is_not(None)
+                ).group_by(RagChunk.report_id)
+            )
+        ).all()
+        report_chunks = sum(int(n) for _, n in per_report)
+        has_vector = RagChunk.embedding_json.is_not(None)
+        if not str(settings.DATABASE_URL).startswith("postgresql"):
+            # SQLite stores "no vector" as the JSON value null, which IS NOT NULL would still count.
+            has_vector = and_(has_vector, func.json_type(RagChunk.embedding_json) != "null")
+        with_vectors = (
+            await db.execute(
+                select(func.count(RagChunk.id)).where(
+                    RagChunk.report_id.is_not(None), has_vector
+                )
+            )
+        ).scalar() or 0
+        emb = embedding_status()
+        report_search = {
+            "embeddings_enabled": emb["enabled"],
+            "embedding_provider": emb["provider"],
+            "vector_size": emb["dimensions"],
+            "search_mode": "embeddings_with_keyword_backup" if emb["enabled"] else "keyword_only",
+            "reports_indexed": len(per_report),
+            "report_chunks": report_chunks,
+            "chunks_with_vectors": int(with_vectors),
+            "chunks_without_vectors": max(report_chunks - int(with_vectors), 0),
+        }
+    except Exception:
+        report_search = None
+
+    # The general-health notes the chat adds to its prompt (ChromaDB). count() is a local call.
+    health_notes = {"passages": None, "ready": False}
+    try:
+        from app.services import rag as _rag
+
+        if _rag.kb_collection is not None:
+            passages = int(_rag.kb_collection.count())
+            health_notes = {"passages": passages, "ready": passages > 0}
+    except Exception:
+        pass
+
     return {
         "status": "ok",
         "overview": {
@@ -132,5 +182,7 @@ async def get_rag_status(
             "total_chunks": total_chunks,
             "total_documents": total_docs,
             "published_documents": published_docs,
+            "report_search": report_search,
+            "health_notes": health_notes,
         },
     }

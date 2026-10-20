@@ -1,5 +1,6 @@
 import json
 import logging
+from pathlib import Path
 
 import firebase_admin
 from firebase_admin import credentials, messaging
@@ -8,16 +9,35 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _load_service_account(value: str) -> dict:
+    """FIREBASE_SERVICE_ACCOUNT_JSON may hold the JSON itself or a path to the key file."""
+    text = value.strip()
+    if text.startswith("{"):
+        return json.loads(text)
+    path = Path(text).expanduser()
+    if not path.is_absolute():
+        path = BACKEND_ROOT / path
+    if not path.is_file():
+        raise FileNotFoundError(f"service account file not found: {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 # Initialize Firebase app if configured
 if settings.FIREBASE_SERVICE_ACCOUNT_JSON:
     try:
-        # Load from string representation
-        cert_dict = json.loads(settings.FIREBASE_SERVICE_ACCOUNT_JSON)
-        cred = credentials.Certificate(cert_dict)
+        cred = credentials.Certificate(_load_service_account(settings.FIREBASE_SERVICE_ACCOUNT_JSON))
         firebase_admin.initialize_app(cred)
         logger.info("Firebase Admin SDK initialized successfully.")
     except Exception as e:
-        logger.error(f"Failed to initialize Firebase Admin SDK: {e}")
+        logger.error(
+            "Push notifications are OFF: could not load FIREBASE_SERVICE_ACCOUNT_JSON (%s: %s). "
+            "Set it to the service-account JSON text or a path to that file, or leave it empty.",
+            type(e).__name__,
+            e,
+        )
 
 
 async def send_push_notification(token: str, title: str, body: str, data: dict = None):

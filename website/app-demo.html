@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#FAF8F5">
+  <meta name="description" content="Follow MedNarrate's report upload journey in a guided, interactive app walkthrough.">
+  <title>App Demo | MedNarrate</title>
+  <link rel="stylesheet" href="demo.css">
+  <link rel="stylesheet" href="site-refined.css">
+  <script src="demo.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="MedNarrate home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 100 100"><path d="M19 72 L34 32 Q37 24 43 32 L50 43 Q55 51 61 43 L68 32 Q73 24 77 34 L88 72" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="10"/><path d="M25 61 H38 L44 49 L51 68 L59 54 L64 61 H77" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.5"/></svg>
+      </span>
+      MedNarrate
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="index.html">Home</a>
+      <a href="team.html">Meet the Team</a>
+      <a href="about.html">About</a>
+      <a href="features.html">Features</a>
+      <a href="app-demo.html" aria-current="page">App Demo</a>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch to dark mode">◐</button>
+    </nav>
+  </header>
+
+  <main class="demo-layout">
+    <section class="demo-intro" aria-labelledby="demo-heading">
+      <p class="eyebrow">GUIDED APP WALKTHROUGH</p>
+      <h1 id="demo-heading">From opening the app to understanding a report.</h1>
+      <p class="intro-copy">Watch the same path a new MedNarrate user takes: onboarding, account creation, dashboard, report upload, processing, and the result screens. The pointer moves to the control used at each step. Returning users go from the splash screen to Login.</p>
+      <div class="journey" aria-label="Walkthrough steps" id="journey"></div>
+      <p class="demo-disclosure">Illustrative walkthrough based on the current Flutter UI. The report, person, and AI response are fictional. This page never uploads a file or contacts the MedNarrate backend.</p>
+    </section>
+
+    <section class="demo-stage" aria-label="Interactive MedNarrate app walkthrough">
+      <div class="stage-header"><span class="stage-live"><i></i> APP WALKTHROUGH</span><span id="stage-count">01 / 15</span></div>
+      <div class="device">
+        <div class="device-camera" aria-hidden="true"></div>
+        <div class="device-screen" id="device-screen">
+          <div class="status-bar" aria-hidden="true"><span>9:41</span><span>●●●  ▰</span></div>
+          <div class="screen-content" id="screen-content" aria-live="polite"></div>
+          <div class="demo-pointer" id="demo-pointer" aria-hidden="true">
+            <span class="pointer-ring"></span>
+            <svg class="pointer-arrow" viewBox="0 0 22 27" aria-hidden="true">
+              <path d="M2.5 2.5v19l5.1-4.7 3.5 7 3.3-1.8-3.5-7 7.6-.4-16-12.1Z"></path>
+            </svg>
+            <span class="tap-label">CLICK</span>
+          </div>
+        </div>
+      </div>
+      <div class="stage-controls">
+        <button type="button" id="play-button" class="control primary">▶ Play walkthrough</button>
+        <button type="button" id="prev-button" class="control secondary">← Back</button>
+        <button type="button" id="next-button" class="control secondary">Next →</button>
+        <button type="button" id="replay-button" class="control secondary">↺ Replay</button>
+      </div>
+      <div class="progress-track" role="progressbar" aria-label="Walkthrough progress" aria-valuemin="1" aria-valuemax="15" aria-valuenow="1" id="progress-track"><span id="progress-fill"></span></div>
+      <p class="stage-caption" id="stage-caption">Opening MedNarrate</p>
+    </section>
+  </main>
+  <footer class="site-footer"><a href="index.html">MedNarrate</a><span>Amrita School of Computing · Coimbatore</span><a href="team.html">Team &amp; faculty ↗</a></footer>
+</body>
+</html>

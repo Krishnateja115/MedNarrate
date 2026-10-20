@@ -4,6 +4,7 @@ import '../../../core/l10n/app_l10n.dart';
 import '../../../core/l10n/locale_notifier.dart';
 import '../../../core/l10n/report_ui_labels.dart';
 import '../../../core/services/api_models.dart';
+import '../../../core/services/narration_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/utils/markdown_formatter.dart';
@@ -24,6 +25,10 @@ class PatientViewTab extends StatefulWidget {
   /// Language currently being fetched, if any (for the selector UI only).
   final String? pendingLanguage;
 
+  /// Optional extra widget shown right under the overview card (the screen
+  /// passes the experimental document-type badge here).
+  final Widget? headerExtra;
+
   const PatientViewTab({
     super.key,
     required this.report,
@@ -32,6 +37,7 @@ class PatientViewTab extends StatefulWidget {
     this.isTranslating = false,
     this.onTranslate,
     this.pendingLanguage,
+    this.headerExtra,
   });
 
   @override
@@ -39,6 +45,40 @@ class PatientViewTab extends StatefulWidget {
 }
 
 class _PatientViewTabState extends State<PatientViewTab> {
+  @override
+  void didUpdateWidget(covariant PatientViewTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A different language means different text: stop reading the old one.
+    if (oldWidget.translation?.language != widget.translation?.language) {
+      NarrationService.instance.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    NarrationService.instance.stop();
+    super.dispose();
+  }
+
+  /// Starts reading the summary aloud, or stops it if it is already playing.
+  Future<void> _toggleNarration(BuildContext context, String text) async {
+    final narration = NarrationService.instance;
+    if (narration.isSpeaking.value) {
+      await narration.stop();
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final result =
+        await narration.speak(text, widget.translation?.language ?? 'en');
+    if (!mounted) return;
+    if (result == NarrationResult.voiceMissing) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.narrationVoiceMissing)));
+    } else if (result == NarrationResult.failed) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.narrationFailed)));
+    }
+  }
+
   String _label(String key, {required String fallback}) {
     final t = widget.translation;
     // Labels of the active report translation, else the app-language word list
@@ -255,6 +295,7 @@ class _PatientViewTabState extends State<PatientViewTab> {
           // 1. Report Overview Header
           _buildOverviewCard(context, report, labs.length, meds.length,
               abnormalList.length, t),
+          if (widget.headerExtra != null) widget.headerExtra!,
 
           const SizedBox(height: 20),
 
@@ -269,6 +310,21 @@ class _PatientViewTabState extends State<PatientViewTab> {
                   style:
                       const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+              ),
+              ValueListenableBuilder<bool>(
+                valueListenable: NarrationService.instance.isSpeaking,
+                builder: (context, speaking, _) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return IconButton(
+                    key: const ValueKey('narrate_button'),
+                    tooltip:
+                        speaking ? l10n.narrationStop : l10n.narrationListen,
+                    onPressed: () => _toggleNarration(context, summary),
+                    icon: Icon(speaking
+                        ? Icons.stop_circle_outlined
+                        : Icons.volume_up_outlined),
+                  );
+                },
               ),
               TextButton.icon(
                 key: const ValueKey('language_selector_button'),

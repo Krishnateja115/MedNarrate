@@ -38,9 +38,29 @@ class _OriginalReportScreenState extends State<OriginalReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isPdf = widget.fileName.toLowerCase().endsWith('.pdf');
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.originalReportTitle)),
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.originalReportTitle),
+            if (widget.fileName.isNotEmpty)
+              Text(
+                widget.fileName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.60),
+                ),
+              ),
+          ],
+        ),
+      ),
       body: FutureBuilder<Uint8List>(
         future: _document,
         builder: (context, snapshot) {
@@ -51,10 +71,28 @@ class _OriginalReportScreenState extends State<OriginalReportScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(AppLocalizations.of(context)!.unableToOpenOriginal),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                        onPressed: _retry, child: Text(AppLocalizations.of(context)!.retry)),
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.error.withValues(alpha: 0.10),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.error_outline_rounded,
+                          color: theme.colorScheme.error, size: 28),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.unableToOpenOriginal,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.tonalIcon(
+                      onPressed: _retry,
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: Text(l10n.retry),
+                    ),
                   ],
                 ),
               ),
@@ -66,27 +104,69 @@ class _OriginalReportScreenState extends State<OriginalReportScreen> {
           final bytes = snapshot.data!;
           return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  AppLocalizations.of(context)!.compareAiFindings,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline_rounded,
+                        size: 18, color: theme.colorScheme.primary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        l10n.compareAiFindings,
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.4,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
-                child: isPdf
-                    ? PdfPreview(
-                        build: (_) async => bytes,
-                        pdfFileName: widget.fileName,
-                        allowPrinting: true,
-                        allowSharing: false,
-                      )
-                    : InteractiveViewer(
-                        minScale: 0.5,
-                        maxScale: 5,
-                        child: Center(child: Image.memory(bytes)),
-                      ),
+                child: ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: isPdf
+                      ? PdfPreview(
+                          build: (_) async => bytes,
+                          pdfFileName: widget.fileName,
+                          allowPrinting: true,
+                          allowSharing: false,
+                          canChangePageFormat: false,
+                          canChangeOrientation: false,
+                          canDebug: false,
+                          maxPageWidth: 760,
+                          previewPageMargin: const EdgeInsets.all(12),
+                          scrollViewDecoration: BoxDecoration(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.06),
+                          ),
+                          actionBarTheme: PdfActionBarTheme(
+                            backgroundColor: theme.colorScheme.primary,
+                            iconColor: Colors.white,
+                            height: 52,
+                          ),
+                        )
+                      : Container(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.06),
+                          child: InteractiveViewer(
+                            minScale: 0.5,
+                            maxScale: 5,
+                            child: Center(child: Image.memory(bytes)),
+                          ),
+                        ),
+                ),
               ),
             ],
           );

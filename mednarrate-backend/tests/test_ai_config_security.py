@@ -96,3 +96,48 @@ async def test_ai_config_key_is_encrypted_in_db(
     from app.core.encryption import decrypt_value
     decrypted = decrypt_value(setting.value)
     assert decrypted == secret_key
+
+
+@pytest.mark.asyncio
+async def test_ai_config_rejects_unknown_provider_and_bad_model(
+    client: AsyncClient, ai_config_admin: User
+):
+    """A typo here would otherwise break every AI request for every user."""
+    token = create_access_token(subject=str(ai_config_admin.id))
+    headers = {"Authorization": f"Bearer {token}"}
+    for payload in (
+        {"primary_provider": "gemni"},
+        {"fallback_provider": "ollamaa"},
+        {"model_name": "bad model; drop table"},
+        {"model_name": ""},
+    ):
+        res = await client.put("/api/v1/admin/ai-config", json=payload, headers=headers)
+        assert res.status_code == 422, (payload, res.text)
+
+    ok = await client.put(
+        "/api/v1/admin/ai-config",
+        json={"primary_provider": "Gemini", "model_name": "gemini-3.1-flash-lite", "fallback_provider": "fallback"},
+        headers=headers,
+    )
+    assert ok.status_code == 200, ok.text
+    cfg = (await client.get("/api/v1/admin/ai-config", headers=headers)).json()
+    assert cfg["primary_provider"] == "gemini"
+    assert cfg["model_name"] == "gemini-3.1-flash-lite"
+    assert cfg["fallback_provider"] == "fallback"
+    assert "primary_provider" in cfg["overridden"]
+
+
+@pytest.mark.asyncio
+async def test_ai_config_accepts_every_provider_the_admin_page_offers(
+    client: AsyncClient, ai_config_admin: User
+):
+    """The admin dropdown lists these; the server must accept each one it shows."""
+    token = create_access_token(subject=str(ai_config_admin.id))
+    headers = {"Authorization": f"Bearer {token}"}
+    for name in ("gemini", "groq", "groq_qwen", "openrouter", "vertex_ai", "ollama"):
+        res = await client.put(
+            "/api/v1/admin/ai-config",
+            json={"primary_provider": name, "fallback_provider": name},
+            headers=headers,
+        )
+        assert res.status_code == 200, (name, res.text)

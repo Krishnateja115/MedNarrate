@@ -112,7 +112,8 @@ class ReportAnalysisOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    # model_versions / model_name are real field names here, not pydantic internals
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
 
 class TranslationRequest(BaseModel):

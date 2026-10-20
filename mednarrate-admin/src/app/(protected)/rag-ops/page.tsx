@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Database, FileText, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Database, FileText, CheckCircle2, AlertTriangle, Search, BookOpen } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
@@ -25,12 +25,31 @@ interface KnowledgeDocument {
   updated_at: string;
 }
 
+interface ReportSearchInfo {
+  embeddings_enabled: boolean;
+  embedding_provider: string | null;
+  vector_size: number;
+  search_mode: string;
+  reports_indexed: number;
+  report_chunks: number;
+  chunks_with_vectors: number;
+  chunks_without_vectors: number;
+}
+
+interface HealthNotesInfo {
+  passages: number | null;
+  ready: boolean;
+}
+
 interface RagOverview {
   index_status: string;
   error_summary: string | null;
   total_chunks: number;
   total_documents: number;
   published_documents: number;
+  // Added later; older servers do not send them, so the page treats them as optional.
+  report_search?: ReportSearchInfo | null;
+  health_notes?: HealthNotesInfo | null;
 }
 
 interface RagStatusResponse {
@@ -238,6 +257,80 @@ export default function RagOpsPage() {
                   icon={<Database className="h-4 w-4 text-blue-500" />}
                 />
               </div>
+
+              {/* How patient-report search and the chat's health notes are doing */}
+              {(overview?.report_search || overview?.health_notes) && (
+                <div className="space-y-3">
+                  <div>
+                    <h2 className="text-lg font-semibold">Chat search</h2>
+                    <p className="text-sm text-muted-foreground">
+                      The chat finds the most relevant parts of a patient&apos;s own report, and adds short general-health notes.
+                    </p>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {overview?.report_search && (
+                      <>
+                        <MetricCard
+                          title="Report search mode"
+                          warning={!overview.report_search.embeddings_enabled}
+                          icon={<Search className="h-4 w-4 text-muted-foreground" />}
+                          value={
+                            <div className="space-y-1">
+                              <span className="text-lg">
+                                {overview.report_search.embeddings_enabled ? 'Embeddings + keyword backup' : 'Keyword only'}
+                              </span>
+                              <p className="text-xs font-normal text-muted-foreground">
+                                {overview.report_search.embeddings_enabled
+                                  ? `Provider: ${overview.report_search.embedding_provider ?? 'unknown'} · ${overview.report_search.vector_size} numbers per vector`
+                                  : 'No embedding provider is available'}
+                              </p>
+                            </div>
+                          }
+                        />
+                        <MetricCard
+                          title="Reports indexed"
+                          value={(overview.report_search.reports_indexed ?? 0).toLocaleString()}
+                          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+                        />
+                        <MetricCard
+                          title="Report chunks"
+                          value={(overview.report_search.report_chunks ?? 0).toLocaleString()}
+                          icon={<Database className="h-4 w-4 text-blue-500" />}
+                        />
+                        <MetricCard
+                          title="Chunks with vectors"
+                          warning={(overview.report_search.chunks_without_vectors ?? 0) > 0}
+                          icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+                          value={`${(overview.report_search.chunks_with_vectors ?? 0).toLocaleString()} / ${(overview.report_search.report_chunks ?? 0).toLocaleString()}`}
+                        />
+                      </>
+                    )}
+                    {overview?.health_notes && (
+                      <MetricCard
+                        title="General-health notes"
+                        warning={!overview.health_notes.ready}
+                        icon={<BookOpen className="h-4 w-4 text-muted-foreground" />}
+                        value={
+                          overview.health_notes.ready
+                            ? `${(overview.health_notes.passages ?? 0).toLocaleString()} passages`
+                            : 'Not built'
+                        }
+                      />
+                    )}
+                  </div>
+                  {overview?.report_search && (overview.report_search.chunks_without_vectors ?? 0) > 0 && (
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      {overview.report_search.chunks_without_vectors} report chunk(s) have no vector yet. They are filled in the
+                      next time someone asks a question about that report; until then those reports use keyword search.
+                    </p>
+                  )}
+                  {overview?.health_notes && !overview.health_notes.ready && (
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      The general-health notes are not built. Run <code>scripts/build_knowledge_base.py</code> on the server.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Error summary from vector store probe */}
               {overview?.error_summary && (

@@ -11,7 +11,7 @@ import json
 import os
 import re
 import time
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Sequence
 
 from app.ml import metrics as M
 

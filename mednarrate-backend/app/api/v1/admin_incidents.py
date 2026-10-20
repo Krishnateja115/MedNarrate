@@ -8,7 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import AdminContext, require_permission
 from app.core.database import get_db
-from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
+from app.core.pagination import (
+    build_pagination_response,
+    clamp_limit,
+    page_to_offset,
+    resolve_sort_column,
+)
 from app.models.incidents import (
     Incident,
     IncidentEvent,
@@ -56,7 +61,7 @@ async def get_incidents(
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = (await db.execute(count_stmt)).scalar() or 0
 
-    sort_col = getattr(Incident, sort_by, Incident.started_at)
+    sort_col = resolve_sort_column(Incident, sort_by, Incident.started_at)
     if sort_desc:
         stmt = stmt.order_by(desc(sort_col))
     else:

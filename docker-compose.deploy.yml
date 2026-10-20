@@ -1,0 +1,69 @@
+# Production add-on for docker-compose.yml: HTTPS (Caddy) + the admin portal.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --build
+#
+# What it changes on top of the base file:
+#   * the API is no longer published on the host; only Caddy (80/443) is public
+#   * adds the admin portal and Caddy
+#   * keeps the chat knowledge index and the downloaded NER model across restarts
+#   * restarts everything automatically after a reboot or crash
+
+services:
+  backend:
+    ports: !reset []
+    restart: unless-stopped
+    volumes:
+      - kbindex:/app/data/kb_index
+      - hfcache:/app/cache/huggingface
+
+  worker:
+    volumes:
+      - hfcache:/app/cache/huggingface
+
+  db:
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ./mednarrate-admin
+      args:
+        MEDNARRATE_API_PROXY_URL: https://${API_DOMAIN:?API_DOMAIN must be set}
+    environment:
+      MEDNARRATE_API_PROXY_URL: https://${API_DOMAIN}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?API_DOMAIN must be set}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?ADMIN_DOMAIN must be set}
+      TEAM_DOMAIN: ${TEAM_DOMAIN:?TEAM_DOMAIN must be set}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./website:/srv/website:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      default:
+        # Lets the admin container reach the API through Caddy by its public name.
+        aliases:
+          - ${API_DOMAIN}
+    depends_on:
+      - backend
+      - admin
+
+volumes:
+  kbindex:
+  hfcache:
+  caddy_data:
+  caddy_config:

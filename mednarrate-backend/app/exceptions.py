@@ -93,14 +93,19 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     exc_str = redact_secrets(f"{type(exc).__name__}: {exc}")
     logger.error(f"Unhandled exception on {request.method} {request.url.path} (request_id={request_id}): {exc_str}", exc_info=True)
 
-    return JSONResponse(
-        status_code=500,
-        content={
-            "detail": "An internal error occurred. Please contact support if this persists.",
-            "code": "internal_server_error",
-            "request_id": request_id
-        }
-    )
+    content = {
+        "detail": "An internal error occurred. Please contact support if this persists.",
+        "code": "internal_server_error",
+        "request_id": request_id,
+    }
+    # Local development only: say what failed so it can be fixed without digging through
+    # terminal output. Never sent in production or staging.
+    from app.core.config import settings
+    if str(getattr(settings, "ENVIRONMENT", "")).lower() in {"development", "dev", "local", "test"}:
+        import re
+        # Also hide any long token-like string (a bare API key has no label to match on).
+        content["debug"] = re.sub(r"[A-Za-z0-9_\-]{24,}", "[redacted]", exc_str)[:300]
+    return JSONResponse(status_code=500, content=content)
 
 async def integrity_exception_handler(request: Request, exc: IntegrityError):
     logger.error(f"INTEGRITY ERROR DETAILS: {exc}")

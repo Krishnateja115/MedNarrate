@@ -1,0 +1,23 @@
+{
+  "description": "Short synthetic documents for the medical-document gate. 'medical' should pass to the pipeline; 'non_medical' should be rejected before any model sees them.",
+  "medical": [
+    "DISCHARGE SUMMARY\nDiagnosis: Community acquired pneumonia\nTreatment plan: oral antibiotics for 7 days\nFollow up after one week with chest X-ray.",
+    "RADIOLOGY REPORT\nX-ray chest PA view\nImpression: No active lung lesion. Cardiac size normal.",
+    "Prescription\nTab Metformin 500 mg twice daily after food\nTab Atorvastatin 10 mg at night\nReview after 3 months with HbA1c.",
+    "LIPID PROFILE\nTotal Cholesterol 236 mg/dL\nTriglycerides 180 mg/dL\nHDL Cholesterol 38 mg/dL",
+    "ULTRASOUND ABDOMEN\nLiver: mildly enlarged with increased echotexture.\nImpression: Grade I fatty liver.",
+    "URINE ROUTINE EXAMINATION\nColour: Pale yellow\nAppearance: Clear\nPus cells: 2-4 /hpf\nSpecimen: midstream urine",
+    "THYROID PROFILE\nT3 Total 1.2 ng/mL\nT4 Total 8.1 ug/dL\nTSH 6.8 uIU/mL\nReference range shown against each test.",
+    "Histopathology report\nSpecimen: skin biopsy, left forearm\nDiagnosis: Seborrhoeic keratosis. No malignancy seen."
+  ],
+  "non_medical": [
+    "TAX INVOICE\nOrder total: Rs 1,499\nShipping address: 22 MG Road, Bengaluru\nTracking number: AWB123456",
+    "Bank statement for September\nOpening balance 12,400.00\nAccount balance 9,881.50",
+    "CURRICULUM VITAE\nEducation: B.Tech Computer Science\nSkills: Python, Flutter, SQL",
+    "Train ticket PNR 4521889012\nFrom Coimbatore to Hyderabad\nCoach B2 Seat 34",
+    "Restaurant bill\n2 x Masala Dosa 180\nFilter coffee 40\nSubtotal 220",
+    "College fee receipt\nSemester 5 tuition fee paid\nAmount due: 0",
+    "Gym membership form\nBlood group: O positive\nGoal: weight loss\nPlan: 6 months",
+    "Pharmacy bill\nDolo 650 x 10 tablets Rs 30\nCetirizine x 10 Rs 18\nTotal Rs 48"
+  ]
+}

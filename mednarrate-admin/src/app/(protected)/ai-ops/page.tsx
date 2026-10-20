@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, Server, AlertTriangle, Search, ActivitySquare } from 'lucide-react';
+import { Activity, Server, AlertTriangle, ActivitySquare } from 'lucide-react';
+import { providerLabel, modelLabel } from '@/lib/provider-labels';
 
 interface AIOverview {
   total_requests: number;
@@ -17,7 +18,13 @@ interface AIOverview {
   timeout_rate: number;
   avg_latency_ms: number;
   fallback_usage: number;
-  providers: { provider: string; requests: number }[];
+  answered_requests?: number;
+  providers: { provider: string; model?: string | null; requests: number; avg_latency_ms?: number; last_used?: string | null }[];
+}
+
+interface FailuresData {
+  failures: { category: string; count: number }[];
+  failed_attempts_by_provider?: { provider: string; attempts: number; last_seen?: string | null }[];
 }
 
 interface AITrace {
@@ -44,7 +51,7 @@ export default function AIOperationsPage() {
     queryFn: () => fetchApi('/api/v1/admin/ai-ops/traces'),
   });
 
-  const { data: failuresData, isLoading: failuresLoading, isError: failuresError } = useQuery<{status: string, failures: {category: string, count: number}[]}>({
+  const { data: failuresData, isLoading: failuresLoading, isError: failuresError } = useQuery<{status: string} & FailuresData>({
     queryKey: ['ai_failures'],
     queryFn: () => fetchApi('/api/v1/admin/ai-ops/failures'),
   });
@@ -91,43 +98,59 @@ export default function AIOperationsPage() {
                 <MetricCard 
                   title="Total Requests" 
                   value={overviewData.overview.total_requests.toLocaleString()} 
+                  description="Questions sent to the AI, each counted once"
                   icon={<Activity className="h-4 w-4 text-muted-foreground" />}
                 />
                 <MetricCard 
                   title="Success Rate" 
                   value={`${overviewData.overview.success_rate.toFixed(1)}%`} 
+                  description="Requests that got an answer"
                   icon={<ActivitySquare className="h-4 w-4 text-emerald-500" />}
                 />
                 <MetricCard 
                   title="Avg Latency" 
                   value={`${overviewData.overview.avg_latency_ms.toFixed(0)} ms`} 
+                  description="Time to answer, answered requests only"
                   icon={<Server className="h-4 w-4 text-blue-500" />}
                 />
                 <MetricCard 
                   title="Fallback Usage" 
                   value={overviewData.overview.fallback_usage.toLocaleString()} 
+                  description="Answered after another provider failed"
                   icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
                 />
               </div>
               <Card>
                 <CardHeader>
-                  <CardTitle>Provider Usage</CardTitle>
+                  <CardTitle>Who answered</CardTitle>
+                  <CardDescription>Providers that returned an answer. Providers that only failed are listed under Failure Analysis.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Provider</TableHead>
-                        <TableHead className="text-right">Requests</TableHead>
+                        <TableHead>Model</TableHead>
+                        <TableHead className="text-right">Answers</TableHead>
+                        <TableHead className="text-right">Avg speed</TableHead>
+                        <TableHead className="text-right">Last used</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {overviewData.overview.providers.map(p => (
-                        <TableRow key={p.provider}>
-                          <TableCell className="font-medium capitalize">{p.provider}</TableCell>
+                        <TableRow key={`${p.provider}-${p.model ?? ''}`}>
+                          <TableCell className="font-medium">{providerLabel(p.provider)}</TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">{modelLabel(p.model)}</TableCell>
                           <TableCell className="text-right">{p.requests.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">{p.avg_latency_ms ? `${Math.round(p.avg_latency_ms)} ms` : '—'}</TableCell>
+                          <TableCell className="text-right text-xs text-muted-foreground">{p.last_used ? new Date(p.last_used).toLocaleString() : '—'}</TableCell>
                         </TableRow>
                       ))}
+                      {overviewData.overview.providers.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="p-8 text-center text-muted-foreground">No AI answers recorded yet.</TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
@@ -165,8 +188,8 @@ export default function AIOperationsPage() {
                         <TableCell className="text-xs text-muted-foreground">{new Date(trace.timestamp).toLocaleString()}</TableCell>
                         <TableCell className="font-mono text-xs">{trace.request_id || '-'}</TableCell>
                         <TableCell>
-                          <div className="font-medium capitalize">{trace.provider}</div>
-                          <div className="text-xs text-muted-foreground">{trace.model_name || 'default'}</div>
+                          <div className="font-medium">{providerLabel(trace.provider)}</div>
+                          <div className="text-xs text-muted-foreground">{modelLabel(trace.model_name)}</div>
                         </TableCell>
                         <TableCell>{trace.feature || 'unknown'}</TableCell>
                         <TableCell>
@@ -221,6 +244,39 @@ export default function AIOperationsPage() {
               )}
             </CardContent>
           </Card>
+          {!failuresLoading && failuresData?.failed_attempts_by_provider && (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>Failed attempts by provider</CardTitle>
+                <CardDescription>A provider that is down or has no key is tried, fails, and the next one answers. These are attempts, not lost requests.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Provider</TableHead>
+                      <TableHead className="text-right">Failed attempts</TableHead>
+                      <TableHead className="text-right">Last seen</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {failuresData.failed_attempts_by_provider.map(f => (
+                      <TableRow key={f.provider}>
+                        <TableCell className="font-medium">{providerLabel(f.provider)}</TableCell>
+                        <TableCell className="text-right">{f.attempts.toLocaleString()}</TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">{f.last_seen ? new Date(f.last_seen).toLocaleString() : '—'}</TableCell>
+                      </TableRow>
+                    ))}
+                    {failuresData.failed_attempts_by_provider.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="p-8 text-center text-muted-foreground">No failed attempts.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

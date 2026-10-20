@@ -31,7 +31,8 @@ from app.services.prompts import (
     GENERAL_CHAT_SYSTEM,
     RAG_SYSTEM_PROMPT,
 )
-from app.services.rag import retrieve_chunks
+from app.core.timing import Stopwatch, record as record_timing
+from app.services.rag import retrieve_chunks, retrieve_kb_context
 from app.services.rag_safety import verify_response_against_source
 from app.services.feature_flags import evaluate_flag
 
@@ -180,6 +181,54 @@ async def _reports_overview(user_id, db: AsyncSession) -> str:
     return "\n".join(lines)
 
 
+_KB_TIMEOUT_SECONDS = 8.0
+_SHORT_QUESTION_WORDS = 6
+
+
+async def _retrieval_query(req, session, db: AsyncSession) -> str:
+    """The text used to search. A short follow-up ("what does that mean?") is searched together
+    with the question before it, otherwise it has nothing to match on."""
+    question = (req.content or "").strip()
+    if len(question.split()) >= _SHORT_QUESTION_WORDS:
+        return question
+    try:
+        stmt = (
+            select(ChatMessage)
+            .where(
+                ChatMessage.chat_session_id == session.id,
+                ChatMessage.role == ChatRole.user,
+            )
+            .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+            .limit(2)
+        )
+        rows = list((await db.execute(stmt)).scalars().all())
+        # The question being answered was already saved; do not repeat it.
+        if rows and rows[0].content == req.content:
+            rows = rows[1:]
+        if rows and (rows[0].content or "").strip():
+            return f"{rows[0].content.strip()[:300]} {question}"
+    except Exception:
+        logger.warning("Could not read the previous question for retrieval", exc_info=True)
+    return question
+
+
+async def _knowledge_context(question: str) -> str:
+    """Short general-health reference notes for the question, or "" if none are available.
+
+    Never raises and never waits long: the notes are a bonus, the answer must not depend on them.
+    The search model is English-only, so non-English questions are skipped."""
+    text = (question or "").strip()
+    if not text or not text.isascii():
+        return ""
+    try:
+        return await asyncio.wait_for(
+            retrieve_kb_context(text, top_k=2), timeout=_KB_TIMEOUT_SECONDS
+        )
+    except Exception:
+        logger.warning("Knowledge-base lookup skipped", exc_info=True)
+        return ""
+
+
 async def _generate_rag_answer(req, session, db: AsyncSession) -> tuple[str, str]:
     """Generate and verify the assistant reply.
 
@@ -187,20 +236,39 @@ async def _generate_rag_answer(req, session, db: AsyncSession) -> tuple[str, str
     the assistant screen (no report) is a general health assistant.
     """
     context = ""
+    knowledge = ""
+    # Read these now: a database rollback during retrieval would expire the session object.
+    report_id = session.report_id
+    user_id = session.user_id
+    watch = Stopwatch()
     history = await _recent_history(req, session, db)
-    if session.report_id:
-        context = await retrieve_chunks(req.content, session.report_id, db, top_k=5)
+    watch.lap("history")
+    search_text = await _retrieval_query(req, session, db)
+    if report_id:
+        context, knowledge = await asyncio.gather(
+            retrieve_chunks(search_text, report_id, db, top_k=5),
+            _knowledge_context(search_text),
+        )
+        watch.lap("retrieve")
         prompt = RAG_SYSTEM_PROMPT.format(
-            context=context, history=history, question=req.content
+            context=context,
+            knowledge=knowledge or "None",
+            history=history,
+            question=req.content,
         )
         chat_sys = (
             "You are a helpful medical AI assistant. Answer conversationally, concisely and clearly. "
             "Do not offer diagnoses or prescribe medication."
         )
     else:
-        overview = await _reports_overview(session.user_id, db)
+        overview = await _reports_overview(user_id, db)
+        knowledge = await _knowledge_context(search_text)
+        watch.lap("retrieve")
         prompt = GENERAL_CHAT_PROMPT.format(
-            reports_overview=overview, history=history, question=req.content
+            reports_overview=overview,
+            knowledge=knowledge or "None",
+            history=history,
+            question=req.content,
         )
         chat_sys = GENERAL_CHAT_SYSTEM
 
@@ -211,16 +279,21 @@ async def _generate_rag_answer(req, session, db: AsyncSession) -> tuple[str, str
     ai_response = await generate(
         prompt, system_instruction=chat_sys, thinking_level="LOW"
     )
+    watch.lap("llm")
 
     # Lightweight verification of language / meta-text
     verifier = TranslationVerifier()
-    verify_result = verifier.verify({"content": req.content}, {"content": ai_response}, language)
+    verify_result = verifier.verify(
+        {"content": req.content}, {"content": ai_response}, language, preserve_numeric=False
+    )
     if not verify_result["ok"]:
         retry_prompt = prompt + f"\n\nYOUR PREVIOUS RESPONSE FAILED: {'; '.join(f['reason'] for f in verify_result['failures'])}. PLEASE REPLY IN {language} WITHOUT META-TEXT."
         ai_response_retry = await generate(
             retry_prompt, system_instruction=chat_sys, thinking_level="LOW"
         )
-        verify_result_retry = verifier.verify({"content": req.content}, {"content": ai_response_retry}, language)
+        verify_result_retry = verifier.verify(
+            {"content": req.content}, {"content": ai_response_retry}, language, preserve_numeric=False
+        )
         if verify_result_retry["ok"] or len(verify_result_retry["failures"]) < len(verify_result["failures"]):
             ai_response = ai_response_retry
         else:
@@ -230,8 +303,19 @@ async def _generate_rag_answer(req, session, db: AsyncSession) -> tuple[str, str
     if context:
         use_guard = await evaluate_flag(db, "rag_hallucination_guard")
         if use_guard:
-            ai_response, _ = verify_response_against_source(ai_response, context)
+            # Numbers from the reference notes are legitimate in a general explanation.
+            ai_response, _ = verify_response_against_source(
+                ai_response, f"{context}\n{knowledge}" if knowledge else context
+            )
 
+    watch.lap("verify")
+    record_timing(
+        "CHAT",
+        "report_chat" if report_id else "general_chat",
+        watch.total_ms(),
+        **{f"{k}_ms": v for k, v in watch.laps_ms.items()},
+        language=language,
+    )
     return ai_response, context
 
 
@@ -294,7 +378,7 @@ async def send_chat_message(
 
     # 6. Persist assistant message
     assistant_msg = ChatMessage(
-        chat_session_id=session.id, role=ChatRole.assistant, content=ai_response
+        chat_session_id=session_id, role=ChatRole.assistant, content=ai_response
     )
     db.add(assistant_msg)
     await db.commit()

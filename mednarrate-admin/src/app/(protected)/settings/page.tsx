@@ -57,14 +57,10 @@ export default function SettingsAndMaintenancePage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <Settings className="w-7 h-7 text-blue-600" /> Application Settings & Maintenance Mode
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">
-          Control application-wide settings and activate scoped maintenance windows for service components.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">App Settings</h1>
+          <p className="text-muted-foreground">Application settings and maintenance mode.</p>
       </div>
 
       {errorMsg && (

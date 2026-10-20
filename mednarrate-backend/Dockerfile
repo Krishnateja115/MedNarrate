@@ -22,9 +22,19 @@ RUN pip install -r requirements.txt
 # environment at runtime (.dockerignore keeps .env, databases, uploads and tests out).
 RUN useradd --create-home --uid 10001 --shell /usr/sbin/nologin appuser
 COPY --chown=appuser:appuser . .
-RUN mkdir -p /app/uploads /app/storage /app/data && chown -R appuser:appuser /app/uploads /app/storage /app/data
+RUN mkdir -p /app/uploads /app/storage /app/data/kb_index /app/cache/huggingface /app/logs \
+    && chown -R appuser:appuser /app/uploads /app/storage /app/data /app/cache /app/logs
+
+# Downloaded NER model files live here so a volume can keep them between restarts.
+ENV HF_HOME=/app/cache/huggingface
 
 USER appuser
+
+# Fetch the small model used by the chat's general-health notes now, so the first chat after a
+# rebuild does not wait for the download. A failed download only means it happens at first use.
+RUN python -c "from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2; ONNXMiniLM_L6_V2()._download_model_if_not_exists()" \
+    || echo "KB model pre-download skipped"
+
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

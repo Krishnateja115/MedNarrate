@@ -92,15 +92,11 @@ export default function RolesAndPermissionsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Lock className="w-7 h-7 text-blue-600" /> Roles & Permission Matrix UI
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Define fine-grained roles, inspect granular permissions, and prevent self-escalation server-side.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Roles &amp; Permissions</h1>
+          <p className="text-muted-foreground">Define roles and review which permissions each one grants.</p>
         </div>
         {canManageRoles && (
           <Button onClick={() => setShowCreateRole(!showCreateRole)} className="flex items-center gap-2">

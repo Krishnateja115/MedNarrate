@@ -113,7 +113,12 @@ class AppRouter {
       ),
       GoRoute(
         path: Routes.reports,
-        builder: (context, state) => const ReportsScreen(),
+        builder: (context, state) {
+          final extra = state.extra;
+          return ReportsScreen(
+            favouritesOnly: extra is Map && extra['favouritesOnly'] == true,
+          );
+        },
       ),
       GoRoute(
         path: Routes.upload,

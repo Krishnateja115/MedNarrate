@@ -1,0 +1,474 @@
+{
+  "generated_at": "2026-10-17T21:31:06+00:00",
+  "environment": {
+    "python": "3.13.9",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+  },
+  "results": {
+    "ner": {
+      "n": 25,
+      "metrics": {
+        "precision": 0.6630434782608695,
+        "recall": 0.7261904761904762,
+        "f1": 0.6931818181818181,
+        "label_accuracy": 0.8305084745762712,
+        "avg_latency_ms": 52.47681824082974
+      },
+      "details": {
+        "sentences": 25,
+        "gold_entities": 84,
+        "true_positives": 61,
+        "false_positives": 31,
+        "false_negatives": 23,
+        "matching": "A predicted span counts when it overlaps the labelled span with IoU >= 0.5."
+      },
+      "evaluated_at": "2026-10-17T21:21:02+00:00"
+    },
+    "retrieval_gemini": {
+      "n": 23,
+      "metrics": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "avg_latency_ms": 592.0561957407145
+      },
+      "details": {
+        "queries": 23,
+        "passages": 21,
+        "baseline_bm25": {
+          "recall_at_1": 0.8260869565217391,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.9130434782608695
+        }
+      },
+      "evaluated_at": "2026-10-17T21:28:58+00:00"
+    },
+    "retrieval_minilm": {
+      "n": 23,
+      "metrics": {
+        "recall_at_1": 0.9565217391304348,
+        "recall_at_3": 0.9565217391304348,
+        "recall_at_5": 0.9565217391304348,
+        "mrr": 0.963768115942029,
+        "avg_latency_ms": 52.4157518698105
+      },
+      "details": {
+        "queries": 23,
+        "passages": 21,
+        "baseline_bm25": {
+          "recall_at_1": 0.8260869565217391,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.9130434782608695
+        }
+      },
+      "evaluated_at": "2026-10-17T21:21:05+00:00"
+    },
+    "retrieval_pubmedbert": {
+      "n": 23,
+      "metrics": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "avg_latency_ms": 50.2452610443984
+      },
+      "details": {
+        "queries": 23,
+        "passages": 21,
+        "baseline_bm25": {
+          "recall_at_1": 0.8260869565217391,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "mrr": 0.9130434782608695
+        }
+      },
+      "evaluated_at": "2026-10-17T21:21:15+00:00"
+    },
+    "llm": {
+      "n": 71,
+      "metrics": {
+        "answer_accuracy": 1.0,
+        "abstention_rate": 1.0,
+        "latency_p50_ms": 1921.998584002722,
+        "latency_p95_ms": 11105.918387399299,
+        "number_preservation": 1.0,
+        "sentences_with_all_numbers_kept": 1.0,
+        "chrf_hindi": 67.13037452562625
+      },
+      "details": {
+        "grounded_qa": {
+          "in_report_questions": 10,
+          "out_of_report_questions": 5,
+          "missed_questions": []
+        },
+        "translation": {
+          "number_preservation_by_language": {
+            "hi": 1.0,
+            "ta": 1.0,
+            "te": 1.0,
+            "kn": 1.0,
+            "ml": 1.0,
+            "bn": 1.0,
+            "mr": 1.0
+          },
+          "sentences": 8,
+          "languages": [
+            "hi",
+            "ta",
+            "te",
+            "kn",
+            "ml",
+            "bn",
+            "mr"
+          ],
+          "avg_latency_ms": 5087.454852696153
+        }
+      },
+      "evaluated_at": "2026-10-17T21:26:55+00:00"
+    },
+    "qwen": {
+      "error": "LLMConnectionError: Failed to load local model: No module named 'llama_cpp'",
+      "attempted_at": "2026-10-17T21:31:06+00:00"
+    },
+    "stt": {
+      "n": 15,
+      "metrics": {
+        "wer_en": 0.06666666666666667,
+        "wer_hi": 0.24571428571428572,
+        "avg_latency_ms": 528.6608918647593
+      },
+      "details": {
+        "clips_per_language": {
+          "en": 10,
+          "hi": 5
+        }
+      },
+      "evaluated_at": "2026-10-17T21:27:14+00:00",
+      "note": "Test audio is computer-generated speech, so these error rates are optimistic."
+    },
+    "lab": {
+      "n": 42,
+      "metrics": {
+        "precision": 1.0,
+        "recall": 0.8095238095238095,
+        "f1": 0.8947368421052632
+      },
+      "details": {
+        "by_layout": {
+          "sample_cbc_pdf": {
+            "layout": "real PDF (scripts/sample_reports/report3.pdf)",
+            "gold": 22,
+            "found": 22,
+            "extra": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "inline_rows": {
+            "layout": "one row per test",
+            "gold": 6,
+            "found": 5,
+            "extra": 0,
+            "precision": 1.0,
+            "recall": 0.8333333333333334,
+            "f1": 0.9090909090909091
+          },
+          "vertical_columns": {
+            "layout": "value, range and unit on separate lines",
+            "gold": 4,
+            "found": 4,
+            "extra": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "thyroid_panel": {
+            "layout": "one row per test, hormone names",
+            "gold": 5,
+            "found": 3,
+            "extra": 0,
+            "precision": 1.0,
+            "recall": 0.6,
+            "f1": 0.7499999999999999
+          },
+          "pipe_separated": {
+            "layout": "pipe-separated export",
+            "gold": 5,
+            "found": 0,
+            "extra": 0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          }
+        },
+        "reports": 5
+      },
+      "evaluated_at": "2026-10-17T21:27:14+00:00",
+      "note": "Rule parsers only; production adds an LLM fall-back for layouts they miss."
+    }
+  },
+  "xai_examples": {
+    "ner": [
+      {
+        "title": "Entity evidence",
+        "text": "The patient has type 2 diabetes mellitus and takes metformin 500 mg twice daily.",
+        "method": "occlusion",
+        "entities": [
+          {
+            "entity": "type 2 diabetes mellitus",
+            "label": "Disease_disorder",
+            "confidence": 0.98783940076828,
+            "evidence": [
+              {
+                "word": "has",
+                "importance": 0.20482409000396729
+              },
+              {
+                "word": "patient",
+                "importance": 0.0794745683670044
+              },
+              {
+                "word": "mg",
+                "importance": 0.02675575017929077
+              },
+              {
+                "word": "daily",
+                "importance": 0.013191401958465576
+              },
+              {
+                "word": "and",
+                "importance": -0.011592686176300049
+              }
+            ]
+          },
+          {
+            "entity": "metformin",
+            "label": "Medication",
+            "confidence": 0.9989188313484192,
+            "evidence": [
+              {
+                "word": "500",
+                "importance": 0.00525665283203125
+              },
+              {
+                "word": "mg",
+                "importance": -0.0006273984909057617
+              },
+              {
+                "word": "takes",
+                "importance": -0.0005661845207214355
+              },
+              {
+                "word": "mellitus",
+                "importance": -0.000563502311706543
+              },
+              {
+                "word": "2",
+                "importance": -0.0005584955215454102
+              }
+            ]
+          },
+          {
+            "entity": "500",
+            "label": "Dosage",
+            "confidence": 0.9981048107147217,
+            "evidence": [
+              {
+                "word": "mg",
+                "importance": 0.9981048107147217
+              },
+              {
+                "word": "daily",
+                "importance": 0.9981048107147217
+              },
+              {
+                "word": "2",
+                "importance": 0.15748274326324463
+              },
+              {
+                "word": "type",
+                "importance": 0.08477973937988281
+              },
+              {
+                "word": "has",
+                "importance": 0.06517988443374634
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Entity evidence",
+        "text": "A 45-year-old male presented with chest pain and shortness of breath.",
+        "method": "occlusion",
+        "entities": [
+          {
+            "entity": "45-year-old",
+            "label": "Age",
+            "confidence": 0.9985727071762085,
+            "evidence": [
+              {
+                "word": "male",
+                "importance": 0.0025295019149780273
+              },
+              {
+                "word": "A",
+                "importance": 0.00024688243865966797
+              },
+              {
+                "word": "chest",
+                "importance": 0.00011783838272094727
+              },
+              {
+                "word": "pain",
+                "importance": 5.2928924560546875e-05
+              },
+              {
+                "word": "presented",
+                "importance": 4.488229751586914e-05
+              }
+            ]
+          },
+          {
+            "entity": "male",
+            "label": "Sex",
+            "confidence": 0.9996967315673828,
+            "evidence": [
+              {
+                "word": "45-year-old",
+                "importance": 0.0024144649505615234
+              },
+              {
+                "word": "presented",
+                "importance": 8.153915405273438e-05
+              },
+              {
+                "word": "A",
+                "importance": 6.73532485961914e-05
+              },
+              {
+                "word": "with",
+                "importance": 2.1696090698242188e-05
+              },
+              {
+                "word": "pain",
+                "importance": 1.7404556274414062e-05
+              }
+            ]
+          },
+          {
+            "entity": "presented",
+            "label": "Clinical_event",
+            "confidence": 0.9994286894798279,
+            "evidence": [
+              {
+                "word": "45-year-old",
+                "importance": 0.9994286894798279
+              },
+              {
+                "word": "pain",
+                "importance": 0.0007571578025817871
+              },
+              {
+                "word": "breath",
+                "importance": 0.0005966424942016602
+              },
+              {
+                "word": "chest",
+                "importance": 0.0005804896354675293
+              },
+              {
+                "word": "and",
+                "importance": 0.0004760622978210449
+              }
+            ]
+          },
+          {
+            "entity": "chest",
+            "label": "Biological_structure",
+            "confidence": 0.9999220371246338,
+            "evidence": [
+              {
+                "word": "pain",
+                "importance": 0.00010269880294799805
+              },
+              {
+                "word": "male",
+                "importance": 3.6835670471191406e-05
+              },
+              {
+                "word": "A",
+                "importance": 2.1457672119140625e-05
+              },
+              {
+                "word": "with",
+                "importance": 1.633167266845703e-05
+              },
+              {
+                "word": "and",
+                "importance": -1.5497207641601562e-05
+              }
+            ]
+          },
+          {
+            "entity": "pain",
+            "label": "Sign_symptom",
+            "confidence": 0.9999635219573975,
+            "evidence": [
+              {
+                "word": "breath",
+                "importance": -8.106231689453125e-06
+              },
+              {
+                "word": "shortness",
+                "importance": -3.6954879760742188e-06
+              },
+              {
+                "word": "and",
+                "importance": -3.4570693969726562e-06
+              },
+              {
+                "word": "of",
+                "importance": -2.1457672119140625e-06
+              },
+              {
+                "word": "presented",
+                "importance": -1.9073486328125e-06
+              }
+            ]
+          },
+          {
+            "entity": "shortness of",
+            "label": "Sign_symptom",
+            "confidence": 0.9715592265129089,
+            "evidence": [
+              {
+                "word": "and",
+                "importance": 0.9715592265129089
+              },
+              {
+                "word": "A",
+                "importance": 0.12462276220321655
+              },
+              {
+                "word": "45-year-old",
+                "importance": 0.09954488277435303
+              },
+              {
+                "word": "pain",
+                "importance": 0.08087831735610962
+              },
+              {
+                "word": "breath",
+                "importance": -0.028310954570770264
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

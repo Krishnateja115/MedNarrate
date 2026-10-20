@@ -10,13 +10,9 @@ import {
   LifeBuoy,
   Users,
   FileText,
-  Bot,
   MessageSquare,
-  Bell,
   BookOpen,
-  Activity,
   AlertTriangle,
-  BarChart3,
   Shield,
   Lock,
   Settings,
@@ -25,7 +21,13 @@ import {
   Radio,
   Clock,
   PieChart,
-  BrainCircuit
+  BrainCircuit,
+  Gauge,
+  KeyRound,
+  ScrollText,
+  UserCog,
+  SlidersHorizontal,
+  HeartPulse,
 } from 'lucide-react';
 
 const NAV_GROUPS = [
@@ -43,9 +45,8 @@ const NAV_GROUPS = [
   {
     title: 'AI & Data Ops',
     items: [
-      { name: 'Admin Copilot', href: '/admin-copilot', icon: Bot, permissions: ['dashboard.view'] },
-      { name: 'AI Operations', href: '/ai-ops', icon: Bot, permissions: ['ai.view', 'ai.manage'] },
-      { name: 'Model Performance & XAI', href: '/model-performance', icon: BrainCircuit, permissions: ['ai.view', 'ai.manage'] },
+      { name: 'AI Operations', href: '/ai-ops', icon: Gauge, permissions: ['ai.view', 'ai.manage'] },
+      { name: 'Models & XAI', href: '/model-performance', icon: BrainCircuit, permissions: ['ai.view', 'ai.manage'] },
       { name: 'Chat Operations', href: '/chat-ops', icon: MessageSquare, permissions: ['chat.view'] },
       { name: 'RAG Knowledge Ops', href: '/rag-ops', icon: Database, permissions: ['rag.view'] },
       { name: 'Automation Jobs', href: '/automation-ops', icon: Clock, permissions: ['automation.view'] },
@@ -56,15 +57,13 @@ const NAV_GROUPS = [
     title: 'Governance & Security',
     items: [
       { name: 'Security Overview', href: '/security', icon: Shield, permissions: ['security.view', 'audit_logs.view'] },
-      { name: 'Governance Center', href: '/governance', icon: Activity, permissions: ['dashboard.view', 'security.view', 'system.health.view'] },
-      { name: 'Admin Accounts', href: '/admins', icon: Users, permissions: ['admins.view', 'admins.manage'] },
+      { name: 'Admin Accounts', href: '/admins', icon: UserCog, permissions: ['admins.view', 'admins.manage'] },
       { name: 'Roles & Permissions', href: '/roles', icon: Lock, permissions: ['roles.view'] },
-      { name: 'Audit Logs', href: '/audit', icon: FileText, permissions: ['audit.view', 'audit_logs:read'] },
-      { name: 'Break-Glass Access', href: '/breakglass', icon: AlertTriangle, permissions: ['security.view', 'breakglass.request', 'breakglass.manage', 'break_glass.read'] },
-      { name: 'Privacy Center', href: '/privacy', icon: Lock, permissions: ['privacy.view'] },
+      { name: 'Audit Logs', href: '/audit', icon: ScrollText, permissions: ['audit.view', 'audit_logs:read'] },
+      { name: 'Break-Glass Access', href: '/breakglass', icon: KeyRound, permissions: ['security.view', 'breakglass.request', 'breakglass.manage', 'break_glass.read'] },
       { name: 'Feature Flags', href: '/feature-flags', icon: Sliders, permissions: ['feature_flags.view', 'feature_flags:read'] },
-      { name: 'AI Configuration', href: '/ai-config', icon: Bot, permissions: ['ai.manage'] },
-      { name: 'System Health', href: '/health', icon: Activity, permissions: ['system.health.view'] },
+      { name: 'AI Configuration', href: '/ai-config', icon: SlidersHorizontal, permissions: ['ai.manage'] },
+      { name: 'System Health', href: '/health', icon: HeartPulse, permissions: ['system.health.view'] },
       { name: 'App Settings', href: '/settings', icon: Settings, permissions: ['settings.view', 'settings.manage', 'settings:read'] },
       { name: 'Announcements', href: '/announcements', icon: Radio, permissions: ['announcements.view', 'announcements.manage', 'announcements:read'] },
     ]

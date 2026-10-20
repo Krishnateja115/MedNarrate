@@ -76,7 +76,10 @@ class _OfflineBannerState extends State<OfflineBanner> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    return SlideTransition(
+    // ClipRect keeps the sliding banner inside its own box, so it never
+    // paints over the phone's status bar while it moves in or out.
+    return ClipRect(
+        child: SlideTransition(
       position: _offsetAnimation,
       child: Container(
         height: 36,
@@ -108,6 +111,6 @@ class _OfflineBannerState extends State<OfflineBanner> with SingleTickerProvider
           ],
         ),
       ),
-    );
+    ));
   }
 }

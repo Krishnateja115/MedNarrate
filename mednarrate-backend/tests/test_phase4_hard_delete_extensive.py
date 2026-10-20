@@ -4,8 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timezone, timedelta, date
 import uuid
-import os
-import json
 
 from app.models.user import User, UserRole
 from app.models.report import Report

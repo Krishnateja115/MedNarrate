@@ -17,7 +17,10 @@ import 'package:mednarrate/l10n/app_localizations.dart';
 import 'package:mednarrate/core/l10n/app_l10n.dart';
 
 class ReportsScreen extends StatefulWidget {
-  const ReportsScreen({super.key});
+  const ReportsScreen({super.key, this.favouritesOnly = false});
+
+  /// Opens the list with the Favourites filter already switched on.
+  final bool favouritesOnly;
 
   static VoidCallback? onRefreshRequested;
 
@@ -39,6 +42,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   void initState() {
     super.initState();
+    _filterFavourite = widget.favouritesOnly ? true : null;
     ReportsScreen.onRefreshRequested = _loadReports;
     _loadReports();
   }

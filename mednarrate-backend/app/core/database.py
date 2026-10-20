@@ -13,7 +13,7 @@ pool_class = NullPool if is_test else None
 
 is_sqlite = settings.DATABASE_URL.startswith("sqlite")
 engine_kwargs = {
-    "echo": settings.ENVIRONMENT == "development",
+    "echo": settings.DB_ECHO,
     "pool_pre_ping": True,
 }
 
@@ -75,9 +75,3 @@ async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
 
-
-async def get_schema_revision() -> str | None:
-    """Return the Alembic revision without exposing connection details."""
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(text("SELECT version_num FROM alembic_version"))
-        return result.scalar_one_or_none()

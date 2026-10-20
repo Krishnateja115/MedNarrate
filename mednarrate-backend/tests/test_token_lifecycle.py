@@ -12,17 +12,14 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
 
 from app.core.config import settings
-from app.core.database import AsyncSessionLocal
 from app.core.security import (
     create_access_token,
     create_refresh_token,
     hash_password,
     hash_token,
 )
-from app.main import app
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 

@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import re
+import time
 from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
@@ -15,6 +16,7 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.core.middleware import CorrelationIdMiddleware
 from app.core.rate_limit import limiter
+from app.core.timing import record as record_timing
 from app.exceptions import setup_exception_handlers
 from app.services.model_registry import get_ner_pipeline
 from app.services.scheduler import start_scheduler, stop_scheduler
@@ -162,6 +164,33 @@ async def resolve_client_ip(request: Request, call_next):
     else:
         request.state.client_ip = request.client.host if request.client else None
     return await call_next(request)
+
+
+_TIMING_SKIP_PREFIXES = ("/health", "/docs", "/redoc", "/openapi.json", "/favicon")
+
+
+@app.middleware("http")
+async def request_timing_middleware(request: Request, call_next):
+    """Measure how long every API request takes (see app/core/timing.py)."""
+    started = time.perf_counter()
+    status_code = 500
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        elapsed_ms = int((time.perf_counter() - started) * 1000)
+        response.headers["X-Process-Time-ms"] = str(elapsed_ms)
+        return response
+    finally:
+        path = request.url.path
+        if not path.startswith(_TIMING_SKIP_PREFIXES):
+            route = request.scope.get("route")
+            template = getattr(route, "path", None) or path
+            record_timing(
+                "HTTP",
+                f"{request.method} {template}",
+                int((time.perf_counter() - started) * 1000),
+                status=status_code,
+            )
 
 
 @app.middleware("http")

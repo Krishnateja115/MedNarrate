@@ -2291,4 +2291,345 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get chatSuggestTerms => 'सामान्य रक्त चाचणीतील शब्दांचा अर्थ काय?';
+
+  @override
+  String get mlScreenTitle => 'AI मॉडेल आणि स्पष्टीकरण';
+
+  @override
+  String get mlTileSubtitle =>
+      'प्रत्येक AI मॉडेल किती चांगले काम करते आणि ते असे उत्तर का देते';
+
+  @override
+  String get mlIntro =>
+      'MedNarrate अनेक AI मॉडेल वापरते. प्रत्येक काय करते, आमच्या स्वतःच्या चाचण्यांत किती गुण मिळाले आणि ते आपली उत्तरे कशी स्पष्ट करते ते पहा.';
+
+  @override
+  String mlSummaryMeasured(int evaluated, int total) {
+    return '$total पैकी $evaluated मॉडेल मोजली गेली';
+  }
+
+  @override
+  String mlSummaryDeep(int evaluated, int total) {
+    return '$total पैकी $evaluated डीप लर्निंग मॉडेल मोजली गेली';
+  }
+
+  @override
+  String get mlPendingBanner =>
+      'काही मॉडेल अजून मोजली गेलेली नाहीत. मूल्यमापन चालवल्यानंतर त्यांचे गुण येथे दिसतील.';
+
+  @override
+  String mlLastMeasured(String when) {
+    return 'शेवटचे मोजमाप: $when';
+  }
+
+  @override
+  String get mlKindDeep => 'डीप लर्निंग';
+
+  @override
+  String get mlKindClassical => 'पारंपरिक मशीन लर्निंग';
+
+  @override
+  String get mlKindRules => 'नियमांवर आधारित';
+
+  @override
+  String get mlUsedInApp => 'अ‍ॅपमध्ये वापरले जाते';
+
+  @override
+  String get mlOfflineTool => 'ऑफलाइन किंवा संशोधनासाठी';
+
+  @override
+  String get mlStatusMeasured => 'मोजले';
+
+  @override
+  String get mlStatusNotEvaluated => 'अजून मूल्यमापन झालेले नाही';
+
+  @override
+  String get mlStatusFailed => 'मोजता आले नाही';
+
+  @override
+  String get mlNoScoresYet => 'अजून गुण नाहीत.';
+
+  @override
+  String mlMeasuredOn(int count) {
+    return '$count चाचणी घटकांवर मोजले';
+  }
+
+  @override
+  String get mlTestSetNote =>
+      'गुण लहान, हाताने तपासलेल्या चाचणी संचांतून येतात, त्यामुळे ते ताकद आणि कमकुवतपणा दाखवतात, वैद्यकीय अचूकता नाही.';
+
+  @override
+  String get mlLoadError => 'मॉडेलची माहिती लोड करता आली नाही.';
+
+  @override
+  String get mlTaskBiomedicalNer =>
+      'अहवालाच्या मजकुरातील लक्षणे, आजार, औषधे आणि तपासणीचे शब्द शोधते';
+
+  @override
+  String get mlTaskReportEmbedding =>
+      'चॅटमधील प्रश्नाचे उत्तर देणारे तुमच्या अहवालाचे भाग शोधते';
+
+  @override
+  String get mlTaskKbEmbedding =>
+      'प्रश्नाचे उत्तर देणारी सर्वसाधारण आरोग्य माहिती शोधते';
+
+  @override
+  String get mlTaskPubmedbertEmbedding =>
+      'शोधासाठी वैद्यकीय ज्ञान तयार करते (ऑफलाइन टप्पा)';
+
+  @override
+  String get mlTaskLlmChain =>
+      'अहवाल समजावते, प्रश्नांची उत्तरे देते आणि सारांशांचे भाषांतर करते';
+
+  @override
+  String get mlTaskLocalQwen =>
+      'ऑनलाइन मॉडेल उपलब्ध नसताना ऑफलाइन भाषांतर करते';
+
+  @override
+  String get mlTaskWhisperStt =>
+      'तुम्ही बोललेल्या प्रश्नाचे मजकुरात रूपांतर करते';
+
+  @override
+  String get mlTaskReportClassifier =>
+      'अहवालाचा प्रकार ओळखते (संशोधन मॉडेल, अ‍ॅपमध्ये वापरले जात नाही)';
+
+  @override
+  String get mlTaskLabExtractor =>
+      'अहवालाच्या मजकुरातून चाचणीची नावे, मूल्ये आणि मर्यादा वाचते';
+
+  @override
+  String get mlMetricPrecision => 'बरोबर निघालेले निष्कर्ष';
+
+  @override
+  String get mlMetricRecall => 'असलेल्यांपैकी सापडलेले';
+
+  @override
+  String get mlMetricF1 => 'एकूण समतोल (F1)';
+
+  @override
+  String get mlMetricEntityType => 'शब्दाचा योग्य प्रकार';
+
+  @override
+  String get mlMetricAvgLatency => 'सरासरी प्रतिसाद वेळ';
+
+  @override
+  String get mlMetricLatencyP50 => 'नेहमीचा प्रतिसाद वेळ';
+
+  @override
+  String get mlMetricLatencyP95 => 'सर्वात संथ ५% प्रतिसाद वेळ';
+
+  @override
+  String get mlMetricTop1 => 'योग्य भाग पहिल्या क्रमांकावर';
+
+  @override
+  String get mlMetricTop3 => 'योग्य भाग पहिल्या ३ मध्ये';
+
+  @override
+  String get mlMetricTop5 => 'योग्य भाग पहिल्या ५ मध्ये';
+
+  @override
+  String get mlMetricMrr => 'सरासरी क्रमवारी गुण (MRR)';
+
+  @override
+  String get mlMetricAnswerAccuracy => 'अहवालातून बरोबर उत्तरे';
+
+  @override
+  String get mlMetricAbstention => 'खरे असताना “अहवालात नाही” असे सांगते';
+
+  @override
+  String get mlMetricNumbersKept => 'भाषांतरात टिकलेले आकडे';
+
+  @override
+  String get mlMetricAllNumbers => 'प्रत्येक आकडा टिकवलेली वाक्ये';
+
+  @override
+  String get mlMetricChrf => 'हिंदी भाषांतराची गुणवत्ता (chrF, १०० पैकी)';
+
+  @override
+  String get mlMetricWerEn => 'इंग्रजी बोलण्यातील चुका (कमी असणे चांगले)';
+
+  @override
+  String get mlMetricWerHi => 'हिंदी बोलण्यातील चुका (कमी असणे चांगले)';
+
+  @override
+  String get mlMetricAccuracy => 'एकूण बरोबर';
+
+  @override
+  String get mlMetricMacroPrecision => 'सर्व प्रकारांत सरासरी बरोबर निष्कर्ष';
+
+  @override
+  String get mlMetricMacroRecall => 'सर्व प्रकारांत सरासरी सापडलेले';
+
+  @override
+  String get mlMetricMacroF1 => 'सर्व प्रकारांत सरासरी समतोल (F1)';
+
+  @override
+  String get mlXaiTitle => 'AI स्वतःला कसे समजावते';
+
+  @override
+  String get mlXaiIntro =>
+      'समजावता येणारे AI (XAI) कोणत्या शब्दांमुळे किंवा आकड्यांमुळे निकाल आला ते दाखवते, म्हणजे डोळे झाकून विश्वास ठेवण्याऐवजी तपासता येते.';
+
+  @override
+  String get mlXaiLimeName => 'LIME: स्थानिक साधे मॉडेल';
+
+  @override
+  String get mlXaiLimeBody =>
+      'काही शब्द लपवून मॉडेलला पुन्हा विचारते आणि उत्तरांना एक लहान साधे मॉडेल जुळवते. वजने दाखवतात की कोणत्या शब्दांनी अंदाजाला दिशा दिली.';
+
+  @override
+  String get mlXaiLinearName => 'अचूक रेषीय योगदान (रेषीय मॉडेलसाठी SHAP)';
+
+  @override
+  String get mlXaiLinearBody =>
+      'रेषीय मॉडेलमध्ये प्रत्येक शब्दाचे योगदान म्हणजे त्याचे वजन गुणिले त्याचे मूल्य. ही योगदाने बेरीज केल्यावर गुण अचूक येतो.';
+
+  @override
+  String get mlXaiOcclusionName => 'शब्द काढून महत्त्व पाहणे (ऑक्लूजन)';
+
+  @override
+  String get mlXaiOcclusionBody =>
+      'एकेक शब्द रिकामा करून विश्वास किती कमी होतो ते मोजते. ज्या शब्दांचा सर्वाधिक परिणाम होतो तेच पुरावे.';
+
+  @override
+  String get mlXaiRuleName => 'नियमाचा मागोवा';
+
+  @override
+  String get mlXaiRuleBody =>
+      'उच्च किंवा कमी खुणेमागील नेमकी तुलना दाखवते: तुमचे मूल्य आणि अहवालात छापलेली मर्यादा.';
+
+  @override
+  String get mlXaiClassifierTitle => 'अहवाल-प्रकार वर्गीकरण: हा अंदाज का?';
+
+  @override
+  String get mlXaiEntitiesTitle => 'वैद्यकीय शब्द शोधक: कशावर अवलंबून राहिला';
+
+  @override
+  String get mlXaiLabsTitle => 'तपासणी निकालांवर खूण का केली जाते';
+
+  @override
+  String mlXaiPredicted(String label, String confidence) {
+    return 'अंदाज: $label ($confidence% खात्री)';
+  }
+
+  @override
+  String get mlXaiLimeCaption => 'अंदाजाला दिशा देणारे शब्द (LIME)';
+
+  @override
+  String get mlXaiLinearCaption => 'प्रत्येक शब्दाचे अचूक योगदान';
+
+  @override
+  String get mlXaiEvidenceCaption => 'ज्या इतर शब्दांवर अवलंबून राहिला';
+
+  @override
+  String get mlXaiNoEvidence => 'इतर कोणत्याही शब्दाने हा निकाल बदलला नाही.';
+
+  @override
+  String get mlXaiExampleNote =>
+      'उदाहरणांत लहान काल्पनिक मजकूर वापरला आहे, रुग्णाचा डेटा नाही.';
+
+  @override
+  String get mlWhyFlagged => 'खूण का?';
+
+  @override
+  String get mlWhyTitle => 'या निकालावर खूण कशी केली गेली';
+
+  @override
+  String get mlWhyYourValue => 'तुमचे मूल्य';
+
+  @override
+  String get mlWhyRangeUsed => 'वापरलेली मर्यादा';
+
+  @override
+  String mlWhyBelow(String value, String low, String percent, String flag) {
+    return '$value हे सर्वात कमी सामान्य मूल्यापेक्षा ($low) $percent% कमी आहे, म्हणून त्यावर “$flag” अशी खूण केली.';
+  }
+
+  @override
+  String mlWhyAbove(String value, String high, String percent, String flag) {
+    return '$value हे सर्वात जास्त सामान्य मूल्यापेक्षा ($high) $percent% जास्त आहे, म्हणून त्यावर “$flag” अशी खूण केली.';
+  }
+
+  @override
+  String mlWhyWithin(String value, String range, String flag) {
+    return '$value मर्यादेच्या ($range) आत आहे, म्हणून हे “$flag” आहे.';
+  }
+
+  @override
+  String mlWhyNoRange(String value) {
+    return 'या अहवालात $value साठी सामान्य मर्यादा दिलेली नाही, म्हणून खूण करता येत नाही.';
+  }
+
+  @override
+  String mlWhyReportMarked(String flag) {
+    return 'प्रयोगशाळेने अहवालात या निकालाला “$flag” असे चिन्हांकित केले आहे आणि तीच खूण वापरली आहे.';
+  }
+
+  @override
+  String get mlWhyProvisional =>
+      'ही मर्यादा सर्वसाधारण प्रौढ मर्यादा आहे, तुमच्या अहवालात छापलेली नाही.';
+
+  @override
+  String get mlWhyMethod =>
+      'पद्धत: नियमाचा मागोवा. अ‍ॅप तुमच्या मूल्याची एका मर्यादेशी तुलना करते. ते निदान करत नाही. खुणेचा तुमच्यासाठी काय अर्थ आहे ते डॉक्टरांना विचारा.';
+
+  @override
+  String get narrationListen => 'सारांश ऐका';
+
+  @override
+  String get narrationStop => 'ऐकणे थांबवा';
+
+  @override
+  String get narrationVoiceMissing =>
+      'या फोनमध्ये या भाषेचा आवाज अजून नाही. फोनच्या टेक्स्ट-टू-स्पीच सेटिंग्जमध्ये तो जोडा.';
+
+  @override
+  String get narrationFailed =>
+      'सारांश वाचून दाखवता आला नाही. कृपया पुन्हा प्रयत्न करा.';
+
+  @override
+  String get docTypeCheckTitle => 'दस्तऐवज प्रकार तपासणी';
+
+  @override
+  String get docTypeCheckExperimental => 'प्रायोगिक';
+
+  @override
+  String docTypeCheckScore(int percent) {
+    return 'मॉडेल स्कोअर $percent%';
+  }
+
+  @override
+  String get docTypeBlood => 'हा रक्त-तपासणी अहवालासारखा दिसतो';
+
+  @override
+  String get docTypeHealth => 'हा सर्वसाधारण आरोग्य नोंदीसारखा दिसतो';
+
+  @override
+  String get docTypeTcga => 'हा पॅथॉलॉजी किंवा कर्करोग-संशोधन नोंदीसारखा दिसतो';
+
+  @override
+  String get docTypeCheckAbout =>
+      'MRAD डेटासेटवर प्रशिक्षित एका प्रायोगिक मॉडेलने या अहवालातील मजकुराची तुलना तीन प्रकारच्या नोंदींशी (रक्त-तपासणी, सर्वसाधारण आरोग्य नोंदी आणि कर्करोग-संशोधन नोंदी) केली. हा फक्त एक संकेत आहे, निदान नाही, आणि ज्या प्रकारचे अहवाल त्याने पाहिले नाहीत त्यांच्यासाठी तो चुकीचा असू शकतो.';
+
+  @override
+  String get mlDatasetTitle => 'अहवाल-प्रकार मॉडेलचा डेटासेट';
+
+  @override
+  String mlDatasetIntro(String reports, String patients) {
+    return 'अहवाल-प्रकार मॉडेल MRAD वरून शिकले; हा $patients रुग्णांच्या $reports वैद्यकीय अहवालांचा संग्रह आहे.';
+  }
+
+  @override
+  String get mlDatasetSplit => 'प्रशिक्षण / पडताळणी / चाचणी';
+
+  @override
+  String get mlDatasetClasses => 'अहवालाचे प्रकार';
+
+  @override
+  String get mlDatasetSafeguard =>
+      'एका रुग्णाचे अहवाल या गटांपैकी एकापेक्षा जास्त गटांत येत नाहीत, आणि प्रशिक्षणापूर्वी मजकुरातून अहवाल-प्रकाराची शीर्षक ओळ काढली जाते.';
+
+  @override
+  String get mlDatasetScope =>
+      'फक्त हे एकच मॉडेल MRAD वरून शिकते. सारांश, चॅट आणि भाषांतर आधीच प्रशिक्षित AI मॉडेल वापरतात आणि ते MRAD वर प्रशिक्षित नाहीत.';
 }

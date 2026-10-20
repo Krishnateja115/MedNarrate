@@ -1,11 +1,8 @@
 import pytest
-import os
 import uuid
-from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.orphan_file import OrphanFile
 from app.services.orphan_cleanup import retry_pending_orphan_files
-from app.services.file_storage import save_upload_file
 
 @pytest.mark.asyncio
 async def test_retry_pending_orphan_files(db_session: AsyncSession):
@@ -14,14 +11,6 @@ async def test_retry_pending_orphan_files(db_session: AsyncSession):
     test_filename = "test_orphan.pdf"
     file_path = f"{test_user_id}/{test_filename}"
     
-    # Actually create the physical file so we can delete it
-    base_dir = os.getenv("STORAGE_ROOT", "storage")
-    full_dir = os.path.join(base_dir, test_user_id)
-    os.makedirs(full_dir, exist_ok=True)
-    full_path = os.path.join(full_dir, test_filename)
-    with open(full_path, "w") as f:
-        f.write("test content")
-
     # 1. Create a pending orphan for the real file
     o1 = OrphanFile(file_path=file_path, status="pending")
     

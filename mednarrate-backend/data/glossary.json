@@ -1,0 +1,104 @@
+{
+    "version": "1.0",
+    "terms": {
+        "total_leucocyte_count": {
+            "en": "Total Leucocyte Count (TLC)",
+            "hi": "कुल ल्यूकोसाइट काउंट (TLC)",
+            "ta": "மொத்த லுகோசைட் எண்ணிக்கை (TLC)",
+            "te": "మొత్తం ల్యూకోసైట్ కౌంట్ (TLC)",
+            "kn": "ಒಟ್ಟು ಲ್ಯುಕೋಸೈಟ್ ಎಣಿಕೆ (TLC)",
+            "ml": "ആകെ ല്യൂക്കോസൈറ്റ് എണ്ണം (TLC)",
+            "review_status": "needs_clinician_review"
+        },
+        "rbc_count": {
+            "en": "RBC Count",
+            "hi": "RBC काउंट",
+            "ta": "RBC எண்ணிக்கை",
+            "te": "RBC కౌంట్",
+            "kn": "RBC ಎಣಿಕೆ",
+            "ml": "RBC എണ്ണം",
+            "review_status": "needs_clinician_review"
+        },
+        "hct": {
+            "en": "Hematocrit (HCT)",
+            "hi": "हेमेटोक्रिट (HCT)",
+            "ta": "ஹெமாடோக்ரிட் (HCT)",
+            "te": "హెమాటోక్రిట్ (HCT)",
+            "kn": "ಹೆಮಾಟೋಕ್ರಿಟ್ (HCT)",
+            "ml": "ഹെമറ്റോക്രിറ്റ് (HCT)",
+            "review_status": "needs_clinician_review"
+        },
+        "mch": {
+            "en": "Mean Corpuscular Hemoglobin (MCH)",
+            "hi": "माध्य कणिका हीमोग्लोबिन (MCH)",
+            "ta": "சராசரி கார்பஸ்குலர் ஹீமோகுளோபின் (MCH)",
+            "te": "మీన్ కార్పస్కులర్ హిమోగ్లోబిన్ (MCH)",
+            "kn": "ಮೀನ್ ಕಾರ್ಪಸ್ಕುಲರ್ ಹಿಮೋಗ್ಲೋಬಿನ್ (MCH)",
+            "ml": "മീൻ കോർപ്പസ്കുലർ ഹീമോഗ്ലോബിൻ (MCH)",
+            "review_status": "needs_clinician_review"
+        },
+        "hemoglobin": {
+            "en": "Hemoglobin",
+            "hi": "हीमोग्लोबिन",
+            "ta": "ஹீமோகுளோபின்",
+            "te": "హీమోగ్లోబిన్",
+            "kn": "ಹಿಮೋಗ್ಲೋಬಿನ್",
+            "ml": "ഹീമോഗ്ലോബിൻ",
+            "review_status": "needs_clinician_review"
+        },
+        "neutrophils": {
+            "en": "Neutrophils",
+            "hi": "न्यूट्रोफिल",
+            "ta": "நியூட்ரோபில்ஸ்",
+            "te": "న్యూట్రోఫిల్స్",
+            "kn": "ನ್ಯೂಟ್ರೋಫಿಲ್ಸ್",
+            "ml": "ന്യൂട്രോഫിൽസ്",
+            "review_status": "needs_clinician_review"
+        },
+        "lymphocytes": {
+            "en": "Lymphocytes",
+            "hi": "लिम्फोसाइट्स",
+            "ta": "லிம்போசைட்டுகள்",
+            "te": "లింఫోసైట్లు",
+            "kn": "ಲಿಂಫೋಸೈಟ್ಸ್",
+            "ml": "ലിംഫോസൈറ്റുകൾ",
+            "review_status": "needs_clinician_review"
+        },
+        "eosinophils": {
+            "en": "Eosinophils",
+            "hi": "इओसिनोफिल",
+            "ta": "ஈசினோபில்ஸ்",
+            "te": "ఇసినోఫిల్స్",
+            "kn": "ಇಯೊಸಿನೊಫಿಲ್ಸ್",
+            "ml": "ഇയോസിനോഫിൽസ്",
+            "review_status": "needs_clinician_review"
+        },
+        "monocytes": {
+            "en": "Monocytes",
+            "hi": "मोनोसाइट्स",
+            "ta": "மோனோசைட்டுகள்",
+            "te": "మోనోసైట్లు",
+            "kn": "ಮೊನೊಸೈಟ್ಸ್",
+            "ml": "മോണോസൈറ്റുകൾ",
+            "review_status": "needs_clinician_review"
+        },
+        "basophils": {
+            "en": "Basophils",
+            "hi": "बेसोफिल",
+            "ta": "பாசோபில்ஸ்",
+            "te": "బాసోఫిల్స్",
+            "kn": "ಬಾಸೊಫಿಲ್ಸ್",
+            "ml": "ബാസോഫിൽസ്",
+            "review_status": "needs_clinician_review"
+        },
+        "platelet_count": {
+            "en": "Platelet Count",
+            "hi": "प्लेटलेट काउंट",
+            "ta": "பிளேட்லெட் எண்ணிக்கை",
+            "te": "ప్లేట్‌లెట్ కౌంట్",
+            "kn": "ಪ್ಲೇಟ್ಲೆಟ್ ಎಣಿಕೆ",
+            "ml": "പ്ലേറ്റ്‌ലെറ്റ് എണ്ണം",
+            "review_status": "needs_clinician_review"
+        }
+    }
+}

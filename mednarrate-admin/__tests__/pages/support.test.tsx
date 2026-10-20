@@ -25,8 +25,11 @@ describe('SupportQueuePage', () => {
   it('renders support tickets correctly', () => {
     (useQuery as jest.Mock).mockReturnValue({
       data: {
-        status: 'ok',
-        tickets: [
+        total: 1,
+        page: 1,
+        limit: 25,
+        has_next: false,
+        items: [
           {
             id: 'ticket-1',
             user_email: 'user@example.com',

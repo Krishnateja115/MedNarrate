@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'helpers.dart';
+import 'markdown_tables.dart';
 
 /// MarkdownFormatter — converts AI-generated Markdown text into structured
 /// Flutter widgets. Handles: ### headings, ## headings, #, bullet lists (- * •),
@@ -16,7 +17,7 @@ class MarkdownFormatter {
     TextStyle? baseStyle,
   }) {
     // Pre-sanitize display artifacts (INPUT_TEXT, entity labels, etc.)
-    final sanitized = Helpers.sanitizeDisplayText(rawText);
+    final sanitized = Helpers.sanitizeDisplayText(flattenMarkdownTables(rawText));
     if (sanitized.trim().isEmpty) return const SizedBox.shrink();
 
     final theme = Theme.of(context);

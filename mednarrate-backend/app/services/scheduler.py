@@ -114,19 +114,3 @@ def stop_scheduler():
         scheduler.shutdown()
         logger.info("Stopped medication reminder scheduler.")
 
-
-def get_all_jobs():
-    """Returns a list of dictionaries detailing all scheduled jobs."""
-    jobs = []
-    for job in scheduler.get_jobs():
-        jobs.append(
-            {
-                "id": job.id,
-                "name": job.name,
-                "next_run_time": job.next_run_time.isoformat()
-                if job.next_run_time
-                else None,
-                "status": "running" if scheduler.running else "stopped",
-            }
-        )
-    return jobs

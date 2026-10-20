@@ -227,6 +227,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       icon: Icons.description_outlined,
                                       color:
                                           Theme.of(context).colorScheme.primary,
+                                      onTap: () async {
+                                        await context.push(Routes.reports);
+                                        _loadData();
+                                      },
                                     ),
                                     const SizedBox(width: 12),
                                     DashboardStatisticsCard(
@@ -235,6 +239,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       value: _activeReminders.toString(),
                                       icon: Icons.medication_outlined,
                                       color: Colors.orange,
+                                      onTap: () async {
+                                        await context.push(Routes.reminders);
+                                        _loadData();
+                                      },
                                     ),
                                     const SizedBox(width: 12),
                                     DashboardStatisticsCard(
@@ -243,6 +251,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       value: _favouriteReports.toString(),
                                       icon: Icons.favorite_border,
                                       color: Colors.red,
+                                      onTap: () async {
+                                        await context.push(Routes.reports,
+                                            extra: {'favouritesOnly': true});
+                                        _loadData();
+                                      },
                                     ),
                                   ],
                                 ),

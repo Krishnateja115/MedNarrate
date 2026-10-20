@@ -134,33 +134,35 @@ async def test_rag_status_uses_supported_document_lifecycle(
 
 
 @pytest.mark.asyncio
-async def test_background_jobs(
-    client: AsyncClient,
-    dashboard_admin_user: dict,
-    db_session: AsyncSession,
+async def test_rag_status_reports_report_search_details(
+    client: AsyncClient, dashboard_admin_user: dict, db_session: AsyncSession
 ):
-    db_session.add(
-        JobExecution(
-            job_name="release-gate-job",
-            status=JobStatus.failed,
-            failure_category="database",
-            request_id="release-gate-request",
-            error_details="postgresql://secret@example.invalid/internal",
-        )
+    """The admin RAG page shows how many report chunks exist and how many have search vectors."""
+    from sqlalchemy import select
+    from app.models.rag_chunk import RagChunk
+
+    report = (await db_session.execute(select(Report))).scalars().first()
+    db_session.add_all(
+        [
+            RagChunk(report_id=report.id, chunk_index=0, chunk_text="hemoglobin 10.2", embedding_json=[0.1] * 768),
+            RagChunk(report_id=report.id, chunk_index=1, chunk_text="vitamin d 14.2", embedding_json=None),
+        ]
     )
     await db_session.commit()
+
     headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
-    response = await client.get("/api/v1/admin/jobs", headers=headers)
+    response = await client.get("/api/v1/admin/rag-ops/status", headers=headers)
     assert response.status_code == 200
-    data = response.json()
-    assert "items" in data
-    assert isinstance(data["items"], list)
-    failed_item = next(
-        item for item in data["items"] if item["job_name"] == "release-gate-job"
-    )
-    assert failed_item["failure_category"] == "database"
-    assert failed_item["request_id"] == "release-gate-request"
-    assert "secret" not in failed_item["error_message"]
+    overview = response.json()["overview"]
+    assert overview["total_chunks"] == 2  # existing field is unchanged
+    search = overview["report_search"]
+    assert search["reports_indexed"] == 1
+    assert search["report_chunks"] == 2
+    assert search["chunks_with_vectors"] == 1
+    assert search["chunks_without_vectors"] == 1
+    assert search["vector_size"] == 768
+    assert search["search_mode"] in ("embeddings_with_keyword_backup", "keyword_only")
+    assert set(overview["health_notes"]) == {"passages", "ready"}
 
 
 @pytest.mark.asyncio
@@ -423,30 +425,6 @@ async def test_push_notification_dispatch(
 
 
 @pytest.mark.asyncio
-async def test_admin_copilot_chat(
-    client: AsyncClient, dashboard_admin_user: dict, db_session: AsyncSession
-):
-    token = dashboard_admin_user["token"]
-
-    payload = {
-        "messages": [{"role": "user", "content": "How many active users are there?"}]
-    }
-
-    from unittest.mock import patch
-    with patch("app.core.config.settings.GEMINI_API_KEY", None):
-        res = await client.post(
-            "/api/v1/admin/copilot/chat",
-            json=payload,
-            headers={"Cookie": f"access_token={token}"},
-        )
-    assert res.status_code == 200
-    data = res.json()
-    assert data["status"] == "ok"
-    assert "active" in data["reply"]
-    assert "placeholder" not in data["reply"].lower()
-
-
-@pytest.mark.asyncio
 async def test_admin_support_tickets_endpoints(
     client: AsyncClient, dashboard_admin_user: dict, db_session: AsyncSession
 ):
@@ -530,3 +508,63 @@ async def test_admin_support_tickets_unauthorized(
         f"/api/v1/admin/admins/{admin_id}/support_tickets", headers=token_headers
     )
     assert res.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_automation_jobs_never_expose_error_text(
+    client: AsyncClient, admin_token_and_user, db_session: AsyncSession
+):
+    headers, _ = admin_token_and_user
+    db_session.add(
+        JobExecution(
+            job_name="release-gate-job",
+            status=JobStatus.failed,
+            failure_category="database",
+            request_id="release-gate-request",
+            error_details="postgresql://secret@example.invalid/internal",
+        )
+    )
+    await db_session.commit()
+    response = await client.get("/api/v1/admin/automation-ops/jobs", headers=headers)
+    assert response.status_code == 200, response.text
+    assert "secret" not in response.text
+    item = next(i for i in response.json()["items"] if i["job_name"] == "release-gate-job")
+    assert item["failure_category"] == "database"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/v1/admin/users",
+        "/api/v1/admin/incidents",
+        "/api/v1/admin/automation-ops/jobs",
+        "/api/v1/admin/automation-ops/notifications",
+        "/api/v1/admin/automation-ops/medications",
+        "/api/v1/admin/diagnostics/llm",
+        "/api/v1/admin/diagnostics/reports",
+    ],
+)
+@pytest.mark.parametrize("bad_sort", ["metadata", "__class__", "hashed_password"])
+async def test_list_endpoints_ignore_unsafe_sort_fields(
+    client: AsyncClient, admin_token_and_user, path: str, bad_sort: str
+):
+    headers, _ = admin_token_and_user
+    response = await client.get(f"{path}?sort_by={bad_sort}", headers=headers)
+    assert response.status_code == 200, response.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/v1/admin/search?q=ab",
+        "/api/v1/admin/automation-ops/notifications?search=a",
+        "/api/v1/admin/support?assigned_admin_id=not-a-uuid",
+        "/api/v1/admin/automation-ops/jobs?status=a",
+    ],
+)
+async def test_admin_search_inputs_never_cause_server_errors(client, admin_token_and_user, path):
+    headers, _ = admin_token_and_user
+    resp = await client.get(path, headers=headers)
+    assert resp.status_code < 500, resp.text

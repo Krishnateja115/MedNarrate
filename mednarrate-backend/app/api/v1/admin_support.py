@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import func, or_
+from sqlalchemy import String, cast, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -18,6 +18,7 @@ from app.models.incidents import (
     IncidentSeverity,
     IncidentStatus,
 )
+from app.models.user import User
 from app.models.help_center import ArticleStatus, HelpArticle
 from app.models.support import (
     SupportTicket,
@@ -136,8 +137,9 @@ class AdminEscalatePayload(BaseModel):
 async def list_tickets(
     status: Optional[TicketStatus] = None,
     priority: Optional[TicketPriority] = None,
-    assigned_admin_id: Optional[str] = None,
+    assigned_admin_id: Optional[uuid.UUID] = None,
     unassigned: Optional[bool] = False,
+    open_only: bool = False,
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(25, ge=1, le=100),
@@ -151,10 +153,14 @@ async def list_tickets(
 
     if status:
         stmt = stmt.where(SupportTicket.status == status)
+    elif open_only:
+        stmt = stmt.where(
+            SupportTicket.status.not_in([TicketStatus.resolved, TicketStatus.closed])
+        )
     if priority:
         stmt = stmt.where(SupportTicket.priority == priority)
     if unassigned:
-        stmt = stmt.where(SupportTicket.assigned_admin_id is None)
+        stmt = stmt.where(SupportTicket.assigned_admin_id.is_(None))
     elif assigned_admin_id:
         stmt = stmt.where(SupportTicket.assigned_admin_id == assigned_admin_id)
 
@@ -162,8 +168,9 @@ async def list_tickets(
         stmt = stmt.where(
             or_(
                 SupportTicket.title.ilike(f"%{search}%"),
-                SupportTicket.id.ilike(f"%{search}%"),
-                SupportTicket.user_id.ilike(f"%{search}%"),
+                cast(SupportTicket.id, String).ilike(f"%{search}%"),
+                cast(SupportTicket.user_id, String).ilike(f"%{search}%"),
+                SupportTicket.user.has(User.email.ilike(f"%{search}%")),
             )
         )
 
@@ -404,7 +411,7 @@ async def reply_ticket(
 
     msg = SupportTicketMessage(
         ticket_id=ticket.id,
-        sender_id=str(admin_ctx.user.id),
+        sender_id=admin_ctx.user.id,
         is_internal=payload.is_internal,
         content=payload.content,
     )
@@ -444,17 +451,27 @@ async def update_ticket(
 
     if payload.status and payload.status != ticket.status:
         ticket.status = payload.status
-        changes.append(f"Status changed to {payload.status}")
+        changes.append(f"Status changed to {payload.status.value}")
 
     if payload.priority and payload.priority != ticket.priority:
         ticket.priority = payload.priority
-        changes.append(f"Priority changed to {payload.priority}")
+        changes.append(f"Priority changed to {payload.priority.value}")
 
     if payload.assigned_admin_id is not None:
-        ticket.assigned_admin_id = (
-            payload.assigned_admin_id if payload.assigned_admin_id else None
-        )
-        changes.append(f"Reassigned to {payload.assigned_admin_id}")
+        new_assignee = None
+        if payload.assigned_admin_id:
+            try:
+                new_assignee = uuid.UUID(payload.assigned_admin_id)
+            except ValueError:
+                raise HTTPException(status_code=422, detail="assigned_admin_id must be a valid admin id")
+        ticket.assigned_admin_id = new_assignee
+        if new_assignee:
+            assignee = await db.get(User, new_assignee)
+            if not assignee:
+                raise HTTPException(status_code=422, detail="Assignee not found")
+            changes.append(f"Assigned to {assignee.full_name or assignee.email}")
+        else:
+            changes.append("Unassigned")
 
     if changes:
         evt = SupportTicketEvent(

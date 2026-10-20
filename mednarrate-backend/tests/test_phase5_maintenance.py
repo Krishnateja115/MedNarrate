@@ -1,10 +1,9 @@
 import pytest
-import uuid
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
 from app.models.mfa_challenge import MFAChallenge

@@ -22,6 +22,23 @@ interface FeatureFlag {
   updated_at: string | null;
 }
 
+// Flags the MedNarrate backend actually reads. A flag that is missing counts as OFF,
+// so these must exist with exactly these names for the toggles to change app behaviour.
+const APP_FLAGS: { name: string; description: string }[] = [
+  {
+    name: 'rag_hallucination_guard',
+    description: 'Chat: check each answer against the report text and flag unsupported claims.',
+  },
+  {
+    name: 'experimental_medical_verifier',
+    description: 'Report analysis: run an extra AI fact-check on the generated summary.',
+  },
+  {
+    name: 'report_type_check',
+    description: 'Report screen: show an experimental "looks like a blood-test / health / pathology record" hint from the MRAD-trained model.',
+  },
+];
+
 export default function FeatureFlagsPage() {
   const queryClient = useQueryClient();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -94,15 +111,11 @@ export default function FeatureFlagsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <BarChart3 className="w-7 h-7 text-blue-600" /> Feature Flags & Progressive Rollouts
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Control feature availability, set percentage rollouts, and monitor feature flag mutation audits.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Feature Flags</h1>
+          <p className="text-muted-foreground">Turn features on or off and roll them out gradually.</p>
         </div>
         <Button onClick={() => setShowCreateForm(!showCreateForm)} className="flex items-center gap-2">
           <Plus className="w-4 h-4" /> {showCreateForm ? 'Cancel' : 'New Feature Flag'}
@@ -188,6 +201,49 @@ export default function FeatureFlagsPage() {
         </Card>
       )}
 
+      {/* Flags the app reads */}
+      {!isLoading && (() => {
+        const existing = new Set((data?.flags || []).map((f) => f.name));
+        const missing = APP_FLAGS.filter((f) => !existing.has(f.name));
+        if (missing.length === 0) return null;
+        return (
+          <Card className="border-amber-200 dark:border-amber-900">
+            <CardHeader>
+              <CardTitle className="text-lg">Flags the app uses</CardTitle>
+              <CardDescription>
+                The app only reacts to flags with these exact names. A flag that does not exist is treated as off.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {missing.map((f) => (
+                <div key={f.name} className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-mono text-sm text-blue-600 dark:text-blue-400">{f.name}</div>
+                    <div className="text-xs text-slate-500">{f.description}</div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={createFlagMutation.isPending}
+                    onClick={() =>
+                      createFlagMutation.mutate({
+                        name: f.name,
+                        description: f.description,
+                        rollout_percentage: 100,
+                        target_environment: 'all',
+                        enabled: false,
+                      })
+                    }
+                  >
+                    Add (off)
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Feature Flags Table */}
       <Card>
         <CardHeader>
@@ -244,7 +300,11 @@ export default function FeatureFlagsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => deleteFlagMutation.mutate(flag.id)}
+                          onClick={() => {
+                            if (window.confirm(`Delete the flag "${flag.name}"? The app will treat it as off.`)) {
+                              deleteFlagMutation.mutate(flag.id);
+                            }
+                          }}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />

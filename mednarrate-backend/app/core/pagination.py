@@ -23,6 +23,24 @@ def clamp_limit(limit: int) -> int:
     return min(max(1, limit), MAX_LIMIT)
 
 
+# Columns that must never drive an ordering, because the resulting order leaks them.
+_UNSORTABLE_COLUMNS = frozenset(
+    {"hashed_password", "mfa_secret", "mfa_recovery_codes", "encrypted_value", "api_key", "token_hash", "secret"}
+)
+
+
+def resolve_sort_column(model: Any, sort_by: str | None, default: Any) -> Any:
+    """Return the model column named by ``sort_by`` or ``default``.
+
+    Only real table columns qualify. Anything else (``metadata``, ``registry``, dunder names,
+    relationships) falls back to ``default`` instead of raising, and secret columns are refused.
+    """
+    columns = getattr(getattr(model, "__table__", None), "columns", None)
+    if not sort_by or columns is None or sort_by not in columns or sort_by in _UNSORTABLE_COLUMNS:
+        return default
+    return getattr(model, sort_by)
+
+
 def build_pagination_response(
     items: List[Any], total: int, page: int, limit: int
 ) -> Dict[str, Any]:

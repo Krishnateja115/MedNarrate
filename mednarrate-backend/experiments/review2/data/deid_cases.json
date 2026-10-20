@@ -1,0 +1,29 @@
+{
+  "description": "Synthetic report headers in common Indian lab layouts. All names, numbers and addresses are invented. 'identifiers' must not reach the language model; 'clinical' strings must survive de-identification unchanged.",
+  "cases": [
+    {"text": "Patient Name: Ravi Kumar Sharma   Age/Sex: 45/M\nUHID: APL-2291834\nPhone: 9876543210\nHemoglobin 12.5 g/dL 13.0 - 17.0\nPlatelet Count 150000 /cumm 150000 - 410000",
+     "identifiers": ["Ravi Kumar Sharma", "APL-2291834", "9876543210"], "clinical": ["12.5", "13.0 - 17.0", "150000", "45/M"]},
+    {"text": "Name : Mrs. Lakshmi Devi        Age : 52 Yrs   Sex : F\nReg. No: 55821\nRef. By: Dr. Suresh Reddy\nFasting Blood Sugar 132 mg/dL 70 - 99",
+     "identifiers": ["Lakshmi Devi", "55821", "Suresh Reddy"], "clinical": ["132", "70 - 99", "52 Yrs"]},
+    {"text": "Pt Name: Arjun Mehta\nDOB: 12/04/1988\nMobile: +91 98480 22331\nEmail: arjun.mehta88@example.com\nTSH 6.8 uIU/mL 0.4 - 4.0",
+     "identifiers": ["Arjun Mehta", "12/04/1988", "98480 22331", "arjun.mehta88@example.com"], "clinical": ["6.8", "0.4 - 4.0"]},
+    {"text": "MRN: 00982731\nPatient: Fatima Begum\nAddress: 14-2-118, Gandhi Nagar, Vijayawada\nSerum Creatinine 1.4 mg/dL 0.6 - 1.1",
+     "identifiers": ["00982731", "Fatima Begum", "Gandhi Nagar"], "clinical": ["1.4", "0.6 - 1.1"]},
+    {"text": "Aadhaar: 4521 8890 1234\nName of Patient: Sri Venkata Rao\nHbA1c 7.2 % 4.0 - 5.6",
+     "identifiers": ["4521 8890 1234", "Venkata Rao"], "clinical": ["7.2", "4.0 - 5.6"]},
+    {"text": "Mr Kiran Babu, 38 years, was seen on 02/09/2026. Contact 9440012345.\nTotal Cholesterol 236 mg/dL < 200",
+     "identifiers": ["Kiran Babu", "9440012345"], "clinical": ["236", "< 200", "38 years"]},
+    {"text": "KAVYA NAIR    F/29Y    Sample ID: 7781\nVitamin D (25-OH) 14 ng/mL 30 - 100",
+     "identifiers": ["KAVYA NAIR"], "clinical": ["14", "30 - 100", "F/29Y"]},
+    {"text": "Patient ID: KMC/2026/44812  Collected: 10-Oct-2026\nUric Acid 7.9 mg/dL 3.5 - 7.2",
+     "identifiers": ["KMC/2026/44812"], "clinical": ["7.9", "3.5 - 7.2"]},
+    {"text": "Referred by Dr. Anitha Krishnan, MD\nPatient: Suresh P\nALT 64 U/L 0 - 40",
+     "identifiers": ["Anitha Krishnan", "Suresh P"], "clinical": ["64", "0 - 40"]},
+    {"text": "Name: Rahul   Age: 30\nWBC 11800 /cumm 4000 - 11000",
+     "identifiers": ["Rahul"], "clinical": ["11800", "4000 - 11000", "30"]},
+    {"text": "Guardian: Mohan Lal (Father)\nChild: Baby of Sunita\nHemoglobin 10.1 g/dL 11.0 - 14.0",
+     "identifiers": ["Mohan Lal", "Sunita"], "clinical": ["10.1", "11.0 - 14.0"]},
+    {"text": "Tel: 040-23456789\nPatient Name: Joseph Thomas\nLDL Cholesterol 162 mg/dL < 100",
+     "identifiers": ["040-23456789", "Joseph Thomas"], "clinical": ["162", "< 100"]}
+  ]
+}

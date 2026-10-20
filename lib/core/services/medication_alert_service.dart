@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../l10n/app_l10n.dart';
 import 'notification_service.dart';
@@ -119,7 +118,7 @@ class MedicationAlertService {
   static final instance = MedicationAlertService._();
   static const _scheduledIdsKey = 'scheduled_medication_alert_ids';
   static const _remindersKey = 'local_medication_alert_source';
-  final FlutterSecureStorage _storage = appSecureStorage;
+  final SecureStore _storage = appSecureStorage;
   Future<void> _tail = Future<void>.value();
 
   Future<void> sync(List<Map<String, dynamic>> reminders) => _enqueue(() async {

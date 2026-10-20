@@ -17,12 +17,9 @@ from app.api.v1.admin_dashboard import router as dashboard_router
 from app.api.v1.admin_diagnostics import router as diagnostics_router
 from app.api.v1.admin_feature_flags import router as feature_flags_router
 from app.api.v1.admin_health import router as health_router
-from app.api.v1.admin_governance import router as governance_router
 from app.api.v1.admin_help_center import router as help_center_router
 from app.api.v1.admin_incidents import router as incidents_router
-from app.api.v1.admin_jobs import router as jobs_router
 from app.api.v1.admin_ml import router as ml_router
-from app.api.v1.admin_privacy import router as privacy_router
 from app.api.v1.admin_rag_ops import router as rag_ops_router
 from app.api.v1.admin_reports import router as reports_router
 from app.api.v1.admin_roles import router as roles_router
@@ -34,7 +31,6 @@ from app.api.v1.admin_settings import router as settings_router
 from app.api.v1.admin_support import router as support_router
 from app.api.v1.admin_users import router as users_router
 from app.api.v1.admin_notifications import router as notifications_router
-from app.api.v1.admin_copilot import router as copilot_router
 from app.core.admin_auth import (
     AdminContext,
     get_admin_context,
@@ -144,10 +140,6 @@ router.include_router(search_router, prefix="/search", tags=["Admin Search"])
 router.include_router(alerts_router, prefix="/alerts", tags=["Admin Alerts"])
 router.include_router(health_router, prefix="/system", tags=["Admin System"])
 router.include_router(
-    governance_router, prefix="/governance", tags=["Admin Governance"]
-)
-router.include_router(jobs_router, prefix="/jobs", tags=["Admin Jobs"])
-router.include_router(
     diagnostics_router, prefix="/diagnostics", tags=["Admin Diagnostics"]
 )
 router.include_router(incidents_router, prefix="/incidents", tags=["Admin Incidents"])
@@ -167,7 +159,6 @@ router.include_router(
 router.include_router(
     notifications_router, prefix="/notifications", tags=["Admin Notifications"]
 )
-router.include_router(copilot_router, prefix="/copilot", tags=["Admin Copilot"])
 
 # Register Privileged Governance Routers
 router.include_router(
@@ -181,7 +172,6 @@ router.include_router(audit_router, prefix="", tags=["Admin Audit Logs"])
 router.include_router(
     breakglass_router, prefix="", tags=["Admin Break-Glass Temporary Access"]
 )
-router.include_router(privacy_router, prefix="", tags=["Admin Privacy Center"])
 router.include_router(feature_flags_router, prefix="", tags=["Admin Feature Flags"])
 router.include_router(ai_config_router, prefix="", tags=["Admin AI Configuration"])
 router.include_router(settings_router, prefix="", tags=["Admin Settings & Maintenance"])

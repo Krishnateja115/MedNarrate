@@ -118,14 +118,10 @@ export default function AuditLogsPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <FileText className="w-7 h-7 text-blue-600" /> Immutable Audit Logs Reader
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">
-          Append-only compliance audit trails with sanitized request metadata and tamper-evident history.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Audit Logs</h1>
+          <p className="text-muted-foreground">A read-only record of admin activity. Sensitive details are removed.</p>
       </div>
 
       {/* Filters Bar */}

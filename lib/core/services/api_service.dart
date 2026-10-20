@@ -14,6 +14,7 @@ import 'offline_queue_service.dart';
 import 'reminder_service.dart';
 import 'medication_alert_service.dart';
 import '../../models/cached/offline_action.dart';
+import '../../features/reports/models/document_type_check.dart';
 import '../../features/reports/models/report_model.dart';
 import '../../features/settings/models/model_performance.dart';
 import '../../models/comparison_models.dart';
@@ -44,14 +45,48 @@ class ApiService {
     };
   }
 
+  /// Debug builds only: prints how long each API call took, e.g.
+  /// `[API] POST /chat/sessions/<id>/messages -> 200 in 2.4s`. Release builds
+  /// run the request untouched. Filter the console with "[API]".
+  Future<http.Response> _timed(
+    String method,
+    String path,
+    Future<http.Response> Function() send,
+  ) async {
+    if (!kDebugMode) return send();
+    final watch = Stopwatch()..start();
+    try {
+      final resp = await send();
+      debugPrint(
+          '[API] $method ${_timingPath(path)} -> ${resp.statusCode} in ${_formatElapsed(watch)}');
+      return resp;
+    } catch (error) {
+      debugPrint(
+          '[API] $method ${_timingPath(path)} FAILED after ${_formatElapsed(watch)} (${error.runtimeType})');
+      rethrow;
+    }
+  }
+
+  static String _timingPath(String path) {
+    final q = path.indexOf('?');
+    return q == -1 ? path : path.substring(0, q);
+  }
+
+  static String _formatElapsed(Stopwatch watch) {
+    final ms = watch.elapsedMilliseconds;
+    return ms >= 1000 ? '${(ms / 1000).toStringAsFixed(1)}s' : '${ms}ms';
+  }
+
   Future<http.Response> _get(String path, {bool allowRefresh = true}) async {
     try {
-      final resp = await http
-          .get(
-            Uri.parse('$_baseUrl$path'),
-            headers: await _authHeaders(),
-          )
-          .timeout(_timeout);
+      final headers = await _authHeaders();
+      final resp = await _timed(
+        'GET',
+        path,
+        () => http
+            .get(Uri.parse('$_baseUrl$path'), headers: headers)
+            .timeout(_timeout),
+      );
       return await _handleResponse(resp, () => _get(path, allowRefresh: false),
           allowRefresh: allowRefresh);
     } catch (error) {
@@ -66,13 +101,17 @@ class ApiService {
       Duration? requestTimeout}) async {
     try {
       final headers = await _authHeaders();
-      final resp = await http
-          .post(
-            Uri.parse('$_baseUrl$path'),
-            headers: headers,
-            body: isJson ? jsonEncode(body) : body,
-          )
-          .timeout(requestTimeout ?? _timeout);
+      final resp = await _timed(
+        'POST',
+        path,
+        () => http
+            .post(
+              Uri.parse('$_baseUrl$path'),
+              headers: headers,
+              body: isJson ? jsonEncode(body) : body,
+            )
+            .timeout(requestTimeout ?? _timeout),
+      );
       return await _handleResponse(
           resp,
           () => _post(path,
@@ -90,13 +129,17 @@ class ApiService {
       {Object? body, bool allowRefresh = true}) async {
     try {
       final headers = await _authHeaders();
-      final resp = await http
-          .patch(
-            Uri.parse('$_baseUrl$path'),
-            headers: headers,
-            body: jsonEncode(body),
-          )
-          .timeout(_timeout);
+      final resp = await _timed(
+        'PATCH',
+        path,
+        () => http
+            .patch(
+              Uri.parse('$_baseUrl$path'),
+              headers: headers,
+              body: jsonEncode(body),
+            )
+            .timeout(_timeout),
+      );
       return await _handleResponse(
           resp, () => _patch(path, body: body, allowRefresh: false),
           allowRefresh: allowRefresh);
@@ -107,12 +150,14 @@ class ApiService {
 
   Future<http.Response> _delete(String path, {bool allowRefresh = true}) async {
     try {
-      final resp = await http
-          .delete(
-            Uri.parse('$_baseUrl$path'),
-            headers: await _authHeaders(),
-          )
-          .timeout(_timeout);
+      final headers = await _authHeaders();
+      final resp = await _timed(
+        'DELETE',
+        path,
+        () => http
+            .delete(Uri.parse('$_baseUrl$path'), headers: headers)
+            .timeout(_timeout),
+      );
       return await _handleResponse(
           resp, () => _delete(path, allowRefresh: false),
           allowRefresh: allowRefresh);
@@ -167,7 +212,10 @@ class ApiService {
       String message = resp.reasonPhrase ?? 'Unknown error';
       try {
         final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
-        message = decoded['detail']?.toString() ?? message;
+        final detail = decoded['detail'];
+        message = detail is Map<String, dynamic>
+            ? (detail['message']?.toString() ?? message)
+            : (detail?.toString() ?? message);
       } catch (_) {}
       throw ApiException(resp.statusCode, message);
     }
@@ -206,10 +254,7 @@ class ApiService {
       String message = resp.reasonPhrase ?? 'Login failed';
       try {
         final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
-        final detail = decoded['detail'];
-        message = detail is Map<String, dynamic>
-            ? (detail['message']?.toString() ?? message)
-            : (detail?.toString() ?? message);
+        message = decoded['detail']?.toString() ?? message;
       } catch (_) {}
       throw ApiException(resp.statusCode, message);
     }
@@ -470,6 +515,19 @@ class ApiService {
     final resp = await _get('/ml/model-performance');
     return ModelPerformanceReport.fromMap(
         jsonDecode(resp.body) as Map<String, dynamic>);
+  }
+
+  /// Experimental document-type hint for one report. Any failure (offline,
+  /// feature off, server problem) counts as "no hint" so the report screen is
+  /// never affected.
+  Future<DocumentTypeCheck> getDocumentTypeCheck(String reportId) async {
+    try {
+      final resp = await _get('/reports/$reportId/document-type');
+      return DocumentTypeCheck.fromMap(
+          jsonDecode(resp.body) as Map<String, dynamic>);
+    } catch (_) {
+      return DocumentTypeCheck.hidden;
+    }
   }
 
   // ─────────────────────────── Voice input ─────────────────────────────
@@ -932,6 +990,11 @@ class ApiService {
         jsonDecode(resp.body)['active_announcements']);
   }
 
+  Future<Map<String, dynamic>> getMaintenanceStatus() async {
+    final resp = await _get('/maintenance/status');
+    return Map<String, dynamic>.from(jsonDecode(resp.body) as Map);
+  }
+
   Future<void> toggleMedicationSchedule(String id) async {
     await _patch('/notifications/medication-schedules/$id/toggle');
     try {
@@ -990,11 +1053,6 @@ class ApiService {
     final reminder = jsonDecode(resp.body) as Map<String, dynamic>;
     try {
       await MedicationAlertService.instance.upsert(reminder);
-  Future<Map<String, dynamic>> getMaintenanceStatus() async {
-    final resp = await _get('/maintenance/status');
-    return Map<String, dynamic>.from(jsonDecode(resp.body) as Map);
-  }
-
     } catch (error) {
       debugPrint('Medicine updated, but phone alert could not be set: $error');
     }

@@ -4202,6 +4202,588 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'What do common blood test terms mean?'**
   String get chatSuggestTerms;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'AI models & explainability'**
+  String get mlScreenTitle;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'How well each AI model performs and why it answers as it does'**
+  String get mlTileSubtitle;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'MedNarrate uses several AI models. See what each one does, how it scored on our own tests, and how it explains its answers.'**
+  String get mlIntro;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'{evaluated} of {total} models measured'**
+  String mlSummaryMeasured(int evaluated, int total);
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'{evaluated} of {total} deep-learning models measured'**
+  String mlSummaryDeep(int evaluated, int total);
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Some models have not been measured yet. Their scores will appear here once the evaluation has been run.'**
+  String get mlPendingBanner;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Last measured: {when}'**
+  String mlLastMeasured(String when);
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Deep learning'**
+  String get mlKindDeep;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Classical machine learning'**
+  String get mlKindClassical;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Rule-based'**
+  String get mlKindRules;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Used in the app'**
+  String get mlUsedInApp;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Offline or research use'**
+  String get mlOfflineTool;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Measured'**
+  String get mlStatusMeasured;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Not evaluated yet'**
+  String get mlStatusNotEvaluated;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Could not be measured'**
+  String get mlStatusFailed;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'No scores yet.'**
+  String get mlNoScoresYet;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Measured on {count} test items'**
+  String mlMeasuredOn(int count);
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Scores come from small, hand-checked test sets, so they show strengths and weaknesses rather than clinical accuracy.'**
+  String get mlTestSetNote;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the model information.'**
+  String get mlLoadError;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Finds symptoms, diseases, medicines and lab terms in report text'**
+  String get mlTaskBiomedicalNer;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Finds the parts of your report that answer a chat question'**
+  String get mlTaskReportEmbedding;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Finds general health knowledge that answers a question'**
+  String get mlTaskKbEmbedding;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Prepares medical knowledge for search (offline step)'**
+  String get mlTaskPubmedbertEmbedding;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Explains reports, answers questions and translates summaries'**
+  String get mlTaskLlmChain;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Translates offline when no online model can be reached'**
+  String get mlTaskLocalQwen;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Turns your spoken question into text'**
+  String get mlTaskWhisperStt;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Predicts the type of a report (research model, not used in the app)'**
+  String get mlTaskReportClassifier;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Reads test names, values and ranges from report text'**
+  String get mlTaskLabExtractor;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Findings that are right'**
+  String get mlMetricPrecision;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Real items it finds'**
+  String get mlMetricRecall;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Overall balance (F1)'**
+  String get mlMetricF1;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Correct type of term'**
+  String get mlMetricEntityType;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Average response time'**
+  String get mlMetricAvgLatency;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Typical response time'**
+  String get mlMetricLatencyP50;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Slowest 5% response time'**
+  String get mlMetricLatencyP95;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Right passage ranked 1st'**
+  String get mlMetricTop1;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Right passage in top 3'**
+  String get mlMetricTop3;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Right passage in top 5'**
+  String get mlMetricTop5;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Average ranking score (MRR)'**
+  String get mlMetricMrr;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answers from the report'**
+  String get mlMetricAnswerAccuracy;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Says “not in the report” when true'**
+  String get mlMetricAbstention;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Numbers kept in translation'**
+  String get mlMetricNumbersKept;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Sentences keeping every number'**
+  String get mlMetricAllNumbers;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Hindi translation quality (chrF, out of 100)'**
+  String get mlMetricChrf;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'English speech errors (lower is better)'**
+  String get mlMetricWerEn;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Hindi speech errors (lower is better)'**
+  String get mlMetricWerHi;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Overall correct'**
+  String get mlMetricAccuracy;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Average right-when-found across types'**
+  String get mlMetricMacroPrecision;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Average share found across types'**
+  String get mlMetricMacroRecall;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Average balance across types (F1)'**
+  String get mlMetricMacroF1;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'How the AI explains itself'**
+  String get mlXaiTitle;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Explainable AI (XAI) shows which words or numbers led to a result, so it can be checked instead of trusted blindly.'**
+  String get mlXaiIntro;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'LIME: local surrogate model'**
+  String get mlXaiLimeName;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Hides random words, asks the model again and fits a small simple model to the answers. The weights show which words pushed the prediction.'**
+  String get mlXaiLimeBody;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Exact linear attribution (SHAP for linear models)'**
+  String get mlXaiLinearName;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'For a linear model, each word contributes its weight times its value. The contributions add up exactly to the score.'**
+  String get mlXaiLinearBody;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Occlusion saliency'**
+  String get mlXaiOcclusionName;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Blanks out one word at a time and measures how much confidence drops. The words that matter most are the evidence.'**
+  String get mlXaiOcclusionBody;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Rule trace'**
+  String get mlXaiRuleName;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Shows the exact comparison behind a High or Low flag: your value against the range printed in the report.'**
+  String get mlXaiRuleBody;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Report-type classifier: why this prediction?'**
+  String get mlXaiClassifierTitle;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Medical-term finder: what it relied on'**
+  String get mlXaiEntitiesTitle;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Why lab results are flagged'**
+  String get mlXaiLabsTitle;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Predicted {label} ({confidence}% sure)'**
+  String mlXaiPredicted(String label, String confidence);
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Words that pushed the prediction (LIME)'**
+  String get mlXaiLimeCaption;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Exact contribution of each word'**
+  String get mlXaiLinearCaption;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Other words it relied on'**
+  String get mlXaiEvidenceCaption;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'No other word changed this result.'**
+  String get mlXaiNoEvidence;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Examples use short invented text, not patient data.'**
+  String get mlXaiExampleNote;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Why flagged?'**
+  String get mlWhyFlagged;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'How this result was flagged'**
+  String get mlWhyTitle;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Your value'**
+  String get mlWhyYourValue;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Range used'**
+  String get mlWhyRangeUsed;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'{value} is below the lowest normal value ({low}) by {percent}%, so it is flagged “{flag}”.'**
+  String mlWhyBelow(String value, String low, String percent, String flag);
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'{value} is above the highest normal value ({high}) by {percent}%, so it is flagged “{flag}”.'**
+  String mlWhyAbove(String value, String high, String percent, String flag);
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'{value} is inside the range ({range}), so it is “{flag}”.'**
+  String mlWhyWithin(String value, String range, String flag);
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'{value} has no reference range in this report, so it cannot be flagged.'**
+  String mlWhyNoRange(String value);
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'The laboratory marked this result as “{flag}” in the report, and that marking is used.'**
+  String mlWhyReportMarked(String flag);
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'This range is a general adult range, not one printed in your report.'**
+  String get mlWhyProvisional;
+
+  /// ai_models screen text
+  ///
+  /// In en, this message translates to:
+  /// **'Method: rule trace. The app compares your value with a range. It does not diagnose. Ask your doctor what a flag means for you.'**
+  String get mlWhyMethod;
+
+  /// Tooltip of the button that reads the report summary aloud
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to summary'**
+  String get narrationListen;
+
+  /// Tooltip of the button that stops the read-aloud
+  ///
+  /// In en, this message translates to:
+  /// **'Stop listening'**
+  String get narrationStop;
+
+  /// Message when the phone has no text-to-speech voice for the chosen language
+  ///
+  /// In en, this message translates to:
+  /// **'This phone doesn\'t have a voice for this language yet. Add one in your phone\'s text-to-speech settings.'**
+  String get narrationVoiceMissing;
+
+  /// Message when the summary could not be read aloud
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the summary aloud. Please try again.'**
+  String get narrationFailed;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Document type check'**
+  String get docTypeCheckTitle;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Experimental'**
+  String get docTypeCheckExperimental;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Model score {percent}%'**
+  String docTypeCheckScore(int percent);
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Looks like a blood-test report'**
+  String get docTypeBlood;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Looks like a general health record'**
+  String get docTypeHealth;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Looks like a pathology or cancer-research record'**
+  String get docTypeTcga;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'An experimental model trained on the MRAD dataset compared the wording of this report with three kinds of records (blood tests, general health records and cancer-research records). It is only a hint, not a diagnosis, and it can be wrong for kinds of reports it has not seen.'**
+  String get docTypeCheckAbout;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Dataset behind the report-type model'**
+  String get mlDatasetTitle;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'The report-type model learned from MRAD, a collection of {reports} medical reports from {patients} patients.'**
+  String mlDatasetIntro(String reports, String patients);
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Training / validation / test'**
+  String get mlDatasetSplit;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Report types'**
+  String get mlDatasetClasses;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Reports from one patient never appear in more than one of these groups, and the report-type header line is removed from the text before training.'**
+  String get mlDatasetSafeguard;
+
+  /// Document type check and dataset text
+  ///
+  /// In en, this message translates to:
+  /// **'Only this one model learns from MRAD. Summaries, chat and translation use pretrained AI models and are not trained on it.'**
+  String get mlDatasetScope;
 }
 
 class _AppLocalizationsDelegate

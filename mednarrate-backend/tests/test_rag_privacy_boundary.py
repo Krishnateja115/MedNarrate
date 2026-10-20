@@ -1,5 +1,4 @@
 """RAG must de-identify before any embedding call, independent of LLM_SEND_MODE."""
-import uuid
 from datetime import date
 
 import pytest
@@ -116,3 +115,15 @@ async def test_user_anonymization_removes_rag_chunks(db_session, monkeypatch):
     await anonymize_and_delete_user_data(user, db_session)
     await db_session.commit()
     assert (await db_session.execute(select(RagChunk))).scalars().all() == []
+
+
+def test_dev_gemini_provider_gets_gemini_embeddings(monkeypatch):
+    """PRIMARY_LLM_PROVIDER=dev_gemini must not disable embeddings."""
+    from app.core.config import settings
+    from app.services import embedding_provider as ep
+
+    sentinel = object()
+    monkeypatch.setitem(ep._PROVIDERS, "dev_gemini", lambda: sentinel)
+    monkeypatch.setattr(settings, "EMBEDDING_PROVIDER", None, raising=False)
+    monkeypatch.setattr(settings, "PRIMARY_LLM_PROVIDER", "dev_gemini", raising=False)
+    assert ep.get_embedder() is sentinel

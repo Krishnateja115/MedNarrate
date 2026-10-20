@@ -217,6 +217,13 @@ Future<void> _ensureBackendRunningOnWindows() async {
   throw Exception("Timeout waiting for local server to start on Windows.");
 }
 
+/// "Starting local server" only makes sense on the desktop builds, which
+/// launch their own backend. Phones just say the app is getting ready.
+String get _startupStatus =>
+    (!kIsWeb && (Platform.isAndroid || Platform.isIOS))
+        ? 'Getting things ready...'
+        : 'Starting local server...';
+
 Future<void> _runBootSequence() async {
   try {
     if (kReleaseMode) AppConfig.apiBaseUrl;
@@ -244,6 +251,7 @@ Future<void> _runBootSequence() async {
     final savedLanguage = await StorageService.instance.getPreferredLanguage();
     localeModeNotifier.value = Locale(savedLanguage);
 
+    await MaintenanceController.instance.start();
     runApp(const MedNarrateApp());
   } on NeedsSetupException catch (e) {
     runApp(_bootApp(
@@ -251,8 +259,7 @@ Future<void> _runBootSequence() async {
         backendPath: e.backendPath,
         onComplete: () {
           runApp(_bootApp(
-    await MaintenanceController.instance.start();
-            const BootScreen(status: 'Starting local server...'),
+            BootScreen(status: _startupStatus),
           ));
           _runBootSequence();
         },
@@ -319,7 +326,7 @@ Future<void> main() async {
   tz.initializeTimeZones();
   await initializeDateFormatting();
 
-  runApp(_bootApp(const BootScreen(status: 'Starting local server...')));
+  runApp(_bootApp(BootScreen(status: _startupStatus)));
 
   await _runBootSequence();
 }

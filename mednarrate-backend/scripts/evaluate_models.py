@@ -88,11 +88,13 @@ def _retrieval(store, key, embed_docs, embed_query=None):
 
 
 def part_retrieval_gemini(store, args):
-    from app.services.embedding_provider import get_embedder
+    # Use the Gemini embedder directly: get_embedder() follows PRIMARY_LLM_PROVIDER,
+    # which is "dev_gemini" on a development setup and has no embedder of its own.
+    from app.services.embedding_provider import _gemini_embedder
 
-    embed = get_embedder()
+    embed = _gemini_embedder()
     if embed is None:
-        raise RuntimeError("No Gemini key configured (GEMINI_API_KEY).")
+        raise RuntimeError("No usable GEMINI_API_KEY in .env (needed for Gemini embeddings).")
     _retrieval(
         store, "retrieval_gemini",
         lambda texts: [_with_retry(lambda t=t: embed(t, "retrieval_document")) for t in texts],
@@ -105,13 +107,6 @@ def part_retrieval_minilm(store, args):
 
     fn = DefaultEmbeddingFunction()
     _retrieval(store, "retrieval_minilm", lambda texts: [list(map(float, v)) for v in fn(texts)])
-
-
-def part_retrieval_pubmedbert(store, args):
-    from app.services.model_registry import get_embedding_model
-
-    model = get_embedding_model()
-    _retrieval(store, "retrieval_pubmedbert", lambda texts: model.encode(texts).tolist())
 
 
 def _llm_translate(provider):
@@ -225,7 +220,6 @@ PARTS = {
     "ner": part_ner,
     "retrieval_gemini": part_retrieval_gemini,
     "retrieval_minilm": part_retrieval_minilm,
-    "retrieval_pubmedbert": part_retrieval_pubmedbert,
     "llm": part_llm,
     "qwen": part_qwen,
     "stt": part_stt,
@@ -247,6 +241,10 @@ def main(argv=None):
     unknown = [p for p in wanted if p not in PARTS]
     if unknown:
         ap.error("unknown part(s): " + ", ".join(unknown))
+
+    # Development mode makes SQLAlchemy print every query; keep the progress output readable.
+    import logging
+    logging.getLogger("sqlalchemy.engine.Engine").disabled = True
 
     store = R.load_store(args.out)
     store["environment"] = {"python": platform.python_version(), "platform": platform.platform()}

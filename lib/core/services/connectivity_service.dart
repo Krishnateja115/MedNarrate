@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import 'offline_queue_service.dart';
 import 'api_service.dart';
 import 'api_exception.dart';
@@ -18,7 +20,7 @@ class ConnectivityService {
 
   Future<void> initialize() async {
     final result = await _connectivity.checkConnectivity();
-    _updateStatus(result);
+    await _updateStatus(result);
     // Actions queued while offline in a previous session must also sync when
     // the app starts online; the listener below only fires on a *change*.
     if (_isOnline) {
@@ -28,13 +30,42 @@ class ConnectivityService {
     _connectivity.onConnectivityChanged.listen(_updateStatus);
   }
 
-  void _updateStatus(List<ConnectivityResult> results) {
+  Timer? _recheckTimer;
+
+  /// A phone connected only by a USB cable (adb reverse) or to a private
+  /// network without internet reports "no connection" although MedNarrate's
+  /// server is reachable. So when the system says "none", ask the server.
+  Future<bool> _backendReachable() async {
+    try {
+      final resp = await http
+          .get(Uri.parse('${AppConfig.apiBaseUrl}/health'))
+          .timeout(const Duration(seconds: 3));
+      return resp.statusCode < 500;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _updateStatus(List<ConnectivityResult> results) async {
     bool online = false;
     for (var r in results) {
       if (r != ConnectivityResult.none) {
         online = true;
         break;
       }
+    }
+    if (!online) {
+      online = await _backendReachable();
+    }
+
+    _recheckTimer?.cancel();
+    _recheckTimer = null;
+    if (!online) {
+      // Keep looking while offline: the system may not announce that a
+      // cable or tunnel came up.
+      _recheckTimer = Timer(const Duration(seconds: 10), () async {
+        _updateStatus(await _connectivity.checkConnectivity());
+      });
     }
 
     if (_isOnline != online) {

@@ -7,62 +7,180 @@ import 'core/config/app_config.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_strings.dart';
 
-class BootScreen extends StatelessWidget {
+/// Start-up screen. It continues straight on from the native launch screen
+/// (the MedNarrate mark, centred on black) and then fades in the name, a soft
+/// glow and a progress line while the app gets ready.
+class BootScreen extends StatefulWidget {
   final String status;
   const BootScreen({super.key, required this.status});
 
   @override
+  State<BootScreen> createState() => _BootScreenState();
+}
+
+class _BootScreenState extends State<BootScreen> with TickerProviderStateMixin {
+  // Same size as the mark on the native launch screen, so nothing jumps.
+  static const double _markSize = 140;
+
+  late final AnimationController _intro;
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _intro = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _intro.dispose();
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  Animation<double> _fade(double from, double to) => CurvedAnimation(
+        parent: _intro,
+        curve: Interval(from, to, curve: Curves.easeOutCubic),
+      );
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    const accent = AppColors.accentTeal;
+    final glow = _fade(0.0, 0.8);
+    final textFade = _fade(0.35, 1.0);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              height: 110,
-              width: 110,
+      // Pure black first, exactly like the native launch screen.
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Soft green glow that fades in behind the mark.
+          FadeTransition(
+            opacity: glow,
+            child: const DecoratedBox(
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Icon(
-                Icons.medical_services_rounded,
-                size: 60,
-                color: theme.colorScheme.onPrimary,
+                gradient: RadialGradient(
+                  center: Alignment(0, -0.05),
+                  radius: 0.85,
+                  colors: [Color(0xFF0B2A24), Color(0xFF000000)],
+                ),
               ),
             ),
-            const SizedBox(height: 28),
-            Text(AppStrings.appName,
-                style: TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface)),
-            const SizedBox(height: 8),
-            Text(
-              AppStrings.appTagline,
-              style: TextStyle(
-                fontSize: 16,
-                color: theme.colorScheme.onSurfaceVariant,
+          ),
+          // The mark, exactly centred (matches the native splash position).
+          Center(
+            child: AnimatedBuilder(
+              animation: _pulse,
+              builder: (context, child) {
+                final t = Curves.easeInOut.transform(_pulse.value);
+                return Container(
+                  width: _markSize,
+                  height: _markSize,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(_markSize * 0.22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.10 + 0.14 * t),
+                        blurRadius: 36 + 26 * t,
+                        spreadRadius: 1 + 5 * t,
+                      ),
+                    ],
+                  ),
+                  child: child,
+                );
+              },
+              child: Image.asset(
+                'assets/icon/app_icon_mark.png',
+                width: _markSize,
+                height: _markSize,
+                filterQuality: FilterQuality.high,
               ),
             ),
-            const SizedBox(height: 50),
-            const SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(strokeWidth: 3)),
-            const SizedBox(height: 16),
-            Text(
-              status,
-              style: TextStyle(
-                fontSize: 14,
-                color: theme.colorScheme.onSurfaceVariant,
+          ),
+          // Name and tagline just below the mark.
+          Align(
+            alignment: Alignment.center,
+            child: Padding(
+              padding: const EdgeInsets.only(top: _markSize + 74),
+              child: FadeTransition(
+                opacity: textFade,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.25),
+                    end: Offset.zero,
+                  ).animate(textFade),
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        AppStrings.appName,
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        AppStrings.appTagline,
+                        style: TextStyle(
+                          fontSize: 15,
+                          letterSpacing: 0.3,
+                          color: Color(0xFF8D9B96),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          // Progress line and status near the bottom.
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 56),
+                child: FadeTransition(
+                  opacity: textFade,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: const SizedBox(
+                          width: 120,
+                          height: 3,
+                          child: LinearProgressIndicator(
+                            color: accent,
+                            backgroundColor: Color(0x1FFFFFFF),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        widget.status,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF8D9B96),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,4 +1,3 @@
-import os
 import pytest
 from app.core.config import Settings
 from app.core.logging_helpers import redact_secrets

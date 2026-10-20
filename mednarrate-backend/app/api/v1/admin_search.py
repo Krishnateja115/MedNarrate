@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import String, cast, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.admin_auth import AdminContext, get_admin_context, require_any_permission
+from app.core.admin_auth import AdminContext, require_any_permission
 from app.core.database import get_db
 from app.models.admin import AdminAuditLog
 from app.models.incidents import Incident
@@ -24,7 +24,7 @@ async def global_admin_search(
         description="Search term across users, reports, tickets, incidents, audit logs",
     ),
     limit: int = Query(20, ge=1, le=50),
-    admin_ctx: AdminContext = Depends(require_any_permission(["dashboard.view", "users.view", "reports.view", "support.view", "incidents.view", "audit_logs.read"])),
+    admin_ctx: AdminContext = Depends(require_any_permission(["dashboard.view", "users.view", "reports.view", "support.view", "incidents.view", "audit_logs:read"])),
     db: AsyncSession = Depends(get_db),
 ):
     query_str = q.strip()
@@ -153,7 +153,7 @@ async def global_admin_search(
             )
 
     # 5. Audit Logs Search (if authorized)
-    if admin_ctx.has_permission("audit.view") or admin_ctx.has_permission("admin"):
+    if admin_ctx.has_permission("audit_logs:read"):
         audit_stmt = (
             select(AdminAuditLog)
             .where(
@@ -172,8 +172,8 @@ async def global_admin_search(
                     "id": str(log.id),
                     "title": log.action,
                     "subtitle": f"Request ID: {log.request_id or 'N/A'}",
-                    "status": log.severity,
-                    "timestamp": log.created_at.isoformat() if log.created_at else None,
+                    "status": log.result,
+                    "timestamp": log.timestamp.isoformat() if log.timestamp else None,
                     "url": "/audit",
                 }
             )

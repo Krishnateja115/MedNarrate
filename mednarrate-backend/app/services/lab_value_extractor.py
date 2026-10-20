@@ -63,45 +63,6 @@ LAB_LINE_RE = re.compile(
 )
 
 
-def classify_entity_category(name: str, unit: str = "") -> str:
-    """
-    Category-First classification into:
-    PatientDemographic, LabResult, Medication, MedicationFrequency, MedicationTiming, Diagnosis, Finding, ReportDate, Other
-    """
-    name_clean = name.strip()
-    unit.strip()
-
-    if DEMOGRAPHIC_PATTERNS.search(name_clean):
-        return "PatientDemographic"
-
-    if NON_LAB_KEYWORDS.search(name_clean) and not KNOWN_LAB_TESTS.search(name_clean):
-        if any(
-            w in name_clean.lower()
-            for w in [
-                "january",
-                "february",
-                "march",
-                "april",
-                "may",
-                "june",
-                "july",
-                "august",
-                "september",
-                "october",
-                "november",
-                "december",
-                "sep",
-                "sept",
-            ]
-        ):
-            return "ReportDate"
-        if any(w in name_clean.lower() for w in ["daily", "weekly", "monthly"]):
-            return "MedicationFrequency"
-        return "Other"
-
-    return "LabResult"
-
-
 VALID_SHORT_NAMES = frozenset({"ph"})
 
 _UNIT_RE = re.compile(
@@ -511,7 +472,6 @@ def _extract_column_layout_table(text: str) -> list[dict]:
                 continue
         index += 1
     return results if anchored >= 3 else []
-
 
 
 def extract_lab_values_rules(text: str) -> list[dict]:

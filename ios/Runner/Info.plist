@@ -4,6 +4,14 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Lets debug builds reach the developer's Mac over plain http on the local network. Public hosts still require HTTPS. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>MedNarrate connects to the development server on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>MedNarrate uses the microphone only when you tap the mic button in the chat, to turn your voice into text. Recordings are not kept.</string>
 	<key>NSFaceIDUsageDescription</key>

@@ -2,7 +2,6 @@
 
 The real models are replaced by small fakes so these run offline and fast.
 """
-import json
 import os
 
 import numpy as np
@@ -335,4 +334,4 @@ def test_markdown_export_only_prints_measured_numbers(tmp_path):
     md = R.export_markdown(R.build_report(path, str(tmp_path / "none.json")))
     assert "| F1 score | 85.0% |" in md
     assert md.count("_Not evaluated yet._") == len(MODELS) - 1
-    assert "Models measured: 1 of 9" in md
+    assert "Models measured: 1 of 8" in md

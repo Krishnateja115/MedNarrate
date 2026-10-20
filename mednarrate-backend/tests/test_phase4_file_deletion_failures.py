@@ -7,7 +7,6 @@ from app.models.orphan_file import OrphanFile
 from app.core.security import create_step_up_token
 from sqlalchemy import select
 from datetime import date
-import uuid
 
 @pytest.mark.asyncio
 async def test_file_deletion_failures(client: AsyncClient, db_session: AsyncSession, admin_token_and_user, target_user, bystander_user):

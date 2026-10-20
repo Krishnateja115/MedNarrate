@@ -5,6 +5,8 @@ import { Suspense, useState } from 'react';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { useStepUp, STEP_UP_CANCELLED } from '@/components/step-up-dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +16,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { ArrowLeft, UserIcon, Shield, Activity, FileText, AlertTriangle, Key, LogOut, CheckCircle2, MessageSquare, Bell, Clock, Cpu, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { Progress } from '@/components/ui/progress';
+
+// The backend stores allergies and chronic conditions as free text; older data may be a list.
+const asText = (value: unknown): string =>
+  Array.isArray(value) ? value.join(', ') : typeof value === 'string' ? value : '';
 
 interface UserDetail {
   id: string;
@@ -100,15 +106,24 @@ function UserDetailPageContent() {
     retry: false
   });
 
+  const { can } = useAuth();
+  const { requestStepUp, stepUpDialog } = useStepUp();
+
   const actionMutation = useMutation({
     mutationFn: async ({ action, payload }: { action: string, payload?: any }) => {
-      const res = await fetch(`/api/v1/admin/users/${userId}/actions/${action}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload ? JSON.stringify(payload) : undefined
-      });
-      if (!res.ok) throw new Error('Action failed');
-      return res.json();
+      const headers: Record<string, string> = {};
+      if (action === 'reset_password') {
+        headers['X-Step-Up-Token'] = await requestStepUp('Resetting a password needs your password and a current authenticator code.');
+      }
+      // Verifying a clinician or caregiver profile has its own routes; every other action goes through /actions/.
+      const verifyPath =
+        action === 'verify_doctor' ? 'doctor_profile/verify'
+        : action === 'verify_caregiver' ? 'caregiver_profile/verify'
+        : null;
+      const url = verifyPath
+        ? `/api/v1/admin/users/${userId}/${verifyPath}`
+        : `/api/v1/admin/users/${userId}/actions/${action}`;
+      return fetchApi(url, { method: 'POST', data: payload, headers });
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['user', userId] });
@@ -123,6 +138,7 @@ function UserDetailPageContent() {
       setTimeout(() => setActionMessage(null), 10000);
     },
     onError: (err) => {
+      if (err.message === STEP_UP_CANCELLED) return;
       setActionMessage({ type: 'error', text: err.message || 'Failed to perform action' });
       setTimeout(() => setActionMessage(null), 5000);
     }
@@ -191,6 +207,7 @@ function UserDetailPageContent() {
             </div>
           </div>
           <div className="flex gap-2">
+            {(can('users.reset_password') || can('users.force_logout') || can('users.manage')) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
@@ -200,14 +217,18 @@ function UserDetailPageContent() {
               <DropdownMenuContent align="right" className="w-56">
                 <DropdownMenuLabel>Account Actions</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {can('users.reset_password') && (
                 <DropdownMenuItem onClick={() => handleAction('reset_password', 'Generate a one-time password reset link?')}>
                   <Key className="mr-2 h-4 w-4" /> Reset Password
                 </DropdownMenuItem>
+                )}
+                {can('users.force_logout') && (
                 <DropdownMenuItem onClick={() => handleAction('force_logout', 'Force logout this user from all devices?')}>
                   <LogOut className="mr-2 h-4 w-4" /> Force Logout All Sessions
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {user.is_active ? (
+                )}
+                {can('users.manage') && <DropdownMenuSeparator />}
+                {!can('users.manage') ? null : user.is_active ? (
                   <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => handleAction('suspend', 'Are you sure you want to suspend this user? They will lose all access immediately.')}>
                     <AlertTriangle className="mr-2 h-4 w-4" /> Suspend Account
                   </DropdownMenuItem>
@@ -218,6 +239,7 @@ function UserDetailPageContent() {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+            )}
           </div>
         </div>
       </div>
@@ -314,15 +336,15 @@ function UserDetailPageContent() {
                       </div>
                       <div>
                         <span className="text-xs text-muted-foreground uppercase font-medium">Blood Type</span>
-                        <div className="text-sm mt-1">{medicalProfile.profile.blood_type || 'Not provided'}</div>
+                        <div className="text-sm mt-1">{medicalProfile.profile.blood_group || 'Not provided'}</div>
                       </div>
                       <div className="md:col-span-3">
                         <span className="text-xs text-muted-foreground uppercase font-medium">Allergies</span>
-                        <div className="text-sm mt-1">{medicalProfile.profile.allergies?.join(', ') || 'None reported'}</div>
+                        <div className="text-sm mt-1">{asText(medicalProfile.profile.known_allergies) || 'None reported'}</div>
                       </div>
                       <div className="md:col-span-3">
                         <span className="text-xs text-muted-foreground uppercase font-medium">Chronic Conditions</span>
-                        <div className="text-sm mt-1">{medicalProfile.profile.chronic_conditions?.join(', ') || 'None reported'}</div>
+                        <div className="text-sm mt-1">{asText(medicalProfile.profile.chronic_conditions) || 'None reported'}</div>
                       </div>
                     </div>
                   </CardContent>
@@ -354,10 +376,10 @@ function UserDetailPageContent() {
                       </div>
                       <div>
                         <span className="text-xs text-muted-foreground uppercase font-medium">Hospital Affiliation</span>
-                        <div className="text-sm mt-1">{doctorProfile.profile.hospital_affiliation || 'Independent'}</div>
+                        <div className="text-sm mt-1">{doctorProfile.profile.hospital || 'Independent'}</div>
                       </div>
                     </div>
-                    {!doctorProfile.profile.is_verified && (
+                    {!doctorProfile.profile.is_verified && can('users.manage') && (
                       <div className="pt-4 border-t flex justify-end">
                         <Button size="sm" onClick={() => handleAction('verify_doctor', 'Approve and verify this clinician profile?')} disabled={actionMutation.isPending}>
                           Verify Credentials
@@ -385,10 +407,10 @@ function UserDetailPageContent() {
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
                         <span className="text-xs text-muted-foreground uppercase font-medium">Relationship to Patient</span>
-                        <div className="text-sm mt-1 capitalize">{caregiverProfile.profile.relationship_to_patient}</div>
+                        <div className="text-sm mt-1 capitalize">{caregiverProfile.profile.relationship}</div>
                       </div>
                     </div>
-                    {!caregiverProfile.profile.is_verified && (
+                    {!caregiverProfile.profile.is_verified && can('users.manage') && (
                       <div className="pt-4 border-t flex justify-end">
                         <Button size="sm" onClick={() => handleAction('verify_caregiver', 'Approve and verify this caregiver profile?')} disabled={actionMutation.isPending}>
                           Verify Caregiver
@@ -409,9 +431,11 @@ function UserDetailPageContent() {
                 <CardTitle>Active Sessions</CardTitle>
                 <CardDescription>Recent login sessions and refresh tokens</CardDescription>
               </div>
+              {can('users.force_logout') && (
               <Button variant="destructive" size="sm" onClick={() => handleAction('force_logout', 'Force logout this user from all devices?')}>
                 Revoke All
               </Button>
+              )}
             </CardHeader>
             <CardContent className="pt-4">
               {sessions?.sessions ? (
@@ -470,7 +494,7 @@ function UserDetailPageContent() {
                     <div key={analysis.id} className="py-3">
                       <div className="flex justify-between items-center">
                         <div className="font-mono text-xs text-muted-foreground">Report: {analysis.report_id}</div>
-                        <Badge variant={analysis.status === 'completed' ? 'outline' : 'destructive'} className={analysis.status === 'completed' ? 'border-emerald-200 text-emerald-600' : ''}>{analysis.status}</Badge>
+                        <Badge variant={analysis.status === 'failed' ? 'destructive' : 'outline'} className={analysis.status === 'completed' ? 'border-emerald-200 text-emerald-600' : ''}>{analysis.status}</Badge>
                       </div>
                       {analysis.error_message && <div className="text-xs text-destructive mt-1">{analysis.error_message}</div>}
                       <div className="text-xs text-muted-foreground mt-1">{new Date(analysis.created_at).toLocaleString()}</div>
@@ -545,7 +569,7 @@ function UserDetailPageContent() {
                   {notifications.items.length > 0 ? notifications.items.map((note: any) => (
                     <div key={note.id} className="py-3 flex justify-between items-center">
                       <div>
-                        <div className="font-medium text-sm uppercase">{note.notification_type}</div>
+                        <div className="font-medium text-sm">{note.title || 'Push notification'}</div>
                         {note.error_message && <div className="text-xs text-destructive mt-1">{note.error_message}</div>}
                         <div className="text-xs text-muted-foreground mt-1">{new Date(note.sent_at).toLocaleString()}</div>
                       </div>
@@ -615,6 +639,7 @@ function UserDetailPageContent() {
         </TabsContent>
 
       </Tabs>
+      {stepUpDialog}
     </div>
   );
 }

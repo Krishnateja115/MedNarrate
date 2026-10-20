@@ -32,6 +32,9 @@ x-backend-env: &backend-env
   # application default. Check what works with:
   #   docker compose exec backend python -m app.llm_check
   PRIMARY_LLM_PROVIDER:
+  # Which service turns report text into search vectors. Leave empty to follow
+  # PRIMARY_LLM_PROVIDER, or use a Gemini key when the answering model has no embeddings.
+  EMBEDDING_PROVIDER:
   LLM_PROVIDER_CHAIN:
   ENABLE_LLM_FALLBACK:
   TRANSLATION_PROVIDER_ORDER:
@@ -77,6 +80,9 @@ services:
     command: bash -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     volumes:
       - uploads:/app/uploads
+      # The general-health knowledge base (built by scripts/build_knowledge_base.py) must survive
+      # a rebuild of the container.
+      - kb_index:/app/data/kb_index
     depends_on:
       db:
         condition: service_healthy
@@ -138,3 +144,4 @@ services:
 volumes:
   postgres_data:
   uploads:
+  kb_index:

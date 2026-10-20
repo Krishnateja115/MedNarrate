@@ -91,7 +91,7 @@ MODELS: list[dict[str, Any]] = [
         "kind": KIND_DEEP,
         "architecture": "Transformer text-embedding model (hosted by Google)",
         "task": "Finds the passages of a user's report that answer a chat question",
-        "used_for": "Chat answers about a specific report (BM25 keyword search is the fallback)",
+        "used_for": "Chat answers about a specific report. Active when Gemini is the AI provider and a Gemini key is set; otherwise a BM25 keyword search answers.",
         "live": True,
         "eval_key": "retrieval_gemini",
         "metric_keys": ["recall_at_1", "recall_at_3", "recall_at_5", "mrr", "avg_latency_ms"],
@@ -114,26 +114,12 @@ MODELS: list[dict[str, Any]] = [
         "xai": [],
     },
     {
-        "id": "pubmedbert_embedding",
-        "name": "PubMedBERT embeddings (pritamdeka/S-PubMedBert-MS-MARCO)",
-        "kind": KIND_DEEP,
-        "architecture": "BERT-base pre-trained on PubMed, tuned for passage retrieval",
-        "task": "Biomedical passage embeddings used when building the knowledge base",
-        "used_for": "scripts/ingest_knowledge.py (offline ingestion, not called per request)",
-        "live": False,
-        "eval_key": "retrieval_pubmedbert",
-        "metric_keys": ["recall_at_1", "recall_at_3", "recall_at_5", "mrr", "avg_latency_ms"],
-        "primary_metric": "recall_at_3",
-        "dataset": "Questions over the knowledge-base paragraphs (app/ml/eval_data/retrieval_eval.json)",
-        "xai": [],
-    },
-    {
         "id": "llm_chain",
-        "name": "Language-model chain (Gemini / Groq / Cerebras / OpenRouter / GitHub Models)",
+        "name": "Language-model chain (Gemini first, other hosted models as fail-over)",
         "kind": KIND_DEEP,
         "architecture": "Large decoder-only language models behind a fail-over chain",
         "task": "Explains reports, answers questions from report text, translates summaries",
-        "used_for": "Summaries, chat answers and translation",
+        "used_for": "Summaries, chat answers and translation. Gemini answers first; another provider (Vertex AI, OpenAI, Anthropic, Mistral, Groq, Cerebras, OpenRouter, GitHub Models, Ollama) answers only if it is configured and Gemini fails.",
         "live": True,
         "eval_key": "llm",
         "metric_keys": [
@@ -150,7 +136,7 @@ MODELS: list[dict[str, Any]] = [
         "kind": KIND_DEEP,
         "architecture": "Small decoder-only language model run on the server's CPU",
         "task": "Offline translation when no hosted model is reachable",
-        "used_for": "Translation fall-back",
+        "used_for": "Translation fall-back. Used only when 'local' is added to TRANSLATION_PROVIDER_ORDER and the model file has been downloaded.",
         "live": True,
         "eval_key": "qwen",
         "metric_keys": ["number_preservation", "sentences_with_all_numbers_kept", "chrf_hindi", "avg_latency_ms"],
@@ -164,7 +150,7 @@ MODELS: list[dict[str, Any]] = [
         "kind": KIND_DEEP,
         "architecture": "Transformer encoder-decoder speech model",
         "task": "Turns spoken chat questions into text",
-        "used_for": "Voice input in chat",
+        "used_for": "Voice input in chat. Off unless VOICE_INPUT_ENABLED=true and a Groq key is set.",
         "live": True,
         "eval_key": "stt",
         "metric_keys": ["wer_en", "wer_hi", "avg_latency_ms"],
@@ -208,9 +194,3 @@ KIND_LABELS = {
     KIND_RULES: "Rule-based",
 }
 
-
-def catalog_entry(model_id: str) -> dict[str, Any] | None:
-    for entry in MODELS:
-        if entry["id"] == model_id:
-            return entry
-    return None

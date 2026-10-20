@@ -21,7 +21,7 @@ async def evaluate_flag(db: AsyncSession, flag_name: str, target_environment: st
         if not user_id:
             return False
         # Deterministic rollout
-        hash_val = int(hashlib.md5(f"{flag_name}:{user_id}".encode()).hexdigest(), 16)
+        hash_val = int(hashlib.md5(f"{flag_name}:{user_id}".encode(), usedforsecurity=False).hexdigest(), 16)
         if (hash_val % 100) >= flag.rollout_percentage:
             return False
 

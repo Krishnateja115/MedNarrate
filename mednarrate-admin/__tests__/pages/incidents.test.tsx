@@ -2,10 +2,19 @@ import { render, screen } from '@testing-library/react';
 import IncidentsPage from '@/app/(protected)/incidents/page';
 import { useQuery } from '@tanstack/react-query';
 
-// Mock useQuery
+// Mock the query hooks. The page also declares incidents (useMutation), checks permissions and navigates.
 jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
+  useMutation: jest.fn(() => ({ mutate: jest.fn(), isPending: false })),
+  useQueryClient: jest.fn(() => ({ invalidateQueries: jest.fn() })),
 }));
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ can: () => true }),
+}));
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+jest.mock('@/components/ui/toast', () => ({ toast: { add: jest.fn() } }));
 
 describe('IncidentsPage', () => {
   beforeEach(() => {

@@ -1,3 +1,4 @@
+import asyncio
 import csv
 import io
 import logging
@@ -27,6 +28,7 @@ from app.schemas.report import (
     ReportOut,
     ReportUpdate,
 )
+from app.services.feature_flags import evaluate_flag
 from app.services.file_storage import delete_file, save_upload_file
 from app.services.lab_value_normalizer import comparison_name
 from app.services.llm_client import generate
@@ -398,6 +400,81 @@ async def compare_reports_multiple(
     )
 
 
+
+
+# The document-type hint is cached next to the analysis (existing JSON column,
+# so no migration is needed) and is only shown for reports that really look
+# medical: the classifier will confidently label unrelated text.
+_DOC_TYPE_FLAG = "report_type_check"
+_DOC_TYPE_MIN_LABS = 3
+_DOC_TYPE_MIN_ENTITIES = 5
+
+
+@router.get("/{id}/document-type")
+async def get_document_type_check(
+    id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Experimental hint: which kind of record this report's wording resembles.
+
+    Behind the ``report_type_check`` feature flag (off unless an admin turns it
+    on). It never raises for model problems: the answer is then simply
+    ``available: false`` and the app shows nothing.
+    """
+    report = await verify_report_ownership(id, str(current_user.id), db)
+    try:
+        if not await evaluate_flag(db, _DOC_TYPE_FLAG, user_id=str(current_user.id)):
+            return {"enabled": False, "available": False}
+    except Exception:  # noqa: BLE001
+        logger.warning("Document type flag lookup failed", exc_info=True)
+        return {"enabled": False, "available": False}
+
+    hidden = {"enabled": True, "available": False, "experimental": True}
+    if report.processing_status != ProcessingStatus.completed:
+        return hidden
+    analysis = (
+        await db.execute(select(ReportAnalysis).where(ReportAnalysis.report_id == report.id))
+    ).scalars().first()
+    if not analysis:
+        return hidden
+
+    cached = (analysis.model_versions or {}).get("document_type_check")
+    if isinstance(cached, dict) and "available" in cached:
+        return {"enabled": True, "experimental": True, **cached}
+
+    looks_medical = (
+        len(analysis.structured_lab_values or []) >= _DOC_TYPE_MIN_LABS
+        or len(analysis.entities or []) >= _DOC_TYPE_MIN_ENTITIES
+    )
+    outcome: dict = {"available": False}
+    if looks_medical:
+        try:
+            from app.ml.report_type_check import classify_report_text
+            from app.services.report_text_loader import extract_report_text
+
+            file_type = getattr(report.file_type, "value", str(report.file_type))
+            text = await asyncio.wait_for(
+                extract_report_text(report.file_path, file_type), timeout=25
+            )
+            found = await asyncio.wait_for(
+                asyncio.to_thread(classify_report_text, text), timeout=20
+            )
+        except Exception:  # noqa: BLE001 - a hint must never break the report screen
+            logger.warning("Document type check failed for report %s", report.id, exc_info=True)
+            return hidden  # not cached, so a later visit can try again
+        if found:
+            outcome = {"available": True, **found}
+
+    try:
+        analysis.model_versions = {
+            **(analysis.model_versions or {}),
+            "document_type_check": outcome,
+        }
+        await db.commit()
+    except Exception:  # noqa: BLE001
+        await db.rollback()
+    return {"enabled": True, "experimental": True, **outcome}
 
 
 @router.get("/{id}", response_model=ReportOut)

@@ -59,7 +59,7 @@ interface TicketArticle {
 }
 
 function TicketInvestigationPageContent() {
-  const { can } = useAuth();
+  const { can, user: currentAdmin } = useAuth();
   const searchParams = useSearchParams();
   const extractedId = searchParams.get('id');
   
@@ -105,13 +105,10 @@ function TicketInvestigationPageContent() {
 
   const replyMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/v1/admin/support/${ticketId}/reply`, {
+      return fetchApi(`/api/v1/admin/support/${ticketId}/reply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: replyContent, is_internal: isInternal })
+        data: { content: replyContent, is_internal: isInternal },
       });
-      if (!res.ok) throw new Error('Failed to send reply');
-      return res.json();
     },
     onSuccess: () => {
       setReplyContent('');
@@ -127,33 +124,32 @@ function TicketInvestigationPageContent() {
 
   const updateMutation = useMutation({
     mutationFn: async (updates: any) => {
-      const res = await fetch(`/api/v1/admin/support/${ticketId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-      if (!res.ok) throw new Error('Update failed');
-      return res.json();
+      return fetchApi(`/api/v1/admin/support/${ticketId}`, { method: 'PATCH', data: updates });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support_ticket', ticketId] });
+    },
+    onError: (err) => {
+      setActionMessage({ type: 'error', text: err.message || 'Update failed' });
+      setTimeout(() => setActionMessage(null), 4000);
     }
   });
 
   const escalateMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/v1/admin/support/${ticketId}/escalate`, {
+      return fetchApi(`/api/v1/admin/support/${ticketId}/escalate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ escalation_type: 'incident', reason: 'Escalated by admin from ticket UI' })
+        data: { escalation_type: 'incident', reason: 'Escalated by admin from ticket UI' },
       });
-      if (!res.ok) throw new Error('Escalation failed');
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['support_ticket', ticketId] });
       setActionMessage({ type: 'success', text: 'Ticket escalated to Incident' });
       setTimeout(() => setActionMessage(null), 3000);
+    },
+    onError: (err) => {
+      setActionMessage({ type: 'error', text: err.message || 'Escalation failed' });
+      setTimeout(() => setActionMessage(null), 4000);
     }
   });
 
@@ -315,6 +311,7 @@ function TicketInvestigationPageContent() {
                   size="icon" 
                   className={`absolute bottom-2 right-2 h-8 w-8 ${isInternal ? 'bg-amber-500 hover:bg-amber-600 text-white' : ''}`} 
                   onClick={handleSendReply}
+                  aria-label="Send reply"
                   disabled={replyMutation.isPending || !replyContent.trim()}
                 >
                   <Send className="h-4 w-4" />
@@ -421,6 +418,38 @@ function TicketInvestigationPageContent() {
                 </Select>
               </div>
               
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground uppercase">Assigned to</Label>
+                <div className="flex items-center justify-between gap-2 text-sm">
+                  <span>
+                    {!ticket.assigned_admin_id
+                      ? 'Nobody yet'
+                      : ticket.assigned_admin_id === currentAdmin?.id
+                        ? 'You'
+                        : 'Another admin'}
+                  </span>
+                  {ticket.assigned_admin_id ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={updateMutation.isPending}
+                      onClick={() => updateMutation.mutate({ assigned_admin_id: '' })}
+                    >
+                      Unassign
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={updateMutation.isPending || !currentAdmin?.id}
+                      onClick={() => currentAdmin?.id && updateMutation.mutate({ assigned_admin_id: currentAdmin.id })}
+                    >
+                      Assign to me
+                    </Button>
+                  )}
+                </div>
+              </div>
+
               <div className="pt-2 border-t">
                 <span className="text-xs text-muted-foreground uppercase font-medium">Category</span>
                 <div className="font-medium mt-1 text-sm">{ticket.category}</div>

@@ -92,7 +92,11 @@ export async function fetchApi<T = any>(endpoint: string, options: FetchOptions 
       } else if (response.status === 429) {
         console.warn(`[API Warning] 429 Too Many Requests ${config.method} ${url} - Rate limit exceeded.`);
       } else if (response.status >= 500) {
-        console.error(`[API Error] ${response.status} ${config.method} ${url} - Backend or dependency failure.`);
+        // A warning, not console.error: the page already shows its own error state,
+        // and console.error makes the Next.js dev overlay pop up on every failed poll.
+        const ref = errorData?.request_id ? ` (ref ${errorData.request_id})` : '';
+        const hint = errorData?.debug ? ` - ${errorData.debug}` : '';
+        console.warn(`[API Warning] ${response.status} ${config.method} ${url} - Server error${ref}${hint}`);
       } else {
         console.error(`[API Error] ${response.status} ${config.method} ${url}`);
       }

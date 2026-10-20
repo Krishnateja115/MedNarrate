@@ -135,15 +135,11 @@ export default function AdminManagementPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Users className="w-7 h-7 text-blue-600" /> Admin Accounts Management
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Provision administrators, manage role assignments, toggle account status, and invalidate active sessions.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Admin Accounts</h1>
+          <p className="text-muted-foreground">Create administrators, assign roles and manage their sessions.</p>
         </div>
         {canManageAdmins && (
           <Button onClick={() => setShowCreateForm(!showCreateForm)} className="flex items-center gap-2">

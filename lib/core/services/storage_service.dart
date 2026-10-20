@@ -1,4 +1,3 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -38,7 +37,7 @@ class StorageService {
   static const _keyMedicalUnits = 'medical_units';
   static const _keyDismissedAnnouncements = 'dismissed_announcements';
 
-  final FlutterSecureStorage _secureStorage = appSecureStorage;
+  final SecureStore _secureStorage = appSecureStorage;
 
   Future<T> _withSecureStorage<T>(Future<T> Function() operation) async {
     try {

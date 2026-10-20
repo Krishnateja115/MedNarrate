@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,19 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Clock, Activity, MessageSquare, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/toast';
+
+const STATUS_OPTIONS = [
+  { value: 'open', label: 'Open' },
+  { value: 'investigating', label: 'Investigating' },
+  { value: 'identified', label: 'Identified' },
+  { value: 'resolved', label: 'Resolved' },
+  { value: 'closed', label: 'Closed' },
+];
 
 interface IncidentEvent {
   id: string;
@@ -48,6 +61,47 @@ function IncidentDetailPageContent() {
     queryKey: ['incident', incidentId],
     queryFn: () => fetchApi(`/api/v1/admin/incidents/${incidentId}`),
   });
+
+  const { can } = useAuth();
+  const queryClient = useQueryClient();
+  const canManage = can('incidents.manage');
+  const [dialogMode, setDialogMode] = useState<'status' | 'resolve' | null>(null);
+  const [newStatus, setNewStatus] = useState('investigating');
+  const [note, setNote] = useState('');
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const updateMutation = useMutation<unknown, Error, Record<string, string>>({
+    mutationFn: (payload) =>
+      fetchApi(`/api/v1/admin/incidents/${incidentId}`, { method: 'PATCH', data: payload }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incident', incidentId] });
+      queryClient.invalidateQueries({ queryKey: ['incidents'] });
+      setDialogMode(null);
+      setNote('');
+      setActionError(null);
+      toast.add({ title: 'Incident updated.', type: 'success' });
+    },
+    onError: (err) => setActionError(err.message || 'Could not update the incident.'),
+  });
+
+  const openDialog = (mode: 'status' | 'resolve', currentStatus: string) => {
+    setNote('');
+    setActionError(null);
+    setNewStatus(currentStatus === 'open' ? 'investigating' : currentStatus);
+    setDialogMode(mode);
+  };
+
+  const submitDialog = () => {
+    if (dialogMode === 'resolve') {
+      const payload: Record<string, string> = { status: 'resolved' };
+      if (note.trim()) payload.resolution = note.trim();
+      updateMutation.mutate(payload);
+    } else {
+      const payload: Record<string, string> = { status: newStatus };
+      if (note.trim()) payload.message = note.trim();
+      updateMutation.mutate(payload);
+    }
+  };
 
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
@@ -131,12 +185,14 @@ function IncidentDetailPageContent() {
             </div>
             <p className="text-muted-foreground font-mono text-sm">ID: {incident.id}</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">Update Status</Button>
-            {incident.status !== 'resolved' && incident.status !== 'closed' && (
-              <Button variant="default" className="bg-emerald-600 hover:bg-emerald-700">Resolve Incident</Button>
-            )}
-          </div>
+          {canManage && (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => openDialog('status', incident.status)}>Update Status</Button>
+              {incident.status !== 'resolved' && incident.status !== 'closed' && (
+                <Button variant="default" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => openDialog('resolve', incident.status)}>Resolve Incident</Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -246,6 +302,45 @@ function IncidentDetailPageContent() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={dialogMode !== null} onOpenChange={(open) => !open && setDialogMode(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{dialogMode === 'resolve' ? 'Resolve incident' : 'Update status'}</DialogTitle>
+            <DialogDescription>
+              {dialogMode === 'resolve'
+                ? 'Mark this incident resolved. Describe what fixed it so the timeline is useful later.'
+                : 'Move the incident to a new status. The change is added to the timeline.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {dialogMode === 'status' && (
+              <div className="space-y-2">
+                <Label htmlFor="incident-new-status">New status</Label>
+                <select
+                  id="incident-new-status"
+                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                >
+                  {STATUS_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="incident-note">{dialogMode === 'resolve' ? 'Resolution (optional)' : 'Note (optional)'}</Label>
+              <Textarea id="incident-note" value={note} onChange={(e) => setNote(e.target.value)} />
+            </div>
+            {actionError && <p className="text-sm text-destructive">{actionError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogMode(null)}>Cancel</Button>
+            <Button onClick={submitDialog} disabled={updateMutation.isPending || (dialogMode === 'status' && newStatus === incident.status && !note.trim())}>
+              {updateMutation.isPending ? 'Saving...' : dialogMode === 'resolve' ? 'Resolve incident' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -19,7 +19,6 @@ from app.models.user import User, UserRole
 @pytest.fixture
 async def sample_ticket_with_report(db_session: AsyncSession):
     
-    import uuid
     u = User(
         email=f"diag_{uuid.uuid4().hex[:8]}@test.com",
         hashed_password="...",

@@ -9,13 +9,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import (
     AdminContext,
-    require_all_permissions,
     require_permission,
     require_active_step_up,
 )
 from app.core.database import get_db
-from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
-from app.core.security import hash_password
+from app.core.pagination import (
+    build_pagination_response,
+    clamp_limit,
+    page_to_offset,
+    resolve_sort_column,
+)
 from app.models.admin import AdminAuditLog
 from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
@@ -26,6 +29,22 @@ router = APIRouter()
 
 class ChangeRoleRequest(BaseModel):
     role: UserRole
+
+
+async def _profile_verified_by_admin(db: AsyncSession, user_id: uuid.UUID, action: str) -> bool:
+    """True once an admin has used the verify button for this user.
+
+    Profiles have no "verified" column, and users can pick the clinician role themselves, so the role
+    alone proves nothing. The audit log entry written by the verify route is the record of approval.
+    """
+    count = await db.scalar(
+        select(func.count(AdminAuditLog.id)).where(
+            AdminAuditLog.action == action,
+            AdminAuditLog.resource_id == str(user_id),
+            AdminAuditLog.result == "success",
+        )
+    )
+    return bool(count)
 
 
 @router.get("")
@@ -66,7 +85,7 @@ async def get_users(
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total_count = (await db.execute(count_stmt)).scalar() or 0
 
-    sort_col = getattr(User, sort_by, User.created_at)
+    sort_col = resolve_sort_column(User, sort_by, User.created_at)
     if sort_desc:
         stmt = stmt.order_by(desc(sort_col))
     else:
@@ -378,7 +397,6 @@ from app.models.push_token import PushToken
 from app.models.medical_profile import MedicalProfile
 from app.models.doctor_profile import DoctorProfile
 from app.models.caregiver_profile import CaregiverProfile
-from app.models.admin import SensitiveAccessGrant
 
 from app.core.admin_auth import validate_access_grant
 
@@ -408,10 +426,13 @@ async def get_medical_profile(
     if not prof:
         return {"status": "ok", "profile": None}
 
+    owner = (await db.execute(select(User).where(User.id == user_id))).scalars().first()
     return {
         "status": "ok",
         "profile": {
             "id": str(prof.id),
+            "date_of_birth": owner.date_of_birth if owner else None,
+            "gender": owner.gender if owner else None,
             "blood_group": prof.blood_group,
             "known_allergies": prof.known_allergies,
             "chronic_conditions": prof.chronic_conditions,
@@ -458,6 +479,7 @@ async def get_doctor_profile(
             "hospital": prof.hospital,
             "professional_address": prof.professional_address,
             "bio": prof.bio,
+            "is_verified": await _profile_verified_by_admin(db, user_id, "DOCTOR_VERIFIED"),
             "updated_at": prof.updated_at.isoformat() if prof.updated_at else None
         }
     }
@@ -496,6 +518,7 @@ async def get_caregiver_profile(
             "caregiver_role": prof.caregiver_role,
             "supported_patient_name": prof.supported_patient_name,
             "organization": prof.organization,
+            "is_verified": await _profile_verified_by_admin(db, user_id, "CAREGIVER_VERIFIED"),
             "updated_at": prof.updated_at.isoformat() if prof.updated_at else None
         }
     }
@@ -638,9 +661,12 @@ async def get_user_analyses(
         {
             "id": str(a.id),
             "report_id": str(a.report_id),
-            "status": a.status,
+            # ReportAnalysis has no status column: a stored failure reason means it failed,
+            # a processed timestamp means it finished, anything else is still running.
+            "status": "failed" if a.failure_category or a.error_reason else ("completed" if a.processed_at else "pending"),
             "created_at": a.created_at.isoformat() if a.created_at else None,
-            "error_message": a.error_message
+            # Category only; raw error text can contain report content.
+            "error_message": a.failure_category
         } for a in analyses
     ]
     return build_pagination_response(items, total_count, page, limit)
@@ -665,7 +691,6 @@ async def get_user_chats(
             "id": str(c.id),
             "title": c.title,
             "created_at": c.created_at.isoformat() if c.created_at else None,
-            "updated_at": c.updated_at.isoformat() if c.updated_at else None
         } for c in chats
     ]
     return build_pagination_response(items, total_count, page, limit)
@@ -753,7 +778,8 @@ async def get_user_notifications(
     items = [
         {
             "id": str(l.id),
-            "notification_type": l.notification_type,
+            "notification_type": "push",
+            "title": l.title,
             "status": l.status,
             "error_message": l.error_message,
             "sent_at": l.sent_at.isoformat() if l.sent_at else None
@@ -779,7 +805,7 @@ async def get_user_support(
     items = [
         {
             "id": str(t.id),
-            "subject": t.subject,
+            "subject": t.title,
             "status": t.status.value if t.status else "unknown",
             "priority": t.priority.value if t.priority else "unknown",
             "created_at": t.created_at.isoformat() if t.created_at else None
@@ -856,11 +882,9 @@ async def hard_delete_user(
     await revoke_all_user_sessions(target_user, db, increment_session_version=True)
 
     from app.models.report import Report
-    from app.services.file_storage import delete_file
 
     reports_stmt = select(Report).where(Report.user_id == target_user.id)
     reports = (await db.execute(reports_stmt)).scalars().all()
-    file_paths = [r.file_path for r in reports if r.file_path]
 
     # Anonymize target user's metadata in existing admin audit logs
     audit_stmt = select(AdminAuditLog).where(AdminAuditLog.resource_id == str(target_user.id))
@@ -897,7 +921,7 @@ async def hard_delete_user(
 
     try:
         await db.commit()
-    except Exception as e:
+    except Exception:
         await db.rollback()
         raise
     return {"status": "ok", "message": "User hard deleted"}

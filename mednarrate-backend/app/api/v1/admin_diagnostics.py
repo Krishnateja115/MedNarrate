@@ -8,7 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.admin_auth import AdminContext, require_permission
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.pagination import build_pagination_response, clamp_limit, page_to_offset
+from app.core.pagination import (
+    build_pagination_response,
+    clamp_limit,
+    page_to_offset,
+    resolve_sort_column,
+)
 from app.models.job_execution import JobExecution
 from app.models.llm_telemetry import LLMDiagnosticEvent
 from app.models.push_token import PushToken
@@ -34,7 +39,7 @@ async def get_llm_diagnostics(
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = (await db.execute(count_stmt)).scalar() or 0
 
-    sort_col = getattr(LLMDiagnosticEvent, sort_by, LLMDiagnosticEvent.timestamp)
+    sort_col = resolve_sort_column(LLMDiagnosticEvent, sort_by, LLMDiagnosticEvent.timestamp)
     if sort_desc:
         stmt = stmt.order_by(desc(sort_col))
     else:
@@ -81,7 +86,7 @@ async def get_report_diagnostics(
     count_stmt = select(func.count(Report.id))
     total = (await db.execute(count_stmt)).scalar() or 0
 
-    sort_col = getattr(Report, sort_by, Report.uploaded_at)
+    sort_col = resolve_sort_column(Report, sort_by, Report.uploaded_at)
     if sort_desc:
         stmt = stmt.order_by(desc(sort_col))
     else:

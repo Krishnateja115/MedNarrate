@@ -55,10 +55,6 @@ class OCRUnavailableError(ExtractionError):
     failure_category = "OCR_ENGINE_UNAVAILABLE"
 
 
-class OCRFailedError(ExtractionError):
-    failure_category = "OCR_FAILED"
-
-
 class OCRNoMeaningfulTextError(ExtractionError):
     failure_category = "OCR_NO_MEANINGFUL_TEXT"
 

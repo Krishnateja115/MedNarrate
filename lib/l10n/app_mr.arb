@@ -761,5 +761,34 @@
   "mlWhyNoRange": "या अहवालात {value} साठी सामान्य मर्यादा दिलेली नाही, म्हणून खूण करता येत नाही.",
   "mlWhyReportMarked": "प्रयोगशाळेने अहवालात या निकालाला “{flag}” असे चिन्हांकित केले आहे आणि तीच खूण वापरली आहे.",
   "mlWhyProvisional": "ही मर्यादा सर्वसाधारण प्रौढ मर्यादा आहे, तुमच्या अहवालात छापलेली नाही.",
-  "mlWhyMethod": "पद्धत: नियमाचा मागोवा. अ‍ॅप तुमच्या मूल्याची एका मर्यादेशी तुलना करते. ते निदान करत नाही. खुणेचा तुमच्यासाठी काय अर्थ आहे ते डॉक्टरांना विचारा."
+  "mlWhyMethod": "पद्धत: नियमाचा मागोवा. अ‍ॅप तुमच्या मूल्याची एका मर्यादेशी तुलना करते. ते निदान करत नाही. खुणेचा तुमच्यासाठी काय अर्थ आहे ते डॉक्टरांना विचारा.",
+  "narrationListen": "सारांश ऐका",
+  "@narrationListen": {
+    "description": "Tooltip of the button that reads the report summary aloud"
+  },
+  "narrationStop": "ऐकणे थांबवा",
+  "@narrationStop": {
+    "description": "Tooltip of the button that stops the read-aloud"
+  },
+  "narrationVoiceMissing": "या फोनमध्ये या भाषेचा आवाज अजून नाही. फोनच्या टेक्स्ट-टू-स्पीच सेटिंग्जमध्ये तो जोडा.",
+  "@narrationVoiceMissing": {
+    "description": "Message when the phone has no text-to-speech voice for the chosen language"
+  },
+  "narrationFailed": "सारांश वाचून दाखवता आला नाही. कृपया पुन्हा प्रयत्न करा.",
+  "@narrationFailed": {
+    "description": "Message when the summary could not be read aloud"
+  },
+  "docTypeCheckTitle": "दस्तऐवज प्रकार तपासणी",
+  "docTypeCheckExperimental": "प्रायोगिक",
+  "docTypeCheckScore": "मॉडेल स्कोअर {percent}%",
+  "docTypeBlood": "हा रक्त-तपासणी अहवालासारखा दिसतो",
+  "docTypeHealth": "हा सर्वसाधारण आरोग्य नोंदीसारखा दिसतो",
+  "docTypeTcga": "हा पॅथॉलॉजी किंवा कर्करोग-संशोधन नोंदीसारखा दिसतो",
+  "docTypeCheckAbout": "MRAD डेटासेटवर प्रशिक्षित एका प्रायोगिक मॉडेलने या अहवालातील मजकुराची तुलना तीन प्रकारच्या नोंदींशी (रक्त-तपासणी, सर्वसाधारण आरोग्य नोंदी आणि कर्करोग-संशोधन नोंदी) केली. हा फक्त एक संकेत आहे, निदान नाही, आणि ज्या प्रकारचे अहवाल त्याने पाहिले नाहीत त्यांच्यासाठी तो चुकीचा असू शकतो.",
+  "mlDatasetTitle": "अहवाल-प्रकार मॉडेलचा डेटासेट",
+  "mlDatasetIntro": "अहवाल-प्रकार मॉडेल MRAD वरून शिकले; हा {patients} रुग्णांच्या {reports} वैद्यकीय अहवालांचा संग्रह आहे.",
+  "mlDatasetSplit": "प्रशिक्षण / पडताळणी / चाचणी",
+  "mlDatasetClasses": "अहवालाचे प्रकार",
+  "mlDatasetSafeguard": "एका रुग्णाचे अहवाल या गटांपैकी एकापेक्षा जास्त गटांत येत नाहीत, आणि प्रशिक्षणापूर्वी मजकुरातून अहवाल-प्रकाराची शीर्षक ओळ काढली जाते.",
+  "mlDatasetScope": "फक्त हे एकच मॉडेल MRAD वरून शिकते. सारांश, चॅट आणि भाषांतर आधीच प्रशिक्षित AI मॉडेल वापरतात आणि ते MRAD वर प्रशिक्षित नाहीत."
 }

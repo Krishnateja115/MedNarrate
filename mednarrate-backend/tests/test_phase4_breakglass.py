@@ -5,11 +5,9 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.admin import SensitiveAccessGrant
 from app.models.medical_profile import MedicalProfile
-from app.core.security import create_access_token
 
 @pytest.fixture
 async def target_user_with_profile(db_session, target_user):
-    from datetime import date
     prof = MedicalProfile(
         id=uuid.uuid4(),
         user_id=target_user.id,

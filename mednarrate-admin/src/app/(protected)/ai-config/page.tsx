@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Key, ShieldAlert, CheckCircle, Lock } from 'lucide-react';
+import { Key, ShieldAlert, CheckCircle } from 'lucide-react';
+import { providerLabel } from '@/lib/provider-labels';
 
 interface AIConfigResponse {
   primary_provider: string;
@@ -18,9 +19,23 @@ interface AIConfigResponse {
   fallback_provider: string;
   api_key_status: {
     is_set: boolean;
-    masked_key: string | null;
   };
+  overridden?: string[];
 }
+
+// Cloud providers need their API key in the backend .env; Groq models are separate so one model's limit does not block the other.
+const PRIMARY_OPTIONS = ['gemini', 'groq', 'groq_qwen', 'openrouter', 'vertex_ai', 'ollama'];
+const FALLBACK_OPTIONS: { value: string; label: string }[] = [
+  { value: 'groq', label: providerLabel('groq') },
+  { value: 'groq_qwen', label: providerLabel('groq_qwen') },
+  { value: 'openrouter', label: providerLabel('openrouter') },
+  { value: 'fallback', label: 'Built-in safe fallback (no AI)' },
+  { value: 'ollama', label: 'Local Ollama' },
+  { value: 'none', label: 'None (fail fast)' },
+];
+
+// The server reports its Gemini setting as either id; both run the same provider.
+const normalizeProvider = (p: string) => (p === 'dev_gemini' ? 'gemini' : p);
 
 export default function AIConfigPage() {
   const queryClient = useQueryClient();
@@ -29,10 +44,10 @@ export default function AIConfigPage() {
 
   // Editable fields
   const [primaryProvider, setPrimaryProvider] = useState('gemini');
-  const [modelName, setModelName] = useState('gemini-1.5-flash');
+  const [modelName, setModelName] = useState('');
   const [temperature, setTemperature] = useState(0.2);
   const [maxTokens, setMaxTokens] = useState(2048);
-  const [fallbackProvider, setFallbackProvider] = useState('ollama');
+  const [fallbackProvider, setFallbackProvider] = useState('fallback');
   const [newApiKey, setNewApiKey] = useState('');
 
   const { data, isLoading } = useQuery<AIConfigResponse>({
@@ -42,11 +57,11 @@ export default function AIConfigPage() {
 
   useEffect(() => {
     if (data) {
-      setPrimaryProvider(data.primary_provider || 'gemini');
-      setModelName(data.model_name || 'gemini-1.5-flash');
+      setPrimaryProvider(normalizeProvider(data.primary_provider || 'gemini'));
+      setModelName(data.model_name || '');
       setTemperature(data.temperature ?? 0.2);
       setMaxTokens(data.max_tokens ?? 2048);
-      setFallbackProvider(data.fallback_provider || 'ollama');
+      setFallbackProvider(data.fallback_provider || 'fallback');
     }
   }, [data]);
 
@@ -70,21 +85,17 @@ export default function AIConfigPage() {
       primary_provider: primaryProvider,
       model_name: modelName,
       temperature,
-      max_tokens: maxTokens,
+      max_tokens: Number.isFinite(maxTokens) ? maxTokens : 2048,
       fallback_provider: fallbackProvider,
       api_key: newApiKey.trim() ? newApiKey.trim() : undefined,
     });
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <Bot className="w-7 h-7 text-blue-600" /> AI Provider & Model Configuration
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">
-          Configure primary AI providers, model parameters, offline fallbacks, and securely store masked credentials.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">AI Configuration</h1>
+          <p className="text-muted-foreground">Choose the AI provider and model, and store its API key securely.</p>
       </div>
 
       {errorMsg && (
@@ -105,8 +116,8 @@ export default function AIConfigPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">LLM Provider & Model Parameters</CardTitle>
-              <CardDescription>Select primary provider, model family, and sampling parameters.</CardDescription>
+              <CardTitle className="text-lg">Provider &amp; model</CardTitle>
+              <CardDescription>What the app is using right now. Saved changes apply to new requests.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -117,9 +128,9 @@ export default function AIConfigPage() {
                     onChange={(e) => setPrimaryProvider(e.target.value)}
                     className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm"
                   >
-                    <option value="gemini">Google Gemini</option>
-                    <option value="vertex_ai">Google Vertex AI</option>
-                    <option value="ollama">Local Ollama (Offline)</option>
+                    {(PRIMARY_OPTIONS.includes(primaryProvider) ? PRIMARY_OPTIONS : [primaryProvider, ...PRIMARY_OPTIONS]).map((p) => (
+                      <option key={p} value={p}>{providerLabel(p)}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -153,21 +164,21 @@ export default function AIConfigPage() {
                     min={256}
                     max={16384}
                     value={maxTokens}
-                    onChange={(e) => setMaxTokens(parseInt(e.target.value))}
+                    onChange={(e) => setMaxTokens(parseInt(e.target.value, 10) || 0)}
                     className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Fallback Provider (Offline Mode)</label>
+                  <label className="block text-sm font-medium mb-1">Fallback if the primary fails</label>
                   <select
                     value={fallbackProvider}
                     onChange={(e) => setFallbackProvider(e.target.value)}
                     className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm"
                   >
-                    <option value="ollama">Local Ollama Engine</option>
-                    <option value="fallback">Local Safe Fallback</option>
-                    <option value="none">None (Fail fast)</option>
+                    {(FALLBACK_OPTIONS.some((o) => o.value === fallbackProvider) ? FALLBACK_OPTIONS : [{ value: fallbackProvider, label: providerLabel(fallbackProvider) }, ...FALLBACK_OPTIONS]).map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -178,10 +189,10 @@ export default function AIConfigPage() {
           <Card className="border-slate-200 dark:border-slate-800">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Key className="w-5 h-5 text-amber-500" /> Provider Secret Key (Masked)
+                <Key className="w-5 h-5 text-amber-500" /> Provider Secret Key
               </CardTitle>
               <CardDescription>
-                API keys are securely stored and NEVER exposed plain-text in GET responses.
+                The key is stored encrypted and is never shown again after saving.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -189,11 +200,9 @@ export default function AIConfigPage() {
                 <Badge variant={data?.api_key_status.is_set ? 'default' : 'destructive'}>
                   {data?.api_key_status.is_set ? 'CONFIGURED' : 'MISSING'}
                 </Badge>
-                {data?.api_key_status.masked_key && (
-                  <span className="font-mono text-sm text-slate-600 dark:text-slate-400">
-                    Current Key: {data.api_key_status.masked_key}
-                  </span>
-                )}
+                <span className="text-sm text-muted-foreground">
+                  {data?.overridden?.length ? `Overridden here: ${data.overridden.join(', ')}. Other values come from the server environment.` : 'All values currently come from the server environment.'}
+                </span>
               </div>
 
               <div>

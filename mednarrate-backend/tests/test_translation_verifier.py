@@ -1,4 +1,3 @@
-import pytest
 from app.services.translation_validation import TranslationVerifier, parse_translation
 
 

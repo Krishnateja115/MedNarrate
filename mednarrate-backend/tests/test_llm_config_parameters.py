@@ -1,6 +1,6 @@
 from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
-from app.services.llm_client import DevGeminiProvider, OllamaProvider, VertexAIProvider
+from app.services.llm_client import DevGeminiProvider, OllamaProvider
 from app.core.config import settings
 
 @pytest.mark.asyncio

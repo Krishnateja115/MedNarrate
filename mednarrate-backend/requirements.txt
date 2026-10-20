@@ -30,12 +30,16 @@ google-generativeai==0.8.1
 firebase-admin==6.5.0
 apscheduler==3.10.4
 chromadb==0.5.5
+posthog<6  # chromadb 0.5.x calls posthog.capture() with the pre-6.0 signature
 sentry-sdk[fastapi]==2.14.0
 sendgrid==6.11.0
 aiosqlite==0.20.0
 pandas==2.2.2
 pyotp==2.10.0
 numpy==1.26.4
+# Report-type classifier (app/ml): the saved model was trained with scikit-learn 1.9.0
+scikit-learn==1.9.0
+joblib>=1.4.0,<2
 torchvision==0.19.1
 
 # Direct imports that were previously only transitive dependencies

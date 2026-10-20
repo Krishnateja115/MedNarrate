@@ -225,6 +225,10 @@ class _Body extends StatelessWidget {
             for (final model in report.models.where((m) => m.kind == kind))
               _ModelCard(model: model),
           ],
+        if (report.dataset != null) ...[
+          const SizedBox(height: 10),
+          _DatasetCard(info: report.dataset!),
+        ],
         const SizedBox(height: 6),
         Text(l.mlTestSetNote, style: TextStyle(fontSize: 12, height: 1.4, color: muted)),
         const SizedBox(height: 26),
@@ -239,6 +243,81 @@ class _Body extends StatelessWidget {
     final d = parsed.toLocal();
     String two(int v) => v.toString().padLeft(2, '0');
     return '${d.year}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}';
+  }
+}
+
+/// The dataset the report-type model learned from (MRAD). Read-only numbers
+/// from the server; nothing is computed on the device.
+class _DatasetCard extends StatelessWidget {
+  final DatasetInfo info;
+  const _DatasetCard({required this.info});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.65);
+    final split = '${DatasetInfo.group(info.trainRecords)} / '
+        '${DatasetInfo.group(info.validationRecords)} / '
+        '${DatasetInfo.group(info.testRecords)}';
+
+    Widget row(String label, String value) => Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 4,
+                child: Text(label, style: TextStyle(fontSize: 12, height: 1.3, color: muted)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 5,
+                child: Text(value,
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, height: 1.3)),
+              ),
+            ],
+          ),
+        );
+
+    return Container(
+      key: const ValueKey('dataset-card'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.dataset_outlined, size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(l.mlDatasetTitle,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l.mlDatasetIntro(DatasetInfo.group(info.usableRecords),
+                DatasetInfo.group(info.uniquePatients)),
+            style: TextStyle(fontSize: 13, height: 1.4, color: muted),
+          ),
+          row(l.mlDatasetSplit, split),
+          if (info.classes.isNotEmpty) row(l.mlDatasetClasses, info.classes.join(', ')),
+          const SizedBox(height: 10),
+          Text(l.mlDatasetSafeguard,
+              style: TextStyle(fontSize: 12, height: 1.4, color: muted)),
+          const SizedBox(height: 6),
+          Text(l.mlDatasetScope, style: TextStyle(fontSize: 12, height: 1.4, color: muted)),
+        ],
+      ),
+    );
   }
 }
 

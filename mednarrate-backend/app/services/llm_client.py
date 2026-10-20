@@ -2,6 +2,7 @@ import abc
 import asyncio
 from contextvars import ContextVar
 import logging
+import re
 import time
 import uuid
 
@@ -86,7 +87,7 @@ def _translation_response_schema() -> dict:
     }
 
 
-from app.services.provider_health import describe_error, http_error_detail, provider_health  # noqa: E402
+from app.services.provider_health import http_error_detail, provider_health  # noqa: E402
 
 
 class LLMConfigurationError(RuntimeError):
@@ -636,6 +637,8 @@ class OpenAIProvider(LLMProvider):
 # Providers that speak the OpenAI chat-completions protocol. name -> (url, key setting, model setting)
 OPENAI_COMPATIBLE = {
     "groq": ("https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY", "GROQ_MODEL"),
+    # Same Groq key, different model: Groq limits each model separately.
+    "groq_qwen": ("https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY", "GROQ_QWEN_MODEL"),
     "cerebras": ("https://api.cerebras.ai/v1/chat/completions", "CEREBRAS_API_KEY", "CEREBRAS_MODEL"),
     "openrouter": ("https://openrouter.ai/api/v1/chat/completions", "OPENROUTER_API_KEY", "OPENROUTER_MODEL"),
     "github": ("https://models.github.ai/inference/chat/completions", "GITHUB_MODELS_TOKEN", "GITHUB_MODELS_MODEL"),
@@ -692,6 +695,10 @@ class OpenAICompatibleProvider(LLMProvider):
         }
         if translating:
             payload["response_format"] = {"type": "json_object"}
+        if self.name.startswith("groq") and "gpt-oss" in model_name:
+            # gpt-oss models think before answering and the thinking counts against
+            # max_tokens; keep it short so the answer is never cut off to nothing.
+            payload["reasoning_effort"] = "low"
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
                 resp = await client.post(
@@ -700,6 +707,8 @@ class OpenAICompatibleProvider(LLMProvider):
                 resp.raise_for_status()
                 data = resp.json()
             content = (data["choices"][0]["message"].get("content") or "").strip()
+            # Some reasoning models (Qwen3 and friends) put their thinking inline.
+            content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
             if not content:
                 raise LLMConnectionError(f"{self.name} returned no text.")
             logger.info(f"[LLM:{self.name.upper()}:SUCCESS] req_id={req_id} latency={int((time.time() - started) * 1000)}ms model={model_name}")
@@ -1411,17 +1420,26 @@ class LocalProvider(LLMProvider):
 
 
 
-async def get_resolved_ai_config() -> dict:
+async def get_resolved_ai_config(db=None) -> dict:
+    """Effective AI settings: admin overrides from the database, else the environment.
+
+    Pass ``db`` (an open AsyncSession) to read through the caller's session; without it a
+    short-lived session is opened.
+    """
     from app.core.database import AsyncSessionLocal
     from app.models.system_setting import SystemSetting
     from sqlalchemy import select
 
     settings_records = {}
     try:
-        async with AsyncSessionLocal() as session:
-            stmt = select(SystemSetting).where(SystemSetting.category == "ai_config")
-            res = await session.execute(stmt)
+        stmt = select(SystemSetting).where(SystemSetting.category == "ai_config")
+        if db is not None:
+            res = await db.execute(stmt)
             settings_records = {s.key: s.value for s in res.scalars().all()}
+        else:
+            async with AsyncSessionLocal() as session:
+                res = await session.execute(stmt)
+                settings_records = {s.key: s.value for s in res.scalars().all()}
     except Exception as e:
         logger.error(f"Failed to fetch DB config: {e}")
 
@@ -1603,7 +1621,6 @@ class LLMClient:
         if primary_name == "auto":
             # "auto" mode tries Vertex AI -> Ollama -> Dev Gemini
             providers_to_try = ["vertex_ai", "ollama", "dev_gemini"]
-            last_err = None
             for p_name in providers_to_try:
                 try:
                     p = self.get_provider(p_name)
@@ -1624,7 +1641,6 @@ class LLMClient:
                     )
                     return res
                 except Exception as e:
-                    last_err = e
                     error_cat = type(e).__name__
                     logger.warning(f"[LLM:AUTO:{p_name.upper()}_FAILED] {e}")
                     await _log_event(p_name, "unknown", "error", 0.0, error_category=error_cat, fallback=False)
@@ -1658,13 +1674,21 @@ class LLMClient:
                 continue
             try:
                 provider = self.get_provider(name)
-                res = await provider.generate(
-                    prompt,
-                    timeout=timeout,
-                    request_id=req_id,
-                    system_instruction=system_instruction,
-                    thinking_level=thinking_level,
-                    config=config,
+                # Only the last provider may use the full timeout; earlier ones
+                # are capped so a slow or hung provider fails over quickly.
+                is_last = index == len(chain) - 1
+                cap = float(getattr(settings, "LLM_PROVIDER_TIMEOUT_SECONDS", 0) or 0)
+                provider_timeout = timeout if (is_last or cap <= 0) else min(timeout, cap)
+                res = await asyncio.wait_for(
+                    provider.generate(
+                        prompt,
+                        timeout=provider_timeout,
+                        request_id=req_id,
+                        system_instruction=system_instruction,
+                        thinking_level=thinking_level,
+                        config=config,
+                    ),
+                    timeout=provider_timeout + 2.0,
                 )
                 provider_health.record_success(name)
                 await _log_event(

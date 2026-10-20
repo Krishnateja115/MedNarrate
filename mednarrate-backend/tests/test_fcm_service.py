@@ -28,3 +28,21 @@ async def test_unconfigured_development_does_not_claim_delivery(monkeypatch, cap
 
 async def test_missing_token_returns_false():
     assert await send_push_notification("", "t", "b") is False
+
+
+def test_service_account_can_be_json_text_or_a_file_path(tmp_path):
+    import json
+
+    import pytest
+
+    from app.services.fcm_service import _load_service_account
+
+    key = {"type": "service_account", "project_id": "demo"}
+    assert _load_service_account(json.dumps(key)) == key
+
+    file = tmp_path / "firebase.json"
+    file.write_text(json.dumps(key))
+    assert _load_service_account(str(file)) == key
+
+    with pytest.raises(FileNotFoundError):
+        _load_service_account(str(tmp_path / "missing.json"))

@@ -605,7 +605,7 @@ def test_fallback_summary_not_treated_as_pathology_by_signature_line():
     import json
 
     from app.services.llm_client import FallbackAIProvider
-    from app.services.prompts import CLINICIAN_PROMPT, PATIENT_PROMPT
+    from app.services.prompts import CLINICIAN_PROMPT
 
     labs = [
         {"test_name": "MCV", "value": 80.0, "unit": "fL", "ref_low": 81.0, "ref_high": 101.0, "flag": "low"},

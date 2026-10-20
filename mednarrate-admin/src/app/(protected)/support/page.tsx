@@ -27,34 +27,36 @@ interface Ticket {
 }
 
 interface SupportResponse {
-  status: string;
-  tickets: Ticket[];
+  items: Ticket[];
+  total: number;
+  page: number;
+  limit: number;
+  has_next: boolean;
 }
 
 export default function SupportQueuePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [tabView, setTabView] = useState<string>('open'); // all, open, unassigned, critical
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
   
   const queryParams = new URLSearchParams();
   if (searchTerm) queryParams.set('search', searchTerm);
-  
+
   if (tabView === 'unassigned') {
     queryParams.set('unassigned', 'true');
   } else if (tabView === 'critical') {
     queryParams.set('priority', 'P1 Critical');
-  }
-  
-  if (statusFilter !== 'all' && tabView !== 'open') {
-    queryParams.set('status', statusFilter);
   } else if (tabView === 'open') {
-    // A simplified 'open' filter which the backend doesn't explicitly have, 
-    // but we can filter on the frontend if needed, or backend can support 'open'
-    // For now, if we don't pass status, we'll get all, and we'll frontend filter.
+    queryParams.set('open_only', 'true');
   }
+  if (statusFilter !== 'all') queryParams.set('status', statusFilter);
+  queryParams.set('page', String(page));
+  queryParams.set('limit', String(PAGE_SIZE));
 
   const { data, isLoading, error } = useQuery<SupportResponse>({
-    queryKey: ['support_tickets', searchTerm, statusFilter, tabView],
+    queryKey: ['support_tickets', searchTerm, statusFilter, tabView, page],
     queryFn: () => fetchApi(`/api/v1/admin/support?${queryParams.toString()}`),
   });
 
@@ -78,16 +80,8 @@ export default function SupportQueuePage() {
     }
   };
 
-  let displayedTickets = data?.tickets || [];
+  const displayedTickets = data?.items || [];
   
-  // Frontend filter for 'open' tab if the backend doesn't native support an 'open' status list
-  if (tabView === 'open') {
-    displayedTickets = displayedTickets.filter(t => t.status !== 'Resolved' && t.status !== 'Closed');
-    if (statusFilter !== 'all') {
-      displayedTickets = displayedTickets.filter(t => t.status === statusFilter);
-    }
-  }
-
   return (
     <div className="space-y-6 fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -97,7 +91,7 @@ export default function SupportQueuePage() {
         </div>
       </div>
 
-      <Tabs value={tabView} onValueChange={setTabView} className="w-full">
+      <Tabs value={tabView} onValueChange={(v) => { setTabView(v); setPage(1); }} className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="open">Open Tickets</TabsTrigger>
           <TabsTrigger value="unassigned">Unassigned</TabsTrigger>
@@ -115,11 +109,11 @@ export default function SupportQueuePage() {
                   placeholder="Search by ID, title, or user email..."
                   className="pl-8"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
                 />
               </div>
               <div className="flex gap-2 w-full sm:w-auto">
-                <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || 'all')}>
+                <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val || 'all'); setPage(1); }}>
                   <SelectTrigger className="w-full sm:w-[150px]">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -208,7 +202,11 @@ export default function SupportQueuePage() {
             {displayedTickets.length > 0 && (
               <div className="p-4 border-t flex items-center justify-between text-sm text-muted-foreground">
                 <div>
-                  Showing {displayedTickets.length} tickets
+                  Showing {(page - 1) * PAGE_SIZE + 1}–{(page - 1) * PAGE_SIZE + displayedTickets.length} of {data?.total ?? displayedTickets.length} tickets
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</Button>
+                  <Button variant="outline" size="sm" disabled={!data?.has_next} onClick={() => setPage(page + 1)}>Next</Button>
                 </div>
               </div>
             )}

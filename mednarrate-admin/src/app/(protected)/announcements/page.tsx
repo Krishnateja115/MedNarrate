@@ -95,15 +95,11 @@ export default function AnnouncementsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Bell className="w-7 h-7 text-blue-600" /> Platform Announcements & Broadcasts
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Publish targeted system announcements for patient mobile app and web users.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Announcements</h1>
+          <p className="text-muted-foreground">Publish notices that appear in the patient app.</p>
         </div>
         <Button onClick={() => setShowCreateForm(!showCreateForm)} className="flex items-center gap-2">
           <Plus className="w-4 h-4" /> {showCreateForm ? 'Cancel' : 'New Announcement'}

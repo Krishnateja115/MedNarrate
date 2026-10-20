@@ -12,6 +12,8 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     - build/**
+    - _removed_files_backup/**
+    - _backups/**
     - mednarrate-backend/**
     - mednarrate-admin/**
     - android/**

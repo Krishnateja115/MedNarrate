@@ -64,12 +64,11 @@ async def dispatch_global_notification(
     dispatched_count = 0
     failed_count = 0
     for tk in tokens:
-        success = await send_push_notification(tk.token, payload.title, payload.body)
+        success = await send_push_notification(tk.device_token, payload.title, payload.body)
         status = "sent" if success else "failed"
         nl = NotificationLog(
             id=uuid.uuid4(),
             user_id=tk.user_id,
-            notification_type="admin_dispatch",
             title=payload.title,
             body=payload.body,
             status=status,
@@ -83,19 +82,32 @@ async def dispatch_global_notification(
             failed_count += 1
 
     await log_admin_action(
-        db, admin_ctx, "NOTIFICATION_DISPATCH", "system", "global",
-        {
+        db=db,
+        action="NOTIFICATION_DISPATCH",
+        actor_admin_id=admin_ctx.user.id,
+        resource_type="system",
+        resource_id="global",
+        metadata={
             "audience": payload.audience,
             "target_users": len(target_users),
             "target_devices": len(tokens),
             "delivered": dispatched_count,
             "failed": failed_count,
             "skipped": 0,
-        }, request
+        },
+        request=request,
     )
 
     await db.commit()
-    return {"status": "ok", "message": f"Successfully dispatched to {dispatched_count} devices.", "dispatched_count": dispatched_count}
+    message = f"Delivered to {dispatched_count} device(s)."
+    if failed_count:
+        message += f" {failed_count} failed - check that push notifications are configured and the device tokens are valid."
+    return {
+        "status": "ok",
+        "message": message,
+        "dispatched_count": dispatched_count,
+        "failed_count": failed_count,
+    }
 
 @router.get("/logs")
 async def get_notification_logs(
@@ -122,7 +134,7 @@ async def get_notification_logs(
         {
             "id": str(l.id),
             "user_id": str(l.user_id),
-            "notification_type": l.notification_type,
+            "notification_type": "push",
             "title": l.title,
             "status": l.status,
             "error_message": l.error_message,
@@ -154,15 +166,20 @@ async def retry_notification(
     if not token:
         raise HTTPException(status_code=400, detail="No registered device for user")
 
-    success = await send_push_notification(token.token, log_entry.title, log_entry.body)
+    success = await send_push_notification(token.device_token, log_entry.title, log_entry.body)
 
     log_entry.status = "sent" if success else "failed"
     log_entry.error_message = None if success else "Failed to send to push service"
     log_entry.sent_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     await log_admin_action(
-        db, admin_ctx, "NOTIFICATION_RETRY", "notification_log", str(log_id),
-        {"success": success}, request
+        db=db,
+        action="NOTIFICATION_RETRY",
+        actor_admin_id=admin_ctx.user.id,
+        resource_type="notification_log",
+        resource_id=str(log_id),
+        metadata={"success": success},
+        request=request,
     )
 
     await db.commit()

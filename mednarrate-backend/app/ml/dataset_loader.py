@@ -33,9 +33,6 @@ POSSIBLE_PATHS = [
             "Unified_Medical_Dataset.csv",
         )
     ),
-    os.path.abspath(
-        "C:/Users/manas/Downloads/MedNarrate-main/data/mrad_full/MRAD/Unified_Medical_Dataset.csv"
-    ),
 ]
 
 

@@ -2299,4 +2299,347 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get chatSuggestTerms => 'ಸಾಮಾನ್ಯ ರಕ್ತ ಪರೀಕ್ಷೆಯ ಪದಗಳ ಅರ್ಥವೇನು?';
+
+  @override
+  String get mlScreenTitle => 'AI ಮಾದರಿಗಳು ಮತ್ತು ವಿವರಣೆ';
+
+  @override
+  String get mlTileSubtitle =>
+      'ಪ್ರತಿ AI ಮಾದರಿ ಎಷ್ಟು ಚೆನ್ನಾಗಿ ಕೆಲಸ ಮಾಡುತ್ತದೆ ಮತ್ತು ಅದು ಏಕೆ ಹಾಗೆ ಉತ್ತರಿಸುತ್ತದೆ';
+
+  @override
+  String get mlIntro =>
+      'MedNarrate ಹಲವಾರು AI ಮಾದರಿಗಳನ್ನು ಬಳಸುತ್ತದೆ. ಪ್ರತಿಯೊಂದೂ ಏನು ಮಾಡುತ್ತದೆ, ನಮ್ಮದೇ ಪರೀಕ್ಷೆಗಳಲ್ಲಿ ಎಷ್ಟು ಅಂಕ ಗಳಿಸಿದೆ ಮತ್ತು ತನ್ನ ಉತ್ತರಗಳನ್ನು ಹೇಗೆ ವಿವರಿಸುತ್ತದೆ ಎಂಬುದನ್ನು ನೋಡಿ.';
+
+  @override
+  String mlSummaryMeasured(int evaluated, int total) {
+    return '$total ಮಾದರಿಗಳಲ್ಲಿ $evaluated ಅಳೆಯಲಾಗಿದೆ';
+  }
+
+  @override
+  String mlSummaryDeep(int evaluated, int total) {
+    return '$total ಡೀಪ್ ಲರ್ನಿಂಗ್ ಮಾದರಿಗಳಲ್ಲಿ $evaluated ಅಳೆಯಲಾಗಿದೆ';
+  }
+
+  @override
+  String get mlPendingBanner =>
+      'ಕೆಲವು ಮಾದರಿಗಳನ್ನು ಇನ್ನೂ ಅಳೆದಿಲ್ಲ. ಮೌಲ್ಯಮಾಪನ ನಡೆದ ನಂತರ ಅವುಗಳ ಅಂಕಗಳು ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ.';
+
+  @override
+  String mlLastMeasured(String when) {
+    return 'ಕೊನೆಯ ಬಾರಿ ಅಳೆದದ್ದು: $when';
+  }
+
+  @override
+  String get mlKindDeep => 'ಡೀಪ್ ಲರ್ನಿಂಗ್';
+
+  @override
+  String get mlKindClassical => 'ಸಾಂಪ್ರದಾಯಿಕ ಯಂತ್ರ ಕಲಿಕೆ';
+
+  @override
+  String get mlKindRules => 'ನಿಯಮ ಆಧಾರಿತ';
+
+  @override
+  String get mlUsedInApp => 'ಆ್ಯಪ್‌ನಲ್ಲಿ ಬಳಕೆಯಾಗುತ್ತದೆ';
+
+  @override
+  String get mlOfflineTool => 'ಆಫ್‌ಲೈನ್ ಅಥವಾ ಸಂಶೋಧನೆಗಾಗಿ';
+
+  @override
+  String get mlStatusMeasured => 'ಅಳೆಯಲಾಗಿದೆ';
+
+  @override
+  String get mlStatusNotEvaluated => 'ಇನ್ನೂ ಮೌಲ್ಯಮಾಪನ ಆಗಿಲ್ಲ';
+
+  @override
+  String get mlStatusFailed => 'ಅಳೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ';
+
+  @override
+  String get mlNoScoresYet => 'ಇನ್ನೂ ಅಂಕಗಳಿಲ್ಲ.';
+
+  @override
+  String mlMeasuredOn(int count) {
+    return '$count ಪರೀಕ್ಷಾ ಅಂಶಗಳ ಮೇಲೆ ಅಳೆಯಲಾಗಿದೆ';
+  }
+
+  @override
+  String get mlTestSetNote =>
+      'ಅಂಕಗಳು ಚಿಕ್ಕ, ಕೈಯಿಂದ ಪರಿಶೀಲಿಸಿದ ಪರೀಕ್ಷಾ ಸೆಟ್‌ಗಳಿಂದ ಬರುತ್ತವೆ; ಆದ್ದರಿಂದ ಅವು ಬಲ ಮತ್ತು ದೌರ್ಬಲ್ಯಗಳನ್ನು ತೋರಿಸುತ್ತವೆ, ವೈದ್ಯಕೀಯ ನಿಖರತೆಯನ್ನಲ್ಲ.';
+
+  @override
+  String get mlLoadError => 'ಮಾದರಿ ಮಾಹಿತಿಯನ್ನು ಲೋಡ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ.';
+
+  @override
+  String get mlTaskBiomedicalNer =>
+      'ವರದಿ ಪಠ್ಯದಲ್ಲಿ ಲಕ್ಷಣಗಳು, ರೋಗಗಳು, ಔಷಧಗಳು ಮತ್ತು ಪರೀಕ್ಷಾ ಪದಗಳನ್ನು ಹುಡುಕುತ್ತದೆ';
+
+  @override
+  String get mlTaskReportEmbedding =>
+      'ಚಾಟ್ ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸುವ ನಿಮ್ಮ ವರದಿಯ ಭಾಗಗಳನ್ನು ಹುಡುಕುತ್ತದೆ';
+
+  @override
+  String get mlTaskKbEmbedding =>
+      'ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸುವ ಸಾಮಾನ್ಯ ಆರೋಗ್ಯ ಮಾಹಿತಿಯನ್ನು ಹುಡುಕುತ್ತದೆ';
+
+  @override
+  String get mlTaskPubmedbertEmbedding =>
+      'ಹುಡುಕಾಟಕ್ಕಾಗಿ ವೈದ್ಯಕೀಯ ಜ್ಞಾನವನ್ನು ಸಿದ್ಧಪಡಿಸುತ್ತದೆ (ಆಫ್‌ಲೈನ್ ಹಂತ)';
+
+  @override
+  String get mlTaskLlmChain =>
+      'ವರದಿಗಳನ್ನು ವಿವರಿಸುತ್ತದೆ, ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸುತ್ತದೆ ಮತ್ತು ಸಾರಾಂಶಗಳನ್ನು ಅನುವಾದಿಸುತ್ತದೆ';
+
+  @override
+  String get mlTaskLocalQwen =>
+      'ಆನ್‌ಲೈನ್ ಮಾದರಿ ಲಭ್ಯವಿಲ್ಲದಾಗ ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿ ಅನುವಾದಿಸುತ್ತದೆ';
+
+  @override
+  String get mlTaskWhisperStt =>
+      'ನೀವು ಮಾತನಾಡಿದ ಪ್ರಶ್ನೆಯನ್ನು ಪಠ್ಯವಾಗಿ ಪರಿವರ್ತಿಸುತ್ತದೆ';
+
+  @override
+  String get mlTaskReportClassifier =>
+      'ವರದಿಯ ಪ್ರಕಾರವನ್ನು ಊಹಿಸುತ್ತದೆ (ಸಂಶೋಧನಾ ಮಾದರಿ, ಆ್ಯಪ್‌ನಲ್ಲಿ ಬಳಕೆಯಾಗುವುದಿಲ್ಲ)';
+
+  @override
+  String get mlTaskLabExtractor =>
+      'ವರದಿ ಪಠ್ಯದಿಂದ ಪರೀಕ್ಷೆಯ ಹೆಸರುಗಳು, ಮೌಲ್ಯಗಳು ಮತ್ತು ಶ್ರೇಣಿಗಳನ್ನು ಓದುತ್ತದೆ';
+
+  @override
+  String get mlMetricPrecision => 'ಸರಿಯಾದ ಕಂಡುಹಿಡಿತಗಳು';
+
+  @override
+  String get mlMetricRecall => 'ಇರುವವುಗಳಲ್ಲಿ ಕಂಡುಹಿಡಿದವು';
+
+  @override
+  String get mlMetricF1 => 'ಒಟ್ಟಾರೆ ಸಮತೋಲನ (F1)';
+
+  @override
+  String get mlMetricEntityType => 'ಪದದ ಸರಿಯಾದ ಪ್ರಕಾರ';
+
+  @override
+  String get mlMetricAvgLatency => 'ಸರಾಸರಿ ಪ್ರತಿಕ್ರಿಯೆ ಸಮಯ';
+
+  @override
+  String get mlMetricLatencyP50 => 'ಸಾಮಾನ್ಯ ಪ್ರತಿಕ್ರಿಯೆ ಸಮಯ';
+
+  @override
+  String get mlMetricLatencyP95 => 'ಅತ್ಯಂತ ನಿಧಾನದ 5% ಪ್ರತಿಕ್ರಿಯೆ ಸಮಯ';
+
+  @override
+  String get mlMetricTop1 => 'ಸರಿಯಾದ ಭಾಗ ಮೊದಲ ಸ್ಥಾನದಲ್ಲಿ';
+
+  @override
+  String get mlMetricTop3 => 'ಸರಿಯಾದ ಭಾಗ ಮೊದಲ 3ರಲ್ಲಿ';
+
+  @override
+  String get mlMetricTop5 => 'ಸರಿಯಾದ ಭಾಗ ಮೊದಲ 5ರಲ್ಲಿ';
+
+  @override
+  String get mlMetricMrr => 'ಸರಾಸರಿ ಶ್ರೇಯಾಂಕ ಅಂಕ (MRR)';
+
+  @override
+  String get mlMetricAnswerAccuracy => 'ವರದಿಯಿಂದ ಸರಿಯಾದ ಉತ್ತರಗಳು';
+
+  @override
+  String get mlMetricAbstention => 'ನಿಜವಾದಾಗ “ವರದಿಯಲ್ಲಿ ಇಲ್ಲ” ಎಂದು ಹೇಳುತ್ತದೆ';
+
+  @override
+  String get mlMetricNumbersKept => 'ಅನುವಾದದಲ್ಲಿ ಉಳಿದ ಸಂಖ್ಯೆಗಳು';
+
+  @override
+  String get mlMetricAllNumbers => 'ಪ್ರತಿ ಸಂಖ್ಯೆಯನ್ನೂ ಉಳಿಸಿಕೊಂಡ ವಾಕ್ಯಗಳು';
+
+  @override
+  String get mlMetricChrf => 'ಹಿಂದಿ ಅನುವಾದದ ಗುಣಮಟ್ಟ (chrF, 100ರಲ್ಲಿ)';
+
+  @override
+  String get mlMetricWerEn => 'ಇಂಗ್ಲಿಷ್ ಮಾತಿನ ತಪ್ಪುಗಳು (ಕಡಿಮೆ ಇದ್ದರೆ ಉತ್ತಮ)';
+
+  @override
+  String get mlMetricWerHi => 'ಹಿಂದಿ ಮಾತಿನ ತಪ್ಪುಗಳು (ಕಡಿಮೆ ಇದ್ದರೆ ಉತ್ತಮ)';
+
+  @override
+  String get mlMetricAccuracy => 'ಒಟ್ಟಾರೆ ಸರಿ';
+
+  @override
+  String get mlMetricMacroPrecision =>
+      'ಎಲ್ಲಾ ಪ್ರಕಾರಗಳಲ್ಲಿ ಸರಾಸರಿ ಸರಿಯಾದ ಕಂಡುಹಿಡಿತಗಳು';
+
+  @override
+  String get mlMetricMacroRecall => 'ಎಲ್ಲಾ ಪ್ರಕಾರಗಳಲ್ಲಿ ಸರಾಸರಿ ಕಂಡುಹಿಡಿದವು';
+
+  @override
+  String get mlMetricMacroF1 => 'ಎಲ್ಲಾ ಪ್ರಕಾರಗಳಲ್ಲಿ ಸರಾಸರಿ ಸಮತೋಲನ (F1)';
+
+  @override
+  String get mlXaiTitle => 'AI ತನ್ನನ್ನು ಹೇಗೆ ವಿವರಿಸಿಕೊಳ್ಳುತ್ತದೆ';
+
+  @override
+  String get mlXaiIntro =>
+      'ವಿವರಿಸಬಲ್ಲ AI (XAI) ಯಾವ ಪದಗಳು ಅಥವಾ ಸಂಖ್ಯೆಗಳು ಫಲಿತಾಂಶಕ್ಕೆ ಕಾರಣವಾದವು ಎಂದು ತೋರಿಸುತ್ತದೆ; ಹೀಗಾಗಿ ಕುರುಡಾಗಿ ನಂಬದೆ ಪರಿಶೀಲಿಸಬಹುದು.';
+
+  @override
+  String get mlXaiLimeName => 'LIME: ಸ್ಥಳೀಯ ಸರಳ ಮಾದರಿ';
+
+  @override
+  String get mlXaiLimeBody =>
+      'ಕೆಲವು ಪದಗಳನ್ನು ಮರೆಮಾಡಿ ಮಾದರಿಯನ್ನು ಮತ್ತೆ ಕೇಳಿ, ಉತ್ತರಗಳಿಗೆ ಚಿಕ್ಕ ಸರಳ ಮಾದರಿಯನ್ನು ಹೊಂದಿಸುತ್ತದೆ. ತೂಕಗಳು ಯಾವ ಪದಗಳು ಅಂದಾಜನ್ನು ತಳ್ಳಿದವು ಎಂದು ತೋರಿಸುತ್ತವೆ.';
+
+  @override
+  String get mlXaiLinearName => 'ನಿಖರ ರೇಖೀಯ ಕೊಡುಗೆ (ರೇಖೀಯ ಮಾದರಿಗಳಿಗೆ SHAP)';
+
+  @override
+  String get mlXaiLinearBody =>
+      'ರೇಖೀಯ ಮಾದರಿಯಲ್ಲಿ ಪ್ರತಿ ಪದದ ಕೊಡುಗೆ ಅದರ ತೂಕ ಗುಣಿಸಿ ಅದರ ಮೌಲ್ಯ. ಈ ಕೊಡುಗೆಗಳನ್ನು ಕೂಡಿಸಿದರೆ ಅಂಕ ನಿಖರವಾಗಿ ಬರುತ್ತದೆ.';
+
+  @override
+  String get mlXaiOcclusionName => 'ಪದ ತೆಗೆದು ಮಹತ್ವ ನೋಡುವುದು (ಆಕ್ಲೂಷನ್)';
+
+  @override
+  String get mlXaiOcclusionBody =>
+      'ಒಂದೊಂದೇ ಪದವನ್ನು ಖಾಲಿ ಮಾಡಿ ವಿಶ್ವಾಸ ಎಷ್ಟು ಕಡಿಮೆಯಾಗುತ್ತದೆ ಎಂದು ಅಳೆಯುತ್ತದೆ. ಹೆಚ್ಚು ಪರಿಣಾಮ ಬೀರುವ ಪದಗಳೇ ಸಾಕ್ಷ್ಯ.';
+
+  @override
+  String get mlXaiRuleName => 'ನಿಯಮದ ಜಾಡು';
+
+  @override
+  String get mlXaiRuleBody =>
+      'ಹೆಚ್ಚು ಅಥವಾ ಕಡಿಮೆ ಗುರುತಿನ ಹಿಂದಿನ ನಿಖರ ಹೋಲಿಕೆಯನ್ನು ತೋರಿಸುತ್ತದೆ: ನಿಮ್ಮ ಮೌಲ್ಯ ಮತ್ತು ವರದಿಯಲ್ಲಿ ಮುದ್ರಿಸಿದ ಶ್ರೇಣಿ.';
+
+  @override
+  String get mlXaiClassifierTitle => 'ವರದಿ-ಪ್ರಕಾರ ವರ್ಗೀಕರಣ: ಈ ಅಂದಾಜು ಏಕೆ?';
+
+  @override
+  String get mlXaiEntitiesTitle => 'ವೈದ್ಯಕೀಯ ಪದ ಶೋಧಕ: ಯಾವುದನ್ನು ಆಧರಿಸಿತು';
+
+  @override
+  String get mlXaiLabsTitle => 'ಪರೀಕ್ಷಾ ಫಲಿತಾಂಶಗಳಿಗೆ ಏಕೆ ಗುರುತು ಹಾಕಲಾಗುತ್ತದೆ';
+
+  @override
+  String mlXaiPredicted(String label, String confidence) {
+    return 'ಅಂದಾಜು: $label ($confidence% ವಿಶ್ವಾಸ)';
+  }
+
+  @override
+  String get mlXaiLimeCaption => 'ಅಂದಾಜನ್ನು ತಳ್ಳಿದ ಪದಗಳು (LIME)';
+
+  @override
+  String get mlXaiLinearCaption => 'ಪ್ರತಿ ಪದದ ನಿಖರ ಕೊಡುಗೆ';
+
+  @override
+  String get mlXaiEvidenceCaption => 'ಆಧರಿಸಿದ ಇತರ ಪದಗಳು';
+
+  @override
+  String get mlXaiNoEvidence => 'ಬೇರೆ ಯಾವ ಪದವೂ ಈ ಫಲಿತಾಂಶವನ್ನು ಬದಲಿಸಲಿಲ್ಲ.';
+
+  @override
+  String get mlXaiExampleNote =>
+      'ಉದಾಹರಣೆಗಳು ಚಿಕ್ಕ ಕಲ್ಪಿತ ಪಠ್ಯವನ್ನು ಬಳಸುತ್ತವೆ, ರೋಗಿಯ ಡೇಟಾವನ್ನಲ್ಲ.';
+
+  @override
+  String get mlWhyFlagged => 'ಏಕೆ ಗುರುತು?';
+
+  @override
+  String get mlWhyTitle => 'ಈ ಫಲಿತಾಂಶಕ್ಕೆ ಹೇಗೆ ಗುರುತು ಹಾಕಲಾಯಿತು';
+
+  @override
+  String get mlWhyYourValue => 'ನಿಮ್ಮ ಮೌಲ್ಯ';
+
+  @override
+  String get mlWhyRangeUsed => 'ಬಳಸಿದ ಶ್ರೇಣಿ';
+
+  @override
+  String mlWhyBelow(String value, String low, String percent, String flag) {
+    return '$value ಅತ್ಯಂತ ಕಡಿಮೆ ಸಾಮಾನ್ಯ ಮೌಲ್ಯಕ್ಕಿಂತ ($low) $percent% ಕಡಿಮೆ ಇದೆ, ಆದ್ದರಿಂದ “$flag” ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ.';
+  }
+
+  @override
+  String mlWhyAbove(String value, String high, String percent, String flag) {
+    return '$value ಅತ್ಯಂತ ಹೆಚ್ಚಿನ ಸಾಮಾನ್ಯ ಮೌಲ್ಯಕ್ಕಿಂತ ($high) $percent% ಹೆಚ್ಚು ಇದೆ, ಆದ್ದರಿಂದ “$flag” ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ.';
+  }
+
+  @override
+  String mlWhyWithin(String value, String range, String flag) {
+    return '$value ಶ್ರೇಣಿಯೊಳಗೆ ($range) ಇದೆ, ಆದ್ದರಿಂದ ಇದು “$flag”.';
+  }
+
+  @override
+  String mlWhyNoRange(String value) {
+    return 'ಈ ವರದಿಯಲ್ಲಿ $valueಗೆ ಸಾಮಾನ್ಯ ಶ್ರೇಣಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಗುರುತು ಹಾಕಲು ಸಾಧ್ಯವಿಲ್ಲ.';
+  }
+
+  @override
+  String mlWhyReportMarked(String flag) {
+    return 'ಪ್ರಯೋಗಾಲಯವು ವರದಿಯಲ್ಲಿ ಈ ಫಲಿತಾಂಶವನ್ನು “$flag” ಎಂದು ಗುರುತಿಸಿದೆ; ಅದೇ ಗುರುತನ್ನು ಬಳಸಲಾಗಿದೆ.';
+  }
+
+  @override
+  String get mlWhyProvisional =>
+      'ಈ ಶ್ರೇಣಿ ಸಾಮಾನ್ಯ ವಯಸ್ಕರ ಶ್ರೇಣಿ, ನಿಮ್ಮ ವರದಿಯಲ್ಲಿ ಮುದ್ರಿಸಿದ್ದಲ್ಲ.';
+
+  @override
+  String get mlWhyMethod =>
+      'ವಿಧಾನ: ನಿಯಮದ ಜಾಡು. ಆ್ಯಪ್ ನಿಮ್ಮ ಮೌಲ್ಯವನ್ನು ಒಂದು ಶ್ರೇಣಿಯೊಂದಿಗೆ ಹೋಲಿಸುತ್ತದೆ. ಇದು ರೋಗ ನಿರ್ಣಯ ಮಾಡುವುದಿಲ್ಲ. ಗುರುತು ನಿಮಗೆ ಏನೆಂದು ನಿಮ್ಮ ವೈದ್ಯರನ್ನು ಕೇಳಿ.';
+
+  @override
+  String get narrationListen => 'ಸಾರಾಂಶವನ್ನು ಆಲಿಸಿ';
+
+  @override
+  String get narrationStop => 'ಆಲಿಸುವುದನ್ನು ನಿಲ್ಲಿಸಿ';
+
+  @override
+  String get narrationVoiceMissing =>
+      'ಈ ಭಾಷೆಯ ಧ್ವನಿ ಈ ಫೋನ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇಲ್ಲ. ನಿಮ್ಮ ಫೋನ್‌ನ ಟೆಕ್ಸ್ಟ್-ಟು-ಸ್ಪೀಚ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಅದನ್ನು ಸೇರಿಸಿ.';
+
+  @override
+  String get narrationFailed =>
+      'ಸಾರಾಂಶವನ್ನು ಓದಿ ಹೇಳಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get docTypeCheckTitle => 'ದಾಖಲೆ ಪ್ರಕಾರ ಪರಿಶೀಲನೆ';
+
+  @override
+  String get docTypeCheckExperimental => 'ಪ್ರಾಯೋಗಿಕ';
+
+  @override
+  String docTypeCheckScore(int percent) {
+    return 'ಮಾದರಿ ಅಂಕ $percent%';
+  }
+
+  @override
+  String get docTypeBlood => 'ಇದು ರಕ್ತ ಪರೀಕ್ಷೆ ವರದಿಯಂತೆ ಕಾಣುತ್ತದೆ';
+
+  @override
+  String get docTypeHealth => 'ಇದು ಸಾಮಾನ್ಯ ಆರೋಗ್ಯ ದಾಖಲೆಯಂತೆ ಕಾಣುತ್ತದೆ';
+
+  @override
+  String get docTypeTcga =>
+      'ಇದು ರೋಗಶಾಸ್ತ್ರ ಅಥವಾ ಕ್ಯಾನ್ಸರ್ ಸಂಶೋಧನೆ ದಾಖಲೆಯಂತೆ ಕಾಣುತ್ತದೆ';
+
+  @override
+  String get docTypeCheckAbout =>
+      'MRAD ಡೇಟಾಸೆಟ್‌ನಲ್ಲಿ ತರಬೇತಿ ಪಡೆದ ಒಂದು ಪ್ರಾಯೋಗಿಕ ಮಾದರಿ, ಈ ವರದಿಯ ಪದಗಳನ್ನು ಮೂರು ರೀತಿಯ ದಾಖಲೆಗಳೊಂದಿಗೆ (ರಕ್ತ ಪರೀಕ್ಷೆಗಳು, ಸಾಮಾನ್ಯ ಆರೋಗ್ಯ ದಾಖಲೆಗಳು, ಕ್ಯಾನ್ಸರ್ ಸಂಶೋಧನೆ ದಾಖಲೆಗಳು) ಹೋಲಿಸಿದೆ. ಇದು ಸೂಚನೆ ಮಾತ್ರ, ರೋಗನಿರ್ಣಯವಲ್ಲ; ಅದು ನೋಡಿರದ ವರದಿ ಪ್ರಕಾರಗಳಿಗೆ ತಪ್ಪಾಗಿರಬಹುದು.';
+
+  @override
+  String get mlDatasetTitle => 'ವರದಿ-ಪ್ರಕಾರ ಮಾದರಿಯ ಡೇಟಾಸೆಟ್';
+
+  @override
+  String mlDatasetIntro(String reports, String patients) {
+    return 'ವರದಿ-ಪ್ರಕಾರ ಮಾದರಿ, $patients ರೋಗಿಗಳ $reports ವೈದ್ಯಕೀಯ ವರದಿಗಳ ಸಂಗ್ರಹವಾದ MRAD ನಿಂದ ಕಲಿತಿದೆ.';
+  }
+
+  @override
+  String get mlDatasetSplit => 'ತರಬೇತಿ / ಪರಿಶೀಲನೆ / ಪರೀಕ್ಷೆ';
+
+  @override
+  String get mlDatasetClasses => 'ವರದಿ ಪ್ರಕಾರಗಳು';
+
+  @override
+  String get mlDatasetSafeguard =>
+      'ಒಬ್ಬ ರೋಗಿಯ ವರದಿಗಳು ಈ ಗುಂಪುಗಳಲ್ಲಿ ಒಂದಕ್ಕಿಂತ ಹೆಚ್ಚಿನದರಲ್ಲಿ ಇರುವುದಿಲ್ಲ, ಮತ್ತು ತರಬೇತಿಗೆ ಮೊದಲು ಪಠ್ಯದಿಂದ ವರದಿ-ಪ್ರಕಾರದ ಹೆಡರ್ ಸಾಲನ್ನು ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ.';
+
+  @override
+  String get mlDatasetScope =>
+      'ಈ ಒಂದು ಮಾದರಿ ಮಾತ್ರ MRAD ನಿಂದ ಕಲಿಯುತ್ತದೆ. ಸಾರಾಂಶಗಳು, ಚಾಟ್ ಮತ್ತು ಅನುವಾದ ಮೊದಲೇ ತರಬೇತಿ ಪಡೆದ AI ಮಾದರಿಗಳನ್ನು ಬಳಸುತ್ತವೆ; ಅವು MRAD ನಲ್ಲಿ ತರಬೇತಿ ಪಡೆದಿಲ್ಲ.';
 }

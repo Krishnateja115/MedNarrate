@@ -75,11 +75,7 @@ export default function AutomationOpsPage() {
 
   const retryNotificationMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/v1/admin/automation-ops/notifications/${id}/retry`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error('Failed to retry');
-      return res.json();
+      return fetchApi(`/api/v1/admin/automation-ops/notifications/${id}/retry`, { method: 'POST' });
     },
     onSuccess: (data: any) => {
       if (data.status === 'failed') {

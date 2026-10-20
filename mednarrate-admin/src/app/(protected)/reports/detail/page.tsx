@@ -65,11 +65,7 @@ function ReportDiagnosticPageContent() {
 
   const actionMutation = useMutation({
     mutationFn: async ({ action }: { action: string }) => {
-      const res = await fetch(`/api/v1/admin/reports/${reportId}/actions/${action}`, {
-        method: 'POST'
-      });
-      if (!res.ok) throw new Error('Action failed');
-      return res.json();
+      return fetchApi(`/api/v1/admin/reports/${reportId}/actions/${action}`, { method: 'POST' });
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['report', reportId] });

@@ -162,6 +162,71 @@ describe('RagOpsPage', () => {
     });
   });
 
+  it('shows the chat search details when the backend sends them', async () => {
+    mockedFetchApi.mockImplementation((url) => {
+      if ((url as string).includes('/status')) {
+        return Promise.resolve({
+          status: 'ok',
+          overview: {
+            ...ragStatus.overview,
+            report_search: {
+              embeddings_enabled: true,
+              embedding_provider: 'gemini',
+              vector_size: 768,
+              search_mode: 'embeddings_with_keyword_backup',
+              reports_indexed: 3,
+              report_chunks: 9,
+              chunks_with_vectors: 7,
+              chunks_without_vectors: 2,
+            },
+            health_notes: { passages: 21, ready: true },
+          },
+        });
+      }
+      return Promise.resolve(paginatedDocs);
+    });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Embeddings + keyword backup')).toBeTruthy());
+    expect(screen.getByText(/Provider: gemini/)).toBeTruthy();
+    expect(screen.getByText('7 / 9')).toBeTruthy();
+    expect(screen.getByText('21 passages')).toBeTruthy();
+    expect(screen.getByText(/2 report chunk\(s\) have no vector yet/)).toBeTruthy();
+  });
+
+  it('warns when embeddings are off and the health notes are not built', async () => {
+    mockedFetchApi.mockImplementation((url) => {
+      if ((url as string).includes('/status')) {
+        return Promise.resolve({
+          status: 'ok',
+          overview: {
+            ...ragStatus.overview,
+            report_search: {
+              embeddings_enabled: false,
+              embedding_provider: null,
+              vector_size: 768,
+              search_mode: 'keyword_only',
+              reports_indexed: 0,
+              report_chunks: 0,
+              chunks_with_vectors: 0,
+              chunks_without_vectors: 0,
+            },
+            health_notes: { passages: 0, ready: false },
+          },
+        });
+      }
+      return Promise.resolve(paginatedDocs);
+    });
+    renderPage();
+    await waitFor(() => expect(screen.getByText('Keyword only')).toBeTruthy());
+    expect(screen.getByText('Not built')).toBeTruthy();
+  });
+
+  it('still renders when an older backend sends no chat search details', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('142')).toBeTruthy());
+    expect(screen.queryByText('Chat search')).toBeNull();
+  });
+
   it('renders error summary when vector store is down', async () => {
     mockedFetchApi.mockImplementation((url) => {
       if ((url as string).includes('/status')) return Promise.resolve(ragStatusDegraded);

@@ -41,6 +41,12 @@ app.*.map.json
 .env.*
 !.env.example
 mednarrate-backend/.env
+mednarrate-backend/.env.*
+!mednarrate-backend/.env.example
+mednarrate-backend/uploads/
+mednarrate-backend/storage/
+firebase-service-account*.json
+*-firebase-adminsdk-*.json
 google-services.json
 GoogleService-Info.plist
 *.jks
@@ -60,7 +66,10 @@ htmlcov/
 
 # Generated data and local databases
 mednarrate-backend/data/kb_index/
-data/
+# Only the repo-root data/ folder (MRAD CSV etc.). mednarrate-backend/data/ holds files the
+# app needs at runtime (glossary, knowledge notes, examples) and must stay trackable.
+/data/
+mednarrate-backend/data/mrad_full/
 *.db
 *.db.pre-history-repair.bak
 *.sqlite
@@ -79,4 +88,10 @@ scratch/
 scratch*.py
 mednarrate-backend/build/
 mednarrate-backend/llm_out.txt
+
+# One-off bundles and backups made while cleaning up
+/*.tar.gz
+/_removed_files_backup/
+
+# Local backups
 _backups/

@@ -280,7 +280,6 @@ async def mfa_verify(
     db: AsyncSession = Depends(get_db),
 ):
     from app.core.security import decode_mfa_challenge_token
-    import pyotp
     from app.core.encryption import decrypt_value
     import uuid
 

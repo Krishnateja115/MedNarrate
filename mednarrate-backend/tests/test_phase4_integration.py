@@ -3,11 +3,10 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.models.user import User, UserRole
-from app.models.admin import AdminRole, AdminRoleAssignment, SensitiveAccessGrant, AdminAuditLog
+from app.models.user import User
 from app.models.report import Report
-from app.core.security import hash_password, create_step_up_token
-from datetime import datetime, timezone, timedelta, date
+from app.core.security import create_step_up_token
+from datetime import datetime, timezone, timedelta
 from app.core.admin_auth import require_active_step_up
 from app.main import app
 import uuid

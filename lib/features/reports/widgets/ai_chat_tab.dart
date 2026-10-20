@@ -13,7 +13,12 @@ class AIChatTab extends StatefulWidget {
   final String reportId;
   final String? initialQuery;
 
-  const AIChatTab({super.key, required this.reportId, this.initialQuery});
+  /// Language the report is currently translated into. When set, answers are
+  /// requested in that language; otherwise the app's display language is used.
+  final String? language;
+
+  const AIChatTab(
+      {super.key, required this.reportId, this.initialQuery, this.language});
 
   @override
   State<AIChatTab> createState() => _AIChatTabState();
@@ -145,7 +150,8 @@ class _AIChatTabState extends State<AIChatTab> {
     }
 
     try {
-      final lang = Localizations.localeOf(context).languageCode;
+      final lang =
+          widget.language ?? Localizations.localeOf(context).languageCode;
       final response =
           await ApiService.instance.sendChatMessage(_sessionId!, text, language: lang);
       if (mounted) {

@@ -34,10 +34,11 @@ const serviceIcons: Record<string, React.ReactNode> = {
 
 const serviceNames: Record<string, string> = {
   api: 'API Server',
-  database: 'PostgreSQL Database',
+  database: 'Database',
   llm_provider: 'Primary LLM Provider',
   storage: 'File Storage',
-  scheduler: 'Background Jobs (APScheduler)'
+  scheduler: 'Background Jobs',
+  rag: 'Knowledge Base (RAG)',
 };
 
 export default function HealthPage() {

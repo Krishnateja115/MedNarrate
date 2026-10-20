@@ -13,13 +13,25 @@ PRIVACY ARCHITECTURE:
   - Failures fall back safely to BM25 keyword retrieval without raising.
   - No direct `genai.configure()` or `genai.embed_content()` calls outside
     this module or `get_embedder()`.
+
+HOW RETRIEVAL WORKS:
+  1. Ingestion (once per report, `process_report_for_rag`): de-identify, split into
+     overlapping chunks, embed each chunk, store text + vector in `rag_chunks`.
+  2. Retrieval (`retrieve_chunks`): embed the question, rank the report's chunks by
+     cosine similarity, return the best `top_k` in document order.
+  3. Reports indexed while embeddings were off (or while the provider was down) get their
+     missing vectors filled in on the first question, within a small time budget.
+  4. If vectors are unavailable for any reason the same chunks are ranked with BM25.
 """
 import re
 import logging
 import asyncio
+import threading
+import time
 import uuid
-from typing import List
+from typing import List, Optional
 
+import numpy as np
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import os
@@ -42,7 +54,7 @@ except Exception as _chroma_init_err:
     kb_collection = None
 
 
-from app.services.embedding_provider import get_embedder  # noqa: E402
+from app.services.embedding_provider import EMBEDDING_DIM, get_embedder  # noqa: E402
 from app.services.privacy import deidentify_prompt_text as _deidentify  # noqa: E402
 
 
@@ -92,6 +104,58 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 64) -> List[str]
 
 
 # ---------------------------------------------------------------------------
+# Vector helpers
+# ---------------------------------------------------------------------------
+
+def _is_postgres() -> bool:
+    return settings.DATABASE_URL.startswith("postgresql")
+
+
+def _as_vector(value) -> Optional[np.ndarray]:
+    """A stored or freshly embedded vector as a 1-D float array, or None if it is unusable.
+
+    Handles lists (SQLite JSON) and numpy arrays (pgvector) alike."""
+    if value is None:
+        return None
+    try:
+        arr = np.asarray(value, dtype=float)
+    except (TypeError, ValueError):
+        return None
+    if arr.ndim != 1 or arr.size == 0 or not np.all(np.isfinite(arr)):
+        return None
+    return arr
+
+
+def _storable_embedding(value) -> Optional[List[float]]:
+    """The vector as a plain list ready to store, or None.
+
+    On PostgreSQL the column is Vector(EMBEDDING_DIM); a vector of any other length would make the
+    whole commit fail and lose every chunk of the report, so it is dropped instead."""
+    arr = _as_vector(value)
+    if arr is None:
+        return None
+    if _is_postgres() and arr.size != EMBEDDING_DIM:
+        logger.error("Embedding has %d numbers but the index expects %d; ignoring it.", arr.size, EMBEDDING_DIM)
+        return None
+    return arr.tolist()
+
+
+async def _embed(embedder, text: str, task_type: str):
+    """Call the (blocking) embedder in a thread; one retry after a short pause, because the
+    free embedding tiers rate-limit bursts."""
+    last_error: Optional[Exception] = None
+    for attempt in range(2):
+        try:
+            return await asyncio.to_thread(embedder, text, task_type)
+        except Exception as e:  # noqa: BLE001 - provider errors vary
+            last_error = e
+            if attempt == 0:
+                await asyncio.sleep(1.0)
+    assert last_error is not None
+    raise last_error
+
+
+# ---------------------------------------------------------------------------
 # Report ingestion
 # ---------------------------------------------------------------------------
 
@@ -112,15 +176,18 @@ async def process_report_for_rag(report_id: uuid.UUID, report_text: str, db: Asy
     chunks = chunk_text(clean_text)
 
     embedder = get_embedder()
+    embedding_available = embedder is not None
 
     for i, chunk in enumerate(chunks):
         embedding = None
-        if embedder is not None:
+        if embedding_available:
             try:
-                embedding = await asyncio.to_thread(embedder, chunk, "retrieval_document")
+                embedding = _storable_embedding(await _embed(embedder, chunk, "retrieval_document"))
             except Exception as e:
-                # Log only the error type, never raw chunk text
+                # Log only the error type, never raw chunk text. If the provider is failing, stop
+                # calling it for the rest of this report; the missing vectors are filled in later.
                 logger.error("Embedding failed for chunk %d of report %s: %s", i, report_id, type(e).__name__)
+                embedding_available = False
 
         db_chunk = RagChunk(
             report_id=report_id,
@@ -137,6 +204,78 @@ async def process_report_for_rag(report_id: uuid.UUID, report_text: str, db: Asy
 # Retrieval
 # ---------------------------------------------------------------------------
 
+_BACKFILL_MAX_CHUNKS = 60
+_BACKFILL_BUDGET_SECONDS = 12.0
+
+# Punctuation that separates words. "." is deliberately not here so "12.5" stays one token, and
+# combining marks of Indian scripts are not here so Hindi/Telugu words are not cut in the middle.
+_WORD_BREAKS = re.compile(r"[,;:!?()\[\]{}\"'“”‘’/\\|<>=*_#+~`@^&%$\-–—]")
+
+
+def _tokens(text: str) -> List[str]:
+    words = _WORD_BREAKS.sub(" ", (text or "").lower()).split()
+    return [w for w in (word.strip(".") for word in words) if w]
+
+
+async def _backfill_missing_embeddings(chunks: List[RagChunk], embedder, db: AsyncSession) -> None:
+    """Embed chunks that were stored without a vector (embeddings were off, or the provider
+    failed during upload). Stops at a time budget; the next question continues where this one
+    stopped. The stored chunk text is already de-identified."""
+    missing = [c for c in chunks if _as_vector(c.embedding_json) is None]
+    if not missing:
+        return
+    started = time.monotonic()
+    filled = 0
+    for chunk in missing[:_BACKFILL_MAX_CHUNKS]:
+        if time.monotonic() - started > _BACKFILL_BUDGET_SECONDS:
+            break
+        try:
+            embedding = _storable_embedding(await _embed(embedder, chunk.chunk_text, "retrieval_document"))
+        except Exception as e:
+            logger.error("Backfill embedding failed: %s", type(e).__name__)
+            break
+        if embedding is None:
+            break
+        chunk.embedding_json = embedding
+        filled += 1
+    if filled:
+        try:
+            await db.commit()
+        except Exception as e:
+            logger.error("Could not save backfilled embeddings: %s", type(e).__name__)
+            await db.rollback()
+
+
+def _dense_top(rows, query_vec: np.ndarray, top_k: int) -> list:
+    """Rank rows (index, text, vector) by cosine similarity to the query. Returns [] if any vector
+    is missing or the sizes disagree, so the caller falls back to keyword search."""
+    scored = []
+    q_norm = float(np.linalg.norm(query_vec))
+    for row in rows:
+        vec = row[2]
+        if vec is None or vec.shape != query_vec.shape:
+            return []
+        denom = q_norm * float(np.linalg.norm(vec))
+        sim = float(np.dot(query_vec, vec) / denom) if denom else 0.0
+        scored.append((sim, row))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [row for _, row in scored[:top_k]]
+
+
+def _bm25_top(rows, query: str, top_k: int) -> list:
+    """Keyword ranking over the same rows. Chunks that share no word with the question are only
+    used to fill up to top_k, in document order."""
+    from rank_bm25 import BM25Okapi
+
+    corpus = [_tokens(r[1]) for r in rows]
+    query_tokens = _tokens(query)
+    if not query_tokens or not any(corpus):
+        return list(rows[:top_k])
+    scores = BM25Okapi(corpus).get_scores(query_tokens)
+    order = sorted(range(len(rows)), key=lambda i: (-scores[i], i))
+    return [rows[i] for i in order[:top_k]]
+
+
 async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, top_k: int = 5) -> str:
     """Retrieve relevant chunks for a query against a specific report.
 
@@ -151,59 +290,35 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
     if not chunks:
         return ""
 
-    has_embeddings = all(c.embedding_json is not None for c in chunks)
-    top_chunks = []
     embedder = get_embedder()
-
-    if has_embeddings and embedder is not None:
+    if embedder is not None:
         try:
-            q_emb = await asyncio.to_thread(embedder, safe_query, "retrieval_query")
+            await _backfill_missing_embeddings(chunks, embedder, db)
+        except Exception as e:
+            logger.error("Embedding backfill failed: %s", type(e).__name__)
 
-            if settings.DATABASE_URL.startswith("postgresql"):
-                stmt_vector = (
-                    select(RagChunk)
-                    .where(RagChunk.report_id == report_id)
-                    .order_by(RagChunk.embedding_json.cosine_distance(q_emb))
-                    .limit(top_k)
-                )
-                result_vector = await db.execute(stmt_vector)
-                top_chunks = result_vector.scalars().all()
-            else:
-                import numpy as np
+    # Plain values from here on: nothing below touches the ORM objects again.
+    rows = [(c.chunk_index, c.chunk_text, _as_vector(c.embedding_json)) for c in chunks]
+    total = len(rows)
 
-                def cosine_sim(a, b):
-                    if not a or not b:
-                        return 0.0
-                    norm_a = np.linalg.norm(a)
-                    norm_b = np.linalg.norm(b)
-                    if norm_a == 0 or norm_b == 0:
-                        return 0.0
-                    return np.dot(a, b) / (norm_a * norm_b)
-
-                scored_chunks = [
-                    (c, cosine_sim(q_emb, c.embedding_json))
-                    for c in chunks
-                    if c.embedding_json
-                ]
-                scored_chunks.sort(key=lambda x: x[1], reverse=True)
-                top_chunks = [c[0] for c in scored_chunks[:top_k]]
+    top_rows: list = []
+    if embedder is not None and all(r[2] is not None for r in rows):
+        try:
+            q_vec = _as_vector(await _embed(embedder, safe_query, "retrieval_query"))
+            if q_vec is not None:
+                top_rows = _dense_top(rows, q_vec, top_k)
         except Exception as e:
             logger.error("Semantic search failed, falling back to BM25: %s", type(e).__name__)
-            has_embeddings = False
 
-    if not has_embeddings or not top_chunks:
-        from rank_bm25 import BM25Okapi
-        tokenized_corpus = [c.chunk_text.lower().split(" ") for c in chunks]
-        bm25 = BM25Okapi(tokenized_corpus)
-        tokenized_query = safe_query.lower().split(" ")
-        top_chunks = bm25.get_top_n(tokenized_query, chunks, n=top_k)
+    if not top_rows:
+        top_rows = _bm25_top(rows, safe_query, top_k)
 
     context_parts = []
     total_chars = 0
-    top_chunks.sort(key=lambda x: x.chunk_index)
+    top_rows = sorted(top_rows, key=lambda r: r[0])
 
-    for c in top_chunks:
-        part = f"[Chunk {c.chunk_index + 1}/{len(chunks)}]: {c.chunk_text}"
+    for index, text, _vec in top_rows:
+        part = f"[Chunk {index + 1}/{total}]: {text}"
         if total_chars + len(part) > 16000:
             break
         context_parts.append(part)
@@ -212,18 +327,29 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
     return "\n\n".join(context_parts)
 
 
+_kb_lock = threading.Lock()
+
+
+def _query_kb(text: str, top_k: int) -> List[str]:
+    """Blocking knowledge-base search. One at a time: the first call downloads the embedding model,
+    and two threads must not download (and write) the same file together."""
+    with _kb_lock:
+        available = kb_collection.count()
+        if not available:
+            return []
+        results = kb_collection.query(query_texts=[text], n_results=min(top_k, available))
+    if results and results["documents"] and results["documents"][0]:
+        return list(results["documents"][0])
+    return []
+
+
 async def retrieve_kb_context(query: str, top_k: int = 3) -> str:
     """Query the global medical knowledge base."""
     if not kb_collection:
         return ""
     try:
-        results = await asyncio.to_thread(
-            kb_collection.query,
-            query_texts=[query],
-            n_results=top_k,
-        )
-        if results and results["documents"] and results["documents"][0]:
-            return "\n\n".join(results["documents"][0])
+        documents = await asyncio.to_thread(_query_kb, _rag_deidentify(query), top_k)
+        return "\n\n".join(documents)
     except Exception as e:
         logger.error("Error querying KB: %s", type(e).__name__)
     return ""
