@@ -3,6 +3,7 @@
 import asyncio
 import json
 import time
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -10,6 +11,7 @@ from app.api.v1.analysis import REQUIRED_UI_LABEL_KEYS
 from app.core.config import settings
 from app.exceptions import TranslationServiceError
 from app.services import llm_client
+from app.services import translation_planner
 from app.services.provider_health import provider_health
 from app.services.translation_labels import get_ui_labels
 from app.services.translation_planner import execute_translation_plan
@@ -121,6 +123,24 @@ async def run_plan(lang, generate, providers=("gemini",), findings=None, meds=No
         generate_func=generate,
         **kw,
     )
+
+
+async def test_real_translation_path_records_new_model_after_validation(monkeypatch):
+    generate = make_generate("hi")
+
+    async def provider_call(prompt, provider):
+        result = await generate(prompt, provider)
+        return {**result, "model": "new-translation-model", "latency_ms": 125}
+
+    record = AsyncMock()
+    monkeypatch.setattr(translation_planner, "generate_translation_with_provider", provider_call)
+    monkeypatch.setattr(translation_planner, "record_successful_model_call", record)
+
+    await run_plan("hi", provider_call)
+
+    assert record.await_count > 0
+    assert record.await_args.kwargs["model"] == "new-translation-model"
+    assert record.await_args.kwargs["feature"] == "translation"
 
 
 class QuotaError(Exception):

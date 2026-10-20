@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { AlertTriangle, BrainCircuit, CheckCircle2, FlaskConical, Layers, Sparkles } from 'lucide-react';
+import { AlertTriangle, BrainCircuit, CheckCircle2, Database, FlaskConical, Layers, Scale, Sparkles } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Forbidden } from '@/components/ui/forbidden';
+import { ModelLiveActivity } from '@/components/model-live-activity';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,12 +15,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import {
   ClassifierExplanation,
+  DatasetInfo,
   EntityExplanation,
   LabTrace,
   ModelEntry,
   ModelPerformanceReport,
   WeightedWord,
+  buildModelComparison,
   describeLabRule,
+  formatCount,
   formatMetric,
   groupByKind,
 } from '@/lib/model-performance';
@@ -315,11 +319,13 @@ export default function ModelPerformancePage() {
   return (
     <div className="space-y-6 fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Model Performance &amp; Explainability</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Models &amp; Explainability</h1>
         <p className="text-muted-foreground">
           How well each model MedNarrate relies on performs, and why the models give the answers they do.
         </p>
       </div>
+
+      <ModelLiveActivity />
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-4">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 w-full" />)}</div>
@@ -353,12 +359,14 @@ export default function ModelPerformancePage() {
             </TabsList>
 
             <TabsContent value="performance" className="space-y-8">
+              <ModelComparisonCard models={data.models} />
               {groupByKind(data.models).map((group) => (
                 <section key={group.kind} className="space-y-3">
                   <h2 className="text-lg font-semibold">{group.label}</h2>
                   {group.models.map((m) => <ModelCard key={m.id} model={m} />)}
                 </section>
               ))}
+              {data.dataset && data.dataset.records_usable ? <DatasetCard info={data.dataset} /> : null}
               <p className="text-xs text-muted-foreground">
                 Scores come from small, hand-checked test sets in the repository, so they show relative strengths and
                 weaknesses rather than clinical accuracy. Latency depends on the machine that ran the evaluation.
@@ -422,6 +430,42 @@ export default function ModelPerformancePage() {
   );
 }
 
+function DatasetCard({ info }: { info: DatasetInfo }) {
+  const rows: [string, string][] = [
+    ['Usable reports', formatCount(info.records_usable)],
+    ['Unique patients', formatCount(info.unique_patients)],
+    ['Duplicates removed', formatCount(info.duplicates_removed)],
+    [
+      'Train / validation / test',
+      `${formatCount(info.train_records)} / ${formatCount(info.validation_records)} / ${formatCount(info.test_records)}`,
+    ],
+    ['Classes', (info.classes ?? []).join(', ') || '—'],
+  ];
+  return (
+    <Card data-testid="dataset-card">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Database className="h-4 w-4 text-blue-500" /> Training dataset: {info.name}
+        </CardTitle>
+        {info.task ? <CardDescription>{info.task}</CardDescription> : null}
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+          {rows.map(([k, v]) => (
+            <div key={k} className="flex justify-between gap-3 border-b py-1">
+              <dt className="text-muted-foreground">{k}</dt>
+              <dd className="font-medium">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        {info.split ? <p className="text-muted-foreground">{info.split}</p> : null}
+        {info.leakage_safeguard ? <p className="text-muted-foreground">{info.leakage_safeguard}</p> : null}
+        {info.scope ? <p className="text-xs text-muted-foreground">{info.scope}</p> : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 function SummaryCard({ title, value, icon, small }: { title: string; value: string; icon: React.ReactNode; small?: boolean }) {
   return (
     <Card>
@@ -431,6 +475,83 @@ function SummaryCard({ title, value, icon, small }: { title: string; value: stri
       </CardHeader>
       <CardContent>
         <div className={small ? 'text-base font-semibold' : 'text-2xl font-bold'}>{value}</div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ModelComparisonCard({ models }: { models: ModelEntry[] }) {
+  const cmp = buildModelComparison(models);
+  if (!cmp.large || !cmp.small) return null;
+
+  const show = (v: number | null, row: { format: Parameters<typeof formatMetric>[1] }) =>
+    v === null ? 'Not evaluated yet' : formatMetric(v, row.format);
+  const cell = (row: { winner: string | null }, side: 'large' | 'small') =>
+    row.winner === side ? 'font-semibold text-emerald-700 dark:text-emerald-400' : '';
+
+  return (
+    <Card data-testid="model-comparison">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Scale className="h-4 w-4 text-blue-500" /> Large model vs small model
+        </CardTitle>
+        <CardDescription>
+          The hosted language-model chain (large) next to the offline Qwen2.5-1.5B model (small), on the same
+          translation test sentences.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {!cmp.ready && (
+          <p className="rounded border border-amber-300 bg-amber-50 p-3 text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
+            At least one of the two models has not been measured yet, so no winner is shown.
+            Run <code>python scripts/evaluate_models.py --only llm,qwen</code> in mednarrate-backend and reload.
+          </p>
+        )}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b text-muted-foreground">
+                <th className="py-1.5 pr-3 font-medium">Measure</th>
+                <th className="py-1.5 pr-3 font-medium">Large (hosted chain)</th>
+                <th className="py-1.5 font-medium">Small (offline Qwen)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cmp.shared.map((row) => (
+                <tr key={row.key} className="border-b last:border-0" data-testid={`cmp-${row.key}`}>
+                  <td className="py-1.5 pr-3">
+                    {row.label}
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      ({row.higherIsBetter ? 'higher is better' : 'lower is better'})
+                    </span>
+                  </td>
+                  <td className={`py-1.5 pr-3 ${cell(row, 'large')}`}>{show(row.large, row)}</td>
+                  <td className={`py-1.5 ${cell(row, 'small')}`}>{show(row.small, row)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {cmp.largeOnly.some((r) => r.large !== null) && (
+          <div>
+            <h4 className="mb-1 font-semibold">Measured for the large model only</h4>
+            <ul className="space-y-0.5 text-muted-foreground">
+              {cmp.largeOnly.filter((r) => r.large !== null).map((r) => (
+                <li key={r.key} data-testid={`cmp-${r.key}`}>
+                  {r.label}: <span className="font-medium text-foreground">{formatMetric(r.large as number, r.format)}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1 text-xs text-muted-foreground">
+              The small model is only used for translation, so it has no score for these.
+            </p>
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Green marks the better value. Times depend on the machine that ran the evaluation: the large model runs on
+          the provider&apos;s servers, the small one on the evaluation machine&apos;s CPU. Both use small, hand-checked
+          test sets, so a gap shows a trend, not clinical accuracy.
+        </p>
       </CardContent>
     </Card>
   );

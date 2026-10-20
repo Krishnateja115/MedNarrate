@@ -78,6 +78,28 @@ export interface XaiExamples {
   lab?: LabTrace[];
 }
 
+export interface DatasetInfo {
+  name: string;
+  task?: string;
+  classes?: string[];
+  records_raw?: number | null;
+  records_usable?: number | null;
+  duplicates_removed?: number | null;
+  unique_patients?: number | null;
+  train_records?: number | null;
+  validation_records?: number | null;
+  test_records?: number | null;
+  test_support_by_class?: Record<string, number>;
+  split?: string;
+  random_seed?: number | null;
+  leakage_safeguard?: string;
+  scope?: string;
+}
+
+export function formatCount(value: number | null | undefined): string {
+  return typeof value === 'number' ? value.toLocaleString('en-US') : '—';
+}
+
 export interface ModelPerformanceReport {
   generated_at: string | null;
   environment?: Record<string, string>;
@@ -90,6 +112,7 @@ export interface ModelPerformanceReport {
   models: ModelEntry[];
   xai_methods: XaiMethod[];
   xai_examples: XaiExamples;
+  dataset?: DatasetInfo | null;
   how_to_refresh?: string;
 }
 
@@ -136,4 +159,107 @@ export function groupByKind(models: ModelEntry[]): Array<{ kind: ModelKind; labe
     label: models.find((m) => m.kind === kind)?.kind_label ?? kind,
     models: models.filter((m) => m.kind === kind),
   })).filter((g) => g.models.length > 0);
+}
+
+export const LARGE_MODEL_ID = 'llm_chain';
+export const SMALL_MODEL_ID = 'local_qwen';
+
+export type ComparisonWinner = 'large' | 'small' | 'tie' | null;
+
+export interface ComparisonRow {
+  key: string;
+  label: string;
+  format: MetricFormat;
+  higherIsBetter: boolean;
+  large: number | null;
+  small: number | null;
+  /** Which model is ahead; null when either side has no measurement. */
+  winner: ComparisonWinner;
+  /** True when only the large model is tested on this measure. */
+  largeOnly?: boolean;
+}
+
+export interface ModelComparison {
+  large: ModelEntry | null;
+  small: ModelEntry | null;
+  /** True only when both models have measured results. */
+  ready: boolean;
+  shared: ComparisonRow[];
+  largeOnly: ComparisonRow[];
+}
+
+function metricValue(model: ModelEntry | null, key: string): number | null {
+  if (!model || model.status !== 'evaluated') return null;
+  const m = model.metrics.find((x) => x.key === key);
+  return m ? m.value : null;
+}
+
+function pickWinner(large: number | null, small: number | null, higherIsBetter: boolean): ComparisonWinner {
+  if (large === null || small === null) return null;
+  if (Math.abs(large - small) < 1e-9) return 'tie';
+  const largeAhead = higherIsBetter ? large > small : large < small;
+  return largeAhead ? 'large' : 'small';
+}
+
+/** Average time per translated sentence for the hosted chain, recorded under details.translation. */
+function largeTranslationLatency(model: ModelEntry | null): number | null {
+  if (!model || model.status !== 'evaluated') return null;
+  const translation = (model.details as { translation?: { avg_latency_ms?: unknown } }).translation;
+  const v = translation?.avg_latency_ms;
+  return typeof v === 'number' ? v : null;
+}
+
+/**
+ * Side-by-side view of the hosted language-model chain (large) and the offline Qwen model (small).
+ * Only measures taken the same way for both models are compared: the translation test sentences and
+ * the average time per translated sentence. Answer accuracy and abstention are only measured for the
+ * large model and are listed separately, never as a comparison.
+ */
+export function buildModelComparison(models: ModelEntry[]): ModelComparison {
+  const large = models.find((m) => m.id === LARGE_MODEL_ID) ?? null;
+  const small = models.find((m) => m.id === SMALL_MODEL_ID) ?? null;
+
+  const sharedSpecs: Array<Pick<ComparisonRow, 'key' | 'label' | 'format' | 'higherIsBetter'>> = [
+    { key: 'number_preservation', label: 'Numbers kept in translation', format: 'percent', higherIsBetter: true },
+    { key: 'sentences_with_all_numbers_kept', label: 'Sentences with every number kept', format: 'percent', higherIsBetter: true },
+    { key: 'chrf_hindi', label: 'Hindi translation quality (chrF)', format: 'points', higherIsBetter: true },
+  ];
+  const shared: ComparisonRow[] = sharedSpecs.map((r) => {
+    const l = metricValue(large, r.key);
+    const s = metricValue(small, r.key);
+    return { ...r, large: l, small: s, winner: pickWinner(l, s, r.higherIsBetter) };
+  });
+
+  const l = largeTranslationLatency(large);
+  const s = metricValue(small, 'avg_latency_ms');
+  shared.push({
+    key: 'translation_latency',
+    label: 'Average time per translated sentence',
+    format: 'ms',
+    higherIsBetter: false,
+    large: l,
+    small: s,
+    winner: pickWinner(l, s, false),
+  });
+
+  const largeOnlySpecs: Array<Pick<ComparisonRow, 'key' | 'label' | 'format'>> = [
+    { key: 'answer_accuracy', label: 'Answers questions from a report correctly', format: 'percent' },
+    { key: 'abstention_rate', label: 'Says "not in the report" when it is not', format: 'percent' },
+  ];
+  const largeOnly: ComparisonRow[] = largeOnlySpecs.map((r) => ({
+    ...r,
+    higherIsBetter: true,
+    large: metricValue(large, r.key),
+    small: null,
+    winner: null,
+    largeOnly: true,
+  }));
+
+  return {
+    large,
+    small,
+    ready: !!large && !!small && large.status === 'evaluated' && small.status === 'evaluated',
+    shared,
+    largeOnly,
+  };
 }

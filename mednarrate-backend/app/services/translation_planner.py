@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.exceptions import TranslationServiceError
 from app.services import provider_health as ph
 from app.services.llm_client import OPENAI_COMPATIBLE, generate_translation_with_provider
+from app.services.model_activity import record_successful_model_call
 from app.services.prompts import TRANSLATION_UNIT_PROMPT
 from app.services.provider_health import classify_error, provider_health
 from app.services.translation_labels import build_discussion_points, get_ui_labels
@@ -422,6 +423,7 @@ async def _execute_with_fallback(
                 if remaining <= 0:
                     kinds.append(TIMEOUT)
                     break
+                call_started = time.monotonic()
                 llm_res = await asyncio.wait_for(
                     generate_func(active_prompt, provider_name),
                     timeout=min(per_call, remaining),
@@ -442,6 +444,18 @@ async def _execute_with_fallback(
                     )
 
                 logger.info(f"[TRANSLATION_PLANNER {request_id}] Validation PASS on {provider_name}")
+                # The main LLM chain already records its own events. Direct
+                # translation providers otherwise bypass that telemetry path.
+                if generate_func is generate_translation_with_provider and provider_name != "existing":
+                    metadata = llm_res if isinstance(llm_res, dict) else {}
+                    await record_successful_model_call(
+                        request_id=request_id,
+                        provider=str(metadata.get("provider") or provider_name.split(":", 1)[0]),
+                        model=metadata.get("model"),
+                        feature="translation",
+                        latency_ms=float(metadata.get("latency_ms") or (time.monotonic() - call_started) * 1000),
+                        fallback_used=provider_name != providers[0],
+                    )
                 return parsed_candidate
 
             except (ValueError, TypeError, KeyError) as exc:
