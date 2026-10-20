@@ -2,6 +2,7 @@ class Routes {
   Routes._();
 
   static const String splash = "/";
+  static const String maintenance = "/maintenance";
   static const String login = "/login";
   static const String signup = "/signup";
   static const String forgotPassword = "/forgot-password";

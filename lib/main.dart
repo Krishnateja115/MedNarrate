@@ -16,6 +16,7 @@ import 'core/services/biometric_service.dart';
 import 'core/services/cache_service.dart';
 import 'core/services/offline_queue_service.dart';
 import 'core/services/connectivity_service.dart';
+import 'core/services/maintenance_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/app_config.dart';
 
@@ -39,6 +40,7 @@ class AppLifecycleObserver extends WidgetsBindingObserver {
         state == AppLifecycleState.inactive) {
       _backgroundedAt ??= DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
+      await MaintenanceController.instance.refresh();
       if (_backgroundedAt != null) {
         final diff = DateTime.now().difference(_backgroundedAt!);
         if (diff.inMinutes >= 3) {
@@ -249,6 +251,7 @@ Future<void> _runBootSequence() async {
         backendPath: e.backendPath,
         onComplete: () {
           runApp(_bootApp(
+    await MaintenanceController.instance.start();
             const BootScreen(status: 'Starting local server...'),
           ));
           _runBootSequence();

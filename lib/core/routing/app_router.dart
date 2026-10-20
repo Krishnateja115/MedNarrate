@@ -25,6 +25,8 @@ import '../../features/settings/screens/privacy_policy_screen.dart';
 import '../../features/settings/screens/licenses_screen.dart';
 import '../../features/settings/screens/ai_models_screen.dart';
 import '../../features/navigation/screens/main_navigation_screen.dart';
+import '../../features/maintenance/screens/maintenance_screen.dart';
+import '../services/maintenance_controller.dart';
 import 'routes.dart';
 
 import '../services/biometric_service.dart';
@@ -35,8 +37,13 @@ class AppRouter {
 
   static final router = GoRouter(
     initialLocation: Routes.splash,
+    refreshListenable: MaintenanceController.instance,
     redirect: (context, state) async {
       final location = state.uri.path;
+      if (MaintenanceController.instance.blocksApp) {
+        return location == Routes.maintenance ? null : Routes.maintenance;
+      }
+      if (location == Routes.maintenance) return Routes.splash;
       const publicPaths = {
         Routes.splash,
         Routes.login,
@@ -69,6 +76,10 @@ class AppRouter {
       return null;
     },
     routes: [
+      GoRoute(
+        path: Routes.maintenance,
+        builder: (context, state) => const MaintenanceScreen(),
+      ),
       GoRoute(
         path: Routes.splash,
         builder: (context, state) => const SplashScreen(),
