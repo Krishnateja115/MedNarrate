@@ -69,6 +69,32 @@ def _headers(user: User) -> dict[str, str]:
 
 
 @pytest.mark.asyncio
+async def test_break_glass_read_is_selectable_without_management_access(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    viewer = await _admin(
+        db_session,
+        name="Break Glass Viewer",
+        permissions=["roles.view", "break_glass.read"],
+    )
+
+    catalog = await client.get(
+        "/api/v1/admin/roles/permissions", headers=_headers(viewer)
+    )
+    assert catalog.status_code == 200
+    assert "break_glass.read" in {item["name"] for item in catalog.json()}
+
+    grants = await client.get(
+        "/api/v1/admin/break-glass/grants", headers=_headers(viewer)
+    )
+    assert grants.status_code == 200
+
+    read_only = AdminContext(viewer, ["break_glass.read"])
+    assert read_only.has_permission("approve_sensitive_access") is False
+    assert read_only.has_permission("break_glass.revoke") is False
+
+
+@pytest.mark.asyncio
 async def test_authorized_deactivate_revokes_sessions_and_audits(
     client: AsyncClient, db_session: AsyncSession
 ):

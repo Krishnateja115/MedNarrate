@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStepUp, STEP_UP_CANCELLED } from '@/components/step-up-dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,12 +27,14 @@ interface BreakGlassGrant {
 
 export default function BreakGlassPage() {
   const queryClient = useQueryClient();
-  const { user, can } = useAuth();
+  const { user, can, hasAnyPermission } = useAuth();
+  const { requestStepUp, stepUpDialog } = useStepUp();
+  const canApprove = hasAnyPermission(['break_glass.approve', 'approve_sensitive_access', 'breakglass.manage']);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const [showRequestForm, setShowRequestForm] = useState(false);
-  const [resourceType, setResourceType] = useState('patient_medical_record');
+  const [resourceType, setResourceType] = useState('medical_report');
   const [resourceId, setResourceId] = useState('');
   const [reason, setReason] = useState('');
   const [expiresInHours, setExpiresInHours] = useState(4);
@@ -44,7 +47,7 @@ export default function BreakGlassPage() {
   const requestGrantMutation = useMutation({
     mutationFn: (newReq: any) => fetchApi('/api/v1/admin/break-glass/request', { data: newReq }),
     onSuccess: () => {
-      setSuccessMsg('Temporary sensitive access grant issued successfully');
+      setSuccessMsg('Access request submitted. A different administrator must approve it before access is active.');
       setErrorMsg(null);
       setShowRequestForm(false);
       setResourceId('');
@@ -72,13 +75,21 @@ export default function BreakGlassPage() {
   });
 
   const approveGrantMutation = useMutation({
-    mutationFn: (grantId: string) => fetchApi(`/api/v1/admin/break-glass/grants/${grantId}/approve`, { method: 'POST', data: { notes: 'Approved via dashboard' } }),
+    mutationFn: async (grantId: string) => {
+      const token = await requestStepUp('Approving sensitive access needs your password and a current authenticator code.');
+      return fetchApi(`/api/v1/admin/break-glass/grants/${grantId}/approve`, {
+        method: 'POST',
+        data: { notes: 'Approved via dashboard' },
+        headers: { 'X-Step-Up-Token': token },
+      });
+    },
     onSuccess: () => {
       setSuccessMsg('Sensitive access grant approved successfully');
       setErrorMsg(null);
       queryClient.invalidateQueries({ queryKey: ['break-glass-grants'] });
     },
     onError: (err: any) => {
+      if (err.message === STEP_UP_CANCELLED) return;
       setErrorMsg(err.message || 'Failed to approve access grant');
       setSuccessMsg(null);
     }
@@ -100,15 +111,11 @@ export default function BreakGlassPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Key className="w-7 h-7 text-amber-500" /> Temporary Sensitive Access (Break-Glass)
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Time-bound, emergency access requests with mandatory audit justification and automatic backend expiration.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Break-Glass Access</h1>
+          <p className="text-muted-foreground">Time-limited emergency access to sensitive records. Every request needs a reason and is logged.</p>
         </div>
         <Button onClick={() => setShowRequestForm(!showRequestForm)} className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white">
           <AlertTriangle className="w-4 h-4" /> {showRequestForm ? 'Cancel Request' : 'Request Break-Glass Access'}
@@ -146,10 +153,11 @@ export default function BreakGlassPage() {
                   onChange={(e) => setResourceType(e.target.value)}
                   className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-700 text-sm"
                 >
-                  <option value="patient_medical_record">Patient Medical Record / Report</option>
-                  <option value="user_pii">User PII / Identity Data</option>
-                  <option value="raw_llm_transcript">Raw LLM Diagnostic Transcript</option>
-                  <option value="system_encryption_key">System Key / Config Vault</option>
+                  <option value="medical_report">Medical Report</option>
+                  <option value="medical_profile">Patient Medical Profile</option>
+                  <option value="doctor_profile">Doctor Profile</option>
+                  <option value="caregiver_profile">Caregiver Profile</option>
+                  <option value="chat_session">Chat Session</option>
                 </select>
               </div>
 
@@ -193,7 +201,7 @@ export default function BreakGlassPage() {
               </div>
 
               <Button type="submit" disabled={requestGrantMutation.isPending} className="bg-amber-600 hover:bg-amber-700 text-white">
-                {requestGrantMutation.isPending ? 'Submitting Request...' : 'Issue Temporary Access Grant'}
+                {requestGrantMutation.isPending ? 'Submitting Request...' : 'Submit Access Request'}
               </Button>
             </form>
           </CardContent>
@@ -272,7 +280,7 @@ export default function BreakGlassPage() {
                             Revoke Now
                           </Button>
                         )}
-                        {grant.status === 'requested' && can('approve_sensitive_access') && user?.id !== grant.admin_id && (
+                        {grant.status === 'requested' && canApprove && user?.id !== grant.admin_id && (
                           <Button
                             variant="default"
                             size="sm"
@@ -292,6 +300,7 @@ export default function BreakGlassPage() {
           )}
         </CardContent>
       </Card>
+      {stepUpDialog}
     </div>
   );
 }

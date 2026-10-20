@@ -42,6 +42,7 @@ DEFAULT_PERMISSIONS = [
     ("roles.manage", "Create and update roles and permissions"),
     ("audit.view", "View immutable audit logs"),
     ("breakglass.request", "Request temporary sensitive data access"),
+    ("break_glass.read", "View break-glass requests and grants without approving or revoking them"),
     ("breakglass.manage", "Approve or revoke break-glass grants"),
     ("privacy.view", "View privacy data requests and sensitive access history"),
     ("privacy.manage", "Manage data access, export, and deletion requests"),
@@ -175,6 +176,25 @@ async def list_roles(
     return out
 
 
+async def _reject_unknown_permissions(db: AsyncSession, names: List[str]) -> None:
+    """A typo in a permission name used to create a junk permission silently,
+    leaving a role that looked configured but granted nothing."""
+    wanted = {n for n in names if n}
+    if not wanted:
+        return
+    known = {name for name, _ in DEFAULT_PERMISSIONS}
+    stored = (
+        await db.execute(select(AdminPermission.name).where(AdminPermission.name.in_(wanted)))
+    ).scalars().all()
+    known.update(stored)
+    unknown = sorted(wanted - known)
+    if unknown:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown permission(s): {', '.join(unknown)}",
+        )
+
+
 @router.post("", status_code=201)
 async def create_role(
     req: RoleCreateReq,
@@ -205,6 +225,8 @@ async def create_role(
                 status_code=403,
                 detail=f"Self-escalation blocked: You cannot grant permissions you do not possess ({missing}).",
             )
+
+    await _reject_unknown_permissions(db, req.permission_names)
 
     new_role = AdminRole(name=req.name, description=req.description)
     db.add(new_role)
@@ -289,6 +311,8 @@ async def update_role(
                 status_code=403,
                 detail=f"Self-escalation blocked: You cannot grant permissions you do not possess ({missing}).",
             )
+
+    await _reject_unknown_permissions(db, req.permission_names)
 
     if req.name:
         role.name = req.name
