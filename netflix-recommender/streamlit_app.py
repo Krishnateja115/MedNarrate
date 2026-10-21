@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+import sys
+
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from pydantic import ValidationError
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from recommender import CustomTitle, RecommendationResult, Recommender, load_catalog
 
 
