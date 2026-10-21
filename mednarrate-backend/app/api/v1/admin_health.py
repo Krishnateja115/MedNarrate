@@ -174,18 +174,24 @@ async def get_system_health(
         )
         health_status["status"] = "degraded"
 
-    # 5. Scheduler — check actual running state
+    # 5. Medication reminders — phone-local in production; only probe APScheduler
+    # when server push has explicitly been enabled.
     start = perf_counter()
     try:
         is_running = scheduler.running
         job_count = len(scheduler.get_jobs()) if is_running else 0
         enabled = settings.SERVER_MEDICATION_PUSH_ENABLED
         health_status["services"]["scheduler"] = _service_entry(
-            "healthy" if is_running else ("disabled" if not enabled else "stopped"),
+            "healthy" if is_running else ("on_device" if not enabled else "stopped"),
             timestamp,
             latency_ms=_elapsed_ms(start) if enabled else None,
             error_summary=None if is_running or not enabled else "APScheduler is not running",
-            details={"active_jobs": job_count, "enabled": enabled},
+            details={
+                "active_jobs": job_count,
+                "enabled": enabled,
+                "delivery_mode": "server_push" if enabled else "phone_local",
+                "device_delivery_observable": False,
+            },
         )
         if enabled and not is_running:
             # Scheduler stopped is degraded, not down — API still serves requests

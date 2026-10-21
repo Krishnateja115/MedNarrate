@@ -138,20 +138,22 @@ export default function OverviewPage() {
     const service = health.services?.[serviceKey] || { status: 'unknown' };
     const healthy = service.status === 'healthy';
     const down = service.status === 'down';
+    const onDevice = service.status === 'on_device';
     
     return (
       <div className="flex items-center justify-between p-3 border rounded-lg bg-card">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-md ${healthy ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : down ? 'bg-destructive/10 text-destructive' : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30'}`}>
+          <div className={`p-2 rounded-md ${healthy ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : onDevice ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30' : down ? 'bg-destructive/10 text-destructive' : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30'}`}>
             <Icon className="w-4 h-4" />
           </div>
           <div>
             <p className="text-sm font-medium">{name}</p>
             {service.latency_ms != null && <p className="text-xs text-muted-foreground">{service.latency_ms}ms</p>}
+            {onDevice && <p className="text-xs text-muted-foreground">Scheduled locally</p>}
           </div>
         </div>
-        <Badge variant={healthy ? 'outline' : down ? 'destructive' : 'secondary'} className={healthy ? 'text-emerald-600 border-emerald-200' : ''}>
-          {service.status}
+        <Badge variant={healthy || onDevice ? 'outline' : down ? 'destructive' : 'secondary'} className={healthy ? 'text-emerald-600 border-emerald-200' : onDevice ? 'text-blue-600 border-blue-200' : ''}>
+          {onDevice ? 'On phone' : service.status}
         </Badge>
       </div>
     );
@@ -188,7 +190,7 @@ export default function OverviewPage() {
           <ServiceStatus name="Storage" icon={HardDrive} serviceKey="storage" />
           <ServiceStatus name="LLM Provider" icon={BrainCircuit} serviceKey="llm_provider" />
           <ServiceStatus name="RAG Service" icon={Bot} serviceKey="rag" />
-          <ServiceStatus name="Scheduler" icon={Clock} serviceKey="scheduler" />
+          <ServiceStatus name="Medication Alerts" icon={Clock} serviceKey="scheduler" />
         </div>
       </section>
 

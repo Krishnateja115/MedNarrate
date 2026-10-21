@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
 interface ServiceHealth {
-  status: 'healthy' | 'degraded' | 'down' | 'unknown' | 'reachable' | 'configured' | 'empty' | 'disabled' | 'stopped';
+  status: 'healthy' | 'degraded' | 'down' | 'unknown' | 'reachable' | 'configured' | 'empty' | 'disabled' | 'stopped' | 'on_device';
   last_checked: string;
   latency_ms: number | null;
   error_summary: string | null;
@@ -38,7 +38,7 @@ const serviceNames: Record<string, string> = {
   database: 'PostgreSQL Database',
   llm_provider: 'Primary LLM Provider',
   storage: 'File Storage',
-  scheduler: 'Medication Push Scheduler',
+  scheduler: 'Medication Alerts',
   report_worker: 'Report Analysis Worker',
   rag: 'Knowledge Base (RAG)',
 };
@@ -64,6 +64,8 @@ export default function HealthPage() {
         return <CheckCircle2 className="h-5 w-5 text-blue-500" />;
       case 'configured':
         return <CheckCircle2 className="h-5 w-5 text-slate-500" />;
+      case 'on_device':
+        return <Clock className="h-5 w-5 text-blue-500" />;
       case 'degraded':
       case 'empty':
         return <AlertCircle className="h-5 w-5 text-amber-500" />;
@@ -82,6 +84,8 @@ export default function HealthPage() {
         return <Badge variant="outline" className="text-blue-500 border-blue-500">Reachable</Badge>;
       case 'configured':
         return <Badge variant="outline" className="text-slate-500 border-slate-500">Configured</Badge>;
+      case 'on_device':
+        return <Badge variant="outline" className="text-blue-500 border-blue-500">On phone</Badge>;
       case 'degraded':
         return <Badge variant="outline" className="text-amber-500 border-amber-500">Degraded</Badge>;
       case 'empty':
@@ -159,7 +163,7 @@ export default function HealthPage() {
           <Card key={key} className={`border-l-4 ${
             service.status === 'healthy' ? 'border-l-emerald-500' :
             ['degraded', 'empty'].includes(service.status) ? 'border-l-amber-500' :
-            ['reachable', 'configured'].includes(service.status) ? 'border-l-blue-500' :
+            ['reachable', 'configured', 'on_device'].includes(service.status) ? 'border-l-blue-500' :
             ['disabled', 'unknown'].includes(service.status) ? 'border-l-slate-300' :
             'border-l-destructive'
           } hover:shadow-md transition-all duration-200`}>
@@ -174,12 +178,14 @@ export default function HealthPage() {
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Latency</span>
-                  <span className="font-medium">
-                    {formatLatency(service.latency_ms)}
-                  </span>
-                </div>
+                {service.status !== 'on_device' && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Latency</span>
+                    <span className="font-medium">
+                      {formatLatency(service.latency_ms)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Last Checked</span>
                   <span className="font-medium">
@@ -195,8 +201,8 @@ export default function HealthPage() {
                 {key === 'api' && (
                   <p className="text-xs text-muted-foreground">API timing includes all service checks on this page.</p>
                 )}
-                {key === 'scheduler' && service.status === 'disabled' && (
-                  <p className="text-xs text-muted-foreground">Medication reminders are scheduled on each phone.</p>
+                {key === 'scheduler' && service.status === 'on_device' && (
+                  <p className="text-xs text-muted-foreground">Each phone schedules its own medication alarms. The server cannot verify whether an individual phone displayed an alert.</p>
                 )}
                 {key === 'report_worker' && service.details && (
                   <p className="text-xs text-muted-foreground">Mode: {service.details.mode === 'worker' ? 'separate report worker' : 'in-process'}</p>

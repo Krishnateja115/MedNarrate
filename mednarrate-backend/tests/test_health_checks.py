@@ -83,6 +83,9 @@ async def test_health_check_returns_all_services(
             assert isinstance(services[name]["latency_ms"], (int, float))
             assert services[name]["latency_ms"] >= 0
         assert services["scheduler"]["latency_ms"] is None
+        assert services["scheduler"]["status"] == "on_device"
+        assert services["scheduler"]["details"]["delivery_mode"] == "phone_local"
+        assert services["scheduler"]["details"]["device_delivery_observable"] is False
 
         refreshed = await client.get(
             "/api/v1/admin/system/health", headers={"Authorization": f"Bearer {token}"}
