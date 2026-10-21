@@ -8,8 +8,11 @@ worker crash. Locks prevent duplicate work across worker instances.
 import argparse
 import asyncio
 import logging
+import os
 import uuid
+from datetime import datetime, timezone
 
+import redis.asyncio as redis
 from sqlalchemy import select, text
 
 from app.core.database import AsyncSessionLocal, engine
@@ -18,6 +21,25 @@ from app.services.analysis_pipeline import run_analysis
 
 
 logger = logging.getLogger(__name__)
+WORKER_HEARTBEAT_KEY = "mednarrate:analysis-worker:heartbeat"
+
+
+async def publish_heartbeat() -> None:
+    """Let the API distinguish a live worker from a stopped container."""
+    redis_url = os.environ.get("RATE_LIMIT_STORAGE_URI")
+    if not redis_url or not redis_url.startswith("redis://"):
+        return
+    try:
+        async with redis.from_url(
+            redis_url, socket_connect_timeout=1, socket_timeout=1
+        ) as client:
+            await client.set(
+                WORKER_HEARTBEAT_KEY,
+                datetime.now(timezone.utc).isoformat(),
+                ex=30,
+            )
+    except Exception:
+        logger.warning("Could not publish report worker heartbeat")
 
 
 def advisory_key(report_id: uuid.UUID) -> int:
@@ -65,6 +87,7 @@ async def main(once: bool, interval_seconds: float) -> None:
     while True:
         try:
             processed = await process_pending_once()
+            await publish_heartbeat()
             logger.info("Processed %s queued reports in this sweep", processed)
         except Exception:
             logger.exception("Report worker sweep failed; will retry")

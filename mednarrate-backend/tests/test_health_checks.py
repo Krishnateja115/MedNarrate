@@ -53,7 +53,7 @@ async def test_health_check_returns_all_services(
     original_get_provider = llm_client_instance.get_provider
 
     class MockProvider:
-        async def health_check(self):
+        async def health_check(self, config: dict | None = None):
             return {"reachable": True, "configured": True, "request_successful": True}
 
     def mock_get_provider(*args, **kwargs):
@@ -78,6 +78,18 @@ async def test_health_check_returns_all_services(
         assert "storage" in services
         assert "scheduler" in services
         assert "rag" in services
+        assert "report_worker" in services
+        for name in ("api", "database", "llm_provider", "storage", "rag"):
+            assert isinstance(services[name]["latency_ms"], (int, float))
+            assert services[name]["latency_ms"] >= 0
+        assert services["scheduler"]["latency_ms"] is None
+
+        refreshed = await client.get(
+            "/api/v1/admin/system/health", headers={"Authorization": f"Bearer {token}"}
+        )
+        assert refreshed.status_code == 200
+        assert refreshed.json()["timestamp"] != data["timestamp"]
+        assert refreshed.json()["services"]["api"]["latency_ms"] >= 0
 
         # Ensure no sensitive details are exposed
         for service_name, details in services.items():
