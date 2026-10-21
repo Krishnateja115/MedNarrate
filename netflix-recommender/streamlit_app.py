@@ -147,10 +147,10 @@ def render_results(result: RecommendationResult, catalog: pd.DataFrame) -> None:
     left, right = st.columns([1.3, 1], gap="large")
     with left:
         st.subheader("Model ranking")
-        st.plotly_chart(score_chart(result), use_container_width=True)
+        st.plotly_chart(score_chart(result), width="stretch")
     with right:
         st.subheader("Genre match")
-        st.plotly_chart(genre_chart(result), use_container_width=True)
+        st.plotly_chart(genre_chart(result), width="stretch")
 
     st.subheader("Recommended titles")
     for rank, row in result.matches.iterrows():
@@ -176,7 +176,7 @@ def render_results(result: RecommendationResult, catalog: pd.DataFrame) -> None:
     )
     same_type = result.matches["type"].eq(str(result.query["type"])).any()
     if same_type:
-        st.plotly_chart(duration_chart(result, catalog), use_container_width=True)
+        st.plotly_chart(duration_chart(result, catalog), width="stretch")
     else:
         st.info("Select matching content types to compare durations in the same units.")
     if result.source == "custom":
@@ -191,9 +191,8 @@ def discover(model: Recommender) -> None:
         'content based recommendation model.</p>', unsafe_allow_html=True,
     )
     st.write("")
-    mode = st.segmented_control(
-        "Start with", ["A catalog title", "A new idea"],
-        default="A catalog title",
+    mode = st.radio(
+        "Start with", ["A catalog title", "A new idea"], horizontal=True,
     )
     type_filter = st.selectbox("Show recommendations for", ["Any type", "Movie", "TV Show"])
     selected_type = None if type_filter == "Any type" else type_filter
@@ -268,7 +267,7 @@ def explore(catalog: pd.DataFrame) -> None:
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
             yaxis=dict(title="Titles", gridcolor="#e9e5e0"),
         )
-        st.plotly_chart(figure, use_container_width=True)
+        st.plotly_chart(figure, width="stretch")
     with right:
         st.subheader("Top genres")
         genres = catalog["primary_genre"].value_counts().head(8).iloc[::-1]
@@ -281,7 +280,7 @@ def explore(catalog: pd.DataFrame) -> None:
             xaxis=dict(title="Titles", gridcolor="#e9e5e0"),
             yaxis=dict(title="", automargin=True),
         )
-        st.plotly_chart(figure, use_container_width=True)
+        st.plotly_chart(figure, width="stretch")
     st.subheader("How the recommendations work")
     st.write(
         "The notebook combines each title’s genres, director, first three cast members, "
