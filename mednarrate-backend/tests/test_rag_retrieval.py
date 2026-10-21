@@ -269,7 +269,7 @@ def test_an_explicit_unknown_embedding_provider_still_disables_embeddings(monkey
 async def test_knowledge_notes_are_skipped_for_non_english_and_never_raise(monkeypatch):
     calls = []
 
-    async def kb(query, top_k=3):
+    async def kb(query, top_k=3, db=None):
         calls.append(query)
         return "note"
 
@@ -279,13 +279,13 @@ async def test_knowledge_notes_are_skipped_for_non_english_and_never_raise(monke
     assert calls == []
     assert await chat_api._knowledge_context("what is hemoglobin") == "note"
 
-    async def broken(query, top_k=3):
+    async def broken(query, top_k=3, db=None):
         raise RuntimeError("chroma down")
 
     monkeypatch.setattr(chat_api, "retrieve_kb_context", broken)
     assert await chat_api._knowledge_context("what is hemoglobin") == ""
 
-    async def slow(query, top_k=3):
+    async def slow(query, top_k=3, db=None):
         await asyncio.sleep(5)
         return "late"
 
@@ -296,7 +296,7 @@ async def test_knowledge_notes_are_skipped_for_non_english_and_never_raise(monke
 
 @pytest.mark.asyncio
 async def test_general_chat_prompt_carries_the_knowledge_notes(client, token_headers, monkeypatch):
-    async def kb(query, top_k=3):
+    async def kb(query, top_k=3, db=None):
         return "Hemoglobin carries oxygen in red blood cells."
 
     monkeypatch.setattr(chat_api, "retrieve_kb_context", kb)
@@ -342,7 +342,7 @@ async def test_report_chat_uses_report_chunks_and_notes_and_searches_follow_ups_
         searches.append(query)
         return "[Chunk 1/1]: Glucose fasting 200 mg/dL"
 
-    async def kb(query, top_k=3):
+    async def kb(query, top_k=3, db=None):
         return "Fasting glucose is measured after 8 hours without food."
 
     monkeypatch.setattr(chat_api, "retrieve_chunks", fake_retrieve)
@@ -391,7 +391,7 @@ async def test_report_chat_still_answers_when_the_knowledge_base_is_broken(clien
     async def fake_retrieve(query, rid, db, top_k=5):
         return "[Chunk 1/1]: Glucose fasting 200 mg/dL"
 
-    async def broken_kb(query, top_k=3):
+    async def broken_kb(query, top_k=3, db=None):
         raise RuntimeError("chroma down")
 
     monkeypatch.setattr(chat_api, "retrieve_chunks", fake_retrieve)
@@ -434,6 +434,31 @@ async def test_knowledge_base_lookup_returns_notes_and_never_asks_for_more_than_
 
     assert await rag.retrieve_kb_context("what is hemoglobin", top_k=5) == "Note A\n\nNote B"
     assert fake.asked[1] == 2
+
+
+@pytest.mark.asyncio
+async def test_knowledge_base_excludes_archived_document_source(monkeypatch, db_session):
+    import json
+
+    from app.models.knowledge_document import DocLifecycleStatus, KnowledgeDocument
+
+    class FilteredCollection:
+        def count(self):
+            return 2
+
+        def query(self, query_texts, n_results, where=None):
+            assert where == {"source": {"$nin": ["archived.md"]}}
+            return {"documents": [["Published note"]]}
+
+    monkeypatch.setattr(rag, "kb_collection", FilteredCollection())
+    db_session.add(KnowledgeDocument(
+        name="Archived note",
+        version="1.0",
+        status=DocLifecycleStatus.archived,
+        source_metadata=json.dumps({"index": "medical_knowledge", "source": "archived.md"}),
+    ))
+    await db_session.commit()
+    assert await rag.retrieve_kb_context("sample", db=db_session) == "Published note"
 
 
 @pytest.mark.asyncio

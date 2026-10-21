@@ -75,7 +75,11 @@ async def update_document_status(
         raise HTTPException(status_code=404, detail="Document not found")
 
     doc.status = payload.status
-    if payload.approval_state:
+    if payload.status == DocLifecycleStatus.approved:
+        doc.approval_state = "approved"
+    elif payload.status == DocLifecycleStatus.review:
+        doc.approval_state = "pending_review"
+    elif payload.approval_state:
         doc.approval_state = payload.approval_state
 
     await log_admin_action(
@@ -84,7 +88,7 @@ async def update_document_status(
         actor_admin_id=admin_ctx.user.id,
         resource_type="KnowledgeDocument",
         resource_id=str(doc.id),
-        metadata={"new_status": payload.status},
+        metadata={"new_status": payload.status.value},
     )
 
     await db.commit()
@@ -169,7 +173,14 @@ async def get_rag_status(
         from app.services import rag as _rag
 
         if _rag.kb_collection is not None:
-            passages = int(_rag.kb_collection.count())
+            excluded_sources = await _rag.unpublished_kb_sources(db)
+            if excluded_sources:
+                passages = len(_rag.kb_collection.get(
+                    where={"source": {"$nin": sorted(excluded_sources)}},
+                    include=[],
+                )["ids"])
+            else:
+                passages = int(_rag.kb_collection.count())
             health_notes = {"passages": passages, "ready": passages > 0}
     except Exception:
         pass

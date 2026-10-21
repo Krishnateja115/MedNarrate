@@ -25,15 +25,31 @@ jest.mock('@/components/ui/forbidden', () => ({
 jest.mock('@/components/ui/toast', () => ({
   toast: { add: jest.fn() },
 }));
+jest.mock('@/components/ui/select', () => ({
+  Select: ({ value, onValueChange, disabled, children }: { value: string; onValueChange: (value: string) => void; disabled?: boolean; children: React.ReactNode }) => (
+    <select value={value} disabled={disabled} onChange={(event) => onValueChange(event.target.value)}>{children}</select>
+  ),
+  SelectTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SelectValue: () => null,
+  SelectItem: ({ value, children }: { value: string; children: React.ReactNode }) => <option value={value}>{children}</option>,
+}));
 jest.mock('@/components/ui/data-table', () => ({
-  DataTable: ({ data, isLoading }: { data: unknown[]; isLoading?: boolean }) => (
+  DataTable: ({ data, isLoading, columns }: {
+    data: Array<{ id: string }>;
+    isLoading?: boolean;
+    columns: Array<{ id?: string; cell?: (context: { row: { original: { id: string } } }) => React.ReactNode }>;
+  }) => (
     <div data-testid="data-table">
       {isLoading ? (
         <div data-testid="loading">loading</div>
       ) : (
         <ul>
-          {(data as Array<{ id: string }>).map((row, i) => (
-            <li key={i} data-testid="doc-row">{row.id}</li>
+          {data.map((row, i) => (
+            <li key={i} data-testid="doc-row">
+              {row.id}
+              {columns.find((column) => column.id === 'actions')?.cell?.({ row: { original: row } })}
+            </li>
           ))}
         </ul>
       )}
@@ -117,8 +133,19 @@ describe('RagOpsPage', () => {
     await waitFor(() => {
       const rows = screen.getAllByTestId('doc-row');
       expect(rows).toHaveLength(2);
-      expect(rows[0].textContent).toBe('doc-aaa');
+      expect(rows[0].textContent).toContain('doc-aaa');
     });
+  });
+
+  it('sends a JSON payload when archiving a document', async () => {
+    renderPage();
+    showDocuments();
+    await waitFor(() => expect(screen.getAllByTestId('doc-row')).toHaveLength(2));
+    fireEvent.change(screen.getAllByRole('combobox')[1], { target: { value: 'Archived' } });
+    await waitFor(() => expect(mockedFetchApi).toHaveBeenCalledWith(
+      '/api/v1/admin/rag-ops/documents/doc-aaa/status',
+      { method: 'PATCH', data: { status: 'Archived' } },
+    ));
   });
 
   it('shows loading state while fetching', () => {

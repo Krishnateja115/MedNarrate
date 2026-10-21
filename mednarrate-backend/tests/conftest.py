@@ -85,7 +85,7 @@ def _no_real_knowledge_base(monkeypatch):
     """Chat looks up general-health notes in ChromaDB, whose model is downloaded on first use.
     Keep every test offline and fast; tests that exercise the lookup patch it themselves."""
 
-    async def _none(query, top_k=3):
+    async def _none(query, top_k=3, db=None):
         return ""
 
     monkeypatch.setattr("app.api.v1.chat.retrieve_kb_context", _none)

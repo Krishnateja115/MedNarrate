@@ -120,7 +120,7 @@ export default function RagOpsPage() {
       setUpdatingId(id);
       return fetchApi(`/api/v1/admin/rag-ops/documents/${id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        data: { status },
       });
     },
     onSuccess: () => {

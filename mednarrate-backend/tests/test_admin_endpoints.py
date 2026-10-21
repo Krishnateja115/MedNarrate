@@ -45,6 +45,7 @@ async def dashboard_admin_user(db_session: AsyncSession):
         "incidents.view",
         "incidents.manage",
         "rag.view",
+        "rag.manage",
         "admins.view",
     ]
     from sqlalchemy import select
@@ -131,6 +132,55 @@ async def test_rag_status_uses_supported_document_lifecycle(
     assert "total_documents" in overview
     assert "published_documents" in overview
     assert "failed_documents" not in overview
+
+
+@pytest.mark.asyncio
+async def test_rag_document_archive_and_approval_change_status_and_search_scope(
+    client: AsyncClient, dashboard_admin_user: dict, db_session: AsyncSession
+):
+    import json
+
+    from app.models.knowledge_document import DocLifecycleStatus, KnowledgeDocument
+    from app.services.rag import unpublished_kb_sources
+
+    document = KnowledgeDocument(
+        name="Test reference",
+        version="1.0",
+        status=DocLifecycleStatus.published,
+        source_metadata=json.dumps({"index": "medical_knowledge", "source": "test_reference.md"}),
+    )
+    db_session.add(document)
+    await db_session.commit()
+    headers = {"Authorization": f"Bearer {dashboard_admin_user['token']}"}
+
+    archived = await client.patch(
+        f"/api/v1/admin/rag-ops/documents/{document.id}/status",
+        json={"status": "Archived"},
+        headers=headers,
+    )
+    assert archived.status_code == 200
+    await db_session.refresh(document)
+    assert document.status == DocLifecycleStatus.archived
+    assert await unpublished_kb_sources(db_session) == {"test_reference.md"}
+
+    approved = await client.patch(
+        f"/api/v1/admin/rag-ops/documents/{document.id}/status",
+        json={"status": "Approved"},
+        headers=headers,
+    )
+    assert approved.status_code == 200
+    await db_session.refresh(document)
+    assert document.status == DocLifecycleStatus.approved
+    assert document.approval_state == "approved"
+    assert await unpublished_kb_sources(db_session) == {"test_reference.md"}
+
+    published = await client.patch(
+        f"/api/v1/admin/rag-ops/documents/{document.id}/status",
+        json={"status": "Published"},
+        headers=headers,
+    )
+    assert published.status_code == 200
+    assert await unpublished_kb_sources(db_session) == set()
 
 
 @pytest.mark.asyncio

@@ -212,7 +212,7 @@ async def _retrieval_query(req, session, db: AsyncSession) -> str:
     return question
 
 
-async def _knowledge_context(question: str) -> str:
+async def _knowledge_context(question: str, db: AsyncSession | None = None) -> str:
     """Short general-health reference notes for the question, or "" if none are available.
 
     Never raises and never waits long: the notes are a bonus, the answer must not depend on them.
@@ -222,7 +222,7 @@ async def _knowledge_context(question: str) -> str:
         return ""
     try:
         return await asyncio.wait_for(
-            retrieve_kb_context(text, top_k=2), timeout=_KB_TIMEOUT_SECONDS
+            retrieve_kb_context(text, top_k=2, db=db), timeout=_KB_TIMEOUT_SECONDS
         )
     except Exception:
         logger.warning("Knowledge-base lookup skipped", exc_info=True)
@@ -245,10 +245,9 @@ async def _generate_rag_answer(req, session, db: AsyncSession) -> tuple[str, str
     watch.lap("history")
     search_text = await _retrieval_query(req, session, db)
     if report_id:
-        context, knowledge = await asyncio.gather(
-            retrieve_chunks(search_text, report_id, db, top_k=5),
-            _knowledge_context(search_text),
-        )
+        # Both lookups use the same AsyncSession, so run them sequentially.
+        context = await retrieve_chunks(search_text, report_id, db, top_k=5)
+        knowledge = await _knowledge_context(search_text, db)
         watch.lap("retrieve")
         prompt = RAG_SYSTEM_PROMPT.format(
             context=context,
@@ -262,7 +261,7 @@ async def _generate_rag_answer(req, session, db: AsyncSession) -> tuple[str, str
         )
     else:
         overview = await _reports_overview(user_id, db)
-        knowledge = await _knowledge_context(search_text)
+        knowledge = await _knowledge_context(search_text, db)
         watch.lap("retrieve")
         prompt = GENERAL_CHAT_PROMPT.format(
             reports_overview=overview,

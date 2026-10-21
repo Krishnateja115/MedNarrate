@@ -29,6 +29,7 @@ import asyncio
 import threading
 import time
 import uuid
+import json
 from typing import List, Optional
 
 import numpy as np
@@ -37,6 +38,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import os
 
 from app.models.rag_chunk import RagChunk
+from app.models.knowledge_document import DocLifecycleStatus, KnowledgeDocument
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -330,25 +332,53 @@ async def retrieve_chunks(query: str, report_id: uuid.UUID, db: AsyncSession, to
 _kb_lock = threading.Lock()
 
 
-def _query_kb(text: str, top_k: int) -> List[str]:
+async def unpublished_kb_sources(db: AsyncSession) -> set[str]:
+    """Return indexed source names whose managed document is not published."""
+    rows = (await db.execute(
+        select(KnowledgeDocument.source_metadata).where(
+            KnowledgeDocument.status != DocLifecycleStatus.published
+        )
+    )).scalars().all()
+    sources: set[str] = set()
+    for raw in rows:
+        try:
+            metadata = json.loads(raw or "{}")
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(metadata, dict):
+            continue
+        if metadata.get("index") == "medical_knowledge" and isinstance(metadata.get("source"), str):
+            sources.add(metadata["source"])
+    return sources
+
+
+def _query_kb(text: str, top_k: int, excluded_sources: set[str] | None = None) -> List[str]:
     """Blocking knowledge-base search. One at a time: the first call downloads the embedding model,
     and two threads must not download (and write) the same file together."""
     with _kb_lock:
         available = kb_collection.count()
         if not available:
             return []
-        results = kb_collection.query(query_texts=[text], n_results=min(top_k, available))
+        kwargs = {}
+        if excluded_sources:
+            kwargs["where"] = {"source": {"$nin": sorted(excluded_sources)}}
+        results = kb_collection.query(query_texts=[text], n_results=min(top_k, available), **kwargs)
     if results and results["documents"] and results["documents"][0]:
         return list(results["documents"][0])
     return []
 
 
-async def retrieve_kb_context(query: str, top_k: int = 3) -> str:
+async def retrieve_kb_context(
+    query: str, top_k: int = 3, db: AsyncSession | None = None
+) -> str:
     """Query the global medical knowledge base."""
     if not kb_collection:
         return ""
     try:
-        documents = await asyncio.to_thread(_query_kb, _rag_deidentify(query), top_k)
+        excluded_sources = await unpublished_kb_sources(db) if db is not None else set()
+        documents = await asyncio.to_thread(
+            _query_kb, _rag_deidentify(query), top_k, excluded_sources
+        )
         return "\n\n".join(documents)
     except Exception as e:
         logger.error("Error querying KB: %s", type(e).__name__)
