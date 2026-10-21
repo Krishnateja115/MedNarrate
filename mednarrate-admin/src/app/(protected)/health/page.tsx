@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
 interface ServiceHealth {
-  status: 'healthy' | 'degraded' | 'down' | 'unknown' | 'reachable' | 'configured';
+  status: 'healthy' | 'degraded' | 'down' | 'unknown' | 'reachable' | 'configured' | 'empty' | 'disabled' | 'stopped';
   last_checked: string;
   latency_ms: number | null;
   error_summary: string | null;
@@ -29,22 +29,30 @@ const serviceIcons: Record<string, React.ReactNode> = {
   database: <Database className="h-5 w-5" />,
   llm_provider: <Brain className="h-5 w-5" />,
   storage: <HardDrive className="h-5 w-5" />,
-  scheduler: <Clock className="h-5 w-5" />
+  scheduler: <Clock className="h-5 w-5" />,
+  report_worker: <Activity className="h-5 w-5" />,
 };
 
 const serviceNames: Record<string, string> = {
   api: 'API Server',
-  database: 'Database',
+  database: 'PostgreSQL Database',
   llm_provider: 'Primary LLM Provider',
   storage: 'File Storage',
-  scheduler: 'Background Jobs',
+  scheduler: 'Medication Push Scheduler',
+  report_worker: 'Report Analysis Worker',
   rag: 'Knowledge Base (RAG)',
 };
+
+function formatLatency(latency: number | null): string {
+  if (latency === null) return 'Not applicable';
+  if (latency < 0.01) return '<0.01 ms';
+  return `${latency.toFixed(latency < 10 ? 2 : 1)} ms`;
+}
 
 export default function HealthPage() {
   const { data, isLoading, error, refetch, isFetching } = useQuery<SystemHealth>({
     queryKey: ['system-health'],
-    queryFn: () => fetchApi('/api/v1/admin/system/health'),
+    queryFn: () => fetchApi('/api/v1/admin/system/health', { cache: 'no-store' }),
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
@@ -57,6 +65,7 @@ export default function HealthPage() {
       case 'configured':
         return <CheckCircle2 className="h-5 w-5 text-slate-500" />;
       case 'degraded':
+      case 'empty':
         return <AlertCircle className="h-5 w-5 text-amber-500" />;
       case 'down':
         return <XCircle className="h-5 w-5 text-destructive" />;
@@ -75,6 +84,12 @@ export default function HealthPage() {
         return <Badge variant="outline" className="text-slate-500 border-slate-500">Configured</Badge>;
       case 'degraded':
         return <Badge variant="outline" className="text-amber-500 border-amber-500">Degraded</Badge>;
+      case 'empty':
+        return <Badge variant="outline" className="text-amber-500 border-amber-500">Empty</Badge>;
+      case 'disabled':
+        return <Badge variant="secondary">Disabled</Badge>;
+      case 'stopped':
+        return <Badge variant="destructive">Stopped</Badge>;
       case 'down':
         return <Badge variant="destructive">Down</Badge>;
       default:
@@ -143,7 +158,9 @@ export default function HealthPage() {
         {Object.entries(data.services).map(([key, service]) => (
           <Card key={key} className={`border-l-4 ${
             service.status === 'healthy' ? 'border-l-emerald-500' :
-            service.status === 'degraded' ? 'border-l-amber-500' :
+            ['degraded', 'empty'].includes(service.status) ? 'border-l-amber-500' :
+            ['reachable', 'configured'].includes(service.status) ? 'border-l-blue-500' :
+            ['disabled', 'unknown'].includes(service.status) ? 'border-l-slate-300' :
             'border-l-destructive'
           } hover:shadow-md transition-all duration-200`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -160,7 +177,7 @@ export default function HealthPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Latency</span>
                   <span className="font-medium">
-                    {service.latency_ms !== null ? `${service.latency_ms} ms` : '—'}
+                    {formatLatency(service.latency_ms)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -174,6 +191,18 @@ export default function HealthPage() {
                   <div className="mt-4 p-3 bg-destructive/10 text-destructive text-xs rounded-md border border-destructive/20 font-mono break-words">
                     {service.error_summary}
                   </div>
+                )}
+                {key === 'api' && (
+                  <p className="text-xs text-muted-foreground">API timing includes all service checks on this page.</p>
+                )}
+                {key === 'scheduler' && service.status === 'disabled' && (
+                  <p className="text-xs text-muted-foreground">Medication reminders are scheduled on each phone.</p>
+                )}
+                {key === 'report_worker' && service.details && (
+                  <p className="text-xs text-muted-foreground">Mode: {service.details.mode === 'worker' ? 'separate report worker' : 'in-process'}</p>
+                )}
+                {key === 'rag' && service.details && (
+                  <p className="text-xs text-muted-foreground">Knowledge index chunks: {service.details.chunk_count ?? 'unknown'}</p>
                 )}
                 
                 {key === 'llm_provider' && service.details && (

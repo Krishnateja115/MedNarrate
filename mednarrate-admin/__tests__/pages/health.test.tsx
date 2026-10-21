@@ -1,11 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import HealthPage from '@/app/(protected)/health/page';
 import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api';
 
 // Mock useQuery
 jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
 }));
+jest.mock('@/lib/api', () => ({ fetchApi: jest.fn() }));
 
 describe('HealthPage', () => {
   beforeEach(() => {
@@ -24,6 +26,7 @@ describe('HealthPage', () => {
   });
 
   it('renders health data correctly', () => {
+    const refetch = jest.fn();
     (useQuery as jest.Mock).mockReturnValue({
       data: {
         status: 'healthy',
@@ -40,11 +43,19 @@ describe('HealthPage', () => {
             last_checked: '2023-10-27T10:00:00Z',
             latency_ms: 500,
             error_summary: 'High latency detected'
+          },
+          scheduler: {
+            status: 'disabled',
+            last_checked: '2023-10-27T10:00:00Z',
+            latency_ms: null,
+            error_summary: null
           }
         }
       },
       isLoading: false,
       error: null,
+      refetch,
+      isFetching: false,
     });
 
     render(<HealthPage />);
@@ -58,5 +69,12 @@ describe('HealthPage', () => {
     
     // Check error summary
     expect(screen.getByText('High latency detected')).toBeInTheDocument();
+    expect(screen.getByText('15.0 ms')).toBeInTheDocument();
+    expect(screen.getByText('Not applicable')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh Status' }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+    const query = (useQuery as jest.Mock).mock.calls[0][0];
+    query.queryFn();
+    expect(fetchApi).toHaveBeenCalledWith('/api/v1/admin/system/health', { cache: 'no-store' });
   });
 });
