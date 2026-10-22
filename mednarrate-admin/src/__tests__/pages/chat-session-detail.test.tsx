@@ -48,5 +48,6 @@ describe('ChatSessionDetailPage', () => {
     fireEvent.click(button);
     await waitFor(() => expect(mockedFetchApi).toHaveBeenCalledWith('/api/v1/admin/chat-ops/sessions/session-123/messages'));
     expect(await screen.findByText(/active break-glass grant/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Request break-glass access' })).toHaveAttribute('href', '/breakglass?resource_type=chat_session&resource_id=session-123');
   });
 });

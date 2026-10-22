@@ -1,7 +1,8 @@
 /* eslint-disable */
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,7 +26,12 @@ interface BreakGlassGrant {
   revoked_at: string | null;
 }
 
-export default function BreakGlassPage() {
+function BreakGlassPageContent() {
+  const searchParams = useSearchParams();
+  const requestedType = searchParams.get('resource_type');
+  const requestedId = searchParams.get('resource_id');
+  const validTypes = ['medical_report', 'medical_profile', 'doctor_profile', 'caregiver_profile', 'chat_session'];
+  const hasPrefill = Boolean(requestedType && validTypes.includes(requestedType) && requestedId?.trim() && requestedId.length <= 128);
   const queryClient = useQueryClient();
   const { user, can, hasAnyPermission } = useAuth();
   const { requestStepUp, stepUpDialog } = useStepUp();
@@ -33,9 +39,9 @@ export default function BreakGlassPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const [showRequestForm, setShowRequestForm] = useState(false);
-  const [resourceType, setResourceType] = useState('medical_report');
-  const [resourceId, setResourceId] = useState('');
+  const [showRequestForm, setShowRequestForm] = useState(hasPrefill);
+  const [resourceType, setResourceType] = useState(hasPrefill ? requestedType! : 'medical_report');
+  const [resourceId, setResourceId] = useState(hasPrefill ? requestedId! : '');
   const [reason, setReason] = useState('');
   const [expiresInHours, setExpiresInHours] = useState(4);
 
@@ -303,4 +309,8 @@ export default function BreakGlassPage() {
       {stepUpDialog}
     </div>
   );
+}
+
+export default function BreakGlassPage() {
+  return <Suspense fallback={<div className="p-6">Loading access requests…</div>}><BreakGlassPageContent /></Suspense>;
 }
