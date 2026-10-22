@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Iterable, Optional
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import AdminContext, require_any_permission
@@ -26,6 +26,7 @@ from app.models.report_analysis import ReportAnalysis
 from app.models.support import SupportTicket
 from app.models.user import User
 from app.services.audit import log_admin_action
+from app.services.report_outcomes import rejected_report_ids
 
 router = APIRouter()
 
@@ -150,6 +151,17 @@ async def get_admin_analytics(
             select(func.count(Report.id)).where(
                 Report.uploaded_at >= since_naive,
                 Report.processing_status == ProcessingStatus.failed,
+                Report.id.not_in(rejected_report_ids()),
+            )
+        )
+    ).scalar_one_or_none() or 0
+
+    rep_rejected = (
+        await db.execute(
+            select(func.count(Report.id)).where(
+                Report.uploaded_at >= since_naive,
+                Report.processing_status == ProcessingStatus.failed,
+                Report.id.in_(rejected_report_ids()),
             )
         )
     ).scalar_one_or_none() or 0
@@ -172,6 +184,7 @@ async def get_admin_analytics(
             Report.uploaded_at >= since_naive,
             Report.processing_status == ProcessingStatus.failed,
             ReportAnalysis.failure_category.isnot(None),
+            Report.id.not_in(rejected_report_ids()),
         )
         .group_by(ReportAnalysis.failure_category)
     )
@@ -357,8 +370,9 @@ async def get_admin_analytics(
             "completed": rep_completed,
             "processing": rep_processing,
             "failed": rep_failed,
-            "success_rate_pct": _safe_pct(rep_completed, rep_total),
-            "failure_rate_pct": _safe_pct(rep_failed, rep_total),
+            "rejected": rep_rejected,
+            "success_rate_pct": _safe_pct(rep_completed, rep_completed + rep_failed),
+            "failure_rate_pct": _safe_pct(rep_failed, rep_completed + rep_failed),
             # Real breakdown — sourced from report_analyses.failure_category
             "failure_categories": failure_categories,
             # Computed from actual timestamps — null if no completed reports with timestamp
@@ -438,8 +452,10 @@ async def get_analytics_timeseries(
             )
             .where(
                 Report.uploaded_at >= since_naive,
-                Report.processing_status.in_(
-                    [ProcessingStatus.completed, ProcessingStatus.failed]
+                or_(
+                    Report.processing_status == ProcessingStatus.completed,
+                    and_(Report.processing_status == ProcessingStatus.failed,
+                         Report.id.not_in(rejected_report_ids())),
                 ),
             )
             .group_by(func.date(Report.uploaded_at), Report.processing_status)

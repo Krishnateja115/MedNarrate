@@ -1,7 +1,7 @@
 from datetime import datetime, time, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import desc, func, select
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import AdminContext, require_permission
@@ -12,6 +12,7 @@ from app.models.report import ProcessingStatus, Report
 from app.models.report_analysis import ReportAnalysis
 from app.models.support import SupportTicket, TicketStatus, TicketPriority
 from app.models.user import User
+from app.services.report_outcomes import rejected_report_ids
 
 router = APIRouter()
 
@@ -76,8 +77,17 @@ async def get_dashboard_summary(
     reports_failed_stmt = select(func.count(Report.id)).where(
         Report.processing_status == ProcessingStatus.failed,
         Report.uploaded_at >= time_window_start,
+        Report.id.not_in(rejected_report_ids()),
     )
     reports_failed = (await db.execute(reports_failed_stmt)).scalar() or 0
+
+    reports_rejected = (await db.execute(
+        select(func.count(Report.id)).where(
+            Report.processing_status == ProcessingStatus.failed,
+            Report.uploaded_at >= time_window_start,
+            Report.id.in_(rejected_report_ids()),
+        )
+    )).scalar() or 0
 
     reports_completed_stmt = select(func.count(Report.id)).where(
         Report.processing_status == ProcessingStatus.completed,
@@ -118,6 +128,7 @@ async def get_dashboard_summary(
             Report.processing_status == ProcessingStatus.failed,
             Report.uploaded_at >= time_window_start,
             ReportAnalysis.failure_category.isnot(None),
+            Report.id.not_in(rejected_report_ids()),
         )
         .group_by(ReportAnalysis.failure_category)
     )
@@ -134,8 +145,10 @@ async def get_dashboard_summary(
         )
         .where(
             Report.uploaded_at >= time_window_start,
-            Report.processing_status.in_(
-                [ProcessingStatus.completed, ProcessingStatus.failed]
+            or_(
+                Report.processing_status == ProcessingStatus.completed,
+                and_(Report.processing_status == ProcessingStatus.failed,
+                     Report.id.not_in(rejected_report_ids())),
             ),
         )
         .group_by(func.date(Report.uploaded_at), Report.processing_status)
@@ -213,6 +226,7 @@ async def get_dashboard_summary(
             "reports_processing": reports_processing,
             "reports_completed": reports_completed,
             "reports_failed": reports_failed,
+            "reports_rejected": reports_rejected,
         },
         "analysis": {
             "analysis_success_rate": round(analysis_success_rate, 2),

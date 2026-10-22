@@ -31,6 +31,7 @@ from app.models.report import ProcessingStatus, Report, ReportType
 from app.models.report_analysis import ReportAnalysis
 from app.models.user import User
 from app.services.audit import log_admin_action
+from app.services.report_outcomes import public_report_status, rejected_report_ids
 
 router = APIRouter()
 
@@ -124,10 +125,13 @@ async def get_reports(
     search: Optional[str] = None,
     report_type: Optional[ReportType] = None,
     processing_status: Optional[ProcessingStatus] = None,
+    rejected: Optional[bool] = None,
     user_id: Optional[uuid.UUID] = None,
 ):
     """List reports. Sensitive fields (extracted_text, findings) are never returned here."""
-    stmt = select(Report, User.email).outerjoin(User, Report.user_id == User.id)
+    stmt = (select(Report, User.email, ReportAnalysis.failure_category)
+            .outerjoin(User, Report.user_id == User.id)
+            .outerjoin(ReportAnalysis, ReportAnalysis.report_id == Report.id))
 
     if search:
         search_term = f"%{search}%"
@@ -147,6 +151,12 @@ async def get_reports(
     if processing_status:
         stmt = stmt.where(Report.processing_status == processing_status)
 
+    if rejected is True:
+        stmt = stmt.where(Report.processing_status == ProcessingStatus.failed,
+                          Report.id.in_(rejected_report_ids()))
+    elif rejected is False:
+        stmt = stmt.where(Report.id.not_in(rejected_report_ids()))
+
     if user_id:
         stmt = stmt.where(Report.user_id == user_id)
 
@@ -161,7 +171,7 @@ async def get_reports(
     results = (await db.execute(stmt)).all()
 
     reports = []
-    for report, user_email in results:
+    for report, user_email, failure_category in results:
         reports.append(
             {
                 "id": str(report.id),
@@ -169,7 +179,7 @@ async def get_reports(
                 "user_email": user_email,
                 "title": report.title,
                 "report_type": report.report_type.value,
-                "processing_status": report.processing_status.value,
+                "processing_status": public_report_status(report.processing_status, failure_category),
                 "uploaded_at": report.uploaded_at.isoformat()
                 if report.uploaded_at
                 else None,
@@ -223,7 +233,7 @@ async def get_report_detail(
             "file_name": report.file_name,
             "file_type": report.file_type.value,
             "report_type": report.report_type.value,
-            "processing_status": report.processing_status.value,
+            "processing_status": public_report_status(report.processing_status, analysis.failure_category if analysis else None),
             "uploaded_at": report.uploaded_at.isoformat()
             if report.uploaded_at
             else None,

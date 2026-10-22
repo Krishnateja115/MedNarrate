@@ -12,6 +12,7 @@ from app.models.incidents import Incident, IncidentStatus
 from app.models.llm_telemetry import LLMDiagnosticEvent
 from app.models.report import Report, ProcessingStatus
 from app.models.support import SupportTicket, TicketStatus, TicketPriority
+from app.services.report_outcomes import rejected_report_ids
 
 router = APIRouter()
 
@@ -64,6 +65,7 @@ async def get_admin_alerts(
             select(func.count(Report.id)).where(
                 Report.uploaded_at >= twenty_four_hours_ago,
                 Report.processing_status == ProcessingStatus.failed,
+                Report.id.not_in(rejected_report_ids()),
             )
         )
     ).scalar_one_or_none() or 0
