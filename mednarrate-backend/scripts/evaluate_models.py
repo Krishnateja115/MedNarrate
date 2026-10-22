@@ -158,7 +158,10 @@ def part_qwen(store, args):
     provider = LocalProvider()
 
     def call(prompt):
-        return run(provider.generate(prompt, timeout=180.0))["content"]
+        # A test sentence needs a short translation, not the provider's default
+        # 2,048-token chat budget. Bound generation so a rambling answer cannot
+        # consume the entire 180-second evaluation timeout.
+        return run(provider.generate(prompt, timeout=180.0, config={"max_output_tokens": 192}))["content"]
 
     result = E.evaluate_translation(_llm_translate(call), _translation_data(args))
     R.record_result(store, "qwen", result)

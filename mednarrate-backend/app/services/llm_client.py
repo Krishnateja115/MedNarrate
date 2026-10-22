@@ -1367,6 +1367,8 @@ class LocalProvider(LLMProvider):
                     messages.append({"role": "user", "content": prompt})
 
                 max_new = settings.TRANSLATION_MAX_OUTPUT_TOKENS if _translation_request.get() else 2048
+                if config and isinstance(config.get("max_output_tokens"), int):
+                    max_new = min(max_new, max(1, config["max_output_tokens"]))
                 
                 kwargs = {
                     "messages": messages,
