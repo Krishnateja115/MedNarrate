@@ -13,6 +13,7 @@ services:
     ports: !reset []
     restart: unless-stopped
     volumes:
+      - ./mednarrate-backend/app/ml/artifacts/model_report.json:/app/app/ml/artifacts/model_report.json:ro
       - kbindex:/app/data/kb_index
       - hfcache:/app/cache/huggingface
 
