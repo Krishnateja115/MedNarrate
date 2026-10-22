@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-10-17T21:31:06+00:00",
+  "generated_at": "2026-10-22T11:05:19+00:00",
   "environment": {
-    "python": "3.13.9",
-    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+    "python": "3.11.17",
+    "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.41"
   },
   "results": {
     "ner": {
@@ -130,8 +130,35 @@
       "evaluated_at": "2026-10-17T21:26:55+00:00"
     },
     "qwen": {
-      "error": "LLMConnectionError: Failed to load local model: No module named 'llama_cpp'",
-      "attempted_at": "2026-10-17T21:31:06+00:00"
+      "n": 56,
+      "metrics": {
+        "number_preservation": 0.865079365079365,
+        "sentences_with_all_numbers_kept": 0.8571428571428571,
+        "avg_latency_ms": 11088.787008983283,
+        "chrf_hindi": 27.386255939663904
+      },
+      "details": {
+        "number_preservation_by_language": {
+          "hi": 0.8333333333333334,
+          "ta": 0.8888888888888888,
+          "te": 1.0,
+          "kn": 0.6666666666666666,
+          "ml": 0.8333333333333334,
+          "bn": 0.8333333333333334,
+          "mr": 1.0
+        },
+        "sentences": 8,
+        "languages": [
+          "hi",
+          "ta",
+          "te",
+          "kn",
+          "ml",
+          "bn",
+          "mr"
+        ]
+      },
+      "evaluated_at": "2026-10-22T11:05:19+00:00"
     },
     "stt": {
       "n": 15,
