@@ -57,6 +57,10 @@ function ClassifierExplanationView({ result }: { result: ClassifierExplanation }
         Predicted <strong>{result.predicted}</strong> with {(result.confidence * 100).toFixed(1)}% confidence
         {' '}({Object.entries(result.class_probabilities).map(([k, v]) => `${k} ${(v * 100).toFixed(0)}%`).join(', ')}).
       </p>
+      <p className="text-sm text-muted-foreground">
+        Why this report type? Green words support the predicted type; red words push against it. Longer bars have
+        more influence for this text. Confidence describes the model&apos;s estimate, not medical certainty.
+      </p>
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
           <h4 className="mb-1 text-sm font-semibold">LIME (local surrogate)</h4>
@@ -83,6 +87,10 @@ function EntityExplanationView({ result }: { result: EntityExplanation }) {
   }
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        The model marked the clinical terms below. Each bar shows how much the other word affected that specific
+        term when it was hidden; it does not explain an AI-written summary.
+      </p>
       {result.entities.map((ent, idx) => (
         <div key={`${ent.entity}-${idx}`}>
           <p className="text-sm">
@@ -264,7 +272,8 @@ function TryItPanel() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5" /> Explain your own text</CardTitle>
         <CardDescription>
-          Paste report text without patient names. Only the length is written to the audit log.
+          Paste a short extract without patient names. Run an explanation to see which words influenced the
+          report-type prediction or clinical-term labels. Only the text length is written to the audit log.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -323,11 +332,9 @@ export default function ModelPerformancePage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Models &amp; Explainability</h1>
         <p className="text-muted-foreground">
-          How well each model MedNarrate relies on performs, and why the models give the answers they do.
+          See why a specific report type or clinical term was identified. Evaluation scores are in Performance.
         </p>
       </div>
-
-      <ModelLiveActivity />
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-4">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 w-full" />)}</div>
@@ -342,25 +349,25 @@ export default function ModelPerformancePage() {
             <SummaryCard title="Last evaluation run" value={data.generated_at ? new Date(data.generated_at).toLocaleString() : 'Never'} icon={<FlaskConical className="h-4 w-4 text-muted-foreground" />} small />
           </div>
 
-          {pending > 0 && (
-            <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/20">
-              <CardContent className="flex items-start gap-3 pt-4">
-                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                <p className="text-sm text-amber-800 dark:text-amber-300">
-                  {pending} deep-learning {pending === 1 ? 'model has' : 'models have'} not been measured yet.{' '}
-                  {data.how_to_refresh}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          <Tabs defaultValue="performance" className="space-y-4">
+          <Tabs defaultValue="xai" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="performance">Performance</TabsTrigger>
               <TabsTrigger value="xai">Explainability (XAI)</TabsTrigger>
+              <TabsTrigger value="performance">Performance</TabsTrigger>
             </TabsList>
 
             <TabsContent value="performance" className="space-y-8">
+              <ModelLiveActivity />
+              {pending > 0 && (
+                <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/20">
+                  <CardContent className="flex items-start gap-3 pt-4">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                    <p className="text-sm text-amber-800 dark:text-amber-300">
+                      {pending} deep-learning {pending === 1 ? 'model has' : 'models have'} not been measured yet.{' '}
+                      {data.how_to_refresh}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
               <ModelComparisonCard models={data.models} />
               {groupByKind(data.models).map((group) => (
                 <section key={group.kind} className="space-y-3">
@@ -376,6 +383,21 @@ export default function ModelPerformancePage() {
             </TabsContent>
 
             <TabsContent value="xai" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">What these explanations show</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                  <p>For report classification, see which words pushed the predicted report type up or down.</p>
+                  <p>For clinical terms, see which surrounding words influenced each label. Lab flags show the
+                    measured value and reference range used by the rule.</p>
+                  <p>These explanations are for those specific models and rules. They do not explain how the
+                    hosted language model wrote a medical summary or prove that a result is clinically correct.</p>
+                </CardContent>
+              </Card>
+
+              <TryItPanel />
+
               <div className="grid gap-4 md:grid-cols-2">
                 {data.xai_methods.map((m) => (
                   <Card key={m.id}>
@@ -419,11 +441,9 @@ export default function ModelPerformancePage() {
 
               {!examples.classifier && !examples.ner && (
                 <p className="text-sm text-muted-foreground">
-                  Worked examples appear after the evaluation script has run. You can still use the box below.
+                  Worked examples appear after the evaluation script has run. You can use the box above now.
                 </p>
               )}
-
-              <TryItPanel />
             </TabsContent>
           </Tabs>
         </>

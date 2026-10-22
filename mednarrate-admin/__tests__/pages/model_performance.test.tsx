@@ -62,6 +62,12 @@ const report = (models: ModelEntry[], extra: Partial<ModelPerformanceReport> = {
 const mockQuery = (data: ModelPerformanceReport | null, isLoading = false, error: Error | null = null) =>
   (useQuery as jest.Mock).mockReturnValue({ data, isLoading, error });
 
+const showPerformance = () => {
+  const tab = screen.getByRole('tab', { name: 'Performance' });
+  fireEvent.mouseDown(tab);
+  fireEvent.click(tab);
+};
+
 describe('ModelPerformancePage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -88,6 +94,7 @@ describe('ModelPerformancePage', () => {
   it('says "Not evaluated yet" instead of showing numbers, and explains how to measure', () => {
     mockQuery(report([baseModel]));
     render(<ModelPerformancePage />);
+    showPerformance();
     expect(screen.getByText('Not evaluated yet')).toBeInTheDocument();
     expect(screen.getByText(/No scores yet/)).toBeInTheDocument();
     expect(screen.getByText(/1 deep-learning model has not been measured yet/)).toBeInTheDocument();
@@ -107,6 +114,7 @@ describe('ModelPerformancePage', () => {
     };
     mockQuery(report([measured], { generated_at: '2026-10-18T10:00:00+00:00' }));
     render(<ModelPerformancePage />);
+    showPerformance();
     expect(screen.getByText('Measured')).toBeInTheDocument();
     expect(screen.getByText('85.3%')).toBeInTheDocument();
     expect(screen.getByText('42 ms')).toBeInTheDocument();
@@ -130,6 +138,7 @@ describe('ModelPerformancePage', () => {
       },
     }));
     render(<ModelPerformancePage />);
+    showPerformance();
     expect(screen.getByTestId('dataset-card')).toBeInTheDocument();
     expect(screen.getByText(/MRAD \(Unified Medical Dataset\)/)).toBeInTheDocument();
     expect(screen.getByText('123,367')).toBeInTheDocument();
@@ -150,6 +159,7 @@ describe('ModelPerformancePage', () => {
   it('reports a failed evaluation with its reason', () => {
     mockQuery(report([{ ...baseModel, status: 'failed', error: 'No Gemini key configured' }]));
     render(<ModelPerformancePage />);
+    showPerformance();
     expect(screen.getByText('Could not run')).toBeInTheDocument();
     expect(screen.getByText(/No Gemini key configured/)).toBeInTheDocument();
   });
@@ -158,16 +168,17 @@ describe('ModelPerformancePage', () => {
     const rules: ModelEntry = { ...baseModel, id: 'lab', name: 'Lab extractor', kind: 'rule_based', kind_label: 'Rule-based' };
     mockQuery(report([baseModel, rules]));
     render(<ModelPerformancePage />);
+    showPerformance();
     expect(screen.getByText('Deep learning')).toBeInTheDocument();
     expect(screen.getByText('Rule-based')).toBeInTheDocument();
   });
 
-  it('lists the explainability methods and a try-it box on the XAI tab', () => {
+  it('opens on explanations, with the text explanation before performance metrics', () => {
     mockQuery(report([baseModel]));
     render(<ModelPerformancePage />);
-    const tab = screen.getByRole('tab', { name: /Explainability/ });
-    fireEvent.mouseDown(tab);
-    fireEvent.click(tab);
+    expect(screen.getByRole('tab', { name: /Explainability/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('What these explanations show')).toBeInTheDocument();
+    expect(screen.getByText(/They do not explain how the hosted language model/)).toBeInTheDocument();
     expect(screen.getByText('LIME (local surrogate)')).toBeInTheDocument();
     expect(screen.getByText('Occlusion saliency')).toBeInTheDocument();
     expect(screen.getByLabelText('Text to explain')).toBeInTheDocument();
@@ -179,9 +190,6 @@ describe('ModelPerformancePage', () => {
     (useMutation as jest.Mock).mockReturnValue({ mutate, isPending: false, isError: false, error: null, data: undefined });
     mockQuery(report([baseModel]));
     render(<ModelPerformancePage />);
-    const tab = screen.getByRole('tab', { name: /Explainability/ });
-    fireEvent.mouseDown(tab);
-    fireEvent.click(tab);
     fireEvent.change(screen.getByLabelText('Text to explain'), { target: { value: 'tumor size 2 cm' } });
     fireEvent.click(screen.getByRole('button', { name: /Explain report-type classifier/ }));
     expect(mutate).toHaveBeenCalledWith({ kind: 'report-type', text: 'tumor size 2 cm' });
