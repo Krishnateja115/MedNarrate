@@ -44,7 +44,11 @@ export default function ReportsPage() {
   const queryParams = new URLSearchParams();
   if (searchTerm) queryParams.set('search', searchTerm);
   if (typeFilter !== 'all') queryParams.set('report_type', typeFilter);
-  if (statusFilter !== 'all') queryParams.set('processing_status', statusFilter);
+  if (statusFilter === 'rejected') queryParams.set('rejected', 'true');
+  else if (statusFilter === 'failed') {
+    queryParams.set('processing_status', 'failed');
+    queryParams.set('rejected', 'false');
+  } else if (statusFilter !== 'all') queryParams.set('processing_status', statusFilter);
   queryParams.set('page', page.toString());
   queryParams.set('limit', limit.toString());
   
@@ -63,6 +67,8 @@ export default function ReportsPage() {
         return <Badge className="bg-blue-500 hover:bg-blue-600">Uploaded</Badge>;
       case 'failed':
         return <Badge variant="destructive">Failed</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="border-amber-500 text-amber-700">Rejected upload</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -114,6 +120,7 @@ export default function ReportsPage() {
                   <SelectItem value="processing">Processing</SelectItem>
                   <SelectItem value="uploaded">Uploaded</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="rejected">Rejected uploads</SelectItem>
                 </SelectContent>
               </Select>
             </div>

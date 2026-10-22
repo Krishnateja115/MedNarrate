@@ -90,6 +90,7 @@ function ReportDiagnosticPageContent() {
       case 'processing': return <Badge className="bg-amber-500">Processing</Badge>;
       case 'uploaded': return <Badge className="bg-blue-500">Uploaded</Badge>;
       case 'failed': return <Badge variant="destructive">Failed</Badge>;
+      case 'rejected': return <Badge variant="outline" className="border-amber-500 text-amber-700">Rejected upload</Badge>;
       default: return <Badge variant="secondary">{status}</Badge>;
     }
   };
@@ -140,6 +141,7 @@ function ReportDiagnosticPageContent() {
 
   const { report, analysis } = data;
   const isFailed = report.processing_status === 'failed';
+  const isRejected = report.processing_status === 'rejected';
   const isCompleted = report.processing_status === 'completed';
 
   return (
@@ -192,9 +194,9 @@ function ReportDiagnosticPageContent() {
               <div className="flex items-center min-w-max">
                 <PipelineNode title="Upload" status="success" />
                 <PipelineArrow active={report.processing_status !== 'uploaded'} />
-                <PipelineNode title="Extraction" status={report.processing_status === 'uploaded' ? 'processing' : 'success'} />
-                <PipelineArrow active={!!analysis || isCompleted || isFailed} />
-                <PipelineNode title="LLM Analysis" status={analysis ? 'success' : isFailed ? 'failed' : 'pending'} desc={analysis?.llm_provider || ''} />
+                <PipelineNode title="Extraction" status={isRejected ? 'failed' : report.processing_status === 'uploaded' ? 'processing' : 'success'} />
+                <PipelineArrow active={!isRejected && (!!analysis || isCompleted || isFailed)} />
+                <PipelineNode title="LLM Analysis" status={isRejected ? 'pending' : analysis?.llm_provider ? 'success' : isFailed ? 'failed' : 'pending'} desc={isRejected ? 'Not run' : analysis?.llm_provider || ''} />
                 <PipelineArrow active={analysis?.verification_status === 'verified'} />
                 <PipelineNode title="Verification" status={analysis?.verification_status === 'verified' ? 'success' : isCompleted ? 'success' : 'pending'} />
                 <PipelineArrow active={isCompleted} />
@@ -203,11 +205,11 @@ function ReportDiagnosticPageContent() {
             </CardContent>
           </Card>
 
-          {isFailed && analysis?.error_reason && (
-            <Card className="border-red-200 bg-red-50 dark:bg-red-950/10">
+          {(isFailed || isRejected) && analysis?.error_reason && (
+            <Card className={isRejected ? 'border-amber-200 bg-amber-50 dark:bg-amber-950/10' : 'border-red-200 bg-red-50 dark:bg-red-950/10'}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-red-700 dark:text-red-400 text-base flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" /> Failure Diagnostic
+                  <AlertTriangle className="h-4 w-4" /> {isRejected ? 'Upload Rejected' : 'Failure Diagnostic'}
                 </CardTitle>
               </CardHeader>
               <CardContent>

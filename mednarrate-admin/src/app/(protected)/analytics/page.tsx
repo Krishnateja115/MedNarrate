@@ -41,6 +41,7 @@ interface AnalyticsData {
     completed: number;
     processing: number;
     failed: number;
+    rejected: number;
     success_rate_pct: number | null;
     failure_rate_pct: number | null;
     failure_categories: Record<string, number>;
@@ -193,7 +194,7 @@ export default function AnalyticsPage() {
           {/* 1. PRODUCT TAB */}
           {activeTab === 'product' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <Card>
                   <CardContent className="pt-6">
                     <div className="flex justify-between items-center">
@@ -299,6 +300,12 @@ export default function AnalyticsPage() {
                   <CardContent className="pt-6">
                     <span className="text-xs font-semibold text-rose-600 uppercase">Failed</span>
                     <div className="text-3xl font-extrabold text-rose-600 mt-2">{data.reports.failed}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <span className="text-xs font-semibold text-amber-600 uppercase">Rejected uploads</span>
+                    <div className="text-3xl font-extrabold text-amber-600 mt-2">{data.reports.rejected}</div>
                   </CardContent>
                 </Card>
               </div>

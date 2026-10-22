@@ -26,6 +26,7 @@ interface DashboardSummary {
     reports_processing: number;
     reports_completed: number;
     reports_failed: number;
+    reports_rejected: number;
     average_processing_time_ms: number | null;
   };
   analysis: {
@@ -269,6 +270,10 @@ export default function OverviewPage() {
               <div className="flex justify-between items-center text-sm">
                 <span className="flex items-center gap-2"><XCircle className="w-4 h-4 text-destructive"/> Failed</span>
                 <span className="font-medium text-destructive">{formatNumber(summary.reports?.reports_failed)}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500"/> Rejected uploads</span>
+                <span className="font-medium text-amber-600">{formatNumber(summary.reports?.reports_rejected)}</span>
               </div>
               <div className="pt-2 border-t mt-2">
                 <div className="flex justify-between items-center">
