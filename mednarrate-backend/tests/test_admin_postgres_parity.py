@@ -10,6 +10,7 @@ from app.models.report import Report, ProcessingStatus, FileType, ReportType
 from app.models.incidents import Incident, IncidentStatus, IncidentSeverity
 from app.models.support import SupportTicket, TicketStatus, TicketPriority, TicketCategory
 from app.models.llm_telemetry import LLMDiagnosticEvent
+from app.models.report_analysis import ReportAnalysis
 from app.core.security import create_access_token
 
 
@@ -30,7 +31,7 @@ async def full_admin_user(db_session: AsyncSession):
     db_session.add(role)
     await db_session.flush()
 
-    perms = ["dashboard.view", "system.health.view", "incidents.view", "reports.diagnostics.view"]
+    perms = ["dashboard.view", "system.health.view", "incidents.view", "reports.diagnostics.view", "reports.view"]
     from sqlalchemy import select
 
     for p_name in perms:
@@ -109,6 +110,41 @@ async def test_postgres_enum_parity_dashboard_summary(client: AsyncClient, full_
     assert data["support"]["p1_tickets"] >= 1
     assert data["support"]["p2_tickets"] >= 1
     assert data["support"]["open_support_tickets"] >= 2
+
+
+@pytest.mark.asyncio
+async def test_rejected_document_is_separate_from_processing_failure(
+    client: AsyncClient, db_session: AsyncSession, full_admin_user: dict
+):
+    report = Report(
+        user_id=full_admin_user["user"].id,
+        title="Unrelated upload",
+        file_name="unrelated.pdf",
+        file_path="/unrelated.pdf",
+        file_type=FileType.pdf,
+        report_type=ReportType.other,
+        processing_status=ProcessingStatus.failed,
+        uploaded_at=datetime.utcnow(),
+        report_date=datetime.utcnow().date(),
+    )
+    db_session.add(report)
+    await db_session.flush()
+    db_session.add(ReportAnalysis(
+        report_id=report.id,
+        failure_category="NOT_MEDICAL_REPORT",
+        error_reason="Please upload a medical document.",
+    ))
+    await db_session.commit()
+
+    headers = {"Authorization": f"Bearer {full_admin_user['token']}"}
+    summary = (await client.get("/api/v1/admin/dashboard/summary", headers=headers)).json()
+    assert summary["reports"]["reports_rejected"] == 1
+    assert summary["reports"]["reports_failed"] == 1
+    assert summary["analysis"]["analysis_success_rate"] == 50.0
+
+    reports = (await client.get("/api/v1/admin/reports?rejected=true", headers=headers)).json()
+    assert reports["total"] == 1
+    assert reports["items"][0]["processing_status"] == "rejected"
 
 
 @pytest.mark.asyncio

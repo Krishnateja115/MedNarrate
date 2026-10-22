@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
@@ -13,6 +14,7 @@ from app.models.admin import (
     AdminRolePermission,
 )
 from app.models.user import User, UserRole
+from app.models.llm_telemetry import LLMDiagnosticEvent
 from app.services.llm_client import llm_client_instance
 
 
@@ -116,3 +118,33 @@ async def test_root_health_check_reports_unmigrated_db(
     assert data["status"] == "degraded"
     assert data["db"] == "down"
     assert data["schema_revision"] is None
+
+
+@pytest.mark.asyncio
+async def test_llm_health_counts_completed_requests_not_failed_attempts(
+    client: AsyncClient, db_session: AsyncSession, health_admin: User, monkeypatch: pytest.MonkeyPatch
+):
+    class ReachableProvider:
+        async def health_check(self, config: dict | None = None) -> dict:
+            return {"reachable": True, "configured": True}
+
+    monkeypatch.setattr(llm_client_instance, "get_provider", lambda *args, **kwargs: ReachableProvider())
+    now = datetime.utcnow()
+    db_session.add_all([
+        LLMDiagnosticEvent(request_id="rescued", provider="gemini", status="error",
+                           timestamp=now, error_category="timeout"),
+        LLMDiagnosticEvent(request_id="rescued", provider="groq", status="success",
+                           timestamp=now + timedelta(seconds=1)),
+        LLMDiagnosticEvent(request_id="old-error", provider="gemini", status="error",
+                           timestamp=now - timedelta(days=2), error_category="timeout"),
+    ])
+    await db_session.commit()
+
+    token = create_access_token(subject=str(health_admin.id))
+    response = await client.get("/api/v1/admin/system/health", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    provider = response.json()["services"]["llm_provider"]
+    assert provider["status"] == "healthy"
+    assert provider["details"]["last_n_checked"] == 1
+    assert provider["details"]["recent_success_rate"] == 100.0
+    assert provider["details"]["recent_attempt_failures"] == 1
