@@ -9,11 +9,11 @@ Each service probe is:
 
 Status values: healthy | degraded | down | unknown
 
-LLM health requires a successful test request — not just configuration presence.
+LLM health uses provider reachability and recent completed request outcomes.
 """
 
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from time import perf_counter
 from typing import Any
 
@@ -102,21 +102,38 @@ async def get_system_health(
         reachable = provider_health.get("reachable", False)
         configured = provider_health.get("configured", False)
 
-        # Check last 10 calls for stability
+        # Group provider attempts by request. A failed primary followed by a
+        # successful external fallback is a successful user request. Ignore
+        # stale attempts and keep the internal canned fallback separate.
+        recent_cutoff = datetime.utcnow() - timedelta(hours=24)
         llm_events_stmt = (
-            select(LLMDiagnosticEvent.status)
+            select(
+                LLMDiagnosticEvent.id,
+                LLMDiagnosticEvent.request_id,
+                LLMDiagnosticEvent.status,
+                LLMDiagnosticEvent.provider,
+            )
+            .where(LLMDiagnosticEvent.timestamp >= recent_cutoff)
             .order_by(desc(LLMDiagnosticEvent.timestamp))
-            .limit(10)
+            .limit(200)
         )
-        llm_events = (await db.execute(llm_events_stmt)).scalars().all()
+        llm_events = (await db.execute(llm_events_stmt)).all()
+
+        outcomes: dict[str, bool] = {}
+        for event_id, request_id, event_status, event_provider in llm_events:
+            key = request_id or str(event_id)
+            if key not in outcomes and len(outcomes) >= 10:
+                continue
+            outcomes[key] = outcomes.get(key, False) or (
+                event_status == "success" and event_provider != "fallback"
+            )
 
         recent_success_rate = 100.0
-        if llm_events:
-            success_count = sum(1 for s in llm_events if s == "success")
-            recent_success_rate = (success_count / len(llm_events)) * 100
+        if outcomes:
+            recent_success_rate = sum(outcomes.values()) / len(outcomes) * 100
 
         threshold = 80.0
-        is_stable = (len(llm_events) == 0) or (recent_success_rate >= threshold)
+        is_stable = not outcomes or recent_success_rate >= threshold
 
         if reachable and is_stable:
             llm_status = "healthy"
@@ -143,7 +160,10 @@ async def get_system_health(
                 "healthy": reachable and is_stable,
                 "recent_success_rate": round(recent_success_rate, 2),
                 "threshold_required": threshold,
-                "last_n_checked": len(llm_events),
+                "last_n_checked": len(outcomes),
+                "recent_attempt_failures": sum(
+                    event_status != "success" for _, _, event_status, _ in llm_events
+                ),
             },
         )
         if llm_status in ("degraded", "down", "unknown"):

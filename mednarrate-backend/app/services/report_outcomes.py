@@ -1,6 +1,9 @@
 """Classify expected document rejection separately from processing faults."""
 
+import uuid
+
 from sqlalchemy import select
+from sqlalchemy.sql import Select
 
 from app.models.report import ProcessingStatus
 from app.models.report_analysis import ReportAnalysis
@@ -9,7 +12,7 @@ from app.models.report_analysis import ReportAnalysis
 REJECTED_REPORT_CATEGORIES = ("NOT_MEDICAL_REPORT",)
 
 
-def rejected_report_ids():
+def rejected_report_ids() -> Select[tuple[uuid.UUID]]:
     """Return report IDs rejected by the medical-document gate."""
     return select(ReportAnalysis.report_id).where(
         ReportAnalysis.failure_category.in_(REJECTED_REPORT_CATEGORIES)
