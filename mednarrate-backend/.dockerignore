@@ -14,6 +14,7 @@
 uploads/
 storage/
 data/kb_index/
+models/
 
 # Environments, caches, VCS
 venv/
