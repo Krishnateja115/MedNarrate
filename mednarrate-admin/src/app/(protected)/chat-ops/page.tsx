@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageSquare, ShieldAlert, Search } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
@@ -105,11 +104,11 @@ export default function ChatOpsPage() {
     },
     {
       id: 'actions',
-      cell: () => (
+      cell: ({ row }) => (
         <div className="text-right">
-          <Button variant="ghost" size="sm" disabled title="Requires sensitive access grant">
+          <Link href={`/chat-ops/detail?id=${encodeURIComponent(row.original.id)}`} className="inline-flex h-7 items-center rounded-lg px-2.5 text-sm font-medium hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
             Inspect
-          </Button>
+          </Link>
         </div>
       ),
     }
