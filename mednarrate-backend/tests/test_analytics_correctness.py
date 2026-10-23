@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token
 from app.api.v1.admin_analytics import _average_duration_seconds
+from app.models.chat import ChatSession
 from app.models.admin import (
     AdminPermission,
     AdminRole,
@@ -119,3 +120,50 @@ def test_average_processing_duration_is_database_independent():
         == 120.0
     )
     assert _average_duration_seconds([]) is None
+
+
+@pytest.mark.asyncio
+async def test_retention_counts_users_active_on_multiple_days(
+    client: AsyncClient, analytics_admin: User, db_session: AsyncSession
+):
+    now = datetime.utcnow()
+    one_day_user = User(
+        email=f"one_day_{uuid.uuid4()}@test.com",
+        hashed_password="hashed",
+        full_name="One Day User",
+        role=UserRole.patient,
+    )
+    db_session.add(one_day_user)
+    await db_session.flush()
+    db_session.add_all(
+        [
+            ChatSession(
+                user_id=analytics_admin.id,
+                title="First day",
+                created_at=now - timedelta(days=1),
+            ),
+            ChatSession(
+                user_id=analytics_admin.id,
+                title="Return day",
+                created_at=now,
+            ),
+            ChatSession(
+                user_id=one_day_user.id,
+                title="Only day",
+                created_at=now,
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    token = create_access_token(subject=str(analytics_admin.id))
+    response = await client.get(
+        "/api/v1/admin/analytics?timeframe=7d",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    product = response.json()["product"]
+    assert product["active_users"] == 2
+    assert product["returning_users"] == 1
+    assert product["retention_rate_pct"] == 50.0

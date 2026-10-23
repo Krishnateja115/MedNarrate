@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Iterable, Optional
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, or_, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.admin_auth import AdminContext, require_any_permission
@@ -117,17 +117,29 @@ async def get_admin_analytics(
     )
     active_users_count = len(active_report_users | active_chat_users)
 
-    # Retention: of users who existed BEFORE the period, how many are still active?
-    old_users_count = (
-        await db.execute(
-            select(func.count(User.id)).where(User.created_at < since_naive)
-        )
-    ).scalar_one_or_none() or 0
-    # Active old users (approximation via report/chat activity)
-    active_old_users = (
-        len(active_report_users | active_chat_users) if old_users_count > 0 else 0
+    # Retention: active users who returned on a different calendar day during
+    # the selected period. This remains measurable for a newly launched app
+    # whose entire user base was registered inside the selected timeframe.
+    activity_events = union_all(
+        select(
+            Report.user_id.label("user_id"),
+            func.date(Report.uploaded_at).label("activity_date"),
+        ).where(Report.uploaded_at >= since_naive),
+        select(
+            ChatSession.user_id.label("user_id"),
+            func.date(ChatSession.created_at).label("activity_date"),
+        ).where(ChatSession.created_at >= since_naive),
+    ).subquery()
+    returning_users_query = (
+        select(activity_events.c.user_id)
+        .group_by(activity_events.c.user_id)
+        .having(func.count(func.distinct(activity_events.c.activity_date)) >= 2)
+        .subquery()
     )
-    retention_rate = _safe_pct(active_old_users, old_users_count)
+    returning_users_count = (
+        await db.execute(select(func.count()).select_from(returning_users_query))
+    ).scalar_one()
+    retention_rate = _safe_pct(returning_users_count, active_users_count)
 
     # ---- 2. REPORT METRICS ----
     # Source: reports table, filtered by timeframe
@@ -350,7 +362,7 @@ async def get_admin_analytics(
         "period_end": now.isoformat(),
         "metric_definitions": {
             "active_users": "Users who uploaded a report or started a chat session in the period",
-            "retention_rate": "% of pre-existing users active in this period (null if no pre-existing users)",
+            "retention_rate": "% of active users who used reports or chat on at least two different days in the period",
             "avg_processing_time_sec": "Mean report processing time (uploaded_at to processed_at) for completed reports; null if no data",
             "failure_categories": "Real breakdown from report_analyses.failure_category — no synthetic categories",
         },
@@ -358,7 +370,8 @@ async def get_admin_analytics(
             "total_users": total_users,
             "new_registrations": new_registrations,
             "active_users": active_users_count,
-            "retention_rate_pct": retention_rate,  # null means no baseline exists yet
+            "returning_users": returning_users_count,
+            "retention_rate_pct": retention_rate,
             "feature_usage": {
                 "reports_uploaded": rep_total,
                 "chat_messages": chat_messages_count,

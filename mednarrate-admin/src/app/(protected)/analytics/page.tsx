@@ -29,6 +29,7 @@ interface AnalyticsData {
     total_users: number;
     new_registrations: number;
     active_users: number;
+    returning_users: number;
     retention_rate_pct: number | null;
     feature_usage: {
       reports_uploaded: number;
@@ -243,7 +244,7 @@ export default function AnalyticsPage() {
                     <div className="text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
                       {formatTelemetry(data.product.retention_rate_pct, '%')}
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">Active return rate from prior period</p>
+                    <p className="text-xs text-slate-500 mt-1">Active on 2+ different days ({data.product.returning_users} returning)</p>
                   </CardContent>
                 </Card>
               </div>
