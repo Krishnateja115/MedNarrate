@@ -111,6 +111,11 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
         ]
         self.app.dependency_overrides[analysis.get_current_user] = lambda: self.user
         self.app.dependency_overrides[analysis.get_db] = lambda: self.db
+        # The route now omits providers whose credentials are absent. Keep one
+        # synthetic provider configured so these endpoint tests exercise the
+        # mocked generator rather than an empty production provider chain.
+        self.gemini_key = patch.object(settings, 'GEMINI_API_KEY', 'test-key')
+        self.gemini_key.start()
         self.ownership = patch.object(analysis, 'verify_report_ownership', new=AsyncMock(return_value=types.SimpleNamespace(id=self.report_id)))
         self.ownership.start()
         self.client = httpx.AsyncClient(transport=httpx.ASGITransport(app=self.app), base_url='http://test')
@@ -125,6 +130,7 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         await self.client.aclose()
         self.ownership.stop()
+        self.gemini_key.stop()
 
     def payload(self):
         text = 'మీ రక్త పరీక్ష నివేదిక'

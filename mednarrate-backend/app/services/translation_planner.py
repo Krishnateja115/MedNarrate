@@ -38,11 +38,36 @@ _REASON_PRIORITY = [
 
 def resolve_translation_providers() -> List[str]:
     """Provider order for translation: TRANSLATION_PROVIDER_ORDER first, then
-    (when fallback is enabled) every other provider that has credentials."""
+    (when fallback is enabled) every other provider that has credentials.
+
+    A provider named in the configured order is still skipped when its required
+    credential is absent.  This matters in production where the default order
+    includes Vertex AI, OpenAI, and Mistral: attempting those unconfigured
+    services delayed every phone translation before a usable fallback ran.
+    """
     order = str(getattr(settings, "TRANSLATION_PROVIDER_ORDER", "") or "")
-    providers = [p.strip() for p in order.split(",") if p.strip()] or [
+    requested = [p.strip() for p in order.split(",") if p.strip()] or [
         "vertex_ai", "gemini", "openai", "mistral",
     ]
+
+    def is_configured(provider_name: str) -> bool:
+        base_name = provider_name.partition(":")[0]
+        required_setting = {
+            "vertex_ai": "VERTEX_PROJECT_ID",
+            "gemini": "GEMINI_API_KEY",
+            "dev_gemini": "GEMINI_API_KEY",
+            "openai": "OPENAI_API_KEY",
+            "anthropic": "ANTHROPIC_API_KEY",
+            "mistral": "MISTRAL_API_KEY",
+        }.get(base_name)
+        if base_name in OPENAI_COMPATIBLE:
+            required_setting = OPENAI_COMPATIBLE[base_name][1]
+        if required_setting is None:
+            # Explicit local/custom providers do not necessarily need a key.
+            return True
+        return bool(str(getattr(settings, required_setting, "") or "").strip())
+
+    providers = [provider for provider in requested if is_configured(provider)]
     # Same Gemini key, other models: separate quota pools, and a stronger model
     # for scripts the lighter one gets wrong. Only when Gemini is in the chain.
     if "gemini" in providers or "dev_gemini" in providers:

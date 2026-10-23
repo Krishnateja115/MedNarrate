@@ -353,6 +353,7 @@ async def test_gemini_model_variants_are_separate_providers(monkeypatch):
     from app.services.translation_planner import resolve_translation_providers
 
     monkeypatch.setattr(settings, "TRANSLATION_PROVIDER_ORDER", "gemini")
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "test-gemini-key")
     monkeypatch.setattr(settings, "GEMINI_MODEL", "gemini-3.1-flash-lite")
     monkeypatch.setattr(settings, "GEMINI_FALLBACK_MODELS", "gemini-2.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash-lite")
     monkeypatch.setattr(settings, "OPENAI_API_KEY", "sk-test-key-value")
@@ -431,6 +432,7 @@ async def test_openai_compatible_providers_join_the_chain_and_send_the_right_req
     assert "groq" in resolve_translation_providers()
     assert "cerebras" not in resolve_translation_providers()
 
+
     sent = {}
 
     class FakeResponse:
@@ -467,3 +469,26 @@ async def test_openai_compatible_providers_join_the_chain_and_send_the_right_req
     assert sent["url"].startswith("https://api.groq.com/") and sent["json"]["model"] == "llama-test"
     assert sent["json"]["response_format"] == {"type": "json_object"}
     assert sent["headers"]["Authorization"] == "Bearer gsk_test_value_123456"
+
+
+def test_unconfigured_translation_providers_are_skipped(monkeypatch):
+    from app.services.translation_planner import resolve_translation_providers
+
+    monkeypatch.setattr(
+        settings,
+        "TRANSLATION_PROVIDER_ORDER",
+        "vertex_ai,gemini,openai,mistral,groq_qwen",
+    )
+    monkeypatch.setattr(settings, "VERTEX_PROJECT_ID", None)
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", None)
+    monkeypatch.setattr(settings, "OPENAI_API_KEY", None)
+    monkeypatch.setattr(settings, "MISTRAL_API_KEY", None)
+    monkeypatch.setattr(settings, "GROQ_API_KEY", "gsk_test_value_123456")
+
+    providers = resolve_translation_providers()
+
+    assert providers[:2] == ["groq_qwen", "groq"]
+    assert "vertex_ai" not in providers
+    assert "gemini" not in providers
+    assert "openai" not in providers
+    assert "mistral" not in providers
