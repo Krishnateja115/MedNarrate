@@ -142,18 +142,18 @@ export default function OverviewPage() {
     const onDevice = service.status === 'on_device';
     
     return (
-      <div className={`min-w-0 border rounded-lg bg-card p-3 ${onDevice ? 'flex flex-col justify-center gap-2' : 'flex items-center justify-between gap-2'}`}>
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 flex-col justify-center gap-2 rounded-lg border bg-card p-3">
+        <div className="flex min-w-0 items-start gap-3">
           <div className={`shrink-0 p-2 rounded-md ${healthy ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : onDevice ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30' : down ? 'bg-destructive/10 text-destructive' : 'bg-orange-100 text-orange-600 dark:bg-orange-900/30'}`}>
             <Icon className="w-4 h-4" />
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium">{name}</p>
+          <div className="min-w-0 flex-1">
+            <p className="break-words text-sm font-medium leading-tight">{name}</p>
             {service.latency_ms != null && <p className="text-xs text-muted-foreground">{service.latency_ms}ms</p>}
             {onDevice && <p className="text-xs text-muted-foreground">Scheduled locally</p>}
           </div>
         </div>
-        <Badge variant={healthy || onDevice ? 'outline' : down ? 'destructive' : 'secondary'} className={`shrink-0 ${onDevice ? 'ml-11 self-start text-blue-600 border-blue-200' : healthy ? 'text-emerald-600 border-emerald-200' : ''}`}>
+        <Badge variant={healthy || onDevice ? 'outline' : down ? 'destructive' : 'secondary'} className={`ml-11 self-start ${onDevice ? 'text-blue-600 border-blue-200' : healthy ? 'text-emerald-600 border-emerald-200' : ''}`}>
           {onDevice ? 'On phone' : service.status}
         </Badge>
       </div>
