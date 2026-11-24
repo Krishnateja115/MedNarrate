@@ -48,3 +48,4 @@ the production build, Docker checks, and security scans.
 
 Live AI-provider tests are opt-in with `RUN_LIVE_LLM_TESTS=1` and require valid
 credentials. Do not put patient reports or secrets in test fixtures or Git.
+
